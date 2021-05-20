@@ -1,0 +1,8 @@
+name = "Dice"
+uuid = "94eeadfc-1ba6-40b7-9ed8-dee71557d525"
+authors = ["Guy Van den Broeck <guyvdb@gmail.com>"]
+version = "0.1.0"
+
+[deps]
+CUDD = "345a2cc7-28d8-58b2-abdf-cff77ea7d7f1"
+Lerche = "d42ef402-04e6-4356-9f73-091573ea58dc"
