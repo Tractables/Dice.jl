@@ -1,3 +1,5 @@
+export DiceProgram
+
 struct DiceProgram
     expr
 end

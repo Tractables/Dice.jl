@@ -1,7 +1,7 @@
 using Lerche: Lerche, Lark, Transformer, @rule, @inline_rule
 
 const dice_grammar = raw"""
-    ?start: expr
+    start: expr
 
     ?expr: identifier
         | discrete
@@ -27,7 +27,7 @@ const dice_grammar = raw"""
     
 struct DiceTransformer <: Transformer end
 
-@rule integer(t::DiceTransformer, x) = Base.parse(Int,x[1])
+@rule integer(t::DiceTransformer, x) = Base.parse(Int,x[2])
 @inline_rule prob(t::DiceTransformer, x) = Base.parse(Float64,x)
 @rule discrete(t::DiceTransformer, x) = Categorical(x)
 @inline_rule identifier(t::DiceTransformer, x) = Identifier(x)
@@ -35,6 +35,7 @@ struct DiceTransformer <: Transformer end
 @rule tuple(t::DiceTransformer, x) = Tuple(x)
 @rule ite(t::DiceTransformer, x) = Ite(x[1],x[2],x[3])
 @rule let_expr(t::DiceTransformer, x) = LetExpr(x[1],x[2],x[3])
+@inline_rule start(t::DiceTransformer, x) = DiceProgram(x)
 
 const dice_parser = 
     Lark(dice_grammar, parser="lalr", lexer="contextual"; 
