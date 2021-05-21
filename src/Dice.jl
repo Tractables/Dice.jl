@@ -1,5 +1,6 @@
 module Dice
 
-greet() = print("Hello World!")
+include("language.jl")
+include("parser.jl")
 
 end # module
