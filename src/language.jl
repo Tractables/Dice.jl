@@ -18,7 +18,7 @@ struct EqualsOp
 end
 
 struct Ite
-    if_expr
+    cond_expr
     then_expr
     else_expr
 end
