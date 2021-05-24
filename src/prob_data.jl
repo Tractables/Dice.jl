@@ -13,52 +13,61 @@ struct ProbBool <: ProbData
     bit
 end
 
-false_constant(mgr) =
+@inline false_constant(mgr) =
     ProbBool(mgr, false_node(mgr))
 
-true_constant(mgr) =
+@inline true_constant(mgr) =
     ProbBool(mgr, true_node(mgr))
 
-flip(mgr) =
+@inline flip(mgr) =
     ProbBool(mgr, new_var(mgr))
     
-biconditional(x::ProbBool, y::ProbBool) =
+@inline biconditional(x::ProbBool, y::ProbBool) =
     ProbBool(x.mgr, biconditional(x.mgr, x.bit, y.bit))
 
-conjoin(x::ProbBool, y::ProbBool) =
+@inline conjoin(x::ProbBool, y::ProbBool) =
     ProbBool(x.mgr, conjoin(x.mgr, x.bit, y.bit))
 
-Base.:&(b::ProbBool, d::ProbBool) = 
+@inline Base.:&(b::ProbBool, d::ProbBool) = 
     conjoin(b,d)
 
-disjoin(x::ProbBool, y::ProbBool) =
+@inline disjoin(x::ProbBool, y::ProbBool) =
     ProbBool(x.mgr, disjoin(x.mgr, x.bit, y.bit))
 
-Base.:|(b::ProbBool, d::ProbBool) = 
+@inline Base.:|(b::ProbBool, d::ProbBool) = 
     disjoin(b,d)
 
-prob_equals(x::ProbBool, y::ProbBool) =
+@inline prob_equals(x::ProbBool, y::ProbBool) =
     biconditional(x,y)
 
-negate(x::ProbBool) =
+@inline negate(x::ProbBool) =
     ProbBool(x.mgr, negate(x.mgr, x.bit))
     
-Base.:!(b::ProbBool) = 
+@inline Base.:!(b::ProbBool) = 
     negate(b)
 
-ite(cond::ProbBool, then::ProbBool, elze::ProbBool) = 
+@inline ite(cond::ProbBool, then::ProbBool, elze::ProbBool) = 
     ProbBool(cond.mgr, ite(cond.mgr, cond.bit, then.bit, elze.bit))
 
-issat(x::ProbBool) =
+@inline issat(x::ProbBool) =
     issat(x.mgr, x.bit)
 
-bools(b::ProbBool) = [b]
+@inline isvalid(x::ProbBool) =
+    isvalid(x.mgr, x.bit)
 
-num_nodes(bits::Vector{ProbBool}) =  
-    num_nodes(bits[1].mgr, map(b -> b.bit, bits))
+@inline bools(b::ProbBool) = [b]
 
-num_nodes(x) =  
-    num_nodes(bools(x))
+num_nodes(bits::Vector{ProbBool}; as_add=false) =  
+    num_nodes(bits[1].mgr, map(b -> b.bit, bits); as_add)
+
+num_nodes(x; as_add=false) =  
+    num_nodes(bools(x); as_add)
+
+dump_dot(bits::Vector{ProbBool}, filename) =
+    dump_dot(bits[1].mgr, map(b -> b.bit, bits), filename)
+
+dump_dot(x, filename) =  
+    dump_dot(bools(x), filename)
 
 # Tuples
 
@@ -118,20 +127,29 @@ function prob_equals(x::ProbInt, y::ProbInt)
 end
 
 function ite(cond::ProbBool, then::ProbInt, elze::ProbInt)
-    last_sat_bit = 0
-    mbthen, mbelze = max_bits(then), max_bits(elze)
-    mb = max(mbthen, mbelze)
-    z = Vector{ProbBool}(undef, mb)
-    false_bit = false_constant(cond.mgr)
-    for i=1:mb
-        then_bit = (mbthen >= i) ? then.bits[i] : false_bit
-        elze_bit = (mbelze >= i) ? elze.bits[i] : false_bit
-        z[i] = ite(cond, then_bit, elze_bit)
-        if issat(z[i])
-            last_sat_bit = i
+    if isvalid(cond)
+        then
+    elseif !issat(cond)
+        elze
+    else
+        last_sat_bit = 0
+        mbthen, mbelze = max_bits(then), max_bits(elze)
+        mb = max(mbthen, mbelze)
+        z = Vector{ProbBool}(undef, mb)
+        for i=1:mb
+            z[i] = if i > mbthen 
+                !cond & elze.bits[i]
+            elseif i> mbelze
+                cond & then.bits[i]
+            else
+                ite(cond, then.bits[i], elze.bits[i])
+            end
+            if issat(z[i])
+                last_sat_bit = i
+            end
         end
+        ProbInt(cond.mgr, z[1:last_sat_bit])
     end
-    ProbInt(cond.mgr, z[1:last_sat_bit])
 end
 
 bools(i::ProbInt) = i.bits

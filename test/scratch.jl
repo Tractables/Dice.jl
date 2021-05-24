@@ -63,3 +63,17 @@ Dice.compile(mgr, b, Dice.parse(DiceProgram, "int(10,4) == int(20,4)"))
 Dice.compile(mgr, b, Dice.parse(DiceProgram, "int(10,4) == int(20,5)"))
 
 Dice.compile(mgr, b, Dice.parse(DiceProgram, "if int(10,4) == int(20,5) then discrete(0.1,0.9) else discrete(0.1,0.9)"))
+
+Dice.compile(mgr, b, Dice.parse(DiceProgram, "let x = int(1,1) in x"))
+
+test = Dice.compile(mgr, b, Dice.parse(DiceProgram, 
+raw"""
+discrete(0.1, 0.2)
+"""))
+
+Dice.num_nodes(test)
+
+Dice.dump_dot(test, "test.dot"); println(read("test.dot", String))
+
+Dice.dump_dot(Dice.flip(mgr), "test.dot"); println(read("test.dot", String))
+Dice.dump_dot(!Dice.flip(mgr), "test.dot"); println(read("test.dot", String))

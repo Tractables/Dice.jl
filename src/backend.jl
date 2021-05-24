@@ -12,36 +12,52 @@ function default_manager()
     CuddMgr(cudd_mgr)
 end
 
-true_node(mgr::CuddMgr) = 
+@inline true_node(mgr::CuddMgr) = 
     Cudd_ReadOne(mgr.cuddmgr)
 
-false_node(mgr::CuddMgr) = 
+@inline false_node(mgr::CuddMgr) = 
     Cudd_ReadLogicZero(mgr.cuddmgr)
 
-biconditional(mgr::CuddMgr, x, y) =
+@inline biconditional(mgr::CuddMgr, x, y) =
     Cudd_bddXnor(mgr.cuddmgr, x, y)
 
-conjoin(mgr::CuddMgr, x, y) =
+@inline conjoin(mgr::CuddMgr, x, y) =
     Cudd_bddAnd(mgr.cuddmgr, x, y)
 
-disjoin(mgr::CuddMgr, x, y) =
+@inline disjoin(mgr::CuddMgr, x, y) =
     Cudd_bddOr(mgr.cuddmgr, x, y)
 
-negate(mgr::CuddMgr, x) =
+@inline negate(mgr::CuddMgr, x) =
     # workaround until https://github.com/sisl/CUDD.jl/issues/16 is fixed
     biconditional(mgr, x, false_node(mgr))
 
-ite(mgr::CuddMgr, cond, then, elze) =
+@inline ite(mgr::CuddMgr, cond, then, elze) =
     Cudd_bddIte(mgr.cuddmgr, cond, then, elze)
 
-issat(mgr::CuddMgr, x) =
+@inline issat(mgr::CuddMgr, x) =
     x !== false_node(mgr)
 
-new_var(mgr::CuddMgr) =
+@inline isvalid(mgr::CuddMgr, x) =
+    x === true_node(mgr)
+
+@inline new_var(mgr::CuddMgr) =
     Cudd_bddNewVar(mgr.cuddmgr)
 
-num_nodes(::CuddMgr, xs::Vector{<:Ptr}) = 
+@inline num_nodes(mgr::CuddMgr, xs::Vector{<:Ptr}; as_add=false) = begin
+    as_add && (xs = map(x -> Cudd_BddToAdd(mgr.cuddmgr, x), xs))
     Cudd_SharingSize(xs, length(xs))
-
-num_flips(mgr::CuddMgr) =
+end
+        
+@inline num_flips(mgr::CuddMgr) =
     Cudd_ReadSize(mgr.cuddmgr)
+
+mutable struct FILE end
+
+@inline dump_dot(mgr::CuddMgr, xs::Vector{<:Ptr}, filename) = begin
+    # convert to ADDs in order to properly print terminals
+    xs = map(x -> Cudd_BddToAdd(mgr.cuddmgr, x), xs)
+    outfile = ccall(:fopen, Ptr{FILE}, (Cstring, Cstring), filename, "w")
+    Cudd_DumpDot(mgr.cuddmgr, length(xs), xs, C_NULL, C_NULL, outfile) 
+    @assert ccall(:fclose, Cint, (Ptr{FILE},), outfile) == 0
+    nothing
+end

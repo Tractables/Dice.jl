@@ -34,15 +34,16 @@ function compile(mgr, _, i::Int)
 end
 
 function compile(mgr, bind,  c::Categorical)
+    # code for exploiting determinism commented out
     vals = collect(enumerate(c.probs))
-    pos_vals = filter(x -> !iszero(x[2]), vals)
+    pos_vals = vals # filter(x -> !iszero(x[2]), vals)
     compile_val(v) = compile(mgr, bind, v[1]-1)
-    if length(pos_vals) == 1
-        compile_val(pos_vals[1])
-    else
+    # if length(pos_vals) == 1
+    #     compile_val(pos_vals[1])
+    # else
         choose(x,y) = ite(flip(mgr), x, y)
         mapreduce(compile_val, choose, pos_vals)
-    end
+    # end
 end
 
 function compile(mgr, bind, id::Identifier)
@@ -56,8 +57,18 @@ function compile(mgr, bind, eq::EqualsOp)
 end
 
 function compile(mgr, bind, ite_expr::Ite)
+    # cond = compile(mgr, bind, ite_expr.cond_expr)
+    # # optimize for case when cond is deterministic?
+    # if !issat(cond)
+    #     compile(mgr, bind, ite_expr.else_expr)
+    # elseif isvalid(cond)
+    #     compile(mgr, bind, ite_expr.then_expr)
+    # else
+    #     then = compile(mgr, bind, ite_expr.then_expr)
+    #     elze = compile(mgr, bind, ite_expr.else_expr)
+    #     ite(cond, then, elze)
+    # end
     cond = compile(mgr, bind, ite_expr.cond_expr)
-    # optimize for case when cond is deterministic?
     then = compile(mgr, bind, ite_expr.then_expr)
     elze = compile(mgr, bind, ite_expr.else_expr)
     ite(cond, then, elze)
