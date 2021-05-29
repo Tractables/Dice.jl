@@ -1,9 +1,9 @@
 using HTTP
 using Dice
 
-# bn = "cancer";
+bn = "cancer";
 # bn = "survey";
-bn = "alarm";
+# bn = "alarm";
 # bn = "pigs";
 # bn = "munin";
 
