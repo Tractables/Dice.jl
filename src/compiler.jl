@@ -83,7 +83,7 @@ function compile(mgr, bind, s, c::Categorical)
         end
         ProbInt(mgr, bits)
     else
-        error("Unknown strategy $strategy")
+        error("Unknown strategy $(s.discrete)")
     end
 end
 
