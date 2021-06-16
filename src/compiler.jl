@@ -2,6 +2,7 @@
 const Binding = Dict{String,ProbData}
 
 default_bindings() = Binding()
+
 default_strategy() = (
     categorical = :bitwiseholtzen,
     branch_elim = :bdd
@@ -24,23 +25,23 @@ compile(mgr, _, _, f::Flip) = flip(mgr)
 
 function compile(mgr, bind, s, t::Tuple{X,Y}) where {X,Y}
     left = compile(mgr, bind, s, t[1])
-    # println("Compiled LHS for tuple ($(t[1]),_)")
     right = compile(mgr, bind, s, t[2])
-    # println("Compiled all of tuple $t")
     ProbTuple(mgr, left, right)
 end
    
 function compile(mgr, bind, s, i::Int)
     @assert i >= 0
-    num_bits = ceil(Int,log2(i+1))
-    bits = Vector{ProbBool}(undef, num_bits)
-    for bit_idx = 1:num_bits
+    num_b = num_bits(i)
+    bits = Vector{ProbBool}(undef, num_b)
+    for bit_idx = 1:num_b
         b::Bool = i & 1
         @inbounds bits[bit_idx] = compile(mgr, bind, s, b) 
         i = i >> 1
     end
     ProbInt(mgr, bits)
 end
+
+num_bits(i) = ceil(Int,log2(i+1))
 
 function compile(mgr, bind, s, c::Categorical)
     if s.categorical == :sangbeamekautz
@@ -59,13 +60,13 @@ function compile(mgr, bind, s, c::Categorical)
         cvals(vals)
     elseif s.categorical == :bitwiseholtzen
         vals = [(i-1, p) for (i,p) in enumerate(c.probs) if !iszero(p)]
-        maxval = maximum(((v,p),) -> v, vals)
-        num_digits = length(digits(Bool, maxval, base=2)) #lazy
+        max_val = maximum(((v,p),) -> v, vals)
+        num_b = num_bits(max_val)
         bitvals = map(vals) do (v,p)
-            (digits(Bool, v, base=2, pad=num_digits), p)
+            (digits(Bool, v, base=2, pad=num_b), p)
         end
-        bits = Vector{ProbBool}(undef, num_digits)
-        for digit = num_digits:-1:1
+        bits = Vector{ProbBool}(undef, num_b)
+        for digit = num_b:-1:1
             enum_contexts(bvs, i) = begin
                 if i == digit
                     if all(((v,p),) -> !v[digit], bvs)
@@ -84,7 +85,7 @@ function compile(mgr, bind, s, c::Categorical)
                     ite(test, then, elze)
                 end
             end
-            bits[digit] = enum_contexts(bitvals, num_digits)
+            bits[digit] = enum_contexts(bitvals, num_b)
         end
         ProbInt(mgr, bits)
     else
@@ -106,8 +107,10 @@ function compile(mgr, bind, s, ite_expr::Ite)
     if s.branch_elim == :bdd
         cond = compile(mgr, bind, s, ite_expr.cond_expr)
         if !issat(cond)
+            # println("Condition $(ite_expr.cond_expr) is always false")
             compile(mgr, bind, s, ite_expr.else_expr)
         elseif isvalid(cond)
+            # println("Condition $(ite_expr.cond_expr) is always true")
             compile(mgr, bind, s, ite_expr.then_expr)
         else
             then = compile(mgr, bind, s, ite_expr.then_expr)
