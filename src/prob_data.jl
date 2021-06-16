@@ -2,9 +2,6 @@
 
 abstract type ProbData end
 
-num_flips(d::ProbData) = 
-    num_flips(d.mgr)
-
 # Booleans
 
 struct ProbBool <: ProbData
@@ -62,6 +59,12 @@ num_nodes(bits::Vector{ProbBool}; as_add=true) =
 
 num_nodes(x; as_add=true) =  
     num_nodes(bools(x); as_add)
+
+num_flips(bits::Vector{ProbBool}) =  
+    num_vars(bits[1].mgr, map(b -> b.bit, bits))
+
+num_flips(x) =  
+    num_flips(bools(x))
 
 dump_dot(bits::Vector{ProbBool}, filename; as_add=true) =
     dump_dot(bits[1].mgr, map(b -> b.bit, bits), filename; as_add)

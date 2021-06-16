@@ -57,8 +57,12 @@ end
     as_add && (xs = map(x -> Cudd_BddToAdd(mgr.cuddmgr, x), xs))
     Cudd_SharingSize(xs, length(xs))
 end
+
+@inline num_vars(mgr::CuddMgr, xs::Vector{<:Ptr}) = begin
+    Cudd_VectorSupportSize(mgr.cuddmgr, xs, length(xs))
+end
         
-@inline num_flips(mgr::CuddMgr) =
+@inline num_vars(mgr::CuddMgr) =
     Cudd_ReadSize(mgr.cuddmgr)
 
 mutable struct FILE end
