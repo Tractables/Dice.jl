@@ -2,6 +2,7 @@ using Dice
 
 mgr = Dice.default_manager()
 b = Dice.default_bindings()
+s = Dice.default_strategy()
 
 t = Dice.compile(mgr, b, true)
 f = Dice.compile(mgr, b, false)
@@ -126,5 +127,7 @@ else
 """)), "test.dot"; as_add=true); println(read("test.dot", String))
 
 
-code = "discrete(0.1, 0.0, 0.3, 0.2, 0.2)"
-Dice.dump_dot(Dice.compile(mgr, b, Dice.parse(DiceProgram, code)), "test.dot"; as_add=true); println(read("test.dot", String))
+# code = "discrete(0.1, 0.2, 0.3, 0.2, 0.2)"
+code = "discrete(0.000000,0.000000,1.000000)"
+Dice.dump_dot(Dice.compile(mgr, b, s, Dice.parse(DiceProgram, code)), "test.dot"; as_add=true); println(read("test.dot", String))
+Dice.run_dice(code; skiptable=true, determinism=true, printstatebdd=true)

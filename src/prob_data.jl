@@ -71,21 +71,23 @@ dump_dot(x, filename; as_add=true) =
 
 # Tuples
 
-struct ProbTuple{L <: ProbData, R <: ProbData} <: ProbData
+struct ProbTuple <: ProbData
     mgr
-    left::L
-    right::R
+    left::ProbData
+    right::ProbData
 end
 
-prob_equals(x::ProbTuple, ::ProbTuple) = 
-    false_constant(x.mgr)
-
-function prob_equals(x::T, y::T) where {T <: ProbTuple}
-    left_eq = prob_equals(x.left, y.left)
-    # TODO optimize by avoiding unnecessary compilation (false and x)
-    # TODO order left and right checks by first fail principle 
-    right_eq = prob_equals(x.right, y.right)
-    left_eq & right_eq
+function prob_equals(x, y)
+    if typeof(x.left) != typeof(y.left) || typeof(x.right) != typeof(y.right)
+        # better to just define equality between different types to be false by default???
+        false_constant(x.mgr)
+    else
+        left_eq = prob_equals(x.left, y.left)
+        # TODO optimize by avoiding unnecessary compilation (false and x)
+        # TODO order left and right checks by first fail principle 
+        right_eq = prob_equals(x.right, y.right)
+        left_eq & right_eq
+    end
 end
 
 function ite(cond::ProbBool, then::T, elze::T) where {T <: ProbTuple}

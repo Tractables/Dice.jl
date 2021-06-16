@@ -1,16 +1,19 @@
+using Pkg; Pkg.activate("Dice/test");
 using HTTP
 using Dice
 
 # bn = "cancer";
 # bn = "survey";
-bn = "alarm";
+# bn = "alarm";
 # bn = "pigs";
-# bn = "munin";
+# bn = "water";
+bn = "munin";
 
 r = HTTP.request("GET", "https://raw.githubusercontent.com/SHoltzen/dice/master/benchmarks/bayesian-networks/$bn.bif.dice");
-bn_code = String(r.body);
+bn_code = String(r.body); nothing;
 
-@time dice_expr = Dice.parse(Dice.DiceProgram, bn_code);
+@time dice_expr = Dice.parse(Dice.DiceProgram, bn_code); nothing;
+@time dice_expr = Dice.parse(Dice.DiceProgram, bn_code); nothing;
 
 # manual
 # using Lerche
@@ -18,9 +21,9 @@ bn_code = String(r.body);
 # bn_ast = Lerche.parse(dice_parser, bn_code);
 # Lerche.transform(Dice.DiceTransformer(), bn_ast);
 
-@time c = Dice.compile(dice_expr);
-@time c = Dice.compile(dice_expr, (discrete = :sangbeamekautz,));
-
+@time c = Dice.compile(dice_expr); nothing;
+@time c = Dice.compile(dice_expr); nothing;
+@time c = Dice.compile(dice_expr, (categorical = :sangbeamekautz,)); nothing;
 
 Dice.num_nodes(c)
 Dice.num_flips(c)

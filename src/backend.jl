@@ -8,7 +8,7 @@ end
 
 function default_manager() 
     cudd_mgr = initialize_cudd()
-    Cudd_DisableGarbageCollection(cudd_mgr)
+    Cudd_DisableGarbageCollection(cudd_mgr) # note: still need to ref because CUDD can delete nodes without doing a GC pass
     CuddMgr(cudd_mgr)
 end
 
@@ -18,21 +18,26 @@ end
 @inline false_node(mgr::CuddMgr) = 
     Cudd_ReadLogicZero(mgr.cuddmgr)
 
+@inline rref(x) = begin 
+    ref(x)
+    x
+end
+
 @inline biconditional(mgr::CuddMgr, x, y) =
-    Cudd_bddXnor(mgr.cuddmgr, x, y)
+    rref(Cudd_bddXnor(mgr.cuddmgr, x, y))
 
 @inline conjoin(mgr::CuddMgr, x, y) =
-    Cudd_bddAnd(mgr.cuddmgr, x, y)
+    rref(Cudd_bddAnd(mgr.cuddmgr, x, y))
 
 @inline disjoin(mgr::CuddMgr, x, y) =
-    Cudd_bddOr(mgr.cuddmgr, x, y)
+    rref(Cudd_bddOr(mgr.cuddmgr, x, y))
 
 @inline negate(mgr::CuddMgr, x) =
     # workaround until https://github.com/sisl/CUDD.jl/issues/16 is fixed
-    biconditional(mgr, x, false_node(mgr))
+    rref(biconditional(mgr, x, false_node(mgr)))
 
 @inline ite(mgr::CuddMgr, cond, then, elze) =
-    Cudd_bddIte(mgr.cuddmgr, cond, then, elze)
+    rref(Cudd_bddIte(mgr.cuddmgr, cond, then, elze))
 
 @inline issat(mgr::CuddMgr, x) =
     x !== false_node(mgr)
@@ -41,7 +46,7 @@ end
     x === true_node(mgr)
 
 @inline new_var(mgr::CuddMgr) =
-    Cudd_bddNewVar(mgr.cuddmgr)
+    rref(Cudd_bddNewVar(mgr.cuddmgr))
 
 @inline num_nodes(mgr::CuddMgr, xs::Vector{<:Ptr}; as_add=true) = begin
     as_add && (xs = map(x -> Cudd_BddToAdd(mgr.cuddmgr, x), xs))

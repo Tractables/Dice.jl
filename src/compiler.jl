@@ -2,7 +2,10 @@
 const Binding = Dict{String,ProbData}
 
 default_bindings() = Binding()
-default_strategy() = (discrete = :bitwiseholtzen,)
+default_strategy() = (
+    categorical = :bitwiseholtzen,
+    branch_elim = :bdd
+    )
 
 compile(p::String, s = default_strategy()) = 
     compile(Dice.parse(DiceProgram,p), s)
@@ -21,7 +24,9 @@ compile(mgr, _, _, f::Flip) = flip(mgr)
 
 function compile(mgr, bind, s, t::Tuple{X,Y}) where {X,Y}
     left = compile(mgr, bind, s, t[1])
+    # println("Compiled LHS for tuple ($(t[1]),_)")
     right = compile(mgr, bind, s, t[2])
+    # println("Compiled all of tuple $t")
     ProbTuple(mgr, left, right)
 end
    
@@ -38,7 +43,7 @@ function compile(mgr, bind, s, i::Int)
 end
 
 function compile(mgr, bind, s, c::Categorical)
-    if s.discrete == :sangbeamekautz
+    if s.categorical == :sangbeamekautz
         vals = [(compile(mgr, bind, s, i-1), p) 
                     for (i,p) in enumerate(c.probs) if !iszero(p)]
         cvals(vs) = begin
@@ -52,7 +57,7 @@ function compile(mgr, bind, s, c::Categorical)
             end
         end
         cvals(vals)
-    elseif s.discrete == :bitwiseholtzen
+    elseif s.categorical == :bitwiseholtzen
         vals = [(i-1, p) for (i,p) in enumerate(c.probs) if !iszero(p)]
         maxval = maximum(((v,p),) -> v, vals)
         num_digits = length(digits(Bool, maxval, base=2)) #lazy
@@ -83,7 +88,7 @@ function compile(mgr, bind, s, c::Categorical)
         end
         ProbInt(mgr, bits)
     else
-        error("Unknown strategy $(s.discrete)")
+        error("Unknown strategy $(s.categorical)")
     end
 end
 
@@ -98,21 +103,25 @@ function compile(mgr, bind, s, eq::EqualsOp)
 end
 
 function compile(mgr, bind, s, ite_expr::Ite)
-    # cond = compile(mgr, bind, ite_expr.cond_expr)
-    # # optimize for case when cond is deterministic?
-    # if !issat(cond)
-    #     compile(mgr, bind, ite_expr.else_expr)
-    # elseif isvalid(cond)
-    #     compile(mgr, bind, ite_expr.then_expr)
-    # else
-    #     then = compile(mgr, bind, ite_expr.then_expr)
-    #     elze = compile(mgr, bind, ite_expr.else_expr)
-    #     ite(cond, then, elze)
-    # end
-    cond = compile(mgr, bind, s, ite_expr.cond_expr)
-    then = compile(mgr, bind, s, ite_expr.then_expr)
-    elze = compile(mgr, bind, s, ite_expr.else_expr)
-    ite(cond, then, elze)
+    if s.branch_elim == :bdd
+        cond = compile(mgr, bind, s, ite_expr.cond_expr)
+        if !issat(cond)
+            compile(mgr, bind, s, ite_expr.else_expr)
+        elseif isvalid(cond)
+            compile(mgr, bind, s, ite_expr.then_expr)
+        else
+            then = compile(mgr, bind, s, ite_expr.then_expr)
+            elze = compile(mgr, bind, s, ite_expr.else_expr)
+            ite(cond, then, elze)
+        end
+    elseif s.branch_elim == :none
+        cond = compile(mgr, bind, s, ite_expr.cond_expr)
+        then = compile(mgr, bind, s, ite_expr.then_expr)
+        elze = compile(mgr, bind, s, ite_expr.else_expr)
+        ite(cond, then, elze)
+    else
+        error("Unknown strategy $(s.branch_elim)")
+    end
 end
 
 function compile(mgr, bind, s, let_expr::LetExpr)
@@ -120,6 +129,7 @@ function compile(mgr, bind, s, let_expr::LetExpr)
     id = let_expr.identifier.symbol
     @assert !haskey(bind,id)
     bind[id] = c1
+    # println("Compiled $id")
     c2 = compile(mgr, bind, s, let_expr.e2)
     delete!(bind, id)
     c2
