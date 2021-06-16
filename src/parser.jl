@@ -3,15 +3,21 @@ using Lerche: Lerche, Lark, Transformer, @rule, @inline_rule
 const dice_grammar = raw"""
     start: expr
 
-    ?expr: identifier
-        | discrete
-        | integer
-        | "(" expr ")"
-        | expr "==" expr -> equals_op
-        | "(" expr "," expr ")" -> tuple
-        | "if" expr "then" expr "else" expr -> ite
-        | "let" identifier "=" expr "in" expr -> let_expr
+    ?expr: bool
+         | identifier
+         | flip
+         | discrete
+         | integer
+         | "(" expr ")"
+         | expr "==" expr -> equals_op
+         | "(" expr "," expr ")" -> tuple
+         | "if" expr "then" expr "else" expr -> ite
+         | "let" identifier "=" expr "in" expr -> let_expr
 
+    bool: "true"             -> bool_t
+        | "false"            -> bool_f
+
+    flip: "flip" prob
     discrete: "discrete" "(" prob ("," prob)* ")"
     integer: "int" "(" INT "," INT ")"
     prob: FLOAT
@@ -27,8 +33,11 @@ const dice_grammar = raw"""
     
 struct DiceTransformer <: Transformer end
 
+@rule bool_t(t::DiceTransformer, x) = true
+@rule bool_f(t::DiceTransformer, x) = false
 @rule integer(t::DiceTransformer, x) = Base.parse(Int,x[2])
 @inline_rule prob(t::DiceTransformer, x) = Base.parse(Float64,x)
+@inline_rule flip(t::DiceTransformer, x) = Flip(x)
 @rule discrete(t::DiceTransformer, x) = Categorical(x)
 @inline_rule identifier(t::DiceTransformer, x) = Identifier(x)
 @rule equals_op(t::DiceTransformer, x) = EqualsOp(x[1],x[2])

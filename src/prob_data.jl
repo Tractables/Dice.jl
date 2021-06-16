@@ -57,17 +57,17 @@ end
 
 @inline bools(b::ProbBool) = [b]
 
-num_nodes(bits::Vector{ProbBool}; as_add=false) =  
+num_nodes(bits::Vector{ProbBool}; as_add=true) =  
     num_nodes(bits[1].mgr, map(b -> b.bit, bits); as_add)
 
-num_nodes(x; as_add=false) =  
+num_nodes(x; as_add=true) =  
     num_nodes(bools(x); as_add)
 
-dump_dot(bits::Vector{ProbBool}, filename) =
-    dump_dot(bits[1].mgr, map(b -> b.bit, bits), filename)
+dump_dot(bits::Vector{ProbBool}, filename; as_add=true) =
+    dump_dot(bits[1].mgr, map(b -> b.bit, bits), filename; as_add)
 
-dump_dot(x, filename) =  
-    dump_dot(bools(x), filename)
+dump_dot(x, filename; as_add=true) =  
+    dump_dot(bools(x), filename; as_add)
 
 # Tuples
 
@@ -101,7 +101,7 @@ bools(t::ProbTuple) = [bools(t.left); bools(t.right)]
 
 struct ProbInt <: ProbData
     mgr
-    # index 1 is least significant bit
+    # first index is least significant bit
     # most significant bits that are always false are trimmed
     bits::Vector{ProbBool}
 end

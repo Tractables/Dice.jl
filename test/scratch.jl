@@ -77,3 +77,54 @@ Dice.dump_dot(test, "test.dot"); println(read("test.dot", String))
 
 Dice.dump_dot(Dice.flip(mgr), "test.dot"); println(read("test.dot", String))
 Dice.dump_dot(!Dice.flip(mgr), "test.dot"); println(read("test.dot", String))
+
+Dice.run_dice("flip 0.5")
+
+Dice.parse(DiceProgram, "true")
+Dice.parse(DiceProgram, "false")
+
+Dice.run_dice("discrete(0.1, 0.1, 0.1, 0.1, 0.6)"; skiptable=true, determinism=false, showinternal=true)
+
+# debug
+code = raw"""
+let i = discrete(0.1, 0.2, 0.3, 0.4) in
+    if i == int(2,2) then
+        true
+    else
+        if i == int(2,3) then
+            true
+        else
+            false
+"""
+# ground truth desugar
+Dice.run_dice(code; skiptable=true, determinism=true, showinternal=true)
+# ground truth size
+Dice.run_dice(code; skiptable=true, determinism=true, showsize=true)
+# show bdd
+Dice.run_dice(code; skiptable=true, determinism=true, printstatebdd=true)
+
+
+# Dice.jl size
+mgr = Dice.default_manager()
+c = Dice.compile(mgr, b, Dice.parse(DiceProgram, code))
+Dice.num_nodes(c)
+Dice.num_nodes(c; as_add=false)
+
+Dice.dump_dot(c, "test.dot"; as_add=true); println(read("test.dot", String))
+
+
+Dice.dump_dot(Dice.compile(mgr, b, Dice.parse(DiceProgram, "discrete(0.1, 0.2, 0.7)")), "test.dot"; as_add=true); println(read("test.dot", String))
+
+
+Dice.dump_dot(Dice.compile(mgr, b, Dice.parse(DiceProgram, raw"""
+if flip 0.5 then
+    int(0,0)
+else if flip 0.5 then
+    int(0,1)
+else
+    int(0,2)
+""")), "test.dot"; as_add=true); println(read("test.dot", String))
+
+
+code = "discrete(0.1, 0.0, 0.3, 0.2, 0.2)"
+Dice.dump_dot(Dice.compile(mgr, b, Dice.parse(DiceProgram, code)), "test.dot"; as_add=true); println(read("test.dot", String))

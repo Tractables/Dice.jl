@@ -5,5 +5,6 @@ include("parser.jl")
 include("prob_data.jl")
 include("compiler.jl")
 include("backend.jl")
+include("debug.jl")
 
 end # module

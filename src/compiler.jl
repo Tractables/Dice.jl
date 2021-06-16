@@ -2,61 +2,102 @@
 const Binding = Dict{String,ProbData}
 
 default_bindings() = Binding()
+default_strategy() = (discrete = :bitwiseholtzen,)
 
-compile(p::String) = 
-    compile(Dice.parse(DiceProgram,p))
+compile(p::String, s = default_strategy()) = 
+    compile(Dice.parse(DiceProgram,p), s)
 
-compile(p::DiceProgram) = 
-    compile(default_manager(), default_bindings(), p)
+compile(p::DiceProgram, s = default_strategy()) = 
+    compile(default_manager(), default_bindings(), s, p)
 
-compile(mgr, bind, p::DiceProgram) =
-    compile(mgr, bind, p.expr)
+compile(mgr, bind, s, p::DiceProgram) =
+    compile(mgr, bind, s, p.expr)
 
-compile(mgr, _, b::Bool) =
+compile(mgr, _, _, b::Bool) =
     ProbBool(mgr, b ? true_node(mgr) :  false_node(mgr))
 
-function compile(mgr, bind, t::Tuple{X,Y}) where {X,Y}
-    left = compile(mgr, bind, t[1])
-    right = compile(mgr, bind, t[2])
+
+compile(mgr, _, _, f::Flip) = flip(mgr)
+
+function compile(mgr, bind, s, t::Tuple{X,Y}) where {X,Y}
+    left = compile(mgr, bind, s, t[1])
+    right = compile(mgr, bind, s, t[2])
     ProbTuple(mgr, left, right)
 end
    
-function compile(mgr, _, i::Int)
+function compile(mgr, bind, s, i::Int)
     @assert i >= 0
     num_bits = ceil(Int,log2(i+1))
     bits = Vector{ProbBool}(undef, num_bits)
     for bit_idx = 1:num_bits
         b::Bool = i & 1
-        @inbounds bits[bit_idx] = compile(mgr, bind, b) 
+        @inbounds bits[bit_idx] = compile(mgr, bind, s, b) 
         i = i >> 1
     end
     ProbInt(mgr, bits)
 end
 
-function compile(mgr, bind,  c::Categorical)
-    # code for exploiting determinism commented out
-    vals = collect(enumerate(c.probs))
-    pos_vals = vals # filter(x -> !iszero(x[2]), vals)
-    compile_val(v) = compile(mgr, bind, v[1]-1)
-    # if length(pos_vals) == 1
-    #     compile_val(pos_vals[1])
-    # else
-        choose(x,y) = ite(flip(mgr), x, y)
-        mapreduce(compile_val, choose, pos_vals)
-    # end
+function compile(mgr, bind, s, c::Categorical)
+    if s.discrete == :sangbeamekautz
+        vals = [(compile(mgr, bind, s, i-1), p) 
+                    for (i,p) in enumerate(c.probs) if !iszero(p)]
+        cvals(vs) = begin
+            v1 = vs[1][1]
+            if length(vs) == 1
+                v1
+            else
+                test = flip(mgr)
+                elze = cvals(vs[2:end])
+                ite(test, v1, elze)
+            end
+        end
+        cvals(vals)
+    elseif s.discrete == :bitwiseholtzen
+        vals = [(i-1, p) for (i,p) in enumerate(c.probs) if !iszero(p)]
+        maxval = maximum(((v,p),) -> v, vals)
+        num_digits = length(digits(Bool, maxval, base=2)) #lazy
+        bitvals = map(vals) do (v,p)
+            (digits(Bool, v, base=2, pad=num_digits), p)
+        end
+        bits = Vector{ProbBool}(undef, num_digits)
+        for digit = num_digits:-1:1
+            enum_contexts(bvs, i) = begin
+                if i == digit
+                    if all(((v,p),) -> !v[digit], bvs)
+                        compile(mgr, bind, s, false)
+                    elseif all(((v,p),) -> v[digit], bvs)
+                        compile(mgr, bind, s, true)
+                    else
+                        flip(mgr)
+                    end
+                else
+                    test = !bits[i] # dice tries false first
+                    bvs0 = filter(((v,p),) -> !v[i], bvs)
+                    then = enum_contexts(bvs0, i-1)
+                    bvs1 = filter(((v,p),) -> v[i], bvs)
+                    elze = enum_contexts(bvs1, i-1)
+                    ite(test, then, elze)
+                end
+            end
+            bits[digit] = enum_contexts(bitvals, num_digits)
+        end
+        ProbInt(mgr, bits)
+    else
+        error("Unknown strategy $strategy")
+    end
 end
 
-function compile(mgr, bind, id::Identifier)
+function compile(mgr, bind, _, id::Identifier)
     bind[id.symbol]
 end
 
-function compile(mgr, bind, eq::EqualsOp)
-    c1 = compile(mgr, bind, eq.e1)
-    c2 = compile(mgr, bind, eq.e2)
+function compile(mgr, bind, s, eq::EqualsOp)
+    c1 = compile(mgr, bind, s, eq.e1)
+    c2 = compile(mgr, bind, s, eq.e2)
     prob_equals(c1, c2)
 end
 
-function compile(mgr, bind, ite_expr::Ite)
+function compile(mgr, bind, s, ite_expr::Ite)
     # cond = compile(mgr, bind, ite_expr.cond_expr)
     # # optimize for case when cond is deterministic?
     # if !issat(cond)
@@ -68,18 +109,18 @@ function compile(mgr, bind, ite_expr::Ite)
     #     elze = compile(mgr, bind, ite_expr.else_expr)
     #     ite(cond, then, elze)
     # end
-    cond = compile(mgr, bind, ite_expr.cond_expr)
-    then = compile(mgr, bind, ite_expr.then_expr)
-    elze = compile(mgr, bind, ite_expr.else_expr)
+    cond = compile(mgr, bind, s, ite_expr.cond_expr)
+    then = compile(mgr, bind, s, ite_expr.then_expr)
+    elze = compile(mgr, bind, s, ite_expr.else_expr)
     ite(cond, then, elze)
 end
 
-function compile(mgr, bind, let_expr::LetExpr)
-    c1 = compile(mgr, bind, let_expr.e1)
+function compile(mgr, bind, s, let_expr::LetExpr)
+    c1 = compile(mgr, bind, s, let_expr.e1)
     id = let_expr.identifier.symbol
     @assert !haskey(bind,id)
     bind[id] = c1
-    c2 = compile(mgr, bind, let_expr.e2)
+    c2 = compile(mgr, bind, s, let_expr.e2)
     delete!(bind, id)
     c2
 end

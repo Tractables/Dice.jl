@@ -1,9 +1,9 @@
 using HTTP
 using Dice
 
-bn = "cancer";
+# bn = "cancer";
 # bn = "survey";
-# bn = "alarm";
+bn = "alarm";
 # bn = "pigs";
 # bn = "munin";
 
@@ -19,8 +19,12 @@ bn_code = String(r.body);
 # Lerche.transform(Dice.DiceTransformer(), bn_ast);
 
 @time c = Dice.compile(dice_expr);
+@time c = Dice.compile(dice_expr, (discrete = :sangbeamekautz,));
+
 
 Dice.num_nodes(c)
 Dice.num_flips(c)
 
+# ground truth size
+Dice.run_dice(bn_code; skiptable=true, determinism=true, showsize=true)
    

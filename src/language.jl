@@ -4,6 +4,10 @@ struct DiceProgram
     expr
 end
 
+struct Flip
+    prob::Float64    
+end
+
 struct Categorical
     probs::Vector{Float64}    
 end

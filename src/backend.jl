@@ -43,7 +43,7 @@ end
 @inline new_var(mgr::CuddMgr) =
     Cudd_bddNewVar(mgr.cuddmgr)
 
-@inline num_nodes(mgr::CuddMgr, xs::Vector{<:Ptr}; as_add=false) = begin
+@inline num_nodes(mgr::CuddMgr, xs::Vector{<:Ptr}; as_add=true) = begin
     as_add && (xs = map(x -> Cudd_BddToAdd(mgr.cuddmgr, x), xs))
     Cudd_SharingSize(xs, length(xs))
 end
@@ -53,9 +53,11 @@ end
 
 mutable struct FILE end
 
-@inline dump_dot(mgr::CuddMgr, xs::Vector{<:Ptr}, filename) = begin
+@inline dump_dot(mgr::CuddMgr, xs::Vector{<:Ptr}, filename; as_add=true) = begin
     # convert to ADDs in order to properly print terminals
-    xs = map(x -> Cudd_BddToAdd(mgr.cuddmgr, x), xs)
+    if as_add
+        xs = map(x -> Cudd_BddToAdd(mgr.cuddmgr, x), xs)
+    end
     outfile = ccall(:fopen, Ptr{FILE}, (Cstring, Cstring), filename, "w")
     Cudd_DumpDot(mgr.cuddmgr, length(xs), xs, C_NULL, C_NULL, outfile) 
     @assert ccall(:fclose, Cint, (Ptr{FILE},), outfile) == 0
