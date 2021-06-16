@@ -8,42 +8,44 @@ default_strategy() = (
     branch_elim = :bdd
     )
 
-compile(p::String, s = default_strategy()) = 
+compile(p::String, s = default_strategy())::ProbData = 
     compile(Dice.parse(DiceProgram,p), s)
 
-compile(p::DiceProgram, s = default_strategy()) = 
+compile(p::DiceProgram, s = default_strategy())::ProbData = 
     compile(default_manager(), default_bindings(), s, p)
 
-compile(mgr, bind, s, p::DiceProgram) =
+compile(mgr, bind, s, p::DiceProgram)::ProbData =
     compile(mgr, bind, s, p.expr)
 
-compile(mgr, _, _, b::Bool) =
+compile(mgr, _, _, b::Bool)::ProbBool =
     ProbBool(mgr, b ? true_node(mgr) :  false_node(mgr))
 
 
-compile(mgr, _, _, f::Flip) = flip(mgr)
+compile(mgr, _, _, f::Flip)::ProbBool = flip(mgr)
 
-function compile(mgr, bind, s, t::Tuple{X,Y}) where {X,Y}
-    left = compile(mgr, bind, s, t[1])
-    right = compile(mgr, bind, s, t[2])
+function compile(mgr, bind, s, t::DiceTuple)::ProbTuple
+    left = compile(mgr, bind, s, t.first)
+    right = compile(mgr, bind, s, t.second)
     ProbTuple(mgr, left, right)
 end
    
-function compile(mgr, bind, s, i::Int)
-    @assert i >= 0
-    num_b = num_bits(i)
-    bits = Vector{ProbBool}(undef, num_b)
-    for bit_idx = 1:num_b
-        b::Bool = i & 1
-        @inbounds bits[bit_idx] = compile(mgr, bind, s, b) 
-        i = i >> 1
+function compile(mgr, bind, s, i::Int)::ProbInt
+    get!(mgr.int_cache, i) do
+        @assert i >= 0
+        num_b = num_bits(i)
+        bits = Vector{ProbBool}(undef, num_b)
+        for bit_idx = 1:num_b
+            b::Bool = i & 1
+            @inbounds bits[bit_idx] = compile(mgr, bind, s, b) 
+            i = i >> 1
+        end
+        ProbInt(mgr, bits)
     end
-    ProbInt(mgr, bits)
 end
 
 num_bits(i) = ceil(Int,log2(i+1))
 
-function compile(mgr, bind, s, c::Categorical)
+function compile(mgr, bind, s, c::Categorical)::ProbInt
     if s.categorical == :sangbeamekautz
         vals = [(compile(mgr, bind, s, i-1), p) 
                     for (i,p) in enumerate(c.probs) if !iszero(p)]
@@ -93,17 +95,17 @@ function compile(mgr, bind, s, c::Categorical)
     end
 end
 
-function compile(mgr, bind, _, id::Identifier)
+function compile(mgr, bind, _, id::Identifier)::ProbData
     bind[id.symbol]
 end
 
-function compile(mgr, bind, s, eq::EqualsOp)
+function compile(mgr, bind, s, eq::EqualsOp)::ProbBool
     c1 = compile(mgr, bind, s, eq.e1)
     c2 = compile(mgr, bind, s, eq.e2)
     prob_equals(c1, c2)
 end
 
-function compile(mgr, bind, s, ite_expr::Ite)
+function compile(mgr, bind, s, ite_expr::Ite)::ProbData
     if s.branch_elim == :bdd
         cond = compile(mgr, bind, s, ite_expr.cond_expr)
         if !issat(cond)
@@ -127,13 +129,22 @@ function compile(mgr, bind, s, ite_expr::Ite)
     end
 end
 
-function compile(mgr, bind, s, let_expr::LetExpr)
-    c1 = compile(mgr, bind, s, let_expr.e1)
-    id = let_expr.identifier.symbol
-    @assert !haskey(bind,id)
-    bind[id] = c1
-    # println("Compiled $id")
-    c2 = compile(mgr, bind, s, let_expr.e2)
-    delete!(bind, id)
-    c2
+function compile(mgr, bind, s, let_expr::LetExpr)::ProbData
+    # Note: a recursive implementation can easily cause a StackOverflowError
+    # so when e2 is also a let expression we should solve it iteratively
+    # keep binding BDDs to identifiers until done
+    while true
+        id = let_expr.identifier.symbol
+        @assert !haskey(bind,id) "No support for reusing identifier symbols: $id"
+        bind[id] = compile(mgr, bind, s, let_expr.e1)
+        if let_expr.e2 isa LetExpr
+            let_expr = let_expr.e2
+        else
+            break
+        end
+    end 
+    # eventually e2 has to be a non-LetExpr, so compile it
+    v = compile(mgr, bind, s, let_expr.e2)::ProbData
+
+    v
 end

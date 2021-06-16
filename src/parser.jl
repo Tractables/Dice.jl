@@ -41,7 +41,7 @@ struct DiceTransformer <: Transformer end
 @rule discrete(t::DiceTransformer, x) = Categorical(x)
 @inline_rule identifier(t::DiceTransformer, x) = Identifier(x)
 @rule equals_op(t::DiceTransformer, x) = EqualsOp(x[1],x[2])
-@rule tuple(t::DiceTransformer, x) = Tuple(x)
+@rule tuple(t::DiceTransformer, x) = DiceTuple(x[1], x[2])
 @rule ite(t::DiceTransformer, x) = Ite(x[1],x[2],x[3])
 @rule let_expr(t::DiceTransformer, x) = LetExpr(x[1],x[2],x[3])
 @inline_rule start(t::DiceTransformer, x) = DiceProgram(x)
@@ -50,8 +50,8 @@ const dice_parser =
     Lark(dice_grammar, parser="lalr", lexer="contextual"; 
          transformer = DiceTransformer())
 
-parse(::Type{DiceProgram}, str) = 
-    Lerche.parse(dice_parser, str);    
+parse(::Type{DiceProgram}, str)::DiceProgram = 
+    Lerche.parse(dice_parser, str)
 
 read(io::IO, ::Type{DiceProgram}) =
     parse(DiceProgram, read(io, String))

@@ -4,12 +4,17 @@ using CUDD
 
 struct CuddMgr
     cuddmgr::Ptr{Nothing}
+    # TODO add integer equality cache?
+    equals_cache::Dict{Any, ProbBool}
+    int_cache::Dict{Int, ProbInt}
 end
 
 function default_manager() 
     cudd_mgr = initialize_cudd()
     Cudd_DisableGarbageCollection(cudd_mgr) # note: still need to ref because CUDD can delete nodes without doing a GC pass
-    CuddMgr(cudd_mgr)
+    equals_cache = Dict{Any, ProbBool}()
+    int_cache = Dict{Int, ProbInt}()
+    CuddMgr(cudd_mgr, equals_cache, int_cache)
 end
 
 @inline true_node(mgr::CuddMgr) = 

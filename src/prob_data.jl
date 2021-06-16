@@ -82,11 +82,14 @@ function prob_equals(x, y)
         # better to just define equality between different types to be false by default???
         false_constant(x.mgr)
     else
-        left_eq = prob_equals(x.left, y.left)
-        # TODO optimize by avoiding unnecessary compilation (false and x)
         # TODO order left and right checks by first fail principle 
-        right_eq = prob_equals(x.right, y.right)
-        left_eq & right_eq
+        left_eq = prob_equals(x.left, y.left)
+        if !issat(left_eq)
+            false_constant(x.mgr)
+        else
+            right_eq = prob_equals(x.right, y.right)
+            left_eq & right_eq
+        end
     end
 end
 
@@ -112,20 +115,24 @@ max_bits(i::ProbInt) =
     length(i.bits)
 
 function prob_equals(x::ProbInt, y::ProbInt)
-    # TODO optimize by avoiding unnecessary compilation (false and x)
-    # TODO order bit checks by first fail principle
-    shared = min(max_bits(x), max_bits(y))
-    eq = true_constant(x.mgr)
-    for i=1:shared
-        eq &= prob_equals(x.bits[i], y.bits[i])
+    cache = x.mgr.equals_cache
+    get!(cache, (x.bits, y.bits)) do
+        shared = min(max_bits(x), max_bits(y))
+        eq = true_constant(x.mgr)
+        for i=max_bits(x):-1:shared+1
+            eq &= !(x.bits[i])
+            !issat(eq) && return eq
+        end
+        for i=max_bits(y):-1:shared+1
+            eq &= !(y.bits[i])
+            !issat(eq) && return eq
+        end
+        for i=shared:-1:1
+            eq &= prob_equals(x.bits[i], y.bits[i])
+            !issat(eq) && return eq
+        end
+        eq
     end
-    for i=shared+1:max_bits(x)
-        eq &= !(x.bits[i])
-    end
-    for i=shared+1:max_bits(y)
-        eq &= !(y.bits[i])
-    end
-    eq
 end
 
 function ite(cond::ProbBool, then::ProbInt, elze::ProbInt)
@@ -141,8 +148,8 @@ function ite(cond::ProbBool, then::ProbInt, elze::ProbInt)
         for i=1:mb
             z[i] = if i > mbthen 
                 !cond & elze.bits[i]
-            elseif i> mbelze
-                cond & then.bits[i]
+            elseif i > mbelze
+                 cond & then.bits[i]
             else
                 ite(cond, then.bits[i], elze.bits[i])
             end
