@@ -1,42 +1,52 @@
-
-const Binding = Dict{String,ProbData}
-
-default_bindings() = Binding()
+abstract type DiceManager end
 
 default_strategy() = (
     categorical = :bitwiseholtzen,
     branch_elim = :bdd
     )
 
-compile(p::String, s = default_strategy())::ProbData = 
-    compile(Dice.parse(DiceProgram,p), s)
+default_manager() =
+    CuddMgr(default_strategy())
 
-compile(p::DiceProgram, s = default_strategy())::ProbData = 
-    compile(default_manager(), default_bindings(), s, p)
+struct Context
+    bindings::Dict{String,ProbData}
+    condition
+end
 
-compile(mgr, bind, s, p::DiceProgram)::ProbData =
-    compile(mgr, bind, s, p.expr)
+default_context(mgr::DiceManager) = 
+    Context(Dict{String,ProbData}(), nothing)
+    
+compile(p::String, mgr = default_manager())::ProbData = 
+    compile(Dice.parse(DiceProgram,p), mgr)
 
-compile(mgr, _, _, b::Bool)::ProbBool =
+compile(p::DiceProgram, mgr = default_manager())::ProbData = begin
+    ctx = default_context(mgr)
+    compile(mgr, ctx, p)
+end 
+
+compile(mgr, ctx, p::DiceProgram)::ProbData =
+    compile(mgr, ctx, p.expr)
+
+compile(mgr, _, b::Bool)::ProbBool =
     ProbBool(mgr, b ? true_node(mgr) :  false_node(mgr))
 
 
-compile(mgr, _, _, f::Flip)::ProbBool = flip(mgr)
+compile(mgr, _, f::Flip)::ProbBool = flip(mgr)
 
-function compile(mgr, bind, s, t::DiceTuple)::ProbTuple
-    left = compile(mgr, bind, s, t.first)
-    right = compile(mgr, bind, s, t.second)
+function compile(mgr, ctx, t::DiceTuple)::ProbTuple
+    left = compile(mgr, ctx, t.first)
+    right = compile(mgr, ctx, t.second)
     ProbTuple(mgr, left, right)
 end
    
-function compile(mgr, bind, s, i::Int)::ProbInt
+function compile(mgr, ctx, i::Int)::ProbInt
     get!(mgr.int_cache, i) do
         @assert i >= 0
         num_b = num_bits(i)
         bits = Vector{ProbBool}(undef, num_b)
         for bit_idx = 1:num_b
             b::Bool = i & 1
-            @inbounds bits[bit_idx] = compile(mgr, bind, s, b) 
+            @inbounds bits[bit_idx] = compile(mgr, ctx, b) 
             i = i >> 1
         end
         ProbInt(mgr, bits)
@@ -45,9 +55,9 @@ end
 
 num_bits(i) = ceil(Int,log2(i+1))
 
-function compile(mgr, bind, s, c::Categorical)::ProbInt
-    if s.categorical == :sangbeamekautz
-        vals = [(compile(mgr, bind, s, i-1), p) 
+function compile(mgr, ctx, c::Categorical)::ProbInt
+    if mgr.strategy.categorical == :sangbeamekautz
+        vals = [(compile(mgr, ctx, i-1), p) 
                     for (i,p) in enumerate(c.probs) if !iszero(p)]
         cvals(vs) = begin
             v1 = vs[1][1]
@@ -60,7 +70,7 @@ function compile(mgr, bind, s, c::Categorical)::ProbInt
             end
         end
         cvals(vals)
-    elseif s.categorical == :bitwiseholtzen
+    elseif mgr.strategy.categorical == :bitwiseholtzen
         vals = [(i-1, p) for (i,p) in enumerate(c.probs) if !iszero(p)]
         max_val = maximum(((v,p),) -> v, vals)
         num_b = num_bits(max_val)
@@ -72,9 +82,9 @@ function compile(mgr, bind, s, c::Categorical)::ProbInt
             enum_contexts(bvs, i) = begin
                 if i == digit
                     if all(((v,p),) -> !v[digit], bvs)
-                        compile(mgr, bind, s, false)
+                        compile(mgr, ctx, false)
                     elseif all(((v,p),) -> v[digit], bvs)
-                        compile(mgr, bind, s, true)
+                        compile(mgr, ctx, true)
                     else
                         flip(mgr)
                     end
@@ -91,52 +101,52 @@ function compile(mgr, bind, s, c::Categorical)::ProbInt
         end
         ProbInt(mgr, bits)
     else
-        error("Unknown strategy $(s.categorical)")
+        error("Unknown strategy $(mgr.strategy.categorical)")
     end
 end
 
-function compile(mgr, bind, _, id::Identifier)::ProbData
-    bind[id.symbol]
+function compile(_, ctx, id::Identifier)::ProbData
+    ctx.bindings[id.symbol]
 end
 
-function compile(mgr, bind, s, eq::EqualsOp)::ProbBool
-    c1 = compile(mgr, bind, s, eq.e1)
-    c2 = compile(mgr, bind, s, eq.e2)
+function compile(mgr, ctx, eq::EqualsOp)::ProbBool
+    c1 = compile(mgr, ctx, eq.e1)
+    c2 = compile(mgr, ctx, eq.e2)
     prob_equals(c1, c2)
 end
 
-function compile(mgr, bind, s, ite_expr::Ite)::ProbData
-    if s.branch_elim == :bdd
-        cond = compile(mgr, bind, s, ite_expr.cond_expr)
+function compile(mgr, ctx, ite_expr::Ite)::ProbData
+    if mgr.strategy.branch_elim == :bdd
+        cond = compile(mgr, ctx, ite_expr.cond_expr)
         if !issat(cond)
             # println("Condition $(ite_expr.cond_expr) is always false")
-            compile(mgr, bind, s, ite_expr.else_expr)
+            compile(mgr, ctx, ite_expr.else_expr)
         elseif isvalid(cond)
             # println("Condition $(ite_expr.cond_expr) is always true")
-            compile(mgr, bind, s, ite_expr.then_expr)
+            compile(mgr, ctx, ite_expr.then_expr)
         else
-            then = compile(mgr, bind, s, ite_expr.then_expr)
-            elze = compile(mgr, bind, s, ite_expr.else_expr)
+            then = compile(mgr, ctx, ite_expr.then_expr)
+            elze = compile(mgr, ctx, ite_expr.else_expr)
             ite(cond, then, elze)
         end
-    elseif s.branch_elim == :none
-        cond = compile(mgr, bind, s, ite_expr.cond_expr)
-        then = compile(mgr, bind, s, ite_expr.then_expr)
-        elze = compile(mgr, bind, s, ite_expr.else_expr)
+    elseif mgr.strategy.branch_elim == :none
+        cond = compile(mgr, ctx, ite_expr.cond_expr)
+        then = compile(mgr, ctx, ite_expr.then_expr)
+        elze = compile(mgr, ctx, ite_expr.else_expr)
         ite(cond, then, elze)
     else
-        error("Unknown strategy $(s.branch_elim)")
+        error("Unknown strategy $(mgr.strategy.branch_elim)")
     end
 end
 
-function compile(mgr, bind, s, let_expr::LetExpr)::ProbData
+function compile(mgr, ctx, let_expr::LetExpr)::ProbData
     # Note: a recursive implementation can easily cause a StackOverflowError
     # so when e2 is also a let expression we should solve it iteratively
     # keep binding BDDs to identifiers until done
     while true
         id = let_expr.identifier.symbol
-        @assert !haskey(bind,id) "No support for reusing identifier symbols: $id"
-        bind[id] = compile(mgr, bind, s, let_expr.e1)
+        @assert !haskey(ctx.bindings,id) "No support for reusing identifier symbols: $id"
+        ctx.bindings[id] = compile(mgr, ctx, let_expr.e1)
         if let_expr.e2 isa LetExpr
             let_expr = let_expr.e2
         else
@@ -144,7 +154,7 @@ function compile(mgr, bind, s, let_expr::LetExpr)::ProbData
         end
     end 
     # eventually e2 has to be a non-LetExpr, so compile it
-    v = compile(mgr, bind, s, let_expr.e2)::ProbData
+    v = compile(mgr, ctx, let_expr.e2)::ProbData
 
     v
 end

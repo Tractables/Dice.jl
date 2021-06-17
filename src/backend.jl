@@ -2,20 +2,22 @@
 
 using CUDD
 
-struct CuddMgr
+struct CuddMgr <: DiceManager
     cuddmgr::Ptr{Nothing}
     # TODO add integer equality cache?
-    equals_cache::Dict{Any, ProbBool}
+    equals_cache::Dict{Tuple{Vector{ProbBool}, Vector{ProbBool}}, ProbBool}
     int_cache::Dict{Int, ProbInt}
+    strategy
 end
 
-function default_manager() 
+function CuddMgr(strategy) 
     cudd_mgr = initialize_cudd()
     Cudd_DisableGarbageCollection(cudd_mgr) # note: still need to ref because CUDD can delete nodes without doing a GC pass
-    equals_cache = Dict{Any, ProbBool}()
+    equals_cache = Dict{Tuple{Vector{ProbBool}, Vector{ProbBool}}, ProbBool}()
     int_cache = Dict{Int, ProbInt}()
-    CuddMgr(cudd_mgr, equals_cache, int_cache)
+    CuddMgr(cudd_mgr, equals_cache, int_cache, strategy)
 end
+
 
 @inline true_node(mgr::CuddMgr) = 
     Cudd_ReadOne(mgr.cuddmgr)
