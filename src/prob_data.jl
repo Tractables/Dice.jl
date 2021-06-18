@@ -1,5 +1,7 @@
 # probabilistic data types
 
+export ProbData, ProbBool, ProbInt, ProbTuple
+
 abstract type ProbData end
 
 # Booleans
@@ -8,6 +10,20 @@ struct ProbBool <: ProbData
     #TODO annotate with pointer type to make isbits?
     mgr
     bit
+end
+
+function Base.show(io::IO, x::ProbBool) 
+    if !issat(x)
+        print(io, "$(typeof(x))(false)") 
+    elseif isvalid(x)
+        print(io, "$(typeof(x))(true)")
+    elseif isposliteral(x)
+        print(io, "$(typeof(x))(f$(firstflip(x)))")
+    elseif isnegliteral(x)
+        print(io, "$(typeof(x))(-f$(firstflip(x)))")
+    else    
+        print(io, "$(typeof(x))@$(hash(x.bit)÷ 10000000000000)")
+    end
 end
 
 @inline false_constant(mgr) =
@@ -51,6 +67,18 @@ end
 
 @inline isvalid(x::ProbBool) =
     isvalid(x.mgr, x.bit)
+
+@inline isliteral(x::ProbBool) =
+    isliteral(x.mgr, x.bit)
+
+@inline isposliteral(x::ProbBool) =
+    isposliteral(x.mgr, x.bit)
+
+@inline isnegliteral(x::ProbBool) =
+    isnegliteral(x.mgr, x.bit)
+
+@inline firstflip(x::ProbBool) =
+    firstvar(x.mgr, x.bit)
 
 @inline bools(b::ProbBool) = [b]
 

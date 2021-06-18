@@ -131,3 +131,21 @@ else
 code = "discrete(0.000000,0.000000,1.000000)"
 Dice.dump_dot(Dice.compile(mgr, b, s, Dice.parse(DiceProgram, code)), "test.dot"; as_add=true); println(read("test.dot", String))
 Dice.run_dice(code; skiptable=true, determinism=true, printstatebdd=true)
+
+code = raw"""
+if flip 0.09 then
+    if flip 0.19 then
+        true
+    else
+        false
+else 
+    false
+"""
+custom_strategy = (Dice.default_strategy()..., branch_elim = :nested_guard_bdd,)
+c = Dice.compile(code); nothing;
+Dice.num_nodes(c)
+Dice.dump_dot(c, "test-ok.dot"; as_add=true); 
+
+c = Dice.compile(code, Dice.CuddMgr(custom_strategy)); nothing;
+Dice.num_nodes(c)
+Dice.dump_dot(c, "test-bad.dot"; as_add=true); 

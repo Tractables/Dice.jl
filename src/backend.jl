@@ -18,12 +18,29 @@ function CuddMgr(strategy)
     CuddMgr(cudd_mgr, equals_cache, int_cache, strategy)
 end
 
+function Base.show(io::IO, x::CuddMgr) 
+    print(io, "$(typeof(x))@$(hash(x)÷ 10000000000000)")
+end
 
 @inline true_node(mgr::CuddMgr) = 
     Cudd_ReadOne(mgr.cuddmgr)
 
 @inline false_node(mgr::CuddMgr) = 
     Cudd_ReadLogicZero(mgr.cuddmgr)
+
+@inline isliteral(mgr::CuddMgr, x) =
+    num_nodes(mgr, [x]) == 3
+
+@inline isposliteral(mgr::CuddMgr, x) =
+    isliteral(mgr,x) && 
+    (x === Cudd_bddIthVar(mgr.cuddmgr, firstvar(mgr,x)))
+
+@inline isnegliteral(mgr::CuddMgr, x) =
+    isliteral(mgr,x) && 
+    (x !== Cudd_bddIthVar(mgr.cuddmgr, firstvar(mgr,x)))
+
+@inline firstvar(_::CuddMgr, x) =
+    Cudd_NodeReadIndex(x)
 
 @inline rref(x) = begin 
     ref(x)

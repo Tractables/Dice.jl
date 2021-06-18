@@ -2,32 +2,35 @@ abstract type DiceManager end
 
 default_strategy() = (
     categorical = :bitwiseholtzen,
-    branch_elim = :bdd
+    branch_elim = :guard_bdd
     )
 
 default_manager() =
     CuddMgr(default_strategy())
 
-struct Context
+mutable struct Context
     bindings::Dict{String,ProbData}
-    condition
+    condition::ProbBool
 end
 
-default_context(mgr::DiceManager) = 
-    Context(Dict{String,ProbData}(), nothing)
-    
+function Context(mgr::DiceManager)
+    bindings = Dict{String,ProbData}()
+    condition  = compile(mgr, true)
+    Context(bindings, condition)
+end
+
 compile(p::String, mgr = default_manager())::ProbData = 
     compile(Dice.parse(DiceProgram,p), mgr)
 
-compile(p::DiceProgram, mgr = default_manager())::ProbData = begin
-    ctx = default_context(mgr)
-    compile(mgr, ctx, p)
-end 
+compile(p::DiceProgram, mgr = default_manager())::ProbData =
+    compile(mgr, Context(mgr), p)
 
 compile(mgr, ctx, p::DiceProgram)::ProbData =
     compile(mgr, ctx, p.expr)
 
 compile(mgr, _, b::Bool)::ProbBool =
+    compile(mgr, b)
+compile(mgr, b::Bool)::ProbBool =
     ProbBool(mgr, b ? true_node(mgr) :  false_node(mgr))
 
 
@@ -116,26 +119,67 @@ function compile(mgr, ctx, eq::EqualsOp)::ProbBool
 end
 
 function compile(mgr, ctx, ite_expr::Ite)::ProbData
-    if mgr.strategy.branch_elim == :bdd
-        cond = compile(mgr, ctx, ite_expr.cond_expr)
-        if !issat(cond)
-            # println("Condition $(ite_expr.cond_expr) is always false")
-            compile(mgr, ctx, ite_expr.else_expr)
-        elseif isvalid(cond)
-            # println("Condition $(ite_expr.cond_expr) is always true")
-            compile(mgr, ctx, ite_expr.then_expr)
-        else
+    if mgr.strategy.branch_elim == :nested_guard_bdd
+        flatten_ite(c,expr) = (issat(c) ? [(c,expr)] : []) # base case
+        flatten_ite(c,expr::Ite) = begin
+            if issat(c) 
+                # let, otherwise guard gets overwritten by the recursion...
+                let guard = compile(mgr, ctx, expr.cond_expr), 
+                    f1 = flatten_ite(c & guard, expr.then_expr),
+                    f2 = flatten_ite(c & !guard, expr.else_expr)
+                    [f1; f2]
+                end
+            else
+                []
+            end
+        end
+        cases = flatten_ite(compile(mgr, true), ite_expr)
+        init = compile(mgr, ctx, cases[1][2]) # then/then/* branch
+        foldl(cases[2:end]; init) do elze, case
+            c, e = case
+            case_val = compile(mgr, ctx, e) 
+            ite(c, case_val, elze)
+        end
+    else
+        guard = compile(mgr, ctx, ite_expr.cond_expr)
+        if mgr.strategy.branch_elim == :path_bdd ||
+            mgr.strategy.branch_elim == :guard_bdd
+            if !issat(guard)
+                return compile(mgr, ctx, ite_expr.else_expr)
+            elseif isvalid(guard)
+                return compile(mgr, ctx, ite_expr.then_expr)
+            else
+                if mgr.strategy.branch_elim == :path_bdd
+                    precond = ctx.condition
+                    @assert issat(precond)
+                    thencond = precond & guard
+                    elzecond = precond & !guard
+                    if !issat(thencond)
+                        ctx.condition = elzecond
+                        return compile(mgr, ctx, ite_expr.else_expr)
+                    elseif !issat(elzecond)
+                        ctx.condition = thencond
+                        return compile(mgr, ctx, ite_expr.then_expr)
+                    else
+                        ctx.condition = thencond
+                        then = compile(mgr, ctx, ite_expr.then_expr)
+                        ctx.condition = elzecond
+                        elze = compile(mgr, ctx, ite_expr.else_expr)
+                    end
+                    ctx.condition = precond
+                else
+                    then = compile(mgr, ctx, ite_expr.then_expr)
+                    elze = compile(mgr, ctx, ite_expr.else_expr)    
+                end
+                return ite(guard, then, elze)
+            end
+        elseif mgr.strategy.branch_elim == :none
             then = compile(mgr, ctx, ite_expr.then_expr)
             elze = compile(mgr, ctx, ite_expr.else_expr)
-            ite(cond, then, elze)
+            return ite(guard, then, elze)
+        else
+            error("Unknown strategy $(mgr.strategy.branch_elim)")
         end
-    elseif mgr.strategy.branch_elim == :none
-        cond = compile(mgr, ctx, ite_expr.cond_expr)
-        then = compile(mgr, ctx, ite_expr.then_expr)
-        elze = compile(mgr, ctx, ite_expr.else_expr)
-        ite(cond, then, elze)
-    else
-        error("Unknown strategy $(mgr.strategy.branch_elim)")
     end
 end
 

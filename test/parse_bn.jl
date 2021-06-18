@@ -22,8 +22,12 @@ bn_code = String(r.body); nothing;
 
 @time c = Dice.compile(dice_expr); nothing;
 
-@time c = Dice.compile(dice_expr, (Dice.default_strategy()..., categorical = :sangbeamekautz,)); nothing;
-@time c = Dice.compile(dice_expr, (Dice.default_strategy()..., branch_elim == :none,)); nothing;
+custom_strategy = (Dice.default_strategy()..., categorical = :sangbeamekautz,)
+custom_strategy = (Dice.default_strategy()..., branch_elim = :none,)
+custom_strategy = (Dice.default_strategy()..., branch_elim = :guard_bdd,)
+custom_strategy = (Dice.default_strategy()..., branch_elim = :path_bdd,)
+custom_strategy = (Dice.default_strategy()..., branch_elim = :nested_guard_bdd,)
+@time c = Dice.compile(dice_expr, Dice.CuddMgr(custom_strategy)); nothing;
 
 Dice.num_nodes(c)
 Dice.num_flips(c)
