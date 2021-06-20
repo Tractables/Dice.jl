@@ -1,7 +1,6 @@
 using Dice
 
 mgr = Dice.default_manager()
-b = Dice.default_bindings()
 s = Dice.default_strategy()
 
 t = Dice.compile(mgr, b, true)
@@ -149,3 +148,14 @@ Dice.dump_dot(c, "test-ok.dot"; as_add=true);
 c = Dice.compile(code, Dice.CuddMgr(custom_strategy)); nothing;
 Dice.num_nodes(c)
 Dice.dump_dot(c, "test-bad.dot"; as_add=true); 
+
+code = raw"""
+let VAR = discrete(0.1,0.9)
+in let W = if VAR == int(0,0) then
+    discrete(1.0,0.0)
+else
+    discrete(0.1,0.9)
+in (VAR,W)
+"""
+s, _ = Dice.support(code)
+Dice.dump_dot(s, "test.dot"; as_add=true); println(read("test.dot", String))

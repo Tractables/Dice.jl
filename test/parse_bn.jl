@@ -36,3 +36,16 @@ Dice.num_vars(c.mgr)
 # ground truth size
 Dice.run_dice(bn_code; skiptable=true, determinism=true, showsize=true)
    
+prefix = "support"
+open(prefix * ".log", "w") do out
+    open(prefix * ".err", "w") do err
+        redirect_stdout(out) do
+            redirect_stderr(err) do
+                @time s, _ = Dice.support(dice_expr)
+                Base.Libc.flush_cstdio()
+            end
+        end
+    end
+end
+
+@time s, _ = Dice.support(dice_expr)

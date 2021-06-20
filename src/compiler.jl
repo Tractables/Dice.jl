@@ -15,7 +15,7 @@ end
 
 function Context(mgr::DiceManager)
     bindings = Dict{String,ProbData}()
-    condition  = compile(mgr, true)
+    condition  = ProbBool(mgr, true)
     Context(bindings, condition)
 end
 
@@ -28,35 +28,20 @@ compile(p::DiceProgram, mgr = default_manager())::ProbData =
 compile(mgr, ctx, p::DiceProgram)::ProbData =
     compile(mgr, ctx, p.expr)
 
-compile(mgr, _, b::Bool)::ProbBool =
-    compile(mgr, b)
-compile(mgr, b::Bool)::ProbBool =
-    ProbBool(mgr, b ? true_node(mgr) :  false_node(mgr))
+compile(mgr, _, b::Bool) =
+    ProbBool(mgr, b)
 
-
-compile(mgr, _, f::Flip)::ProbBool = flip(mgr)
+compile(mgr, _, f::Flip)::ProbBool = 
+    flip(mgr)
+  
+compile(mgr, _, i::Int)=
+    ProbInt(mgr, i)
 
 function compile(mgr, ctx, t::DiceTuple)::ProbTuple
     left = compile(mgr, ctx, t.first)
     right = compile(mgr, ctx, t.second)
     ProbTuple(mgr, left, right)
 end
-   
-function compile(mgr, ctx, i::Int)::ProbInt
-    get!(mgr.int_cache, i) do
-        @assert i >= 0
-        num_b = num_bits(i)
-        bits = Vector{ProbBool}(undef, num_b)
-        for bit_idx = 1:num_b
-            b::Bool = i & 1
-            @inbounds bits[bit_idx] = compile(mgr, ctx, b) 
-            i = i >> 1
-        end
-        ProbInt(mgr, bits)
-    end
-end
-
-num_bits(i) = ceil(Int,log2(i+1))
 
 function compile(mgr, ctx, c::Categorical)::ProbInt
     if mgr.strategy.categorical == :sangbeamekautz
@@ -75,8 +60,7 @@ function compile(mgr, ctx, c::Categorical)::ProbInt
         cvals(vals)
     elseif mgr.strategy.categorical == :bitwiseholtzen
         vals = [(i-1, p) for (i,p) in enumerate(c.probs) if !iszero(p)]
-        max_val = maximum(((v,p),) -> v, vals)
-        num_b = num_bits(max_val)
+        num_b = num_bits(c)
         bitvals = map(vals) do (v,p)
             (digits(Bool, v, base=2, pad=num_b), p)
         end
@@ -85,9 +69,9 @@ function compile(mgr, ctx, c::Categorical)::ProbInt
             enum_contexts(bvs, i) = begin
                 if i == digit
                     if all(((v,p),) -> !v[digit], bvs)
-                        compile(mgr, ctx, false)
+                        ProbBool(mgr, false)
                     elseif all(((v,p),) -> v[digit], bvs)
-                        compile(mgr, ctx, true)
+                        ProbBool(mgr, true)
                     else
                         flip(mgr)
                     end
@@ -127,13 +111,21 @@ function compile(mgr, ctx, ite_expr::Ite)::ProbData
                 let guard = compile(mgr, ctx, expr.cond_expr), 
                     f1 = flatten_ite(c & guard, expr.then_expr),
                     f2 = flatten_ite(c & !guard, expr.else_expr)
+                    if issat(guard) && isempty(f1)
+                        println("$expr then branch not reachable")
+                        println()
+                    end
+                    if !isvalid(guard) && isempty(f2)
+                        println("$expr else branch not reachable")
+                        println()
+                    end
                     [f1; f2]
                 end
             else
                 []
             end
         end
-        cases = flatten_ite(compile(mgr, true), ite_expr)
+        cases = flatten_ite(ProbBool(mgr, true), ite_expr)
         init = compile(mgr, ctx, cases[1][2]) # then/then/* branch
         foldl(cases[2:end]; init) do elze, case
             c, e = case
@@ -198,7 +190,5 @@ function compile(mgr, ctx, let_expr::LetExpr)::ProbData
         end
     end 
     # eventually e2 has to be a non-LetExpr, so compile it
-    v = compile(mgr, ctx, let_expr.e2)::ProbData
-
-    v
+    compile(mgr, ctx, let_expr.e2)::ProbData
 end

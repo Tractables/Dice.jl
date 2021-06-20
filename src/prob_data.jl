@@ -12,6 +12,10 @@ struct ProbBool <: ProbData
     bit
 end
 
+ProbBool(mgr, b::Bool)::ProbBool =
+    b ? true_constant(mgr) :  false_constant(mgr)
+
+
 function Base.show(io::IO, x::ProbBool) 
     if !issat(x)
         print(io, "$(typeof(x))(false)") 
@@ -108,7 +112,7 @@ struct ProbTuple <: ProbData
     right::ProbData
 end
 
-function prob_equals(x, y)
+function prob_equals(x::ProbTuple, y::ProbTuple)
     if typeof(x.left) != typeof(y.left) || typeof(x.right) != typeof(y.right)
         # better to just define equality between different types to be false by default???
         false_constant(x.mgr)
@@ -142,8 +146,25 @@ struct ProbInt <: ProbData
     bits::Vector{ProbBool}
 end
 
+function ProbInt(mgr, i::Int)
+    get!(mgr.int_cache, i) do
+        @assert i >= 0
+        num_b = num_bits(i)
+        bits = Vector{ProbBool}(undef, num_b)
+        for bit_idx = 1:num_b
+            b::Bool = i & 1
+            @inbounds bits[bit_idx] = ProbBool(mgr, b) 
+            i = i >> 1
+        end
+        ProbInt(mgr, bits)
+    end
+end
+
 max_bits(i::ProbInt) =
     length(i.bits)
+
+@inline flip(mgr, ::Type{ProbInt}, bits::Int) =
+    ProbInt(mgr, [flip(mgr) for i = 1:bits])
 
 function prob_equals(x::ProbInt, y::ProbInt)
     cache = x.mgr.equals_cache
