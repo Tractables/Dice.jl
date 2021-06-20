@@ -4,10 +4,10 @@ using Dice
 
 # bn = "cancer";
 # bn = "survey";
-# bn = "alarm";
+bn = "alarm";
 # bn = "pigs";
 # bn = "water";
-bn = "munin";
+# bn = "munin";
 
 r = HTTP.request("GET", "https://raw.githubusercontent.com/SHoltzen/dice/master/benchmarks/bayesian-networks/$bn.bif.dice"); nothing;
 bn_code = String(r.body); nothing;
@@ -49,3 +49,16 @@ open(prefix * ".log", "w") do out
 end
 
 @time s, _ = Dice.support(dice_expr)
+Dice.num_nodes(s)
+
+# try making a single BDD
+roots = Dice.bools(c)
+onebdd = Dice.true_constant(roots[1].mgr)
+for r in roots
+    equiv = Dice.prob_equals(Dice.flip(r.mgr), r)
+    onebdd = Dice.:&(onebdd, equiv)
+    println("Nodes: $(Dice.num_nodes(onebdd)))")
+end
+
+custom_strategy = (Dice.default_strategy()..., branch_elim = :nested_guard_bdd,)
+@time c = Dice.compile(dice_expr, Dice.CuddMgr(custom_strategy)); nothing;

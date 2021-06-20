@@ -159,3 +159,15 @@ in (VAR,W)
 """
 s, _ = Dice.support(code)
 Dice.dump_dot(s, "test.dot"; as_add=true); println(read("test.dot", String))
+
+prefix = "support"
+open(prefix * ".log", "w") do out
+    open(prefix * ".err", "w") do err
+        redirect_stdout(out) do
+            redirect_stderr(err) do
+                @time s, _ = Dice.support(dice_expr)
+                Base.Libc.flush_cstdio()
+            end
+        end
+    end
+end

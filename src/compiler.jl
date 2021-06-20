@@ -2,7 +2,8 @@ abstract type DiceManager end
 
 default_strategy() = (
     categorical = :bitwiseholtzen,
-    branch_elim = :guard_bdd
+    branch_elim = :guard_bdd,
+    include_indicators = false
     )
 
 default_manager() =
@@ -11,12 +12,16 @@ default_manager() =
 mutable struct Context
     bindings::Dict{String,ProbData}
     condition::ProbBool
+    indicators::Dict{String,ProbData}
+    global_compilation::ProbBool
 end
 
 function Context(mgr::DiceManager)
     bindings = Dict{String,ProbData}()
     condition  = ProbBool(mgr, true)
-    Context(bindings, condition)
+    indicators = Dict{String,ProbData}()
+    global_compilation = ProbBool(mgr, true) 
+    Context(bindings, condition, indicators, global_compilation)
 end
 
 compile(p::String, mgr = default_manager())::ProbData = 
@@ -182,7 +187,18 @@ function compile(mgr, ctx, let_expr::LetExpr)::ProbData
     while true
         id = let_expr.identifier.symbol
         @assert !haskey(ctx.bindings,id) "No support for reusing identifier symbols: $id"
+        if mgr.strategy.include_indicators
+            nb = num_bits(let_expr.e1)
+            x = flip(mgr, ProbInt, nb)
+            @assert !haskey(ctx.indicators,id) "No support for reusing identifier symbols: $id"
+            ctx.indicators[id] = x
+        end
         ctx.bindings[id] = compile(mgr, ctx, let_expr.e1)
+        if mgr.strategy.include_indicators
+            ctx.global_compilation &= 
+                prob_equals(x, ctx.bindings[id])
+            println("Global compilation has size $(num_nodes(ctx.global_compilation))")
+        end
         if let_expr.e2 isa LetExpr
             let_expr = let_expr.e2
         else
