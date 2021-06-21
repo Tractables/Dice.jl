@@ -171,3 +171,19 @@ open(prefix * ".log", "w") do out
         end
     end
 end
+
+
+using LightGraphs
+
+g = SimpleGraph()
+add_vertex!(g, "ALARM")
+add_edge!(g. 1, 2)
+
+using SparseArrays, Metis
+S = LightGraphs.smallgraph(:tutte)
+parts = Metis.separator(S)
+
+el = Edge.([(i,i+1) for i = 1:100 ])
+S = SimpleGraph(el)
+collect(edges(S))
+perm, _ = Metis.permutation(S); perm

@@ -1,5 +1,8 @@
 # non-deterministic reachability analysis
 
+# this is fast on some bayesian networks, but very slow on others (munin).
+# consider more automatic wekaenings of the analysis/ upper bounds on the support
+
 support(p::String, mgr = default_manager()) = 
     support(Dice.parse(DiceProgram,p), mgr)
 

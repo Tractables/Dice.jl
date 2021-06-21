@@ -36,17 +36,6 @@ Dice.num_vars(c.mgr)
 # ground truth size
 Dice.run_dice(bn_code; skiptable=true, determinism=true, showsize=true)
    
-prefix = "support"
-open(prefix * ".log", "w") do out
-    open(prefix * ".err", "w") do err
-        redirect_stdout(out) do
-            redirect_stderr(err) do
-                @time s, _ = Dice.support(dice_expr)
-                Base.Libc.flush_cstdio()
-            end
-        end
-    end
-end
 
 @time s, _ = Dice.support(dice_expr)
 Dice.num_nodes(s)
@@ -60,5 +49,8 @@ for r in roots
     println("Nodes: $(Dice.num_nodes(onebdd)))")
 end
 
-custom_strategy = (Dice.default_strategy()..., branch_elim = :nested_guard_bdd,)
+custom_strategy = (Dice.default_strategy()..., include_indicators = true)
 @time c = Dice.compile(dice_expr, Dice.CuddMgr(custom_strategy)); nothing;
+
+@time g = Dice.id_dep_graph(dice_expr);
+Dice.plot(g)
