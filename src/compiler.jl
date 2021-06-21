@@ -1,10 +1,14 @@
 abstract type DiceManager end
 
+############################################ 
+############################################
+
 default_strategy() = (
     categorical = :bitwiseholtzen,
     branch_elim = :guard_bdd,
-    include_indicators = false
-    )
+    include_indicators = false,
+    var_order = :program_order
+)
 
 default_manager() =
     CuddMgr(default_strategy())
@@ -14,6 +18,8 @@ mutable struct Context
     condition::ProbBool
     indicators::Dict{String,ProbData}
     global_compilation::ProbBool
+    precompile_cache::Dict{DiceExpr, ProbData}
+    precompile_leafs::Bool
 end
 
 function Context(mgr::DiceManager)
@@ -21,23 +27,44 @@ function Context(mgr::DiceManager)
     condition  = ProbBool(mgr, true)
     indicators = Dict{String,ProbData}()
     global_compilation = ProbBool(mgr, true) 
-    Context(bindings, condition, indicators, global_compilation)
+    precompile_cache = Dict{DiceExpr, ProbData}()
+    precompile_leafs = false
+    Context(bindings, condition, indicators, global_compilation, precompile_cache, precompile_leafs)
 end
+
+############################################
+############################################
 
 compile(p::String, mgr = default_manager())::ProbData = 
     compile(Dice.parse(DiceProgram,p), mgr)
 
-compile(p::DiceProgram, mgr = default_manager())::ProbData =
+compile(p::DiceProgram, mgr = default_manager())::ProbData = 
     compile(mgr, Context(mgr), p)
 
-compile(mgr, ctx, p::DiceProgram)::ProbData =
+
+function compile(mgr, ctx, p::DiceProgram)::ProbData
+    if mgr.strategy.var_order != :program
+        g = id_dep_graph(p)
+        π = variable_order(g, mgr.strategy.var_order)
+        for id in π
+            precompile_leafs(mgr, ctx, g.id2expr[id])
+        end
+        ctx.precompile_leafs = true
+    end
     compile(mgr, ctx, p.expr)
+end
 
 compile(mgr, _, b::Bool) =
     ProbBool(mgr, b)
 
-compile(mgr, _, f::Flip)::ProbBool = 
+function compile(mgr, ctx, f::Flip)::ProbBool 
+    if ctx.precompile_leafs
+        # if haskey(ctx.precompile_cache, f)
+            return ctx.precompile_cache[f]
+        # end
+    end
     flip(mgr)
+end
   
 compile(mgr, _, i::Int)=
     ProbInt(mgr, i)
@@ -49,6 +76,11 @@ function compile(mgr, ctx, t::DiceTuple)::ProbTuple
 end
 
 function compile(mgr, ctx, c::Categorical)::ProbInt
+    if ctx.precompile_leafs
+        # if haskey(ctx.precompile_cache, c)
+            return ctx.precompile_cache[c]
+        # end
+    end
     if mgr.strategy.categorical == :sangbeamekautz
         vals = [(compile(mgr, ctx, i-1), p) 
                     for (i,p) in enumerate(c.probs) if !iszero(p)]
@@ -207,4 +239,36 @@ function compile(mgr, ctx, let_expr::LetExpr)::ProbData
     end 
     # eventually e2 has to be a non-LetExpr, so compile it
     compile(mgr, ctx, let_expr.e2)::ProbData
+end
+
+############################################
+############################################
+
+function precompile_leafs(mgr, ctx, e::LetExpr)
+    # skip e1 because it is associated with a different id
+    precompile_leafs(mgr, ctx, e.e2)
+end
+
+function precompile_leafs(mgr, ctx, e::Ite)
+    precompile_leafs(mgr, ctx, e.cond_expr)
+    precompile_leafs(mgr, ctx, e.then_expr)
+    precompile_leafs(mgr, ctx, e.else_expr)
+end
+
+function precompile_leafs(mgr, ctx, e::EqualsOp)
+    precompile_leafs(mgr, ctx, e.e1)
+    precompile_leafs(mgr, ctx, e.e2)
+end
+
+function precompile_leafs(mgr, ctx, e::Union{Int,Bool,Identifier})
+    # no op
+end
+
+function precompile_leafs(mgr, ctx, e::Union{Flip,Categorical})
+    ctx.precompile_cache[e] = compile(mgr, ctx, e)
+end
+
+function precompile_leafs(mgr, ctx, e::DiceTuple)
+    precompile_leafs(mgr, ctx, e.first)
+    precompile_leafs(mgr, ctx, e.second)
 end
