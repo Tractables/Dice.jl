@@ -2,14 +2,19 @@ using Pkg; Pkg.activate("Dice/test");
 using HTTP
 using Dice
 
-# bn = "cancer";
-# bn = "survey";
-# bn = "alarm";
-# bn = "pigs";
-# bn = "water";
+bn = "cancer";
+bn = "survey";
+bn = "alarm";
+bn = "pigs";
+bn = "water";
 bn = "munin";
+bn = "munin1";
+bn = "munin2";
+bn = "munin3";
+bn = "munin4";
+bn = "diabetes";
 
-r = HTTP.request("GET", "https://raw.githubusercontent.com/SHoltzen/dice/master/benchmarks/bayesian-networks/$bn.bif.dice"); nothing;
+r = HTTP.request("GET", "https://raw.githubusercontent.com/ellieyhcheng/dice/master/benchmarks/bayesian-networks//$bn.dice"); nothing;
 bn_code = String(r.body); nothing;
 
 @time dice_expr = Dice.parse(Dice.DiceProgram, bn_code); nothing;
@@ -28,6 +33,7 @@ custom_strategy = (Dice.default_strategy()..., branch_elim = :guard_bdd,)
 custom_strategy = (Dice.default_strategy()..., branch_elim = :path_bdd,)
 custom_strategy = (Dice.default_strategy()..., branch_elim = :nested_guard_bdd,)
 custom_strategy = (Dice.default_strategy()..., var_order = :dfs,)
+custom_strategy = (Dice.default_strategy()..., var_order = :metis_cut,)
 @time c = Dice.compile(dice_expr, Dice.CuddMgr(custom_strategy)); nothing;
 
 Dice.num_nodes(c)
@@ -53,7 +59,10 @@ end
 custom_strategy = (Dice.default_strategy()..., include_indicators = true)
 @time c = Dice.compile(dice_expr, Dice.CuddMgr(custom_strategy)); nothing;
 
-@time g = Dice.id_dep_graph(dice_expr);
-Dice.plot(g)
+g = Dice.id_dep_graph(dice_expr); nothing;
+Dice.plot(g);
+Dice.plot(g; order = :program_order);
+Dice.plot(g; order = :dfs);
+Dice.plot(g; order = :metis_cut);
 
 Dice.topological_sort_by_dfs(g)

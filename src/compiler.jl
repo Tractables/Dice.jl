@@ -43,7 +43,7 @@ compile(p::DiceProgram, mgr = default_manager())::ProbData =
 
 
 function compile(mgr, ctx, p::DiceProgram)::ProbData
-    if mgr.strategy.var_order != :program
+    if mgr.strategy.var_order != :program_order
         g = id_dep_graph(p)
         π = variable_order(g, mgr.strategy.var_order)
         for id in π
@@ -63,7 +63,13 @@ function compile(mgr, ctx, f::Flip)::ProbBool
             return ctx.precompile_cache[f]
         # end
     end
-    flip(mgr)
+    if isone(f.prob)
+        compile(mgr, ctx, true)
+    elseif iszero(f.prob)
+        compile(mgr, ctx, false)
+    else
+        flip(mgr)
+    end
 end
   
 compile(mgr, _, i::Int)=

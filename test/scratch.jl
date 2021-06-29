@@ -183,7 +183,8 @@ using SparseArrays, Metis
 S = LightGraphs.smallgraph(:tutte)
 parts = Metis.separator(S)
 
-el = Edge.([(i,i+1) for i = 1:100 ])
+el = Edge.([(i,i+1) for i = 1:12 ])
 S = SimpleGraph(el)
 collect(edges(S))
 perm, _ = Metis.permutation(S); perm
+parts = Metis.separator(S)

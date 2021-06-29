@@ -90,16 +90,30 @@ LightGraphs.SimpleDiGraph(g::IdDepGraph) =
 LightGraphs.SimpleGraph(g::IdDepGraph) =
     SimpleGraph(Edge.(g.edges))
 
-function plot(g::IdDepGraph; labeled = true)
+function plot(g::IdDepGraph; order = nothing)
     sg = SimpleDiGraph(g)
-    if labeled
-        labels = [g.id2int(i).symbol for i=1:g.num_ids]
-        TikzGraphs.plot(sg, labels)
-    else
+    if order == :program_order
         TikzGraphs.plot(sg)
+    else
+        if order == nothing
+            labels = [g.id2int(i).symbol for i=1:g.num_ids]
+        else 
+            π = variable_order(g, order)
+            πindex =  map(id -> g.id2int[id], π)
+            labels = ["$(findfirst(isequal(i),πindex))" for i=1:g.num_ids]
+        end
+        TikzGraphs.plot(sg, labels)
     end
 end
 
+function plot_cut(g::IdDepGraph)
+    sg = SimpleGraph(g)
+    sgd = SimpleDiGraph(g) 
+    sep_labels = Metis.separator(sg)
+    labels = ["$(sep_labels[i])" for i=1:g.num_ids]
+    TikzGraphs.plot(sgd, labels)
+end
+        
 function LightGraphs.topological_sort_by_dfs(g::IdDepGraph)
     sg = SimpleDiGraph(g)
     π = topological_sort_by_dfs(sg)
@@ -114,15 +128,45 @@ function metis_permutation(g::IdDepGraph)
     map(i -> g.id2int(i), π)
 end
 
+function metis_cut(g::IdDepGraph)
+    sg = SimpleGraph(g)
+    sgd = SimpleDiGraph(g)
+    
+    sep_labels = Metis.separator(sg)
+    
+    seps = findall(isequal(3), sep_labels)
+    clust1 = findall(isequal(1), sep_labels)
+    clust2 = findall(isequal(2), sep_labels)
+    
+    sep_in = map(i -> inneighbors(sgd,i), seps)
+    sep_out = map(i -> outneighbors(sgd,i), seps)
+    sep_parents = unique(reduce(vcat,sep_in)) 
+    sep_children = unique(reduce(vcat,sep_out))
+
+    parents_clusters = sep_labels[sep_parents]
+    children_clusters = sep_labels[sep_children]
+
+    avg(x) = sum(x) / length(x)
+
+    if avg(parents_clusters) < avg(children_clusters)    
+        π = [clust1; seps ; clust2]
+    else
+        π = [clust2; seps ; clust1]
+    end
+    map(i -> g.id2int(i), π)
+end
+
 function variable_order(g, order)
     if order == :dfs
         topological_sort_by_dfs(g)
     elseif order == :dfs_rev
         reverse(topological_sort_by_dfs(g))
-    elseif order == :metis
+    elseif order == :metis_perm
         metis_permutation(g)
-    elseif order == :metis_rev
+    elseif order == :metis_perm_rev
         reverse(metis_permutation(g))
+    elseif order == :metis_cut
+        metis_cut(g)
     else
         error("Unknown variable order: $order")
     end
