@@ -2,7 +2,7 @@
 
 using CUDD
 
-struct CuddMgr <: DiceManager
+mutable struct CuddMgr <: DiceManager
     cuddmgr::Ptr{Nothing}
     # TODO add integer equality cache?
     equals_cache::Dict{Tuple{Vector{ProbBool}, Vector{ProbBool}}, ProbBool}
@@ -15,7 +15,10 @@ function CuddMgr(strategy)
     Cudd_DisableGarbageCollection(cudd_mgr) # note: still need to ref because CUDD can delete nodes without doing a GC pass
     equals_cache = Dict{Tuple{Vector{ProbBool}, Vector{ProbBool}}, ProbBool}()
     int_cache = Dict{Int, ProbInt}()
-    CuddMgr(cudd_mgr, equals_cache, int_cache, strategy)
+    mgr = CuddMgr(cudd_mgr, equals_cache, int_cache, strategy)
+    finalizer(mgr) do x
+        Cudd_Quit(x.cuddmgr)
+    end
 end
 
 function Base.show(io::IO, x::CuddMgr) 

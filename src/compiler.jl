@@ -46,7 +46,9 @@ function compile(mgr, ctx, p::DiceProgram)::ProbData
     if mgr.strategy.var_order != :program_order
         g = id_dep_graph(p)
         π = variable_order(g, mgr.strategy.var_order)
+        (mgr.strategy.debug >= 1) && println("Precompiling with order $π")
         for id in π
+            (mgr.strategy.debug >= 10) && println("Precompiling $id")
             precompile_leafs(mgr, ctx, g.id2expr[id])
         end
         ctx.precompile_leafs = true
@@ -67,9 +69,9 @@ function compile(mgr, ctx, f::Flip)::ProbBool
         # end
     end
     if isone(f.prob)
-        compile(mgr, ctx, true)
+        ProbBool(mgr, true)
     elseif iszero(f.prob)
-        compile(mgr, ctx, false)
+        ProbBool(mgr, false)
     else
         flip(mgr)
     end
@@ -257,8 +259,7 @@ end
 ############################################
 
 function precompile_leafs(mgr, ctx, e::LetExpr)
-    # skip e1 because it is associated with a different id
-    precompile_leafs(mgr, ctx, e.e2)
+    @assert false "Precompilation does not support let statements inside of bindings."
 end
 
 function precompile_leafs(mgr, ctx, e::Ite)
@@ -272,11 +273,12 @@ function precompile_leafs(mgr, ctx, e::EqualsOp)
     precompile_leafs(mgr, ctx, e.e2)
 end
 
-function precompile_leafs(mgr, ctx, e::Union{Int,Bool,Identifier})
+function precompile_leafs(mgr, ctx, e::Union{DiceInt,DiceBool,Identifier})
     # no op
 end
 
 function precompile_leafs(mgr, ctx, e::Union{Flip,Categorical})
+    (mgr.strategy.debug >= 1) && println("Precompiling $(e)")
     ctx.precompile_cache[e] = compile(mgr, ctx, e)
 end
 

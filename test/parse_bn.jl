@@ -2,19 +2,10 @@ using Pkg; Pkg.activate("Dice/test");
 using HTTP
 using Dice
 
-bn = "cancer";
-bn = "survey";
-bn = "alarm";
-bn = "pigs";
-bn = "water";
-bn = "munin";
-bn = "munin1";
-bn = "munin2";
-bn = "munin3";
-bn = "munin4";
-bn = "link";
-bn = "diabetes";
-bn = "barley";
+bns = ["cancer", "andes", "asia", "child", "earthquake", "hailfinder", "hepar2", "insurance", "mildew", "survey", "pathfinder", "sachs", "survey", "win95pts", "alarm", "pigs", "water", "munin", "munin1", "munin2", "munin3", "munin4", "link", "diabetes", "barley"]
+
+bn = bns[15] # alarm
+bn = bns[23] # link
 
 r = HTTP.request("GET", "https://raw.githubusercontent.com/ellieyhcheng/dice/master/benchmarks/bayesian-networks//$bn.dice"); nothing;
 bn_code = String(r.body); nothing;
@@ -45,6 +36,7 @@ custom_strategy = (Dice.default_strategy()..., debug=1, var_order = :dfs,)
 custom_strategy = (Dice.default_strategy()..., debug=1, var_order = :metis_cut,)
 custom_strategy = (Dice.default_strategy()..., debug=1, var_order = :metis_perm,)
 custom_strategy = (Dice.default_strategy()..., debug=1, var_order = :metis_perm_rev,)
+custom_strategy = (Dice.default_strategy()..., debug=1, var_order = :min_gap,)
 custom_strategy = (Dice.default_strategy()..., debug=0, var_order = :min_gap,)
 (c = @time (Dice.compile(dice_expr, Dice.CuddMgr(custom_strategy)))); nothing
 Dice.num_nodes(c)

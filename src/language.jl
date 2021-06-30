@@ -5,7 +5,8 @@ struct DiceProgram
     expr::DiceExpr
 end
 
-struct Flip <: DiceExpr
+# struct should be mutable to avoid equality between flips with the same parameters
+mutable struct Flip <: DiceExpr
     prob::Float64
 end
 struct Categorical <: DiceExpr

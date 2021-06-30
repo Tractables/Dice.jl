@@ -1,5 +1,15 @@
 
-function run_dice(code; 
+function run_dice(code::DiceProgram; 
+    showinternal=false, skiptable=false, 
+    determinism=true, showsize=false,
+    printstatebdd=false)
+    run_dice("$(code)"; 
+        showinternal, skiptable, 
+        determinism, showsize,
+        printstatebdd)
+end
+
+function run_dice(code::String; 
             showinternal=false, skiptable=false, 
             determinism=true, showsize=false,
             printstatebdd=false)
@@ -23,8 +33,14 @@ function run_dice(code;
             push!(flags, "-print-state-bdd")
         end
         cmd = `$(homedir())/.opam/4.09.0/bin/dice $path $flags`
-        # println(cmd)
-        run(cmd)
-        nothing
+        Base.read(cmd, String)
     end    
+end
+
+function num_nodes_ocml(code)
+    out = run_dice(code; skiptable=true, showsize=true)
+    regex = r"================.*================\n(.+)\n"
+    size_str = match(regex, out)
+    @assert size_str !== nothing "$out did not match expected pattern"
+    Base.parse(Int, size_str[1])
 end
