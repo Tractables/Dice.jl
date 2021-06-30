@@ -14,8 +14,8 @@ function support(p::DiceProgram, mgr = default_manager())
     return supp, ctx.bindings
 end
 
-function support(mgr, _, _, x::ProbInt, i::Int)
-    prob_equals(x,ProbInt(mgr, i))
+function support(mgr, _, _, x::ProbInt, i::DiceInt)
+    prob_equals(x,ProbInt(mgr, i.v))
 end
 
 function support(mgr, _, _, x::ProbInt, c::Categorical)
@@ -74,8 +74,8 @@ function compile_bounds(mgr, ctx, supp, id::Identifier)
     ctx.bindings[id.symbol]
 end
 
-function compile_bounds(mgr, ctx, supp, x::Int)
-    ProbInt(mgr, x)
+function compile_bounds(mgr, ctx, supp, x::DiceInt)
+    ProbInt(mgr, x.v)
 end
 
 

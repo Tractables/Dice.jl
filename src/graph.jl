@@ -69,7 +69,11 @@ function id_dep_graph(_::Flip, _, _)
     # no op
 end
 
-function id_dep_graph(e::Int, g, child)
+function id_dep_graph(e::DiceInt, g, child)
+    # no op
+end
+
+function id_dep_graph(e::DiceBool, g, child)
     # no op
 end
 
@@ -209,20 +213,21 @@ function variable_order(g, order)
     end
 end
 
-function code_motion(p::DiceProgram, order)
+function code_motion(p::DiceProgram, order)::DiceProgram
     g = id_dep_graph(p)
     π = variable_order(g, order)
     re = return_expr(p)
-    foldr(π; init = re) do id, e2
+    lets = foldr(π; init = re) do id, e2
         e1 = g.id2expr[id]
         LetExpr(id, e1, e2)
     end
+    DiceProgram(lets)
 end
 
 return_expr(e::DiceProgram) =
-    e.expr
+    return_expr(e.expr)
 return_expr(e::LetExpr) =
-    e.e2
+    return_expr(e.e2)
 return_expr(e::DiceTuple) =
     e
 

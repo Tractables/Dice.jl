@@ -42,7 +42,6 @@ compile(p::String, mgr = default_manager())::ProbData =
 compile(p::DiceProgram, mgr = default_manager())::ProbData = 
     compile(mgr, Context(mgr), p)
 
-
 function compile(mgr, ctx, p::DiceProgram)::ProbData
     if mgr.strategy.var_order != :program_order
         g = id_dep_graph(p)
@@ -55,8 +54,11 @@ function compile(mgr, ctx, p::DiceProgram)::ProbData
     compile(mgr, ctx, p.expr)
 end
 
-compile(mgr, _, b::Bool) =
-    ProbBool(mgr, b)
+compile(mgr, _, e::DiceBool) =
+    ProbBool(mgr, e.b)
+  
+compile(mgr, _, e::DiceInt)=
+    ProbInt(mgr, e.v)
 
 function compile(mgr, ctx, f::Flip)::ProbBool 
     if ctx.precompile_leafs
@@ -72,9 +74,6 @@ function compile(mgr, ctx, f::Flip)::ProbBool
         flip(mgr)
     end
 end
-  
-compile(mgr, _, i::Int)=
-    ProbInt(mgr, i)
 
 function compile(mgr, ctx, t::DiceTuple)::ProbTuple
     left = compile(mgr, ctx, t.first)

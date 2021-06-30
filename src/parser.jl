@@ -33,9 +33,9 @@ const dice_grammar = raw"""
     
 struct DiceTransformer <: Transformer end
 
-@rule bool_t(t::DiceTransformer, x) = true
-@rule bool_f(t::DiceTransformer, x) = false
-@rule integer(t::DiceTransformer, x) = Base.parse(Int,x[2])
+@rule bool_t(t::DiceTransformer, x) = DiceBool(true)
+@rule bool_f(t::DiceTransformer, x) = DiceBool(false)
+@rule integer(t::DiceTransformer, x) = DiceInt(Base.parse(Int,x[2]), Base.parse(Int,x[1]))
 @inline_rule prob(t::DiceTransformer, x) = Base.parse(Float64,x)
 @inline_rule flip(t::DiceTransformer, x) = Flip(x)
 @rule discrete(t::DiceTransformer, x) = Categorical(x)
