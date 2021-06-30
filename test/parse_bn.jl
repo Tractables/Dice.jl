@@ -12,7 +12,9 @@ bn = "munin1";
 bn = "munin2";
 bn = "munin3";
 bn = "munin4";
+bn = "link";
 bn = "diabetes";
+bn = "barley";
 
 r = HTTP.request("GET", "https://raw.githubusercontent.com/ellieyhcheng/dice/master/benchmarks/bayesian-networks//$bn.dice"); nothing;
 bn_code = String(r.body); nothing;
@@ -27,18 +29,27 @@ bn_code = String(r.body); nothing;
 
 @time c = Dice.compile(dice_expr); nothing;
 
+Dice.num_nodes(c)
+Dice.num_flips(c)
+Dice.num_vars(c.mgr)
+
 custom_strategy = (Dice.default_strategy()..., categorical = :sangbeamekautz,)
 custom_strategy = (Dice.default_strategy()..., branch_elim = :none,)
 custom_strategy = (Dice.default_strategy()..., branch_elim = :guard_bdd,)
 custom_strategy = (Dice.default_strategy()..., branch_elim = :path_bdd,)
 custom_strategy = (Dice.default_strategy()..., branch_elim = :nested_guard_bdd,)
-custom_strategy = (Dice.default_strategy()..., var_order = :dfs,)
-custom_strategy = (Dice.default_strategy()..., var_order = :metis_cut,)
-@time c = Dice.compile(dice_expr, Dice.CuddMgr(custom_strategy)); nothing;
 
+
+custom_strategy = (Dice.default_strategy()..., debug=1, var_order = :program_order,)
+custom_strategy = (Dice.default_strategy()..., debug=1, var_order = :dfs,)
+custom_strategy = (Dice.default_strategy()..., debug=1, var_order = :metis_cut,)
+custom_strategy = (Dice.default_strategy()..., debug=1, var_order = :metis_perm,)
+custom_strategy = (Dice.default_strategy()..., debug=1, var_order = :metis_perm_rev,)
+custom_strategy = (Dice.default_strategy()..., debug=0, var_order = :min_gap,)
+(c = @time (Dice.compile(dice_expr, Dice.CuddMgr(custom_strategy)))); nothing
 Dice.num_nodes(c)
-Dice.num_flips(c)
-Dice.num_vars(c.mgr)
+
+
 
 # ground truth size
 Dice.run_dice(bn_code; skiptable=true, determinism=true, showsize=true)
@@ -64,5 +75,6 @@ Dice.plot(g);
 Dice.plot(g; order = :program_order);
 Dice.plot(g; order = :dfs);
 Dice.plot(g; order = :metis_cut);
+Dice.plot(g; order = :min_gap);
 
 Dice.topological_sort_by_dfs(g)

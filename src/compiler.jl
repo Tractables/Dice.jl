@@ -7,7 +7,8 @@ default_strategy() = (
     categorical = :bitwiseholtzen,
     branch_elim = :guard_bdd,
     include_indicators = false,
-    var_order = :program_order
+    var_order = :program_order,
+    debug = 0
 )
 
 default_manager() =
@@ -146,6 +147,7 @@ function compile(mgr, ctx, eq::EqualsOp)::ProbBool
 end
 
 function compile(mgr, ctx, ite_expr::Ite)::ProbData
+    yield()
     if mgr.strategy.branch_elim == :nested_guard_bdd
         flatten_ite(c,expr) = (issat(c) ? [(c,expr)] : []) # base case
         flatten_ite(c,expr::Ite) = begin
@@ -222,8 +224,12 @@ function compile(mgr, ctx, let_expr::LetExpr)::ProbData
     # Note: a recursive implementation can easily cause a StackOverflowError
     # so when e2 is also a let expression we should solve it iteratively
     # keep binding BDDs to identifiers until done
+    i = 0
     while true
+        yield()
         id = let_expr.identifier.symbol
+        i += 1
+        (mgr.strategy.debug >= 1) && print("Compiling $(i)th let $id")
         @assert !haskey(ctx.bindings,id) "No support for reusing identifier symbols: $id"
         if mgr.strategy.include_indicators
             nb = num_bits(let_expr.e1)
@@ -237,6 +243,7 @@ function compile(mgr, ctx, let_expr::LetExpr)::ProbData
                 prob_equals(x, ctx.bindings[id])
             println("Global compilation has size $(num_nodes(ctx.global_compilation))")
         end
+        (mgr.strategy.debug >= 1) && println(" into $(num_nodes(ctx.bindings[id])) nodes")
         if let_expr.e2 isa LetExpr
             let_expr = let_expr.e2
         else

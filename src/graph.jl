@@ -65,6 +65,10 @@ function id_dep_graph(_::Categorical, _, _)
     # no op
 end
 
+function id_dep_graph(_::Flip, _, _)
+    # no op
+end
+
 function id_dep_graph(e::Int, g, child)
     # no op
 end
@@ -96,7 +100,7 @@ function plot(g::IdDepGraph; order = nothing)
         TikzGraphs.plot(sg)
     else
         if order == nothing
-            labels = [g.id2int(i).symbol for i=1:g.num_ids]
+            labels = [tolatex(g.id2int(i).symbol) for i=1:g.num_ids]
         else 
             π = variable_order(g, order)
             πindex =  map(id -> g.id2int[id], π)
@@ -104,6 +108,10 @@ function plot(g::IdDepGraph; order = nothing)
         end
         TikzGraphs.plot(sg, labels)
     end
+end
+
+function tolatex(s)
+    replace(s, "_" => raw"\_")
 end
 
 function plot_cut(g::IdDepGraph)
@@ -156,6 +164,33 @@ function metis_cut(g::IdDepGraph)
     map(i -> g.id2int(i), π)
 end
 
+function order_min_gap(g::IdDepGraph)
+    sg = SimpleDiGraph(g)
+    order = Dict()
+    leafs = Vector()
+    for i in 1:g.num_ids
+        parents = inneighbors(sg,i)
+        if isempty(parents)
+            order[i] = [i]
+        else
+            parent_orders = map(p -> order[p], parents)
+            sort!(parent_orders, by= x -> -length(x))
+            o = reduce(vcat,parent_orders)
+            unique!(o)
+            push!(o,i)
+            order[i] = o
+        end
+        if isempty(outneighbors(sg,i))
+            push!(leafs, order[i])
+        end
+    end
+    leaf_orders = sort!(leafs, by= x -> -length(x))
+    π = reduce(vcat, leaf_orders)
+    unique!(π)
+    map(i -> g.id2int(i), π)
+end
+
+
 function variable_order(g, order)
     if order == :dfs
         topological_sort_by_dfs(g)
@@ -167,7 +202,27 @@ function variable_order(g, order)
         reverse(metis_permutation(g))
     elseif order == :metis_cut
         metis_cut(g)
+    elseif order == :min_gap
+        order_min_gap(g)
     else
         error("Unknown variable order: $order")
     end
 end
+
+function code_motion(p::DiceProgram, order)
+    g = id_dep_graph(p)
+    π = variable_order(g, order)
+    re = return_expr(p)
+    foldr(π; init = re) do id, e2
+        e1 = g.id2expr[id]
+        LetExpr(id, e1, e2)
+    end
+end
+
+return_expr(e::DiceProgram) =
+    e.expr
+return_expr(e::LetExpr) =
+    e.e2
+return_expr(e::DiceTuple) =
+    e
+
