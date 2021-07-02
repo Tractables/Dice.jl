@@ -230,7 +230,7 @@ function compile(mgr, ctx, let_expr::LetExpr)::ProbData
         yield()
         id = let_expr.identifier.symbol
         i += 1
-        (mgr.strategy.debug >= 1) && print("Compiling $(i)th let $id")
+        (mgr.strategy.debug >= 1) && print("Compiling $(i)th let $id using $(num_flips(let_expr.e1)) additional flips")
         @assert !haskey(ctx.bindings,id) "No support for reusing identifier symbols: $id"
         if mgr.strategy.include_indicators
             nb = num_bits(let_expr.e1)
@@ -256,6 +256,7 @@ function compile(mgr, ctx, let_expr::LetExpr)::ProbData
 end
 
 ############################################
+# Precompile leafs
 ############################################
 
 function precompile_leafs(mgr, ctx, e::LetExpr)
@@ -278,11 +279,43 @@ function precompile_leafs(mgr, ctx, e::Union{DiceInt,DiceBool,Identifier})
 end
 
 function precompile_leafs(mgr, ctx, e::Union{Flip,Categorical})
-    (mgr.strategy.debug >= 1) && println("Precompiling $(e)")
+    (mgr.strategy.debug >= 5) && println("Precompiling $(e)")
     ctx.precompile_cache[e] = compile(mgr, ctx, e)
 end
 
 function precompile_leafs(mgr, ctx, e::DiceTuple)
     precompile_leafs(mgr, ctx, e.first)
     precompile_leafs(mgr, ctx, e.second)
+end
+
+############################################
+# Number of Flips (lazy assume for now no hoisting, only determinism)
+############################################
+
+function num_flips(e::LetExpr)
+    num_flips(e.e1) + num_flips(e.e2)
+end
+
+function num_flips(e::Ite)
+    num_flips(e.cond_expr) + num_flips(e.then_expr) + num_flips(e.else_expr)
+end
+
+function num_flips(e::EqualsOp)
+    num_flips(e.e1) + num_flips(e.e2)
+end
+
+function num_flips(::Union{DiceInt,DiceBool,Identifier})
+    0
+end
+
+function num_flips(e::Flip)
+    (iszero(e.prob) || isone(e.prob)) ? 0 : 1
+end
+
+function num_flips(e::Categorical)
+    count(p -> !iszero(p), e.probs) - 1
+end
+
+function precompile_leafs(e::DiceTuple)
+    num_flips(e.first) + num_flips(e.second)
 end

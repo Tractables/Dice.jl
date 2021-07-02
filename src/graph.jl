@@ -103,7 +103,7 @@ function plot(g::IdDepGraph; order = nothing)
     if order == :program_order
         TikzGraphs.plot(sg)
     else
-        if order == nothing
+        if order === nothing
             labels = [tolatex(g.id2int(i).symbol) for i=1:g.num_ids]
         else 
             π = variable_order(g, order)
@@ -168,7 +168,7 @@ function metis_cut(g::IdDepGraph)
     map(i -> g.id2int(i), π)
 end
 
-function order_min_gap(g::IdDepGraph)
+function order_min_gap(g::IdDepGraph; importance=length)
     sg = SimpleDiGraph(g)
     order = Dict()
     leafs = Vector()
@@ -178,8 +178,13 @@ function order_min_gap(g::IdDepGraph)
             order[i] = [i]
         else
             parent_orders = map(p -> order[p], parents)
-            sort!(parent_orders, by= x -> -length(x))
-            o = reduce(vcat,parent_orders)
+            sort!(parent_orders, rev=true, by=importance)
+            print("Sorted order options: ")
+            for o in parent_orders
+                print(" (l: $(length(o)), i: $(importance(o)))")
+            end
+            println()
+            o = reduce(vcat, parent_orders)
             unique!(o)
             push!(o,i)
             order[i] = o
@@ -188,10 +193,28 @@ function order_min_gap(g::IdDepGraph)
             push!(leafs, order[i])
         end
     end
-    leaf_orders = sort!(leafs, by= x -> -length(x))
-    π = reduce(vcat, leaf_orders)
+    sort!(leafs, rev=true, by=importance)
+    π = reduce(vcat, leafs)
+    # TODO do a better job of interleaving orders here; can only make it better at leaf level since we have no children 
     unique!(π)
+    println(" final importance: $(importance(π)) of $(length(leafs)) leafs")
+    # println("order $π")
     map(i -> g.id2int(i), π)
+end
+
+function interleave(a, b)
+    
+end
+
+function order_min_gap_flips(g::IdDepGraph)
+    # store number of flips per local node
+    nf_local = map(1:g.num_ids) do i
+        num_flips(g.id2expr[g.id2int(i)])
+    end
+    nf_order(o) = begin
+        sum(i -> nf_local[i], o)
+    end
+    order_min_gap(g, importance = nf_order)
 end
 
 
@@ -208,6 +231,8 @@ function variable_order(g, order)
         metis_cut(g)
     elseif order == :min_gap
         order_min_gap(g)
+    elseif order == :min_gap_flips
+        order_min_gap_flips(g)
     else
         error("Unknown variable order: $order")
     end
