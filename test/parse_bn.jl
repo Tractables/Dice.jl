@@ -7,6 +7,8 @@ bns = ["cancer", "andes", "asia", "child", "earthquake", "hailfinder", "hepar2",
 bn = bns[15] # alarm
 bn = bns[23] # link
 
+bn = "insurance"
+
 r = HTTP.request("GET", "https://raw.githubusercontent.com/ellieyhcheng/dice/master/benchmarks/bayesian-networks//$bn.dice"); nothing;
 bn_code = String(r.body); nothing;
 
