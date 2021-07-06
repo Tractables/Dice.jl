@@ -45,17 +45,40 @@ struct LetExpr <: DiceExpr
     e2::DiceExpr
 end
 
-num_bits(i::DiceInt) = i.num_bits
+####################
+# Get type of expressions
+####################
+
+# partial implementation
+
+max_val(x::Categorical)::Int = 
+    findlast(p -> !iszero(p), x.probs) - 1
+
 num_bits(i::Int) = ceil(Int,log2(i+1))
-num_bits(x::Ite) = 
-    max(num_bits(x.then_expr),num_bits(x.else_expr))
-    
-function num_bits(x::Categorical)
-    max_val = findlast(p -> !iszero(p), x.probs) - 1
-    num_bits(max_val)
+num_bits(i::DiceInt) = i.num_bits
+num_bits(x::Categorical) = num_bits(max_val(x))
+
+expr_type(_::Union{DiceBool,Flip,Bool}) = (DiceBool,)
+expr_type(i::Union{DiceInt,Categorical,Int}) = (DiceInt, num_bits(i))
+expr_type(x::Categorical) =
+    expr_type(max_val(x))
+
+function expr_type(x::Ite)
+    t1 = expr_type(x.then_expr)
+    t2 = expr_type(x.else_expr)
+    @assert t1[1] == t2[1]
+    if t1[1] == DiceInt
+        (DiceInt, max(t1[2], t2[2]))
+    elseif t1[1] == DiceBool
+        (DiceBool,)
+    else
+        error("Cannot unify types")
+    end
 end
 
-# TODO add other cases for num_bits?
+####################
+# Pretty printing
+####################
 
 Base.show(io::IO, x::DiceProgram) =
     show(io, x.expr, 0) 

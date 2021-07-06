@@ -6,7 +6,6 @@ abstract type DiceManager end
 default_strategy() = (
     categorical = :bitwiseholtzen,
     branch_elim = :guard_bdd,
-    include_indicators = false,
     var_order = :program_order,
     debug = 0
 )
@@ -17,8 +16,6 @@ default_manager() =
 mutable struct Context
     bindings::Dict{String,ProbData}
     condition::ProbBool
-    indicators::Dict{String,ProbData}
-    global_compilation::ProbBool
     precompile_cache::Dict{DiceExpr, ProbData}
     precompile_leafs::Bool
 end
@@ -26,11 +23,9 @@ end
 function Context(mgr::DiceManager)
     bindings = Dict{String,ProbData}()
     condition  = ProbBool(mgr, true)
-    indicators = Dict{String,ProbData}()
-    global_compilation = ProbBool(mgr, true) 
     precompile_cache = Dict{DiceExpr, ProbData}()
     precompile_leafs = false
-    Context(bindings, condition, indicators, global_compilation, precompile_cache, precompile_leafs)
+    Context(bindings, condition, precompile_cache, precompile_leafs)
 end
 
 ############################################
@@ -64,9 +59,7 @@ compile(mgr, _, e::DiceInt)=
 
 function compile(mgr, ctx, f::Flip)::ProbBool 
     if ctx.precompile_leafs
-        # if haskey(ctx.precompile_cache, f)
-            return ctx.precompile_cache[f]
-        # end
+        return ctx.precompile_cache[f]
     end
     if isone(f.prob)
         ProbBool(mgr, true)
@@ -85,9 +78,7 @@ end
 
 function compile(mgr, ctx, c::Categorical)::ProbInt
     if ctx.precompile_leafs
-        # if haskey(ctx.precompile_cache, c)
-            return ctx.precompile_cache[c]
-        # end
+        return ctx.precompile_cache[c]
     end
     if mgr.strategy.categorical == :sangbeamekautz
         vals = [(ProbInt(mgr, i-1), p) 
@@ -232,18 +223,7 @@ function compile(mgr, ctx, let_expr::LetExpr)::ProbData
         i += 1
         (mgr.strategy.debug >= 1) && print("Compiling $(i)th let $id using $(num_flips(let_expr.e1)) additional flips")
         @assert !haskey(ctx.bindings,id) "No support for reusing identifier symbols: $id"
-        if mgr.strategy.include_indicators
-            nb = num_bits(let_expr.e1)
-            x = flip(mgr, ProbInt, nb)
-            @assert !haskey(ctx.indicators,id) "No support for reusing identifier symbols: $id"
-            ctx.indicators[id] = x
-        end
         ctx.bindings[id] = compile(mgr, ctx, let_expr.e1)
-        if mgr.strategy.include_indicators
-            ctx.global_compilation &= 
-                prob_equals(x, ctx.bindings[id])
-            println("Global compilation has size $(num_nodes(ctx.global_compilation))")
-        end
         (mgr.strategy.debug >= 1) && println(" into $(num_nodes(ctx.bindings[id])) nodes")
         if let_expr.e2 isa LetExpr
             let_expr = let_expr.e2

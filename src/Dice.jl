@@ -8,5 +8,6 @@ include("support.jl")
 include("backend.jl")
 include("debug.jl")
 include("graph.jl")
+include("indicators.jl")
 
 end # module

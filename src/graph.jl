@@ -280,7 +280,9 @@ function order_test(g::IdDepGraph)
 end
 
 function variable_order(g, order)
-    if order == :dfs
+    if order == :program_order
+        map(g.id2int, 1:g.num_ids)
+    elseif order == :dfs
         topological_sort_by_dfs(g)
     elseif order == :dfs_rev
         reverse(topological_sort_by_dfs(g))
