@@ -90,7 +90,7 @@ function compile(mgr, ctx, c::Categorical)::ProbInt
         # end
     end
     if mgr.strategy.categorical == :sangbeamekautz
-        vals = [(compile(mgr, ctx, i-1), p) 
+        vals = [(ProbInt(mgr, i-1), p) 
                     for (i,p) in enumerate(c.probs) if !iszero(p)]
         cvals(vs) = begin
             v1 = vs[1][1]

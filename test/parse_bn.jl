@@ -6,8 +6,8 @@ bns = ["cancer", "andes", "asia", "child", "earthquake", "hailfinder", "hepar2",
 
 bn = bns[15] # alarm
 bn = bns[23] # link
-
 bn = "insurance"
+
 
 r = HTTP.request("GET", "https://raw.githubusercontent.com/ellieyhcheng/dice/master/benchmarks/bayesian-networks//$bn.dice"); nothing;
 bn_code = String(r.body); nothing;
@@ -40,6 +40,7 @@ custom_strategy = (Dice.default_strategy()..., debug=1, var_order = :metis_perm,
 custom_strategy = (Dice.default_strategy()..., debug=1, var_order = :metis_perm_rev,)
 custom_strategy = (Dice.default_strategy()..., debug=1, var_order = :min_gap,)
 custom_strategy = (Dice.default_strategy()..., debug=0, var_order = :min_gap,)
+custom_strategy = (Dice.default_strategy()..., debug=1, var_order = :test,)
 (c = @time (Dice.compile(dice_expr, Dice.CuddMgr(custom_strategy)))); nothing
 Dice.num_nodes(c)
 
@@ -67,8 +68,10 @@ custom_strategy = (Dice.default_strategy()..., include_indicators = true)
 g = Dice.id_dep_graph(dice_expr); nothing;
 Dice.plot(g);
 Dice.plot(g; order = :program_order);
+Dice.plot(g; order = :test);
 Dice.plot(g; order = :dfs);
 Dice.plot(g; order = :metis_cut);
 Dice.plot(g; order = :min_gap);
+Dice.plot(g; order = :test);
 
 Dice.topological_sort_by_dfs(g)

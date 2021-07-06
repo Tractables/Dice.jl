@@ -130,14 +130,14 @@ function LightGraphs.topological_sort_by_dfs(g::IdDepGraph)
     sg = SimpleDiGraph(g)
     π = topological_sort_by_dfs(sg)
     @assert length(π) == g.num_ids
-    map(i -> g.id2int(i), π)
+    map(g.id2int, π)
 end
 
 function metis_permutation(g::IdDepGraph)
     sg = SimpleGraph(g)
     π, _ = Metis.permutation(sg)
     @assert Set(π) == g.id2int.range
-    map(i -> g.id2int(i), π)
+    map(g.id2int, π)
 end
 
 function metis_cut(g::IdDepGraph)
@@ -165,7 +165,7 @@ function metis_cut(g::IdDepGraph)
     else
         π = [clust2; seps ; clust1]
     end
-    map(i -> g.id2int(i), π)
+    map(g.id2int, π)
 end
 
 function order_min_gap(g::IdDepGraph; importance=length, merge_leafs=vcat)
@@ -199,7 +199,7 @@ function order_min_gap(g::IdDepGraph; importance=length, merge_leafs=vcat)
     unique!(π)
     # println(" final importance: $(importance(π)) of $(length(leafs)) leafs")
     # println("order $π")
-    map(i -> g.id2int(i), π)
+    map(g.id2int, π)
 end
 
 function order_min_gap_flips(g::IdDepGraph; merge_leafs=vcat)
@@ -247,7 +247,7 @@ function interleave(a, b)
     c
 end
 
-function order_test(g::IdDepGraph; importance=length, merge_leafs=test_interleave)
+function order_test(g::IdDepGraph)
     sg = SimpleDiGraph(g)
     order = Dict()
     leafs = Vector()
@@ -255,14 +255,15 @@ function order_test(g::IdDepGraph; importance=length, merge_leafs=test_interleav
         parents = inneighbors(sg,i)
         if isempty(parents)
             order[i] = [i]
+        elseif length(parents) == 1 && 
+                length(outneighbors(sg,i)) == 0 &&
+                num_flips(g.id2expr[g.id2int(i)]) <= 4
+            # prefer reverse order
+            po = order[parents[1]]
+            order[i] = [i, po...]
         else
             parent_orders = map(p -> order[p], parents)
-            sort!(parent_orders, rev=true, by=importance)
-            # print("Sorted order options: ")
-            # for o in parent_orders
-                # print(" (l: $(length(o)), i: $(importance(o)))")
-            # end
-            # println()
+            sort!(parent_orders, rev=true, by=length)
             o = foldl(vcat, parent_orders)
             unique!(o)
             push!(o,i)
@@ -272,42 +273,10 @@ function order_test(g::IdDepGraph; importance=length, merge_leafs=test_interleav
             push!(leafs, order[i])
         end
     end
-    sort!(leafs, rev=true, by=importance)
-    π = foldl(merge_leafs, leafs)
-    # TODO do a better job of interleaving orders here; can only make it better at leaf level since we have no children 
+    sort!(leafs, rev=true, by=length)
+    π = foldl(vcat, leafs)
     unique!(π)
-    # println(" final importance: $(importance(π)) of $(length(leafs)) leafs")
-    # println("order $π")
-    map(i -> g.id2int(i), π)
-end
-
-function test_interleave(a, b)
-    c = copy(a)
-    miss = Set(setdiff(b, a))
-    for i in length(b):-1:1
-        x = b[i]
-        if x ∈ miss
-            before_i = Set(b[1:i-1]) ∩ c
-            after_i = Set(b[i+1:end]) ∩ c
-            penalty = length(after_i)
-            best_j = length(c)+1
-            best_penalty = penalty
-            for j = length(c):-1:1
-                if c[j] ∈ before_i
-                    penalty += 1
-                elseif c[j] ∈ after_i
-                    penalty -= 1
-                end
-                if penalty < best_penalty
-                    best_penalty = penalty
-                    best_j = j
-                end
-            end
-            insert!(c, best_j, x)
-        end
-    end
-    @assert length(c) == length(a) + length(miss)
-    c
+    map(g.id2int, π)
 end
 
 function variable_order(g, order)
@@ -329,6 +298,10 @@ function variable_order(g, order)
         order_min_gap_flips_interleave(g)
     elseif order == :test
         order_test(g)
+    elseif order isa Vector{Identifier}
+        order
+    elseif order isa Vector{Int}
+        map(g.id2int, order)
     else
         error("Unknown variable order: $order")
     end

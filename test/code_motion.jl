@@ -21,6 +21,8 @@ order = :program_order
 # link:     15117830
 # munin:     4998135
 
+order = :metis_cut
+
 order = :min_gap
 # alarm:  10874
 # insurance:  243286
@@ -49,21 +51,19 @@ order = :min_gap_flips_interleave
 # munin: /
 
 order = :test
-# alarm:  10874
-# insurance:  243290
-# water:  40633
-# hailfinder:  137709
-# pigs:  57507
-# link:  3350260
+
+categorical = :bitwiseholtzen
+# categorical = :sangbeamekautz
 
 # for bn in bns
 for bn in ["alarm", "insurance", "water", "hailfinder", "pigs", "link", "munin"]
+    # for bn in ["alarm", "insurance", "water",  "pigs", "link", "munin"]
 
     r = HTTP.request("GET", "https://raw.githubusercontent.com/ellieyhcheng/dice/master/benchmarks/bayesian-networks//$bn.dice"); nothing;
     bn_code = String(r.body); nothing;
 
     dice_expr = Dice.parse(Dice.DiceProgram, bn_code); nothing;
-
+    "hailfinder", 
     # opt_expr = Dice.code_motion(dice_expr, order); nothing
 
     # open("dice_opt/$bn.opt.dice", "w") do io
@@ -76,7 +76,7 @@ for bn in ["alarm", "insurance", "water", "hailfinder", "pigs", "link", "munin"]
     # println("Saved optimized $bn")
 
     # our compilation with code motion built in
-    custom_strategy = (Dice.default_strategy()..., debug=0, var_order = order,)
+    custom_strategy = (Dice.default_strategy()..., debug=0, var_order = order, categorical, )
     c = Dice.compile(dice_expr, Dice.CuddMgr(custom_strategy))
     s = Dice.num_nodes(c)
     println("# $bn:  $s")
