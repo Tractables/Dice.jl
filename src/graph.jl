@@ -247,6 +247,38 @@ function interleave(a, b)
     c
 end
 
+function order_min_gap_flips_interleave_all(g::IdDepGraph)
+    # store number of flips per local node
+    nf_local = map(1:g.num_ids) do i
+        num_flips(g.id2expr[g.id2int(i)])
+    end
+    nf_order(o) = begin
+        sum(i -> nf_local[i], o)
+    end
+
+    sg = SimpleDiGraph(g)
+    order = Dict()
+    leafs = Vector()
+    for i in 1:g.num_ids
+        parents = inneighbors(sg,i)
+        if isempty(parents)
+            order[i] = [i]
+        else
+            parent_orders = map(p -> order[p], parents)
+            sort!(parent_orders, rev=true, by=nf_order)
+            o = foldl(interleave, parent_orders)
+            push!(o,i)
+            order[i] = o
+        end
+        if isempty(outneighbors(sg,i))
+            push!(leafs, order[i])
+        end
+    end
+    sort!(leafs, rev=true, by=nf_order)
+    π = foldl(interleave, leafs)
+    map(g.id2int, π)
+end
+
 function order_test(g::IdDepGraph)
     sg = SimpleDiGraph(g)
     order = Dict()
@@ -298,6 +330,8 @@ function variable_order(g, order)
         order_min_gap_flips(g)
     elseif order == :min_gap_flips_interleave
         order_min_gap_flips_interleave(g)
+    elseif order == :min_gap_flips_interleave_all
+        order_min_gap_flips_interleave_all(g)
     elseif order == :test
         order_test(g)
     elseif order isa Vector{Identifier}

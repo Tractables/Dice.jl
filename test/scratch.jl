@@ -129,6 +129,7 @@ else
 # code = "discrete(0.1, 0.2, 0.3, 0.2, 0.2)"
 code = "discrete(0.000000,0.000000,1.000000)"
 Dice.dump_dot(Dice.compile(mgr, b, s, Dice.parse(DiceProgram, code)), "test.dot"; as_add=true); println(read("test.dot", String))
+
 Dice.run_dice(code; skiptable=true, determinism=true, printstatebdd=true)
 
 code = raw"""
@@ -188,3 +189,7 @@ S = SimpleGraph(el)
 collect(edges(S))
 perm, _ = Metis.permutation(S); perm
 parts = Metis.separator(S)
+
+
+code = "discrete(0.000000,0.000000,1.000000)"
+Dice.dump_dot(Dice.compile(mgr, b, s, Dice.parse(DiceProgram, code)), "test.dot"; as_add=true); println(read("test.dot", String))

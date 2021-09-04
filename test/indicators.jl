@@ -11,15 +11,15 @@ var_order = :metis_perm_rev
 var_order = :metis_cut
 var_order = :min_gap_flips
 var_order = :min_gap_flips_interleave
-
+var_order = :min_gap_flips_interleave_all
 
 categorical = :bitwiseholtzen
 categorical = :sangbeamekautz
 
 debug = 0
 
-# for bn in ["water"] 
-for bn in ["alarm", "insurance", "water", "hailfinder", "link", "munin", "pigs"]
+for bn in ["alarm"] 
+# for bn in ["alarm", "insurance", "water", "hailfinder", "munin", "link", "pigs"]
 
     r = HTTP.request("GET", "https://raw.githubusercontent.com/ellieyhcheng/dice/master/benchmarks/bayesian-networks//$bn.dice"); nothing;
     bn_code = String(r.body); nothing;
@@ -28,7 +28,7 @@ for bn in ["alarm", "insurance", "water", "hailfinder", "link", "munin", "pigs"]
 
     # compile indicators
     custom_strategy = (Dice.default_strategy()..., debug=debug, var_order=var_order, categorical=categorical, )
-    c = Dice.comp_ind(dice_expr, Dice.CuddMgr(custom_strategy))
+    @time (c = Dice.comp_ind(dice_expr, Dice.CuddMgr(custom_strategy)))
     s = Dice.num_nodes(c)
     println("# $bn:  $s")
 
@@ -71,3 +71,11 @@ end
 ### min_gap_flips_interleave, bitwiseholtzen
 # alarm:  5040
 # insurance:  318800
+# water:  398433
+# hailfinder:  128321
+
+
+### min_gap_flips_interleave_all, bitwiseholtzen
+# alarm:  410989
+# insurance:  704520
+# water:  1021879

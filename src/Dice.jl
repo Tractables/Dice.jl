@@ -9,5 +9,6 @@ include("backend.jl")
 include("debug.jl")
 include("graph.jl")
 include("indicators.jl")
+include("problog_transpiler.jl")
 
 end # module
