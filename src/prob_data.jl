@@ -1,4 +1,5 @@
 # probabilistic data types
+using IfElse: IfElse, ifelse
 
 export ProbData, ProbBool, ProbInt, ProbTuple
 
@@ -65,6 +66,9 @@ end
 
 @inline ite(cond::ProbBool, then::ProbBool, elze::ProbBool) = 
     ProbBool(cond.mgr, ite(cond.mgr, cond.bit, then.bit, elze.bit))
+
+IfElse.ifelse(condition::ProbBool, x, y) = 
+    ite(condition, x, y)
 
 @inline issat(x::ProbBool) =
     issat(x.mgr, x.bit)
