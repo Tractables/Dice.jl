@@ -37,7 +37,7 @@ end
 @inline true_constant(mgr) =
     ProbBool(mgr, true_node(mgr))
 
-@inline flip(mgr) =
+@inline flip(mgr::DiceManager) =
     ProbBool(mgr, new_var(mgr))
     
 @inline biconditional(x::ProbBool, y::ProbBool) =
