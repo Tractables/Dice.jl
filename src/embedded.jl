@@ -7,6 +7,18 @@ export @dice
 ite(cond::ProbBool, x, y) = 
     ite(cond, convert(ProbData,x), convert(ProbData,y))
 
+Base.:&(x::ProbBool, y::Bool) = 
+    x & convert(ProbBool,y)
+
+Base.:&(x::Bool, y::ProbBool) = 
+    y & x
+
+Base.:|(x::ProbBool, y::Bool) = 
+    x | convert(ProbBool,y)
+
+Base.:|(x::Bool, y::ProbBool) = 
+    y | x
+
 Base.convert(::Type{ProbData}, b::Bool) = 
     Base.convert(ProbBool, b)
 

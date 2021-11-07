@@ -164,6 +164,10 @@ function ProbInt(mgr, i::Int)
     end
 end
 
+function ProbInt(bits::Vector)
+    ProbInt(bits[1].mgr, bits)
+end
+
 max_bits(i::ProbInt) =
     length(i.bits)
 
