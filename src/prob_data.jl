@@ -3,6 +3,7 @@ using IfElse: IfElse, ifelse
 
 export ProbData, ProbBool, ProbInt, ProbTuple
 
+abstract type DiceManager end
 abstract type ProbData end
 
 # Booleans
