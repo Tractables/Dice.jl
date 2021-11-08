@@ -28,6 +28,8 @@ currently it makes if-then-else, &&, and || polymorphic
 """
 macro dice(code)
 
+    # TODO figure out how to use `esc` to correctly bind methods defined outside of the macro
+
     transformed_code = postwalk(code) do x
         # TODO: replace by custom desugaring that is still lazy for boolean guards
         # this will not work in general
@@ -44,7 +46,7 @@ macro dice(code)
     return quote
         
         # prelims tied to one manage
-        mgr = default_manager()
+        mgr = Dice.default_manager()
         
         Dice.flip(prob::Number) = 
             Dice.flip(mgr) #ignore prob for now
