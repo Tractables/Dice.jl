@@ -15,22 +15,19 @@ function reachable(adjacency::Matrix, src::Int, dest::Int)
     reachable[dest]
 end
 
-@dice begin
+n = 7
 
-    n = 7
+# run on sampled deterministic graph
+adjacency_sampled = rand(Bool, n, n)
+r = reachable(adjacency_sampled, 1, n)
+println("Sampled graph reachability: ", r)
 
-    # run on sampled deterministic graph
-    adjacency_sampled = rand(Bool, n, n)
-    r = reachable(adjacency_sampled, 1, n)
-    println("Sampled graph reachability: ", r)
-
-    # run on random graph
+# run on random graph
+r = @dice begin
     adjacency_rand = [flip(0.5) for i=1:n, j=1:n]
-    r = reachable(adjacency_rand, 1, n)
-
-    @assert num_flips(r) == n*n-3n+3
-    println("Number of flips used: ", num_flips(r))
-    println("Number of BDD nodes: ", num_nodes(r))
-
+    reachable(adjacency_rand, 1, n)
 end
 
+@assert num_flips(r) == n*n-3n+3
+println("Number of flips used: ", num_flips(r))
+println("Number of BDD nodes: ", num_nodes(r))
