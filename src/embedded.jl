@@ -83,3 +83,10 @@ macro dice_ir(code)
         to_dice_ir(@dice :ir $(code))
     end
 end
+
+
+macro dice_ir_ocaml(code)
+    quote
+        println(run_dice(@dice_ir $(code)))
+    end
+end
