@@ -11,7 +11,7 @@ default_strategy() = (
 
 default_manager() =
     CuddMgr(default_strategy())
-
+    
 mutable struct Context
     bindings::Dict{String,ProbData}
     condition::ProbBool

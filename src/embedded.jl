@@ -8,6 +8,12 @@ ite(cond::ProbBool, x, y) =
     ite(cond, val2dist(x, cond.mgr), 
               val2dist(y, cond.mgr))
 
+ite(cond::ProbBool, x::ProbBool, y) = 
+    ite(cond, x, val2dist(y, cond.mgr))
+
+ite(cond::ProbBool, x, y::ProbBool) = 
+    ite(cond, val2dist(x, cond.mgr), y)
+                                
 Base.:&(x::ProbBool, y::Bool) = 
     x & val2dist(y, x.mgr)
 
@@ -27,11 +33,12 @@ val2dist(x::Bool, mgr) =
 macro to process dice code before running it
 currently it makes if-then-else, &&, and || polymorphic
 """
-macro dice(code)
+macro dice(analysis, code)
 
     # manual hygiene
     mgr = gensym(:mgr)
     flip = gensym(:flip)
+    ite = gensym(:ite)
 
     transformed_code = postwalk(esc(code)) do x
         # TODO: replace by custom desugaring that is still lazy for boolean guards
@@ -39,7 +46,7 @@ macro dice(code)
         # for example when control flow has `return`` inside
         if x isa Expr && (x.head == :if || x.head == :elseif)
             @assert length(x.args) == 3 "@dice macro only supports purely functional if-then-else"
-            return Expr(:call, :ifelse, x.args...)
+            return :($ite($(x.args...)))
         end
         @capture(x, flip(P_)) && return :($flip($P)) 
         @capture(x, A_ || B_) && return :($A | $B) 
@@ -47,14 +54,25 @@ macro dice(code)
         return x
     end
 
+    mgr_choice = if eval(analysis) == :bdd
+        :(default_manager())
+    elseif analysis == :ir
+        :(ir_manager())
+    else
+        error("Unknown dice analysis: ", analysis)
+    end
+
     return quote
         
-        $(esc(mgr)) = default_manager()
+        $(esc(mgr)) = $mgr_choice
         
-        function $(esc(flip))(prob::Number) 
+        $(esc(flip))(prob::Number) = 
             Dice.flip($(esc(mgr))) #ignore prob for now
-        end
+        
+        $(esc(ite))(args...) =
+            Dice.ite(args...)
 
+        
         # transformed user code
         $transformed_code
     end
