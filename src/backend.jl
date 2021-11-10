@@ -72,7 +72,7 @@ end
 @inline isvalid(mgr::CuddMgr, x) =
     x === true_node(mgr)
 
-@inline new_var(mgr::CuddMgr) =
+@inline new_var(mgr::CuddMgr, prob) =
     rref(Cudd_bddNewVar(mgr.cuddmgr))
 
 @inline num_nodes(mgr::CuddMgr, xs::Vector{<:Ptr}; as_add=true) = begin

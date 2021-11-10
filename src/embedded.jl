@@ -56,7 +56,7 @@ macro dice(analysis, code)
 
     mgr_choice = if eval(analysis) == :bdd
         :(default_manager())
-    elseif analysis == :ir
+    elseif eval(analysis) == :ir
         :(ir_manager())
     else
         error("Unknown dice analysis: ", analysis)
@@ -67,7 +67,7 @@ macro dice(analysis, code)
         $(esc(mgr)) = $mgr_choice
         
         $(esc(flip))(prob::Number) = 
-            Dice.flip($(esc(mgr))) #ignore prob for now
+            Dice.flip($(esc(mgr)), prob)
         
         $(esc(ite))(args...) =
             Dice.ite(args...)
@@ -75,5 +75,11 @@ macro dice(analysis, code)
         
         # transformed user code
         $transformed_code
+    end
+end
+
+macro dice_ir(code)
+    quote
+        to_dice_ir(@dice :ir $(code))
     end
 end

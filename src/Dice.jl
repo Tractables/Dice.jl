@@ -11,5 +11,6 @@ include("graph.jl")
 include("indicators.jl")
 include("problog_transpiler.jl")
 include("embedded.jl")
+include("ir.jl")
 
 end # module

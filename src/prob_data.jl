@@ -19,6 +19,7 @@ ProbBool(mgr, b::Bool)::ProbBool =
 
 
 function Base.show(io::IO, x::ProbBool) 
+    # specific to CuddMgr ProbBools...
     if !issat(x)
         print(io, "$(typeof(x))(false)") 
     elseif isvalid(x)
@@ -38,8 +39,8 @@ end
 @inline true_constant(mgr) =
     ProbBool(mgr, true_node(mgr))
 
-@inline flip(mgr::DiceManager) =
-    ProbBool(mgr, new_var(mgr))
+@inline flip(mgr::DiceManager, prob = 0.5) =
+    ProbBool(mgr, new_var(mgr, prob))
     
 @inline biconditional(x::ProbBool, y::ProbBool) =
     ProbBool(x.mgr, biconditional(x.mgr, x.bit, y.bit))
