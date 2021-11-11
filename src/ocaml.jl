@@ -1,14 +1,3 @@
-
-function run_dice(code::DiceProgram; 
-    showinternal=false, skiptable=false, 
-    determinism=true, showsize=false,
-    printstatebdd=false)
-    run_dice("$(code)"; 
-        showinternal, skiptable, 
-        determinism, showsize,
-        printstatebdd)
-end
-
 function run_dice(code::String; 
             showinternal=false, skiptable=false, 
             determinism=true, showsize=false,

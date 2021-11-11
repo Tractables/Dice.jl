@@ -1,7 +1,3 @@
 [deps]
 Dice = "94eeadfc-1ba6-40b7-9ed8-dee71557d525"
-Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
-HTTP = "cd3eb016-35fb-5094-929b-558a96fad6f3"
-IfElse = "615f187c-cbe4-4ef1-ba3b-2fcf58d6d173"
-LongestPaths = "3a25c17e-307c-411a-a047-890a9a5fbb4d"
-TikzGraphs = "b4f28e30-c73f-5eaf-a395-8a9db949a742"
+Jive = "ba5e3d4b-8524-549f-bc71-e76ad9e9deed"

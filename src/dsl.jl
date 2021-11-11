@@ -1,39 +1,12 @@
 using MacroTools: postwalk, @capture
 
-export @dice
-
-# extentions to Dice.jl to support embedding dice-like code in Julia
-
-ite(cond::ProbBool, x, y) = 
-    ite(cond, val2dist(x, cond.mgr), 
-              val2dist(y, cond.mgr))
-
-ite(cond::ProbBool, x::ProbBool, y) = 
-    ite(cond, x, val2dist(y, cond.mgr))
-
-ite(cond::ProbBool, x, y::ProbBool) = 
-    ite(cond, val2dist(x, cond.mgr), y)
-                                
-Base.:&(x::ProbBool, y::Bool) = 
-    x & val2dist(y, x.mgr)
-
-Base.:&(x::Bool, y::ProbBool) = 
-    y & x
-
-Base.:|(x::ProbBool, y::Bool) = 
-    x | val2dist(y, x.mgr)
-
-Base.:|(x::Bool, y::ProbBool) = 
-    y | x
-
-val2dist(x::Bool, mgr) = 
-    ProbBool(mgr, x)
+export @dice_bdd, @dice_ir, @dice_run
 
 """
-macro to process dice code before running it
+process dice code before running it
 currently it makes if-then-else, &&, and || polymorphic
 """
-macro dice(analysis, code)
+function interpret_dice(code, mgr_choice)
 
     # manual hygiene
     mgr = gensym(:mgr)
@@ -54,23 +27,15 @@ macro dice(analysis, code)
         return x
     end
 
-    mgr_choice = if eval(analysis) == :bdd
-        :(default_manager())
-    elseif eval(analysis) == :ir
-        :(ir_manager())
-    else
-        error("Unknown dice analysis: ", analysis)
-    end
-
     return quote
         
-        $(esc(mgr)) = $mgr_choice
+        $(esc(mgr)) = $mgr_choice()
         
         $(esc(flip))(prob::Number) = 
-            Dice.flip($(esc(mgr)), prob)
+            DistBool($(esc(mgr)), prob)
         
         $(esc(ite))(args...) =
-            Dice.ite(args...)
+            ifthen(args...)
 
         
         # transformed user code
@@ -78,14 +43,21 @@ macro dice(analysis, code)
     end
 end
 
+macro dice_bdd(code)
+    interpret_dice(code, CuddMgr)
+end
+
+macro dice_ir_inter(code)
+    interpret_dice(code, IrMgr)
+end
+
 macro dice_ir(code)
     quote
-        to_dice_ir(@dice :ir $(code))
+        to_dice_ir(@dice_ir_inter $(code))
     end
 end
 
-
-macro dice_ir_ocaml(code)
+macro dice_run(code)
     quote
         println(run_dice(@dice_ir $(code)))
     end

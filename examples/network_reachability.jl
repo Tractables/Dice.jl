@@ -1,8 +1,9 @@
 using Pkg; Pkg.activate(@__DIR__);
 
-using Dice: @dice, num_flips, num_nodes
+using Dice
+using Dice: num_flips, num_nodes
 
-net = @dice :bdd begin
+net = @dice_bdd begin
     # network reachability example from the dice paper
 
     function diamond(s1)

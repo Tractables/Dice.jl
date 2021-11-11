@@ -2,9 +2,6 @@ export to_dice_ir
 
 struct IrMgr <: DiceManager end
 
-ir_manager() = 
-    IrMgr()
-
 abstract type IrNode end
 
 struct IrFlip <: IrNode
@@ -40,7 +37,7 @@ disjoin(::IrMgr, x, y) =
     
 ###################################
 
-to_dice_ir(pb::ProbBool) =
+to_dice_ir(pb::DistBool) =
     to_dice_ir(pb.bit)
 
 to_dice_ir(ir::IrFlip) = 

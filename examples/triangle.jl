@@ -1,8 +1,9 @@
 using Pkg; Pkg.activate(@__DIR__);
 
-using Dice: @dice, num_flips, num_nodes
+using Dice
+using Dice, num_flips, num_nodes
 
-@dice begin
+@dice_bdd begin
     # triangle distribution
 
     function triangle(b::Int)

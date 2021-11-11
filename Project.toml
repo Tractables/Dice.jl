@@ -4,12 +4,6 @@ authors = ["Guy Van den Broeck <guyvdb@gmail.com>"]
 version = "0.1.0"
 
 [deps]
-Bijections = "e2ed5e7c-b2de-5872-ae92-c73ca462fb04"
 CUDD = "345a2cc7-28d8-58b2-abdf-cff77ea7d7f1"
 IfElse = "615f187c-cbe4-4ef1-ba3b-2fcf58d6d173"
-IncrementalInference = "904591bb-b899-562f-9e6f-b8df64c7d480"
-Lerche = "d42ef402-04e6-4356-9f73-091573ea58dc"
-LightGraphs = "093fc24a-ae57-5d10-9952-331d41423f4d"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
-Metis = "2679e427-3c69-5b7f-982b-ece356f1e94b"
-TikzGraphs = "b4f28e30-c73f-5eaf-a395-8a9db949a742"
