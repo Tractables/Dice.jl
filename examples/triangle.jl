@@ -1,5 +1,3 @@
-using Pkg; Pkg.activate(@__DIR__);
-
 using Dice
 using Dice, num_flips, num_nodes
 

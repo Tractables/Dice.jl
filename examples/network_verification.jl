@@ -1,9 +1,7 @@
-using Pkg; Pkg.activate(@__DIR__);
-
 using Dice
 using Dice: num_flips, num_nodes
 
-net = @dice_bdd begin
+bdd = @dice_bdd begin
     # network reachability example from the dice paper
 
     function diamond(s1)
@@ -22,5 +20,5 @@ net = @dice_bdd begin
     net
 end
 
-println("Number of flips used: $(num_flips(net))")
-println("Number of BDD nodes: $(num_nodes(net))")
+println("Number of flips used: $(num_flips(bdd))")
+println("Number of BDD nodes: $(num_nodes(bdd))")
