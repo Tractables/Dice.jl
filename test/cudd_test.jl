@@ -10,7 +10,13 @@ using Dice: CuddMgr, DistBool
     x = DistBool(mgr, 0.5)
 
     @test !!x == x
-    @test isliteral(x)
-    @test isliteral(!x)
+    @test Dice.isliteral(x)
+    @test Dice.isliteral(!x)
+
+    @test Dice.isposliteral(x)
+    @test Dice.isnegliteral(!x)
+
+    @test !Dice.isposliteral(!x)
+    @test !Dice.isnegliteral(x)
 
 end
