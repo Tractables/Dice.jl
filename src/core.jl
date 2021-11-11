@@ -25,10 +25,6 @@ function Base.show(io::IO, x::DistBool)
     print(io, typeof(x))
     show(io, x.mgr, x.bit)
 end
-
-
-Base.show(io::IO, x::DistBool) =
-    show(io, x, x.mgr)    
     
 function biconditional(x::DistBool, y::DistBool)
     @assert x.mgr === y.mgr

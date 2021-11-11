@@ -67,12 +67,17 @@ end
 @inline disjoin(mgr::CuddMgr, x, y) =
     rref(Cudd_bddOr(mgr.cuddmgr, x, y))
 
-@inline negate(mgr::CuddMgr, x) =
-    # workaround until https://github.com/sisl/CUDD.jl/issues/16 is fixed
-    rref(biconditional(mgr, x, false_val(mgr)))
+@inline negate(::CuddMgr, x) = 
+    Cudd_Not(x)
+
+# workaround until https://github.com/sisl/CUDD.jl/issues/16 is fixed
+Cudd_Not(node) =
+    convert(Ptr{Nothing}, xor(convert(Int,node), 1))
 
 @inline ite(mgr::CuddMgr, cond, then, elze) =
     rref(Cudd_bddIte(mgr.cuddmgr, cond, then, elze))
+
+# lower-level functionality specific to Cudd
 
 @inline issat(mgr::CuddMgr, x) =
     x !== false_val(mgr)
