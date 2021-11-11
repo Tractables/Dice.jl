@@ -35,6 +35,15 @@ end
 disjoin(::IrMgr, x, y) =
     IrDisjoin(x, y)
     
+struct IrIte <: IrNode
+    cond::IrNode
+    then::IrNode
+    elze::IrNode
+end
+    
+ite(::IrMgr, x, y, z) =
+    IrIte(x, y, z)
+    
 ###################################
 
 to_dice_ir(pb::DistBool) =
@@ -51,3 +60,11 @@ to_dice_ir(ir::IrConjoin) =
 
 to_dice_ir(ir::IrDisjoin) = 
     "($(to_dice_ir(ir.x))) || ($(to_dice_ir(ir.y)))"
+
+to_dice_ir(ir::IrIte) = 
+    """
+    if $(to_dice_ir(ir.cond)) then
+        $(to_dice_ir(ir.then))
+    else
+        $(to_dice_ir(ir.elze))
+    """
