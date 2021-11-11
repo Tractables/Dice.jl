@@ -35,8 +35,7 @@ function interpret_dice(code, mgr_choice)
             DistBool($(esc(mgr)), prob)
         
         $(esc(ite))(args...) =
-            ifthen(args...)
-
+            ifelse(args...)
         
         # transformed user code
         $transformed_code

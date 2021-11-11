@@ -68,7 +68,7 @@ prob_equals(x::DistBool, y::DistBool) =
 
 function ifelse(cond::DistBool, then::DistBool, elze::DistBool)
     @assert cond.mgr === then.mgr === elze.mgr
-    DistBool(cond.mgr, ifelse(cond.mgr, cond.bit, then.bit, elze.bit))
+    DistBool(cond.mgr, ite(cond.mgr, cond.bit, then.bit, elze.bit))
 end
 
 ifelse(cond::DistBool, x, y) = 
