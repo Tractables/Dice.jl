@@ -15,6 +15,39 @@ function CuddMgr()
     end
 end
 
+##################################
+# core functionality
+##################################
+
+
+true_val(mgr::CuddMgr) = 
+    Cudd_ReadOne(mgr.cuddmgr)
+
+false_val(mgr::CuddMgr) = 
+    Cudd_ReadLogicZero(mgr.cuddmgr)
+
+biconditional(mgr::CuddMgr, x, y) =
+    rref(Cudd_bddXnor(mgr.cuddmgr, x, y))
+
+conjoin(mgr::CuddMgr, x, y) =
+    rref(Cudd_bddAnd(mgr.cuddmgr, x, y))
+
+disjoin(mgr::CuddMgr, x, y) =
+    rref(Cudd_bddOr(mgr.cuddmgr, x, y))
+
+negate(::CuddMgr, x) = 
+    Cudd_Not(x)
+
+ite(mgr::CuddMgr, cond, then, elze) =
+    rref(Cudd_bddIte(mgr.cuddmgr, cond, then, elze))
+
+new_var(mgr::CuddMgr, prob) =
+    rref(Cudd_bddNewVar(mgr.cuddmgr))
+
+##################################
+# additional CUDD-based functionality
+##################################
+
 function Base.show(io::IO, mgr::CuddMgr, x) 
     if !issat(mgr, x)
         print(io, "(false)") 
@@ -33,76 +66,88 @@ function Base.show(io::IO, x::CuddMgr)
     print(io, "$(typeof(x))@$(hash(x)÷ 10000000000000)")
 end
 
-@inline true_val(mgr::CuddMgr) = 
-    Cudd_ReadOne(mgr.cuddmgr)
 
-@inline false_val(mgr::CuddMgr) = 
-    Cudd_ReadLogicZero(mgr.cuddmgr)
+isconstant(x) =
+    isone(Cudd_IsConstant(x))
 
-@inline isliteral(mgr::CuddMgr, x) =
-    num_nodes(mgr, [x]) == 3
 
-@inline isposliteral(mgr::CuddMgr, x) =
+isliteral(x::DistBool) =
+    isliteral(x.mgr, x.bit)
+
+isliteral(::CuddMgr, x) =
+    (!isconstant(x) &&
+     isconstant(Cudd_T(x)) &&
+     isconstant(Cudd_E(x)))
+
+
+isposliteral(x::DistBool) =
+    isposliteral(x.mgr, x.bit)
+
+isposliteral(mgr::CuddMgr, x) =
     isliteral(mgr,x) && 
     (x === Cudd_bddIthVar(mgr.cuddmgr, firstvar(mgr,x)))
 
-@inline isnegliteral(mgr::CuddMgr, x) =
+
+isnegliteral(x::DistBool) =
+    isnegliteral(x.mgr, x.bit)
+
+isnegliteral(mgr::CuddMgr, x) =
     isliteral(mgr,x) && 
     (x !== Cudd_bddIthVar(mgr.cuddmgr, firstvar(mgr,x)))
 
-@inline firstvar(_::CuddMgr, x) =
-    Cudd_NodeReadIndex(x)
+issat(x::DistBool) =
+    issat(x.mgr, x.bit)
 
-@inline rref(x) = begin 
-    ref(x)
-    x
-end
-
-@inline biconditional(mgr::CuddMgr, x, y) =
-    rref(Cudd_bddXnor(mgr.cuddmgr, x, y))
-
-@inline conjoin(mgr::CuddMgr, x, y) =
-    rref(Cudd_bddAnd(mgr.cuddmgr, x, y))
-
-@inline disjoin(mgr::CuddMgr, x, y) =
-    rref(Cudd_bddOr(mgr.cuddmgr, x, y))
-
-@inline negate(::CuddMgr, x) = 
-    Cudd_Not(x)
-
-# workaround until https://github.com/sisl/CUDD.jl/issues/16 is fixed
-Cudd_Not(node) =
-    convert(Ptr{Nothing}, xor(convert(Int,node), 1))
-
-@inline ite(mgr::CuddMgr, cond, then, elze) =
-    rref(Cudd_bddIte(mgr.cuddmgr, cond, then, elze))
-
-# lower-level functionality specific to Cudd
-
-@inline issat(mgr::CuddMgr, x) =
+issat(mgr::CuddMgr, x) =
     x !== false_val(mgr)
 
-@inline isvalid(mgr::CuddMgr, x) =
+
+isvalid(mgr::CuddMgr, x) =
     x === true_val(mgr)
 
-@inline new_var(mgr::CuddMgr, prob) =
-    rref(Cudd_bddNewVar(mgr.cuddmgr))
+isvalid(x::DistBool) =
+    isvalid(x.mgr, x.bit)
 
-@inline num_nodes(mgr::CuddMgr, xs::Vector{<:Ptr}; as_add=true) = begin
+
+num_nodes(bits::Vector{DistBool}; as_add=true) =  
+    num_nodes(bits[1].mgr, map(b -> b.bit, bits); as_add)
+
+num_nodes(x; as_add=true) =  
+    num_nodes(bools(x); as_add)
+
+num_nodes(mgr::CuddMgr, xs::Vector{<:Ptr}; as_add=true) = begin
     as_add && (xs = map(x -> rref(Cudd_BddToAdd(mgr.cuddmgr, x)), xs))
     Cudd_SharingSize(xs, length(xs))
 end
 
-@inline num_vars(mgr::CuddMgr, xs::Vector{<:Ptr}) = begin
+
+num_flips(bits::Vector{DistBool}) =  
+    num_vars(bits[1].mgr, map(b -> b.bit, bits))
+
+num_flips(x) =  
+    num_flips(bools(x))
+
+num_vars(mgr::CuddMgr, xs::Vector{<:Ptr}) = begin
     Cudd_VectorSupportSize(mgr.cuddmgr, xs, length(xs))
 end
         
-@inline num_vars(mgr::CuddMgr) =
+num_vars(mgr::CuddMgr) =
     Cudd_ReadSize(mgr.cuddmgr)
+
+
+firstvar(_::CuddMgr, x) =
+    Cudd_NodeReadIndex(x)
+
+
+dump_dot(bits::Vector{DistBool}, filename; as_add=true) =
+    dump_dot(bits[1].mgr, map(b -> b.bit, bits), filename; as_add)
+
+dump_dot(x, filename; as_add=true) =  
+    dump_dot(bools(x), filename; as_add)
 
 mutable struct FILE end
 
-@inline dump_dot(mgr::CuddMgr, xs::Vector{<:Ptr}, filename; as_add=true) = begin
+dump_dot(mgr::CuddMgr, xs::Vector{<:Ptr}, filename; as_add=true) = begin
     # convert to ADDs in order to properly print terminals
     if as_add
         xs = map(x -> rref(Cudd_BddToAdd(mgr.cuddmgr, x)), xs)
@@ -113,37 +158,15 @@ mutable struct FILE end
     nothing
 end
 
-# higher-level functionality specific to Cudd
+##################################
+# CUDD Utilities
+##################################
 
-issat(x::DistBool) =
-    issat(x.mgr, x.bit)
+# workaround until https://github.com/sisl/CUDD.jl/issues/16 is fixed
+Cudd_Not(node) =
+    convert(Ptr{Nothing}, xor(convert(Int,node), 1))
 
-isvalid(x::DistBool) =
-    isvalid(x.mgr, x.bit)
-
-isliteral(x::DistBool) =
-    isliteral(x.mgr, x.bit)
-
-isposliteral(x::DistBool) =
-    isposliteral(x.mgr, x.bit)
-
-isnegliteral(x::DistBool) =
-    isnegliteral(x.mgr, x.bit)
-
-num_nodes(bits::Vector{DistBool}; as_add=true) =  
-    num_nodes(bits[1].mgr, map(b -> b.bit, bits); as_add)
-
-num_nodes(x; as_add=true) =  
-    num_nodes(bools(x); as_add)
-
-num_flips(bits::Vector{DistBool}) =  
-    num_vars(bits[1].mgr, map(b -> b.bit, bits))
-
-num_flips(x) =  
-    num_flips(bools(x))
-
-dump_dot(bits::Vector{DistBool}, filename; as_add=true) =
-    dump_dot(bits[1].mgr, map(b -> b.bit, bits), filename; as_add)
-
-dump_dot(x, filename; as_add=true) =  
-    dump_dot(bools(x), filename; as_add)
+rref(x) = begin 
+    ref(x)
+    x
+end
