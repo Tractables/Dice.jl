@@ -1,5 +1,3 @@
-using Pkg; Pkg.activate(@__DIR__);
-
 using Test
 
 using Dice
