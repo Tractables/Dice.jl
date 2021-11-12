@@ -9,8 +9,9 @@ end
 
 # BDD analysis
 bdd = compile(code)
-println("Number of flips used: $(num_flips(bdd))")
-println("Number of BDD nodes: $(num_nodes(bdd))")
+num_flips(bdd)
+num_nodes(bdd)
+infer(code, :bdd)
 
 # IR analysis
 println(to_dice_ir(code))

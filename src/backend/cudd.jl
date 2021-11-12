@@ -4,7 +4,7 @@ using CUDD
 
 mutable struct CuddMgr <: DiceManager
     cuddmgr::Ptr{Nothing}
-    logprobs::Dict{Int,Float64}
+    probs::Dict{Int,Float64}
 end
 
 function CuddMgr() 
@@ -40,8 +40,31 @@ ite(mgr::CuddMgr, cond, then, elze) =
 
 new_var(mgr::CuddMgr, prob) = begin
     x = rref(Cudd_bddNewVar(mgr.cuddmgr))
-    mgr.logprobs[decisionvar(mgr, x)] = log(prob)
+    mgr.probs[decisionvar(mgr, x)] = prob
     x
+end
+
+function infer(mgr::CuddMgr, x)
+    
+    cache = Dict{Tuple{Ptr{Nothing},Bool},Float64}()
+    t = constant(mgr, true)
+    cache[(t,false)] = log(one(Float64))
+    cache[(t,true)] = log(zero(Float64))
+    
+    rec(y, c) = 
+        if Cudd_IsComplement(y)
+            rec(Cudd_Regular(y), !c)   
+        else get!(cache, (y,c)) do 
+                v = decisionvar(mgr,y)
+                prob = mgr.probs[v]
+                a = log(prob) + rec(Cudd_T(y), c)
+                b = log(1.0-prob) + rec(Cudd_E(y), c)
+                max(a,b) + log1p(exp(-abs(a-b)))
+            end
+        end
+    
+    logprob = rec(x, false)
+    exp(logprob)
 end
 
 ##################################
@@ -165,6 +188,12 @@ end
 # workaround until https://github.com/sisl/CUDD.jl/issues/16 is fixed
 Cudd_Not(node) =
     convert(Ptr{Nothing}, xor(convert(Int,node), 1))
+
+Cudd_IsComplement(node) =
+    isone(convert(Int,node) & 1)
+
+Cudd_Regular(node) = 
+    convert(Ptr{Nothing}, convert(Int,node) & ~1)
 
 rref(x) = begin 
     ref(x)

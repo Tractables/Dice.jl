@@ -7,7 +7,7 @@ using Dice: CuddMgr, DistBool
     
     mgr = CuddMgr()
 
-    x = DistBool(mgr, 0.5)
+    x = DistBool(mgr, 0.1)
 
     @test !!x == x
     @test Dice.isliteral(x)
@@ -18,5 +18,14 @@ using Dice: CuddMgr, DistBool
 
     @test !Dice.isposliteral(!x)
     @test !Dice.isnegliteral(x)
+
+    @test !Dice.Cudd_IsComplement(x.bit)
+    @test Dice.Cudd_IsComplement((!x).bit)
+
+    @test Dice.Cudd_Regular(x.bit) === x.bit
+    @test Dice.Cudd_Regular((!x).bit) === x.bit
+
+    # @test infer(x) ≈ 0.1
+    # @test infer(!x) ≈ 0.9
 
 end

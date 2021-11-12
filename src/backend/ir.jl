@@ -58,6 +58,10 @@ infer(mgr::IrMgr, code::IrNode) =
 
 ###################################
 
+# function treeify(x::IrNode)
+
+# end
+
 Base.show(io::IO, ::IrMgr, ir::IrNode) =
     print(io, "(", ir, ")")
 

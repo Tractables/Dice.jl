@@ -29,13 +29,12 @@ end
 
 # BDD analysis
 bdd = compile(code)
-println("Number of flips used: $(num_flips(bdd))")
-println("Number of BDD nodes: $(num_nodes(bdd))")
+num_flips(bdd)
+num_nodes(bdd)
 @assert num_flips(bdd) == n*n-3n+3
+infer(code, :bdd)
 
-# IR analysis
-# TODO: add let expressions to the IR
-# println(to_dice_ir(code))
+# # IR analysis
+# to_dice_ir(code)
 # has_dice_binary() && rundice(code)
 # has_dice_binary() && infer(code, :ocaml)
-
