@@ -14,7 +14,9 @@ println("Number of BDD nodes: $(num_nodes(alltails))")
     mapreduce(p -> !flip(p), &, probs)    
 end
 
-@dice_run begin
-    probs = [1/i for i=2:20]
-    mapreduce(p -> !flip(p), &, probs)    
+if has_dice_binary()
+    @dice_run begin
+        probs = [1/i for i=2:20]
+        mapreduce(p -> !flip(p), &, probs)    
+    end
 end

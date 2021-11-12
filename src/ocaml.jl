@@ -1,7 +1,15 @@
+export has_dice_binary
+
+function has_dice_binary()
+    !isnothing(Sys.which("dice"))
+end
+
 function run_dice(code::String; 
             showinternal=false, skiptable=false, 
             determinism=true, showsize=false,
             printstatebdd=false)
+    dice = Sys.which("dice")
+    isnothing(dice) && error("Ocaml dice binary not found in path")
     mktemp() do path, io 
         write(io, code)
         close(io)
@@ -21,7 +29,7 @@ function run_dice(code::String;
         if printstatebdd
             push!(flags, "-print-state-bdd")
         end
-        cmd = `$(homedir())/.opam/4.09.0/bin/dice $path $flags`
+        cmd = `$dice $path $flags`
         Base.read(cmd, String)
     end    
 end

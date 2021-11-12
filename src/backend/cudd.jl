@@ -4,12 +4,13 @@ using CUDD
 
 mutable struct CuddMgr <: DiceManager
     cuddmgr::Ptr{Nothing}
+    probs::Dict{Int,Float64}
 end
 
 function CuddMgr() 
     cudd_mgr = initialize_cudd()
     Cudd_DisableGarbageCollection(cudd_mgr) # note: still need to ref because CUDD can delete nodes without doing a GC pass
-    mgr = CuddMgr(cudd_mgr)
+    mgr = CuddMgr(cudd_mgr, Dict{Int,Float64}())
     finalizer(mgr) do x
         Cudd_Quit(x.cuddmgr)
     end
@@ -18,7 +19,6 @@ end
 ##################################
 # core functionality
 ##################################
-
 
 true_val(mgr::CuddMgr) = 
     Cudd_ReadOne(mgr.cuddmgr)
@@ -41,8 +41,11 @@ negate(::CuddMgr, x) =
 ite(mgr::CuddMgr, cond, then, elze) =
     rref(Cudd_bddIte(mgr.cuddmgr, cond, then, elze))
 
-new_var(mgr::CuddMgr, prob) =
-    rref(Cudd_bddNewVar(mgr.cuddmgr))
+new_var(mgr::CuddMgr, prob) = begin
+    x = rref(Cudd_bddNewVar(mgr.cuddmgr))
+    mgr.probs[decisionvar(mgr, x)] = prob
+    x
+end
 
 ##################################
 # additional CUDD-based functionality
@@ -54,9 +57,9 @@ function Base.show(io::IO, mgr::CuddMgr, x)
     elseif isvalid(mgr, x)
         print(io, "(true)")
     elseif isposliteral(mgr, x)
-        print(io, "(f$(firstvar(mgr, x)))")
+        print(io, "(f$(decisionvar(mgr, x)))")
     elseif isnegliteral(mgr, x)
-        print(io, "(-f$(firstvar(mgr, x)))")
+        print(io, "(-f$(decisionvar(mgr, x)))")
     else    
         print(io, "@$(hash(x)÷ 10000000000000)")
     end
@@ -85,7 +88,7 @@ isposliteral(x::DistBool) =
 
 isposliteral(mgr::CuddMgr, x) =
     isliteral(mgr,x) && 
-    (x === Cudd_bddIthVar(mgr.cuddmgr, firstvar(mgr,x)))
+    (x === Cudd_bddIthVar(mgr.cuddmgr, decisionvar(mgr,x)))
 
 
 isnegliteral(x::DistBool) =
@@ -93,7 +96,7 @@ isnegliteral(x::DistBool) =
 
 isnegliteral(mgr::CuddMgr, x) =
     isliteral(mgr,x) && 
-    (x !== Cudd_bddIthVar(mgr.cuddmgr, firstvar(mgr,x)))
+    (x !== Cudd_bddIthVar(mgr.cuddmgr, decisionvar(mgr,x)))
 
 issat(x::DistBool) =
     issat(x.mgr, x.bit)
@@ -134,8 +137,8 @@ end
 num_vars(mgr::CuddMgr) =
     Cudd_ReadSize(mgr.cuddmgr)
 
-
-firstvar(_::CuddMgr, x) =
+    
+decisionvar(_::CuddMgr, x) =
     Cudd_NodeReadIndex(x)
 
 
