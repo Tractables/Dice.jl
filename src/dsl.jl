@@ -62,3 +62,12 @@ end
 function rundice(code::DiceCode)
     rundice(to_dice_ir(code)) 
 end
+
+function infer(code::DiceCode, algo)
+    x = if algo == :ocaml
+        to_dice_ir(code)
+    elseif algo == :bdd
+        compile(code)
+    end
+    infer(x) 
+end

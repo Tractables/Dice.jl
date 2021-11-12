@@ -50,6 +50,12 @@ end
 ite(::IrMgr, x, y, z) =
     IrIte(x, y, z)
     
+rundice(::IrMgr, code::IrNode) =
+    rundice(string(code)) 
+
+infer(mgr::IrMgr, code::IrNode) =
+    infer_ocml(string(code))
+
 ###################################
 
 Base.show(io::IO, ::IrMgr, ir::IrNode) =
@@ -75,6 +81,3 @@ Base.show(io::IO, ir::IrIte) = begin
              " then ", ir.then, 
              " else ", ir.elze) 
 end
-
-rundice(::IrMgr, code::IrNode) =
-    println(rundice("$code")) 

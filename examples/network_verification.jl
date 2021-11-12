@@ -1,7 +1,7 @@
 using Dice
 using Dice: num_flips, num_nodes, to_dice_ir
 
-output = @dice begin
+code = @dice begin
     # network reachability example from the dice paper
 
     function diamond(s1)
@@ -20,13 +20,11 @@ output = @dice begin
     net
 end
 
-bdd = compile(output)
+bdd = compile(code)
 println("Number of flips used: $(num_flips(bdd))")
 println("Number of BDD nodes: $(num_nodes(bdd))")
 
-ir = to_dice_ir(output)
-print(ir.bit)
-has_dice_binary() && rundice(ir)
-has_dice_binary() && rundice(output)
-
-
+# IR analysis
+println(to_dice_ir(code))
+has_dice_binary() && rundice(code)
+has_dice_binary() && infer(code, :ocaml)

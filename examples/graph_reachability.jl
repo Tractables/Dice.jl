@@ -22,19 +22,20 @@ r = reachable(adjacency_sampled, 1, n)
 println("Sampled graph reachability: ", r)
 
 # run on random graph
-r = @dice begin
+code = @dice begin
     adjacency_rand = [flip(0.5) for i=1:n, j=1:n]
     reachable(adjacency_rand, 1, n)
 end
 
-
-bdd = compile(r)
-@assert num_flips(bdd) == n*n-3n+3
+# BDD analysis
+bdd = compile(code)
 println("Number of flips used: $(num_flips(bdd))")
 println("Number of BDD nodes: $(num_nodes(bdd))")
+@assert num_flips(bdd) == n*n-3n+3
 
+# IR analysis
 # TODO: add let expressions to the IR
-# ir = to_dice_ir(r)
-# println(ir)
-# has_dice_binary() && rundice(ir)
-# has_dice_binary() && rundice(r)
+# println(to_dice_ir(code))
+# has_dice_binary() && rundice(code)
+# has_dice_binary() && infer(code, :ocaml)
+

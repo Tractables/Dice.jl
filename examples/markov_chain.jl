@@ -1,7 +1,7 @@
 using Dice
 using Dice: num_flips, num_nodes, to_dice_ir
 
-chain = @dice begin
+code = @dice begin
     n = 10
     x = Vector(undef, n)
     x[1] = flip(0.5)
@@ -15,11 +15,12 @@ chain = @dice begin
     x[end]
 end
 
-bdd = compile(chain)
+# BDD analysis
+bdd = compile(code)
 println("Number of flips used: $(num_flips(bdd))")
 println("Number of BDD nodes: $(num_nodes(bdd))")
 
-ir = to_dice_ir(chain)
-print(ir.bit)
-has_dice_binary() && rundice(ir)
-has_dice_binary() && rundice(chain)
+# IR analysis
+println(to_dice_ir(code))
+has_dice_binary() && rundice(code)
+has_dice_binary() && infer(code, :ocaml)
