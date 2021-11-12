@@ -1,4 +1,4 @@
-export to_dice_ir
+export to_dice_ir_string
 
 struct IrMgr <: DiceManager end
 
@@ -10,6 +10,12 @@ end
 
 new_var(::IrMgr, prob) =
     IrFlip(prob)
+struct IrConst <: IrNode
+    value
+end
+
+constant(::IrMgr, c::Bool) =
+    IrConst(c)
 
 struct IrNegate <: IrNode
     x::IrNode
@@ -46,25 +52,29 @@ ite(::IrMgr, x, y, z) =
     
 ###################################
 
-to_dice_ir(pb::DistBool) =
-    to_dice_ir(pb.bit)
+Base.show(io::IO, ::IrMgr, ir::IrNode) =
+    print(io, "(", ir, ")")
 
-to_dice_ir(ir::IrFlip) = 
-    "flip $(ir.prob)"
+Base.show(io::IO, ir::IrFlip) =
+    print(io, "flip ", ir.prob)
 
-to_dice_ir(ir::IrNegate) = 
-    "!($(to_dice_ir(ir.x)))"
+Base.show(io::IO, ir::IrConst) =
+    print(io, ir.value)
 
-to_dice_ir(ir::IrConjoin) = 
-    "($(to_dice_ir(ir.x))) && ($(to_dice_ir(ir.y)))"
+Base.show(io::IO, ir::IrNegate) = 
+    print(io, "!(", ir.x, ")")
 
-to_dice_ir(ir::IrDisjoin) = 
-    "($(to_dice_ir(ir.x))) || ($(to_dice_ir(ir.y)))"
+Base.show(io::IO, ir::IrConjoin) = 
+    print(io, "(", ir.x, ") && (", ir.y, ")")
 
-to_dice_ir(ir::IrIte) = 
-    """
-    if $(to_dice_ir(ir.cond)) then
-        $(to_dice_ir(ir.then))
-    else
-        $(to_dice_ir(ir.elze))
-    """
+Base.show(io::IO, ir::IrDisjoin) = 
+    print(io, "(", ir.x, ") || (", ir.y, ")")
+
+Base.show(io::IO, ir::IrIte) = begin
+    print(io, "if ", ir.cond, 
+             " then ", ir.then, 
+             " else ", ir.elze) 
+end
+
+rundice(::IrMgr, code::IrNode) =
+    println(rundice("$code")) 

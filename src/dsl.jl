@@ -1,12 +1,16 @@
 using MacroTools: postwalk, @capture
 
-export @dice_bdd, @dice_ir, @dice_run
+export @dice, compile, rundice
+
+struct DiceCode
+    interpret::Function
+end
 
 """
 process dice code before running it
 currently it makes if-then-else, &&, and || polymorphic
 """
-function interpret_dice(code, mgr_choice)
+function to_dice(code)
 
     # manual hygiene
     mgr = gensym(:mgr)
@@ -29,35 +33,32 @@ function interpret_dice(code, mgr_choice)
 
     return quote
         
-        $(esc(mgr)) = $mgr_choice()
+        DiceCode( $(esc(mgr)) -> begin
         
-        $(esc(flip))(prob::Number) = 
-            DistBool($(esc(mgr)), prob)
-        
-        $(esc(ite))(args...) =
-            ifelse(args...)
-        
-        # transformed user code
-        $transformed_code
+            $(esc(flip))(prob::Number) = 
+                DistBool($(esc(mgr)), prob)
+            
+            $(esc(ite))(args...) =
+                ifelse(args...)
+            
+            # transformed user code
+            $transformed_code
+        end)
     end
 end
 
-macro dice_bdd(code)
-    interpret_dice(code, CuddMgr)
+macro dice(code)
+    to_dice(code)
 end
 
-macro dice_ir_inter(code)
-    interpret_dice(code, IrMgr)
+function compile(code::DiceCode)
+    code.interpret(CuddMgr())
 end
 
-macro dice_ir(code)
-    quote
-        to_dice_ir(@dice_ir_inter $(code))
-    end
+function to_dice_ir(code::DiceCode)
+    code.interpret(IrMgr())
 end
 
-macro dice_run(code)
-    quote
-        println(run_dice(@dice_ir $(code)))
-    end
+function rundice(code::DiceCode)
+    rundice(to_dice_ir(code)) 
 end

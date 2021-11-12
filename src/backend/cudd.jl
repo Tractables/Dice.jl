@@ -4,7 +4,7 @@ using CUDD
 
 mutable struct CuddMgr <: DiceManager
     cuddmgr::Ptr{Nothing}
-    probs::Dict{Int,Float64}
+    logprobs::Dict{Int,Float64}
 end
 
 function CuddMgr() 
@@ -20,11 +20,8 @@ end
 # core functionality
 ##################################
 
-true_val(mgr::CuddMgr) = 
-    Cudd_ReadOne(mgr.cuddmgr)
-
-false_val(mgr::CuddMgr) = 
-    Cudd_ReadLogicZero(mgr.cuddmgr)
+constant(mgr::CuddMgr, c:: Bool) = 
+    c ? Cudd_ReadOne(mgr.cuddmgr) : Cudd_ReadLogicZero(mgr.cuddmgr)
 
 biconditional(mgr::CuddMgr, x, y) =
     rref(Cudd_bddXnor(mgr.cuddmgr, x, y))
@@ -43,7 +40,7 @@ ite(mgr::CuddMgr, cond, then, elze) =
 
 new_var(mgr::CuddMgr, prob) = begin
     x = rref(Cudd_bddNewVar(mgr.cuddmgr))
-    mgr.probs[decisionvar(mgr, x)] = prob
+    mgr.logprobs[decisionvar(mgr, x)] = log(prob)
     x
 end
 
@@ -102,14 +99,14 @@ issat(x::DistBool) =
     issat(x.mgr, x.bit)
 
 issat(mgr::CuddMgr, x) =
-    x !== false_val(mgr)
+    x !== constant(mgr, false)
 
-
-isvalid(mgr::CuddMgr, x) =
-    x === true_val(mgr)
 
 isvalid(x::DistBool) =
     isvalid(x.mgr, x.bit)
+
+isvalid(mgr::CuddMgr, x) =
+    x === constant(mgr, true)
 
 
 num_nodes(bits::Vector{DistBool}; as_add=true) =  
@@ -137,7 +134,7 @@ end
 num_vars(mgr::CuddMgr) =
     Cudd_ReadSize(mgr.cuddmgr)
 
-    
+
 decisionvar(_::CuddMgr, x) =
     Cudd_NodeReadIndex(x)
 

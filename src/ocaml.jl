@@ -4,7 +4,7 @@ function has_dice_binary()
     !isnothing(Sys.which("dice"))
 end
 
-function run_dice(code::String; 
+function rundice(code::String; 
             showinternal=false, skiptable=false, 
             determinism=true, showsize=false,
             printstatebdd=false)
@@ -35,7 +35,7 @@ function run_dice(code::String;
 end
 
 function num_nodes_ocml(code)
-    out = run_dice(code; skiptable=true, showsize=true)
+    out = rundice(code; skiptable=true, showsize=true)
     regex = r"================.*================\n(.+)\n"
     size_str = match(regex, out)
     @assert size_str !== nothing "$out did not match expected pattern"

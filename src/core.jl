@@ -14,7 +14,7 @@ struct DistBool <: Dist{Bool}
 end
 
 DistBool(mgr::DiceManager, b::Bool) =
-    DistBool(mgr, b ? true_val(mgr) :  false_val(mgr))
+    DistBool(mgr, constant(mgr, b))
 
 DistBool(mgr::DiceManager, p::Number) =
     DistBool(mgr, new_var(mgr, p))
@@ -76,4 +76,6 @@ ifelse(cond::DistBool, x::DistBool, y) =
 
 bools(b::DistBool) = [b]
 
+rundice(d::DistBool) =
+    rundice(d.mgr, d.bit) 
 

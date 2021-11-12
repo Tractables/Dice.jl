@@ -1,22 +1,16 @@
 using Dice
-using Dice: num_flips, num_nodes
+using Dice: num_flips, num_nodes, to_dice_ir
 
-alltails = @dice_bdd begin
+alltails = @dice begin
     probs = [1/i for i=2:20]
     mapreduce(p -> !flip(p), &, probs)    
 end
 
-println("Number of flips used: $(num_flips(alltails))")
-println("Number of BDD nodes: $(num_nodes(alltails))")
+bdd = compile(alltails)
+println("Number of flips used: $(num_flips(bdd))")
+println("Number of BDD nodes: $(num_nodes(bdd))")
 
-@dice_ir begin
-    probs = [1/i for i=2:20]
-    mapreduce(p -> !flip(p), &, probs)    
-end
-
-if has_dice_binary()
-    @dice_run begin
-        probs = [1/i for i=2:20]
-        mapreduce(p -> !flip(p), &, probs)    
-    end
-end
+ir = to_dice_ir(alltails)
+println(ir)
+has_dice_binary() && rundice(ir)
+has_dice_binary() && rundice(alltails)

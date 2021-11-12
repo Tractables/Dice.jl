@@ -1,7 +1,7 @@
 using Dice
-using Dice, num_flips, num_nodes
+using Dice: num_flips, num_nodes, to_dice_ir
 
-@dice_bdd begin
+t = @dice begin
     # triangle distribution
 
     function triangle(b::Int)
