@@ -14,7 +14,7 @@ function reachable(adjacency::Matrix, src::Int, dest::Int)
     reachable[dest]
 end
 
-n = 7
+n = 5
 
 # run on sampled deterministic graph
 adjacency_sampled = rand(Bool, n, n)
@@ -29,12 +29,13 @@ end
 
 # BDD analysis
 bdd = compile(code)
-num_flips(bdd)
-num_nodes(bdd)
+num_flips(bdd), num_nodes(bdd)
 @assert num_flips(bdd) == n*n-3n+3
 infer(code, :bdd)
 
-# # IR analysis
-# to_dice_ir(code)
+# IR analysis
+to_dice_ir(code)
+
+# # TODO fix loopy let identifiers
 # has_dice_binary() && rundice(code)
 # has_dice_binary() && infer(code, :ocaml)

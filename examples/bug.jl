@@ -2,9 +2,9 @@ using Dice
 using Dice: num_flips, num_nodes, to_dice_ir
 
 code = @dice begin
-    # all tails
-    probs = [1/i for i=2:20]
-    mapreduce(p -> !flip(p), &, probs)    
+    x = flip(0.5)
+    y = if x x else false
+    if y y else false
 end
 
 # BDD analysis

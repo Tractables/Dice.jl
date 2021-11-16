@@ -56,7 +56,8 @@ function compile(code::DiceCode)
 end
 
 function to_dice_ir(code::DiceCode)
-    code.interpret(IrMgr())
+    interpretation = code.interpret(IrMgr())
+    treeify(interpretation.bit)
 end
 
 function rundice(code::DiceCode)

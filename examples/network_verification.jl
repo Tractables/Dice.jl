@@ -13,7 +13,7 @@ code = @dice begin
     end
 
     net = true
-    for i=1:1
+    for i=1:3
         net = diamond(net)
     end
 
