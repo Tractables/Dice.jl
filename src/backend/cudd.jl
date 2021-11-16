@@ -185,16 +185,6 @@ end
 # CUDD Utilities
 ##################################
 
-# workaround until https://github.com/sisl/CUDD.jl/issues/16 is fixed
-Cudd_Not(node) =
-    convert(Ptr{Nothing}, xor(convert(Int,node), 1))
-
-Cudd_IsComplement(node) =
-    isone(convert(Int,node) & 1)
-
-Cudd_Regular(node) = 
-    convert(Ptr{Nothing}, convert(Int,node) & ~1)
-
 rref(x) = begin 
     ref(x)
     x

@@ -7,3 +7,6 @@ version = "0.1.0"
 CUDD = "345a2cc7-28d8-58b2-abdf-cff77ea7d7f1"
 IfElse = "615f187c-cbe4-4ef1-ba3b-2fcf58d6d173"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
+
+[compat]
+CUDD = "0.2.2"
