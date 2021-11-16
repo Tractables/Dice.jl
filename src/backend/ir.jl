@@ -1,6 +1,6 @@
 export to_dice_ir_string
 
-using DAGs: DAGs, DAG, num_parents, Inner, Leaf, foldup_aggregate
+using DirectedAcyclicGraphs: DirectedAcyclicGraphs, DAG, num_parents, Inner, Leaf, foldup_aggregate
 
 struct IrMgr <: DiceManager end
 
@@ -8,8 +8,8 @@ abstract type IrNode <: DAG end
 abstract type IrLeafNode <: IrNode end
 abstract type IrInnerNode <: IrNode end
 
-DAGs.NodeType(::Type{<:IrInnerNode}) = Inner()
-DAGs.NodeType(::Type{<:IrLeafNode}) = Leaf()
+DirectedAcyclicGraphs.NodeType(::Type{<:IrInnerNode}) = Inner()
+DirectedAcyclicGraphs.NodeType(::Type{<:IrLeafNode}) = Leaf()
 
 # Leaf IR nodes
 mutable struct IrFlip <: IrLeafNode
@@ -39,7 +39,7 @@ end
 negate(::IrMgr, x) =
     IrNegate(x)
 
-DAGs.children(n::IrNegate) = [n.x]
+DirectedAcyclicGraphs.children(n::IrNegate) = [n.x]
 
 mutable struct IrConjoin <: IrInnerNode
     x::IrNode
@@ -49,7 +49,7 @@ end
 conjoin(::IrMgr, x, y) =
     IrConjoin(x, y)
     
-DAGs.children(n::IrConjoin) = [n.x, n.y]
+DirectedAcyclicGraphs.children(n::IrConjoin) = [n.x, n.y]
 mutable struct IrDisjoin <: IrInnerNode
     x::IrNode
     y::IrNode
@@ -58,7 +58,7 @@ end
 disjoin(::IrMgr, x, y) =
     IrDisjoin(x, y)
     
-DAGs.children(n::IrDisjoin) = [n.x, n.y]
+DirectedAcyclicGraphs.children(n::IrDisjoin) = [n.x, n.y]
 
 mutable struct IrIte <: IrInnerNode
     cond::IrNode
@@ -69,7 +69,7 @@ end
 ite(::IrMgr, x, y, z) =
     IrIte(x, y, z)
 
-DAGs.children(n::IrIte) = [n.cond, n.then, n.elze]
+DirectedAcyclicGraphs.children(n::IrIte) = [n.cond, n.then, n.elze]
     
 mutable struct IrLet <: IrInnerNode
     id::IrId
@@ -77,7 +77,7 @@ mutable struct IrLet <: IrInnerNode
     y::IrNode
 end
 
-DAGs.children(n::IrLet) = [n.id, n.x, n.y]
+DirectedAcyclicGraphs.children(n::IrLet) = [n.id, n.x, n.y]
 
 rundice(::IrMgr, code::IrNode) =
     rundice(code) 
