@@ -8,18 +8,25 @@ See [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice)
 
 ### Installation
 
-Until `DirectedAcyclicGraphs.jl` is registered in the julia repository (should happen within few days), you would need to install it manually by url, for example inside `Dice.jl` folder first run:
-
+Start julia in project mode for current folder, i.e.:
 ```bash
 julia --project
 ```
 
-Then can add the `DirectedAcyclicGraphs`, or put it in developement mode as follows:
+Then can install Dice and update dependencies by doing (also can do `precompile` or `build`)
 
 ```julia
-] add https://github.com/Juice-jl/DirectedAcyclicGraphs.jl
+] up
 ```
 
+Now can do `] status` to see what versions of dependencies we have (or for more details can look into the `Manifest.toml` file).
+
 ```julia
-] dev https://github.com/Juice-jl/DirectedAcyclicGraphs.jl
+(Dice) pkg> status
+     Project Dice v0.1.0
+      Status `~/Dice.jl/Project.toml`
+  [345a2cc7] CUDD v0.2.2
+  [1e6dae5e] DirectedAcyclicGraphs v0.1.0
+  [615f187c] IfElse v0.1.1
+  [1914dd2f] MacroTools v0.5.9
 ```
