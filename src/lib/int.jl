@@ -1,7 +1,8 @@
      
 # Integers
+export ProbInt, subtract, greater_than, add_bits, max_bits
 
-struct ProbInt <: Dist
+struct ProbInt <: Dist{Vector{DistBool}}
     mgr
     # first index is least significant bit
     # most significant bits that are always false are trimmed
@@ -9,17 +10,16 @@ struct ProbInt <: Dist
 end
 
 function ProbInt(mgr, i::Int)
-    get!(mgr.int_cache, i) do
-        @assert i >= 0
-        num_b = num_bits(i)
-        bits = Vector{DistBool}(undef, num_b)
-        for bit_idx = 1:num_b
-            b::Bool = i & 1
-            @inbounds bits[bit_idx] = DistBool(mgr, b) 
-            i = i >> 1
-        end
-        ProbInt(mgr, bits)
+    @assert i >= 0
+    # num_b = num_bits(i)
+    num_b = ndigits(i, base = 2)
+    bits = Vector{DistBool}(undef, num_b)
+    for bit_idx = 1:num_b
+        b::Bool = i & 1
+        @inbounds bits[bit_idx] = DistBool(mgr, b) 
+        i = i >> 1
     end
+    ProbInt(mgr, bits)
 end
 
 function ProbInt(bits::Vector)
@@ -29,31 +29,35 @@ end
 max_bits(i::ProbInt) =
     length(i.bits)
 
-@inline flip(mgr, ::Type{ProbInt}, bits::Int) =
-    ProbInt(mgr, [flip(mgr) for i = 1:bits])
+# @inline flip(mgr, ::Type{ProbInt}, bits::Int) =
+#     ProbInt(mgr, [flip(mgr) for i = 1:bits])
 
 function prob_equals(x::ProbInt, y::ProbInt)
-    cache = x.mgr.equals_cache
-    get!(cache, (x.bits, y.bits)) do
-        shared = min(max_bits(x), max_bits(y))
-        eq = true_constant(x.mgr)
-        for i=max_bits(x):-1:shared+1
-            eq &= !(x.bits[i])
-            !issat(eq) && return eq
-        end
-        for i=max_bits(y):-1:shared+1
-            eq &= !(y.bits[i])
-            !issat(eq) && return eq
-        end
-        for i=shared:-1:1
-            eq &= prob_equals(x.bits[i], y.bits[i])
-            !issat(eq) && return eq
-        end
-        eq
+    shared = min(max_bits(x), max_bits(y))
+    eq = true
+    for i=max_bits(x):-1:shared+1
+        eq &= !(x.bits[i])
+        !issat(eq) && return eq
     end
+    for i=max_bits(y):-1:shared+1
+        eq &= !(y.bits[i])
+        !issat(eq) && return eq
+    end
+    for i=shared:-1:1
+        # println(i)
+        eq &= prob_equals(x.bits[i], y.bits[i])
+        !issat(eq) && return eq
+    end
+    eq
 end
 
-function ite(cond::DistBool, then::ProbInt, elze::ProbInt)
+prob_equals(x::ProbInt, y::Int) = 
+    prob_equals(x, ProbInt(x.mgr, y))
+
+prob_equals(x::Int, y::ProbInt) =
+    prob_equals(y, x)
+
+function ifelse(cond::DistBool, then::ProbInt, elze::ProbInt)
     if isvalid(cond)
         then
     elseif !issat(cond)
@@ -69,7 +73,7 @@ function ite(cond::DistBool, then::ProbInt, elze::ProbInt)
             elseif i > mbelze
                  cond & then.bits[i]
             else
-                ite(cond, then.bits[i], elze.bits[i])
+                ifelse(cond, then.bits[i], elze.bits[i])
             end
             if issat(z[i])
                 last_sat_bit = i
@@ -79,5 +83,124 @@ function ite(cond::DistBool, then::ProbInt, elze::ProbInt)
     end
 end
 
+#TODO: Look for optimizations here
+function greater_than(x::ProbInt, y::ProbInt)
+    mx, my = max_bits(x), max_bits(y)
+    shared = min(mx, my)
+    eq = false
+    prop = true
+    for i=mx:-1:my+1
+        prop &= !x.bits[i]
+    end 
+    eq |= !prop
+    for i = my:-1:mx+1
+        prop &= !y.bits[i]
+    end
+    for i=shared:-1:1    
+        eq |= ifelse(prop, ifelse(x.bits[i] & !y.bits[i], true, false), false)
+        prop &= prob_equals(x.bits[i], y.bits[i])
+    end
+    eq
+end
+
+# No canonical bitwidth
+function Base.:+(p1::ProbInt, p2::ProbInt)
+    last_sat_bit = 0
+    mb1, mb2 = max_bits(p1), max_bits(p2)
+    if (mb1 > mb2)
+        t1, t2 = p1, p2
+        mab, mib = mb1, mb2
+    else   
+        t1, t2 = p2, p1
+        mab, mib = mb2, mb1
+    end
+
+    z = Vector{DistBool}(undef, mab)
+    carry = false
+    for i = 1:mib
+        z[i] = (!t1.bits[i] & t2.bits[i]) | (t1.bits[i] & !t2.bits[i])
+        z[i] = (!z[i] & carry) | (z[i] & !carry) #combine in one line or maybe add XOR too
+        carry = (t1.bits[i] & t2.bits[i]) | (carry & (t1.bits[i] | t2.bits[i]))
+        # println(typeof(z[i]))
+        # if issat(z[i])
+        #     last_sat_bit = i
+        # end
+    end
+    for i = mib+1:mab
+        z[i] = (!t1.bits[i] & carry) | (t1.bits[i] & !carry)
+        carry = t1.bits[i] & carry
+        # if issat(z[i])
+        #     last_sat_bit = i
+        # end
+    end
+    # println(typeof(carry))
+    ProbInt(t1.mgr, z), carry
+end
+
+Base.:+(p1::ProbInt, p2::Int) =
+    p1 + ProbInt(p1.mgr, p2)
+
+Base.:+(p1::Int, p2::ProbInt) = 
+    ProbInt(p2.mgr, p1) + p2
+
+function subtract(p1::ProbInt, p2::ProbInt)
+    mb = max_bits(p2)
+    z = Vector{DistBool}(undef, mb)
+    for i = 1:mb
+        z[i] = !p2.bits[i]
+    end
+    sub = ProbInt(p1.mgr, z) + 1
+    p1 + sub[1]
+end
+
+function Base.:-(t1::ProbInt, t2::ProbInt)
+    last_sat_bit = 0
+    mb1, mb2 = max_bits(t1), max_bits(t2)
+    # if (mb1 > mb2)
+    #     t1, t2 = p1, p2
+    #     mab, mib = mb1, mb2
+    # else   
+    #     t1, t2 = p2, p1
+    #     mab, mib = mb2, mb1
+    # end
+    mab = max(mb1, mb2)
+    mib = min(mb1, mb2)
+
+    z = Vector{DistBool}(undef, mab)
+    borrow = false
+    for i = 1:mib
+        z[i] = ifelse(!borrow, (!t1.bits[i] & t2.bits[i]) | (t1.bits[i] & !t2.bits[i]), prob_equals(t1.bits[i], t2.bits[i]))
+        borrow = ifelse(!borrow, !t1.bits[i] & t2.bits[i], !t1.bits[i] | t2.bits[i])
+    end
+    for i = mib+1:mb1
+        z[i] = (!t1.bits[i] & borrow) | (t1.bits[i] & !borrow)
+        borrow = !t1.bits[i] & borrow
+    end
+
+    for i = mib+1:mb2
+        z[i] = (!t2.bits[i] & borrow) | (t2.bits[i] & !borrow)
+        borrow = t2.bits[i] | borrow 
+    end
+
+    for i = 1:mab
+        z[i] = ifelse(borrow, !z[i], z[i])
+    end
+    
+    ans = ifelse(borrow, (ProbInt(z) + 1)[1], ProbInt(z))
+    ans, borrow
+end
+
 bools(i::ProbInt) = i.bits
+
+#No safety checks yet
+function add_bits(p::ProbInt, w::Int)
+    mb = max_bits(p)
+    ext = Vector(undef, w)
+    for i= w:-1:1
+        ext[i] = DistBool(p.mgr, false)
+    end
+    ProbInt(p.mgr, vcat(p.bits, ext))
+end
+    
+
 
