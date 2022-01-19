@@ -1,6 +1,6 @@
      
 # Integers
-export ProbInt, subtract, greater_than, add_bits, max_bits
+export ProbInt, add_bits, max_bits
 
 struct ProbInt <: Dist{Vector{DistBool}}
     mgr
@@ -84,7 +84,7 @@ function ifelse(cond::DistBool, then::ProbInt, elze::ProbInt)
 end
 
 #TODO: Look for optimizations here
-function greater_than(x::ProbInt, y::ProbInt)
+function Base.:>(x::ProbInt, y::ProbInt)
     mx, my = max_bits(x), max_bits(y)
     shared = min(mx, my)
     eq = false
@@ -121,7 +121,6 @@ function Base.:+(p1::ProbInt, p2::ProbInt)
         z[i] = (!t1.bits[i] & t2.bits[i]) | (t1.bits[i] & !t2.bits[i])
         z[i] = (!z[i] & carry) | (z[i] & !carry) #combine in one line or maybe add XOR too
         carry = (t1.bits[i] & t2.bits[i]) | (carry & (t1.bits[i] | t2.bits[i]))
-        # println(typeof(z[i]))
         # if issat(z[i])
         #     last_sat_bit = i
         # end
@@ -133,7 +132,6 @@ function Base.:+(p1::ProbInt, p2::ProbInt)
         #     last_sat_bit = i
         # end
     end
-    # println(typeof(carry))
     ProbInt(t1.mgr, z), carry
 end
 
@@ -143,26 +141,9 @@ Base.:+(p1::ProbInt, p2::Int) =
 Base.:+(p1::Int, p2::ProbInt) = 
     ProbInt(p2.mgr, p1) + p2
 
-function subtract(p1::ProbInt, p2::ProbInt)
-    mb = max_bits(p2)
-    z = Vector{DistBool}(undef, mb)
-    for i = 1:mb
-        z[i] = !p2.bits[i]
-    end
-    sub = ProbInt(p1.mgr, z) + 1
-    p1 + sub[1]
-end
-
 function Base.:-(t1::ProbInt, t2::ProbInt)
     last_sat_bit = 0
     mb1, mb2 = max_bits(t1), max_bits(t2)
-    # if (mb1 > mb2)
-    #     t1, t2 = p1, p2
-    #     mab, mib = mb1, mb2
-    # else   
-    #     t1, t2 = p2, p1
-    #     mab, mib = mb2, mb1
-    # end
     mab = max(mb1, mb2)
     mib = min(mb1, mb2)
 
@@ -189,6 +170,80 @@ function Base.:-(t1::ProbInt, t2::ProbInt)
     ans = ifelse(borrow, (ProbInt(z) + 1)[1], ProbInt(z))
     ans, borrow
 end
+
+function Base.:*(p1::ProbInt, p2::ProbInt)
+    # p1 = ProbInt(p11.mgr, 3)
+    # p2 = ProbInt(p12.mgr, 3)
+    mbp1 = max_bits(p1)
+    mbp2 = max_bits(p2)
+    if (mbp1 > mbp2) 
+        t1, t2 = p1, p2
+        mb1, mb2 = mbp1, mbp2
+    else
+        t1, t2 = p2, p1
+        mb1, mb2 = mbp2, mbp1
+    end
+
+    P = ProbInt(p1.mgr, 0)
+    P = add_bits(P, mb1 - 1)
+    shifted_bits = t1.bits
+    carry = false
+    for i=1:mb2
+        if (i != 1)
+            carry |= ifelse(t2.bits[i], shifted_bits[mb1], false)
+            println(mb1)
+            println(shifted_bits)
+            shifted_bits = vcat(DistBool(p1.mgr, false), shifted_bits[1:mb1 - 1])
+        end
+        added = ifelse(t2.bits[i], ProbInt(p1.mgr, shifted_bits), ProbInt(p1.mgr, 0))
+        res = (P + added)
+        P = res[1]
+        carry |= res[2]
+    end
+    P, carry
+end
+
+
+# function Base.:*(p1::ProbInt, p2::ProbInt)
+#     p1 = ProbInt(p1.mgr, 2)
+#     p2 = ProbInt(p1.mgr, 2)
+#     mb1 = max_bits(p1)
+#     mb2 = max_bits(p2)
+#     A_bits = vcat(bools(p1), fill(DistBool(p1.mgr, false), mb2+1))
+#     println(A_bits)
+#     B_msb = Vector(undef, mb1)
+#     for i=1:mb1
+#         B_msb[i] = !p1.bits[1]
+#     end
+#     B_complement = ProbInt(p1.mgr, B_msb)
+#     B = B_complement + 1
+#     B_bits = vcat(B[1].bits, fill(DistBool(p1.mgr, false), mb2+1))
+
+#     A = ProbInt(p1.mgr, A_bits)
+#     S = ProbInt(p1.mgr, B_bits)
+
+#     P_bits = vcat(fill(DistBool(p1.mgr, false), mb1), p2.bits, fill(DistBool(p1.mgr, false), 1))
+
+
+#     false_constant = DistBool(p1.mgr, false)
+#     true_constant = DistBool(p1.mgr, true)
+#     zero_constant = ProbInt(p1.mgr, 0)
+#     P = ProbInt(p1.mgr, P_bits)
+
+    
+#     for i = 1:mb2
+#         next_P = ifelse(prob_equals(P.bits[1], P.bits[2]), zero_constant, 
+#                                                     ifelse(prob_equals(P.bits[1], false_constant) & prob_equals(P.bits[2], true_constant), S, 
+#                                                                                                                                         A))
+#         P = (P + next_P)[1]
+#         shift_P = circshift(P.bits, -1)
+#         P = ProbInt(p1.mgr, shift_P)
+#         P.bits[mb1 + mb2 + 1] = P.bits[mb1 + mb2]
+#     end
+
+#     ProbInt(p1.mgr, P.bits[1:mb1+mb2])
+# end
+    
 
 bools(i::ProbInt) = i.bits
 

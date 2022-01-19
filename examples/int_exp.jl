@@ -11,9 +11,10 @@ code = @dice begin
         return add_bits(ProbInt(x), w - b)
     end
     a = uniform(2, 2)
-    b = uniform(2, 2)
-    y = a - b
-    prob_equals(y[1], 2) & y[2]
+    b = uniform(3, 3)
+    # println(leftShift(a, 3))
+    y = (a*b)
+    prob_equals(y[1], 3) & !y[2] 
 end
 
 # BDD analysis
