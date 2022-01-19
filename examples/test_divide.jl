@@ -1,4 +1,3 @@
-using Revise
 using Dice
 using Dice: num_flips, num_nodes, to_dice_ir
 
