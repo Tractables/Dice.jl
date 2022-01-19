@@ -29,4 +29,5 @@ using Dice: CuddMgr, DistBool
     @test Dice.isvalid(prob_equals(x & x, x))
     @test Dice.isvalid(prob_equals(x | x, x))
 
+    
 end
