@@ -22,11 +22,6 @@ function ProbInt(mgr, i::Int)
     ProbInt(mgr, bits)
 end
 
-#To be removed later
-function ProbInt(b::DistBool, i::Int)
-    ProbInt(b.mgr, i)
-end
-
 function ProbInt(bits::Vector)
     ProbInt(bits[1].mgr, bits)
 end

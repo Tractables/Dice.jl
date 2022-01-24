@@ -14,4 +14,8 @@ using Suppressor: @suppress_out
         "$(@__DIR__)/../examples/test_mod.jl"
     )
 
+    @test_nowarn @suppress_out include(
+        "$(@__DIR__)/../examples/test_discrete.jl"
+    )
+
 end
