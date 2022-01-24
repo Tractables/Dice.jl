@@ -2,7 +2,7 @@
 # Integers
 export ProbInt, add_bits, max_bits
 
-struct ProbInt <: Dist{Vector{DistBool}}
+struct ProbInt <: Dist{Int}
     mgr
     # first index is least significant bit
     # most significant bits that are always false are trimmed
@@ -22,15 +22,33 @@ function ProbInt(mgr, i::Int)
     ProbInt(mgr, bits)
 end
 
+#To be removed later
+function ProbInt(b::DistBool, i::Int)
+    ProbInt(b.mgr, i)
+end
+
 function ProbInt(bits::Vector)
     ProbInt(bits[1].mgr, bits)
+end
+
+function infer(d::ProbInt)
+    # ans1 = DistBool(d.mgr, true)
+    # ans2 = DistBool(d.mgr, true)
+    mb = max_bits(d)
+    ans = Vector(undef, 2^mb)
+    for i=0:2^mb - 1
+        println(i)
+        a = infer(prob_equals(d, i))
+        ans[i + 1] = a
+    end
+    ans
 end
 
 max_bits(i::ProbInt) =
     length(i.bits)
 
-# @inline flip(mgr, ::Type{ProbInt}, bits::Int) =
-#     ProbInt(mgr, [flip(mgr) for i = 1:bits])
+@inline flip(mgr, ::Type{ProbInt}, bits::Int) =
+    ProbInt(mgr, [flip(mgr) for i = 1:bits])
 
 function prob_equals(x::ProbInt, y::ProbInt)
     shared = min(max_bits(x), max_bits(y))

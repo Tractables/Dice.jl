@@ -11,11 +11,12 @@ code = @dice begin
         return add_bits(ProbInt(x), w - b)
     end
     sum = uniform(2, 4)
-    for i = 1:3
+    for i = 1:4
         sum = (sum + uniform(2, 4))[1]
     end
     println(max_bits(sum))
-    prob_equals(sum, 6)
+    sum
+    # prob_equals(sum, 3)
 end
 
 # BDD analysis

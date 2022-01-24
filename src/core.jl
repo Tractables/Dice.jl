@@ -81,5 +81,3 @@ rundice(d::DistBool) =
 infer(d::DistBool) =
     infer(d.mgr, d.bit)
 
-#TODO: infer for probint
-# infer(d::ProbInt) = 

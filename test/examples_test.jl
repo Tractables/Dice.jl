@@ -14,6 +14,4 @@ using Suppressor: @suppress_out
         "$(@__DIR__)/../examples/test_mod.jl"
     )
 
-    
-
 end
