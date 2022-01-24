@@ -59,7 +59,13 @@ function infer(mgr::CuddMgr, x)
                 prob = mgr.probs[v]
                 a = log(prob) + rec(Cudd_T(y), c)
                 b = log(1.0-prob) + rec(Cudd_E(y), c)
-                max(a,b) + log1p(exp(-abs(a-b)))
+                if (!isfinite(a))
+                    b
+                elseif (!isfinite(b))
+                    a
+                else
+                    max(a,b) + log1p(exp(-abs(a-b)))
+                end
             end
         end
     

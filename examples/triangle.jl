@@ -1,7 +1,8 @@
 using Dice
 using Dice: num_flips, num_nodes, to_dice_ir
 
-t = @dice begin
+#TODO: the code below is not correct
+code = @dice begin
     # triangle distribution
 
     function triangle(b::Int)
@@ -24,5 +25,10 @@ t = @dice begin
         t = triangle(b)
         println("$b-bit triangle uses $(num_flips(t)) flips and $(num_nodes(t)) BDD nodes")
     end
+    triangle(2)
 
 end
+bdd = compile(code)
+num_flips(bdd)
+num_nodes(bdd)
+infer(code, :bdd)

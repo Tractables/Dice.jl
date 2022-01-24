@@ -80,3 +80,4 @@ rundice(d::DistBool) =
 
 infer(d::DistBool) =
     infer(d.mgr, d.bit)
+

@@ -6,4 +6,12 @@ using Suppressor: @suppress_out
     @test_nowarn @suppress_out include(
         "$(@__DIR__)/../examples/mapreduce.jl")
 
+    @test_nowarn @suppress_out include(
+        "$(@__DIR__)/../examples/test_divide.jl"
+    )
+
+    @test_nowarn @suppress_out include(
+        "$(@__DIR__)/../examples/test_mod.jl"
+    )
+
 end
