@@ -12,10 +12,10 @@ code = @dice begin
     end
     sum = uniform(2, 4)
     for i = 1:4
-        sum = (sum + uniform(2, 4))[1]
+        sum = (sum + uniform(2, 4))
     end
-    println(max_bits(sum))
-    sum
+    println(max_bits(sum[1]))
+    sum[1]
     # prob_equals(sum, 3)
 end
 

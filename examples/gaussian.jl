@@ -1,6 +1,7 @@
 using Revise
 using Dice
 using Dice: num_flips, num_nodes, to_dice_ir
+using Distributions
 
 code = @dice begin
     # triangle distribution
@@ -11,7 +12,7 @@ code = @dice begin
         x = Vector(undef, b)
         y = Vector(undef, b)
         for i = b:-1:1
-            x[i] = if s flip(1/2) else flip((3n - 2)/ (4n-4)) end
+            x[i] = Dice.ifelse(s, flip(1/2), flip((3n - 2)/ (4n-4)))
             y[i] = flip((n-2)/(3n-2))
             s = s || (x[i] && !y[i])
             n = n/2
@@ -27,21 +28,91 @@ code = @dice begin
         return ProbInt(x)
     end
 
-    function discrete(p::Vector{Float})
+    function discrete(p::Vector{Float64})
         mb = length(p)
-        ans = ProbInt
+        v = Vector(undef, mb)
+        sum = 1
         for i=1:mb
-            
+            v[i] = p[i]/sum
+            sum = sum - p[i]
+        end
+
+        # println(v)
+        ans = ProbInt(flip(0), mb-1)
+        for i=mb-1:-1:1
+            ans = if flip(v[i]) ProbInt(flip(0), i-1) else ans end
+        end
+        return ans
     end
-    uniform(2)
-    # flip(0)
+
+    function anyline(bits::Int, p::Float64)
+        ans = Dice.ifelse(flip(p*2^bits), add_bits(uniform(bits), 3), add_bits(triangle(bits), 3))
+        return ans
+    end
+
+    function gaussian(bits::Int, pieces::Int)
+        d = Normal()
+        start = quantile.(Normal(), 0.001)
+        interval_sz = 2*abs(start)/pieces
+    
+        areas = Vector(undef, pieces)
+        total_area = 0
+    
+        end_pts = Vector(undef, pieces)
+        for i=1:pieces
+            p1 = start + (i-1)*interval_sz
+            p2 = p1 + interval_sz/2^bits
+            p3 = start + (i)*interval_sz
+            p4 = p3 - interval_sz/2^bits
+    
+            pts = [cdf.(d, p2) - cdf.(d, p1), cdf.(d, p3) - cdf.(d, p4)]
+            end_pts[i] = pts
+    
+            areas[i] = (pts[1] + pts[2])*2^(bits - 1)
+            total_area += areas[i]
+        end
+
+        # println(total_area)
+    
+        rel_prob = areas/total_area
+    
+        b = discrete(rel_prob)
+        a = end_pts[pieces][1]/areas[pieces]
+        l = a > 1/2^bits
+        ans =  (if l
+                    2^bits - 1 + (pieces - 1)*2^bits - add_bits(anyline(bits, 2/2^bits - a), 3)
+                else
+                    (pieces - 1)*2^bits + add_bits(anyline(bits, a), 3)
+                end)[1]
+
+        for i=pieces-1:-1:1
+            a = end_pts[i][1]/areas[i]
+            l = a > 1/2^bits
+            ans = if prob_equals(b, i-1) 
+                    (if l
+                        (2^bits - 1 + (i - 1)*2^bits - anyline(bits, 2/2^bits - a))
+                    else
+                        (i - 1)*2^bits + 
+                            anyline(bits, a)
+                    end)[1]
+                else
+                    ans
+                end  
+        end
+        return ans
+    end
+    # println(max_bits(add_bits(anyline(2, 0.1), 3)))
+    println(max_bits(gaussian(2, 4)))
+    gaussian(8, 1)
 end
 
-@macroexpand @dice begin
-    # triangle distribution
-    flip(0)
 
-end
+
+bdd = compile(code)
+num_flips(bdd)
+num_nodes(bdd)
+infer(code, :bdd)
+
 bdd = compile(code)
 num_flips(bdd)
 num_nodes(bdd)

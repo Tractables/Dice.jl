@@ -18,26 +18,7 @@ code = @dice begin
             ans = if flip(v[i]) ProbInt(i-1) else ans end
         end
         return ans
-    end
-
-    # function discrete2(p::Vector{Float64})
-    #     mb = length(p)
-    #     sum = 1
-    #     ans = ProbInt(0, flip(0.5))
-    #     for i = 0:mb-1
-    #         ans = if prob_equals(ans, i)
-    #                     if flip(p[i+1]/sum)
-    #                         ProbInt(i, flip(0.5))
-    #                     else
-    #                         ProbInt(i+1, flip(0.5))
-    #                     end
-    #                 else 
-    #                     ProbInt(i, flip(0.5))
-    #                 end
-    #         sum = sum - p[i+1]
-    #     end
-    #     return ans
-    # end        
+    end      
     discrete(a)
 end
 

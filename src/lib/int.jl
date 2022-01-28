@@ -9,6 +9,8 @@ struct ProbInt <: Dist{Int}
     bits::Vector{DistBool}
 end
 
+ProbInt(d::DistBool, i::Int) = ProbInt(d.mgr, i)
+
 function ProbInt(mgr, i::Int)
     @assert i >= 0
     # num_b = num_bits(i)
@@ -27,16 +29,17 @@ function ProbInt(bits::Vector)
 end
 
 function infer(d::ProbInt)
-    # ans1 = DistBool(d.mgr, true)
-    # ans2 = DistBool(d.mgr, true)
     mb = max_bits(d)
     ans = Vector(undef, 2^mb)
+    non_zero_index = 0
     for i=0:2^mb - 1
-        println(i)
         a = infer(prob_equals(d, i))
+        if !(a ≈ 0)
+            non_zero_index = i+1
+        end
         ans[i + 1] = a
     end
-    ans
+    ans[1:non_zero_index]
 end
 
 max_bits(i::ProbInt) =
@@ -154,6 +157,21 @@ Base.:+(p1::ProbInt, p2::Int) =
 Base.:+(p1::Int, p2::ProbInt) = 
     ProbInt(p2.mgr, p1) + p2
 
+function Base.:+(p1::Tuple{ProbInt, DistBool}, p2::ProbInt)
+    a = p1[1] + p2
+    a[1], a[2] | p1[2]
+end
+
+function Base.:+(p1::ProbInt, p2::Tuple{ProbInt, DistBool})
+    a = p1 + p2[1]
+    a[1], a[2] | p2[2]
+end
+
+function Base.:+(p2::Tuple{ProbInt, DistBool}, p1::Tuple{ProbInt, DistBool})
+    a = p1[1] + p2[1]
+    a[1], a[2] | p1[2] | p2[2]
+end
+
 function Base.:-(t1::ProbInt, t2::ProbInt)
     last_sat_bit = 0
     mb1, mb2 = max_bits(t1), max_bits(t2)
@@ -183,6 +201,12 @@ function Base.:-(t1::ProbInt, t2::ProbInt)
     ans = ifelse(borrow, (ProbInt(z) + 1)[1], ProbInt(z))
     ans, borrow
 end
+
+Base.:-(p1::ProbInt, p2::Int) =
+    p1 - ProbInt(p1.mgr, p2)
+
+Base.:-(p1::Int, p2::ProbInt) = 
+    ProbInt(p2.mgr, p1) - p2
 
 function Base.:*(p1::ProbInt, p2::ProbInt)
     mbp1 = max_bits(p1)
@@ -214,12 +238,39 @@ function Base.:*(p1::ProbInt, p2::ProbInt)
     P, carry
 end 
 
+Base.:*(p1::ProbInt, p2::Int) =
+    p1 * ProbInt(p1.mgr, p2)
+
+Base.:*(p1::Int, p2::ProbInt) = 
+    ProbInt(p2.mgr, p1) * p2
+
+function Base.:*(p1::Tuple{ProbInt, DistBool}, p2::ProbInt)
+    a = p1[1] * p2
+    a[1], a[2] | p1[2]
+end
+
+function Base.:*(p1::ProbInt, p2::Tuple{ProbInt, DistBool})
+    a = p1 * p2[1]
+    a[1], a[2] | p2[2]
+end
+
+function Base.:*(p2::Tuple{ProbInt, DistBool}, p1::Tuple{ProbInt, DistBool})
+    a = p1[1] * p2[1]
+    a[1], a[2] | p1[2] | p2[2]
+end
+
 function Base.:/(p1::ProbInt, p2::ProbInt) #p1/p2
     mb1 = max_bits(p1)
     mb2 = max_bits(p2)
     p1_bits = Vector(undef, 0)
-    # p1.bits[mb1:mb1]
     ans = Vector(undef, 0)
+
+    is_zero = DistBool(p1.mgr, true)
+    for i=1:mb2
+        is_zero &= !p2.bits[i]
+    end
+
+
     for i = mb1:-1:1
         p1_proxy = ProbInt(p1.mgr, p1_bits)
         p1_bits = vcat(p1.bits[i:i], ifelse(p2 > p1_proxy, p1_proxy, (p1_proxy - p2)[1]).bits)
@@ -227,25 +278,27 @@ function Base.:/(p1::ProbInt, p2::ProbInt) #p1/p2
     end
     p1_proxy = ProbInt(p1.mgr, p1_bits)
     ans = vcat(ifelse(p2 > p1_proxy, DistBool(p1.mgr, false), DistBool(p1.mgr, true)), ans)
-    ProbInt(p1.mgr, ans), DistBool(p1.mgr, false)
-    # end
+    ifelse(is_zero, p2, ProbInt(p1.mgr, ans)), is_zero
 end 
 
 function Base.:%(p1::ProbInt, p2::ProbInt) #p1%p2
     mb1 = max_bits(p1)
     mb2 = max_bits(p2)
     p1_bits = Vector(undef, 0)
-    # p1.bits[mb1:mb1]
-    # ans = Vector(undef, 0)
+
+    is_zero = DistBool(p1.mgr, true)
+    for i=1:mb2
+        is_zero &= !p2.bits[i]
+    end
+
     for i = mb1:-1:1
         p1_proxy = ProbInt(p1.mgr, p1_bits)
         p1_bits = vcat(p1.bits[i], ifelse(p2 > p1_proxy, p1_proxy, (p1_proxy - p2)[1]).bits)
-        # ans = vcat(ifelse(p2 > p1_proxy, DistBool(p1.mgr, false), DistBool(p1.mgr, true)), ans)
     end
     p1_proxy = ProbInt(p1.mgr, p1_bits)
     p1_bits = ifelse(p2 > p1_proxy, p1_proxy, (p1_proxy - p2)[1]).bits
-    # ans = vcat(ifelse(p2 > p1_proxy, DistBool(p1.mgr, false), DistBool(p1.mgr, true)), ans)
-    ProbInt(p1.mgr, p1_bits), DistBool(p1.mgr, false)
+    ifelse(is_zero, p2, ProbInt(p1.mgr, p1_bits)), is_zero
+    # ProbInt(p1.mgr, p1_bits), DistBool(p1.mgr, false)
     # end
 end 
 
