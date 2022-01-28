@@ -14,8 +14,6 @@ function to_dice(code)
 
     # manual hygiene
     mgr = gensym(:mgr)
-    flip = gensym(:flip)
-    probint = gensym(:probint)
     ite = gensym(:ite)
 
     transformed_code = postwalk(esc(code)) do x
@@ -26,8 +24,9 @@ function to_dice(code)
             @assert length(x.args) == 3 "@dice macro only supports purely functional if-then-else"
             return :($ite($(x.args...)))
         end
-        @capture(x, flip(P_)) && return :($flip($P)) 
-        @capture(x, ProbInt(P_)) && return :($probint($P)) 
+        @capture(x, flip(P_)) && return :(DistBool($mgr, $P)) 
+        @capture(x, ProbInt(I_)) && return :(ProbInt($mgr, $I)) 
+        @capture(x, dicecontext()) && return :($mgr) 
         @capture(x, A_ || B_) && return :($A | $B) 
         @capture(x, A_ && B_) && return :($A & $B) 
         return x
@@ -37,12 +36,6 @@ function to_dice(code)
         
         DiceCode( $(esc(mgr)) -> begin
         
-            $(esc(flip))(prob::Number) = 
-                DistBool($(esc(mgr)), prob)
-
-            $(esc(probint))(args...) = 
-                ProbInt($(esc(mgr)), args...)
-            
             $(esc(ite))(args...) =
                 ifelse(args...)
             
