@@ -9,8 +9,6 @@ struct ProbInt <: Dist{Int}
     bits::Vector{DistBool}
 end
 
-ProbInt(d::DistBool, i::Int) = ProbInt(d.mgr, i)
-
 function ProbInt(mgr, i::Int)
     @assert i >= 0
     # num_b = num_bits(i)
@@ -45,8 +43,8 @@ end
 max_bits(i::ProbInt) =
     length(i.bits)
 
-@inline flip(mgr, ::Type{ProbInt}, bits::Int) =
-    ProbInt(mgr, [flip(mgr) for i = 1:bits])
+# @inline flip(mgr, ::Type{ProbInt}, bits::Int) =
+#     ProbInt(mgr, [flip(mgr) for i = 1:bits])
 
 function prob_equals(x::ProbInt, y::ProbInt)
     shared = min(max_bits(x), max_bits(y))
@@ -118,6 +116,10 @@ function Base.:>(x::ProbInt, y::ProbInt)
     end
     eq
 end
+
+Base.:>(x::ProbInt, y::Int) = x > ProbInt(x.mgr, y)
+
+Base.:>(x::Int, y::ProbInt) = ProbInt(y.mgr, x) > y
 
 # No canonical bitwidth
 function Base.:+(p1::ProbInt, p2::ProbInt)

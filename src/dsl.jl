@@ -22,7 +22,16 @@ function to_dice(code)
         # for example when control flow has `return`` inside
         if x isa Expr && (x.head == :if || x.head == :elseif)
             @assert length(x.args) == 3 "@dice macro only supports purely functional if-then-else"
-            return :($ite($(x.args...)))
+            # return :($ite($(x.args...)))
+            return :(if typeof($(x.args[1])) == DistBool
+                        Dice.ifelse($(x.args...))
+                    else
+                        (if $(x.args[1])
+                            $(x.args[2])
+                        else
+                            $(x.args[3])
+                        end)
+                    end)
         end
         @capture(x, flip(P_)) && return :(DistBool($mgr, $P)) 
         @capture(x, ProbInt(I_)) && return :(ProbInt($mgr, $I)) 
@@ -36,8 +45,17 @@ function to_dice(code)
         
         DiceCode( $(esc(mgr)) -> begin
         
-            $(esc(ite))(args...) =
-                ifelse(args...)
+            # $(esc(ite))(args...) = 
+            #     if typeof(args[1]) == DistBool
+            #         ifelse(args...)
+            #     else
+            #         if args[1]
+            #             args[2]
+            #         else
+            #             args[3]
+            #         end
+            #     end
+
             
             # transformed user code
             $transformed_code

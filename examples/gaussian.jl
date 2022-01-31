@@ -38,9 +38,9 @@ code = @dice begin
         end
 
         # println(v)
-        ans = ProbInt(flip(0), mb-1)
+        ans = ProbInt(dicecontext(), mb-1)
         for i=mb-1:-1:1
-            ans = if flip(v[i]) ProbInt(flip(0), i-1) else ans end
+            ans = if flip(v[i]) ProbInt(dicecontext(), i-1) else ans end
         end
         return ans
     end
@@ -103,7 +103,7 @@ code = @dice begin
     end
     # println(max_bits(add_bits(anyline(2, 0.1), 3)))
     println(max_bits(gaussian(2, 4)))
-    gaussian(8, 1)
+    gaussian(8, 8) > 1023
 end
 
 
@@ -111,7 +111,7 @@ end
 bdd = compile(code)
 num_flips(bdd)
 num_nodes(bdd)
-infer(code, :bdd)
+@assert infer(code, :bdd) ≈ 0.5
 
 bdd = compile(code)
 num_flips(bdd)
