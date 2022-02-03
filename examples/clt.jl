@@ -20,10 +20,16 @@ code = @dice begin
 end
 
 # BDD analysis
-bdd = compile(code)
-num_flips(bdd)
-num_nodes(bdd)
-infer(code, :bdd)
+# bdd = compile(code)
+# num_flips(bdd)
+# num_nodes(bdd)
+# infer(code, :bdd)
+
+function execute(code)
+    @time infer(code, :bdd)
+end
+
+execute(code)
 
 # IR analysis
 # to_dice_ir(code)

@@ -40,6 +40,22 @@ function infer(d::ProbInt)
     ans[1:non_zero_index]
 end
 
+function infer(dtuple::Tuple{ProbInt, DistBool})
+    d = dtuple[1]
+    b = dtuple[2]
+    mb = max_bits(d)
+    ans = Vector(undef, 2^mb)
+    non_zero_index = 0
+    for i=0:2^mb - 1
+        a = infer((prob_equals(d, i), b))
+        if !(a ≈ 0)
+            non_zero_index = i+1
+        end
+        ans[i + 1] = a
+    end
+    ans[1:non_zero_index]
+end
+
 max_bits(i::ProbInt) =
     length(i.bits)
 

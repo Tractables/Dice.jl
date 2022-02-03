@@ -81,3 +81,7 @@ rundice(d::DistBool) =
 infer(d::DistBool) =
     infer(d.mgr, d.bit)
 
+
+infer(d::Tuple{DistBool, DistBool}) =
+    infer(d[1] & d[2])/infer(d[2])
+

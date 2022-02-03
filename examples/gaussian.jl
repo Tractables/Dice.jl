@@ -102,8 +102,9 @@ code = @dice begin
         return ans
     end
     # println(max_bits(add_bits(anyline(2, 0.1), 3)))
-    println(max_bits(gaussian(2, 4)))
-    gaussian(8, 8) > 1023
+    # println(max_bits(gaussian(2, 4)))
+    rep = gaussian(2, 4) > 7
+    rep, rep
 end
 
 
@@ -111,6 +112,7 @@ end
 bdd = compile(code)
 num_flips(bdd)
 num_nodes(bdd)
+println(infer(code, :bdd))
 @assert infer(code, :bdd) ≈ 0.5
 
 bdd = compile(code)
