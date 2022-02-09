@@ -20,7 +20,7 @@ code = @dice begin
         return ans
     end      
     discrete(a)
-end
+end 
 
 bdd = compile(code)
 num_flips(bdd)

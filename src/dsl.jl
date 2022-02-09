@@ -15,6 +15,7 @@ function to_dice(code)
     # manual hygiene
     mgr = gensym(:mgr)
     ite = gensym(:ite)
+    ite_guard = gensym(:ite)
 
     transformed_code = postwalk(esc(code)) do x
         # TODO: replace by custom desugaring that is still lazy for boolean guards
@@ -23,15 +24,17 @@ function to_dice(code)
         if x isa Expr && (x.head == :if || x.head == :elseif)
             @assert length(x.args) == 3 "@dice macro only supports purely functional if-then-else"
             # return :($ite($(x.args...)))
-            return :(if typeof($(x.args[1])) == DistBool
-                        Dice.ifelse($(x.args...))
+            return :(begin $ite_guard = $(x.args[1])
+                    if ($(ite_guard) isa DistBool)
+                        Dice.ifelse($(ite_guard), $(x.args[2:3]...))
                     else
-                        (if $(x.args[1])
+                        (if $(ite_guard)
                             $(x.args[2])
                         else
                             $(x.args[3])
                         end)
-                    end)
+                    end
+                end)
         end
         @capture(x, flip(P_)) && return :(DistBool($mgr, $P)) 
         @capture(x, ProbInt(I_)) && return :(ProbInt($mgr, $I)) 

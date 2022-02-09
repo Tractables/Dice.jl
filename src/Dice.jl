@@ -9,6 +9,7 @@ include("dsl.jl")
 include("ocaml.jl")
 
 include("lib/int.jl")
+include("lib/cond.jl")
 # include("lib/tuple.jl")
 
 end # module

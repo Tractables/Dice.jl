@@ -103,8 +103,9 @@ code = @dice begin
     end
     # println(max_bits(add_bits(anyline(2, 0.1), 3)))
     # println(max_bits(gaussian(2, 4)))
-    rep = gaussian(2, 4) > 7
-    rep, rep
+    g = gaussian(1, 108)
+    rep = (g > 107) & (143 > g)
+    rep
 end
 
 
