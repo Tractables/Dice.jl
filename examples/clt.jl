@@ -8,22 +8,28 @@ code = @dice begin
         for i = b:-1:1
             x[i] = flip(0.5)
         end
-        return add_bits(ProbInt(x), w - b)
+        return add_bits(DistInt(x), w - b)
     end
     sum = uniform(2, 4)
     for i = 1:4
-        sum = (sum + uniform(2, 4))[1]
+        sum = (sum + uniform(2, 4))
     end
-    println(max_bits(sum))
-    sum
+    println(max_bits(sum[1]))
+    sum[1]
     # prob_equals(sum, 3)
 end
 
 # BDD analysis
-bdd = compile(code)
-num_flips(bdd)
-num_nodes(bdd)
-infer(code, :bdd)
+# bdd = compile(code)
+# num_flips(bdd)
+# num_nodes(bdd)
+# infer(code, :bdd)
+
+function execute(code)
+    @time infer(code, :bdd)
+end
+
+execute(code)
 
 # IR analysis
 # to_dice_ir(code)

@@ -8,10 +8,10 @@ function code_div(b1::Int, b2::Int, res::Int)
             for i = b:-1:1
                 x[i] = flip(0.5)
             end
-            return add_bits(ProbInt(x), w - b)
+            return add_bits(DistInt(x), w - b)
         end
         a = (uniform(b1, b1+1) + 1)[1]
-        b = (uniform(b2, b2+1) + 1)[1]
+        b = (uniform(b2, b2+1))
         y = (a%b)
         # println(y)
         prob_equals(y[1], res) & !y[2]
@@ -22,15 +22,16 @@ end
 # BDD analysis
 code = code_div(1, 1, 0)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.75
+println(infer(code, :bdd))
+@assert infer(code, :bdd) ≈ 0.5
 
 code = code_div(2, 1, 1)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.25
+@assert infer(code, :bdd) ≈ 0
 
 code = code_div(2, 1, 0)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.75
+@assert infer(code, :bdd) ≈ 0.5
 
 code = code_div(1, 2, 0)
 bdd = compile(code)
@@ -38,7 +39,7 @@ bdd = compile(code)
 
 code = code_div(1, 2, 2)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.25
+@assert infer(code, :bdd) ≈ 0.125
 
 # #         bdd = compile(code)
 # # num_flips(bdd)

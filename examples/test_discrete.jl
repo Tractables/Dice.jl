@@ -1,24 +1,26 @@
-using Revise
 using Dice
 using Dice: num_flips, num_nodes, to_dice_ir
 
 code = @dice begin
-    a = [0.33, 0.33, 0.34]
+    a = [0.1, 0.2, 0.7]
     function discrete(p::Vector{Float64})
-        sum = 1
-        a = flip(0.5)
-        ans = ProbInt(a, 0)
         mb = length(p)
-        for i = 0:mb-1
-            ans = ifelse(prob_equals(ans, ProbInt(a, i)), 
-                        ifelse(flip(p[i+1]/sum), ProbInt(a, i), ProbInt(a, i+1)), ans)
-            sum = sum - p[i+1]
+        v = Vector(undef, mb)
+        sum = 1
+        for i=1:mb
+            v[i] = p[i]/sum
+            sum = sum - p[i]
+        end
+
+        println(v)
+        ans = DistInt(mb-1)
+        for i=mb-1:-1:1
+            ans = if flip(v[i]) DistInt(i-1) else ans end
         end
         return ans
-    end
-
+    end      
     discrete(a)
-end
+end 
 
 bdd = compile(code)
 num_flips(bdd)
