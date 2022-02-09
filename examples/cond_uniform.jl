@@ -16,7 +16,7 @@ code = @dice begin
                 d &= true
             end
         end
-        return ProbInt(bits), d
+        return DistInt(bits), d
     end
 
     a, b = uniform(4)

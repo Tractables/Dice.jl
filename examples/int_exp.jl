@@ -10,7 +10,7 @@ code = @dice begin
         for i = b:-1:1
             x[i] = flip(0.5)
         end
-        return add_bits(ProbInt(x), w - b)
+        return add_bits(DistInt(x), w - b)
     end
     uniform(2, 2)
 end

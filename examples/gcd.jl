@@ -9,7 +9,7 @@ code = @dice begin
         for i = b:-1:1
             x[i] = flip(0.5)
         end
-        return ProbInt(x)
+        return DistInt(x)
     end
 
     function GCD(a, b)

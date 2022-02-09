@@ -11,7 +11,7 @@ function infer(c::CondBool)
 end
 
 struct CondInt <: Dist{Int}
-    b1::ProbInt
+    b1::DistInt
     b2::DistBool
 end
 

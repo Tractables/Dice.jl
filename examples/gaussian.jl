@@ -17,7 +17,7 @@ code = @dice begin
             s = s || (x[i] && !y[i])
             n = n/2
         end
-        return ProbInt(x)
+        return DistInt(x)
     end
 
     function uniform(b::Int) # b is the bits for uniform, w is the bitwidth
@@ -25,7 +25,7 @@ code = @dice begin
         for i = b:-1:1
             x[i] = flip(0.5)
         end
-        return ProbInt(x)
+        return DistInt(x)
     end
 
     function discrete(p::Vector{Float64})
@@ -38,9 +38,9 @@ code = @dice begin
         end
 
         # println(v)
-        ans = ProbInt(dicecontext(), mb-1)
+        ans = DistInt(dicecontext(), mb-1)
         for i=mb-1:-1:1
-            ans = if flip(v[i]) ProbInt(dicecontext(), i-1) else ans end
+            ans = if flip(v[i]) DistInt(dicecontext(), i-1) else ans end
         end
         return ans
     end

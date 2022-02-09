@@ -8,7 +8,7 @@ function code_div(b1::Int, b2::Int, res::Int)
             for i = b:-1:1
                 x[i] = flip(0.5)
             end
-            return add_bits(ProbInt(x), w - b)
+            return add_bits(DistInt(x), w - b)
         end
         a = (uniform(b1, b1+1) + 1)[1]
         b = (uniform(b2, b2+1))

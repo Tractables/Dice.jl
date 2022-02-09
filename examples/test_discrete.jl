@@ -13,9 +13,9 @@ code = @dice begin
         end
 
         println(v)
-        ans = ProbInt(mb-1)
+        ans = DistInt(mb-1)
         for i=mb-1:-1:1
-            ans = if flip(v[i]) ProbInt(i-1) else ans end
+            ans = if flip(v[i]) DistInt(i-1) else ans end
         end
         return ans
     end      

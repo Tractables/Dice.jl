@@ -10,7 +10,7 @@ code = @dice begin
             x[i] = if b != 1 flip(0.5) else flip(0) end
         end
 
-        ans = ProbInt(x)
+        ans = DistInt(x)
         return add_bits(ans, w)
     end
 
@@ -33,7 +33,7 @@ code = @dice begin
             pos += 1
         end 
         println(sum_v)
-        ans = (ProbInt([flip(0)]))
+        ans = (DistInt([flip(0)]))
         println(num_b)
         for i = 2:num_b
             println(i)

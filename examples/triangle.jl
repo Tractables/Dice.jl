@@ -18,7 +18,7 @@ code = @dice begin
             m = m/4
             n = n/2
         end
-        return ProbInt(x)
+        return DistInt(x)
     end
 
     for b = 1:16
