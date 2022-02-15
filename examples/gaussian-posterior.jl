@@ -5,6 +5,13 @@ using Distributions
 
 code = @dice begin
     # triangle distribution
+    # function uniform(b::Int, point::Int)
+    #     x = Vector(undef, b)
+    #     for i = b:-1:1
+    #         x[i] = flip(0.5)
+    #     end
+    #     return DistFix(x)
+    # end
 
     function triangle(b::Int)
         s = false
@@ -102,7 +109,6 @@ code = @dice begin
         return ans
     end
 
-
     function gaussian_std_prob(bits::Int, pieces::Int, a::Float64)
         dist = gaussian(bits, pieces)
         beta = quantile.(Normal(), 0.001)
@@ -120,13 +126,15 @@ code = @dice begin
         return Int(ceil(a_proxy)) > dist
     end
 
+    mu1 = gaussian(1, 8)
+    sigma = 1
+    d = true
+    d &= prob_equals((add_bits(gaussian(1, 8), 3)*sigma + mu1)[1], 9)
+    # d &= prob_equals((gaussian(1, 4)*sigma + mu1)[1], data[2])
 
-    # println(max_bits(add_bits(anyline(2, 0.1), 3)))
-    # println(max_bits(gaussian(2, 4)))
-    gaussian_prob(1.0, 3.0, 1, 108, 4.0)
-    # g = gaussian(1, 108)
-    # rep = (g > 107) & (143 > g)
-    # rep
+    (add_bits(gaussian(1, 8), 3)*sigma + mu1)[1]
+    # CondInt(mu1, d)
+    # mu1
 end
 
 

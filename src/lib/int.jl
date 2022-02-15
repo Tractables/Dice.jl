@@ -1,5 +1,5 @@
      
-# Integers
+# Unsigned Integers
 export DistInt, add_bits, max_bits
 
 struct DistInt <: Dist{Int}
