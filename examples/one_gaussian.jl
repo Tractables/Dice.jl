@@ -4,14 +4,6 @@ using Dice: num_flips, num_nodes, to_dice_ir
 using Distributions
 
 code = @dice begin
-    # triangle distribution
-    # function uniform(b::Int, point::Int)
-    #     x = Vector(undef, b)
-    #     for i = b:-1:1
-    #         x[i] = flip(0.5)
-    #     end
-    #     return DistFix(x)
-    # end
 
     function triangle(b::Int)
         s = false
@@ -109,32 +101,20 @@ code = @dice begin
         return ans
     end
 
-    function gaussian_std_prob(bits::Int, pieces::Int, a::Float64)
+    function cont2disc(bits::Int, pieces::Int, a::Float64)
         dist = gaussian(bits, pieces)
-        beta = quantile.(Normal(), 0.001)
-        alpha = 2*abs(beta)/(pieces * 2^bits)
-        a_proxy = ((2/alpha)*(a - beta) - 1)/2
-        return Int(ceil(a_proxy)) > dist
+        sigma = pieces * 2^(bits - 1)/quantile.(Normal(), 0.001)*(-1)
+        mu = pieces * 2^(bits - 1)
+        a_proxy = a*sigma + mu
+        return Int(round(a_proxy)) > dist
     end
 
     function gaussian_prob(mu::Float64, sigma::Float64, bits::Int, pieces::Int, a::Float64)
-        dist = gaussian(bits, pieces)
-        beta = quantile.(Normal(), 0.001)
-        alpha = 2*abs(beta)/(pieces * 2^bits)
-        new_a = (a - mu)/sigma
-        a_proxy = ((2/alpha)*(new_a - beta) - 1)/2
-        return Int(ceil(a_proxy)) > dist
+        cont2disc(bits, pieces, (a - mu)/sigma)
     end
-
-    mu1 = gaussian(1, 8)
-    sigma = 1
-    d = true
-    d &= prob_equals((add_bits(gaussian(1, 8), 3)*sigma + mu1)[1], 9)
-    # d &= prob_equals((gaussian(1, 4)*sigma + mu1)[1], data[2])
-
-    (add_bits(gaussian(1, 8), 3)*sigma + mu1)[1]
-    # CondInt(mu1, d)
-    # mu1
+    
+    # cont2disc(1, 200, 1.0)
+    gaussian(3, 4)
 end
 
 
@@ -142,7 +122,7 @@ end
 bdd = compile(code)
 num_flips(bdd)
 num_nodes(bdd)
-println(infer(code, :bdd))
+(infer(code, :bdd))
 @assert infer(code, :bdd) ≈ 0.5
 
 bdd = compile(code)

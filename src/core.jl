@@ -81,4 +81,7 @@ rundice(d::DistBool) =
 infer(d::DistBool) =
     infer(d.mgr, d.bit)
 
+condinfer(b1::DistBool, b2::DistBool) = 
+infer(b1 & b2)/infer(b2)
+
 

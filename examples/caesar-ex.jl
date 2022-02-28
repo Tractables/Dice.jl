@@ -33,7 +33,7 @@ code = @dice begin
     for i=1:4
         d&=sendChar(key, 2)
     end 
-    key, d
+    Cond{Int}(key, d)
 end
 
 # BDD analysis

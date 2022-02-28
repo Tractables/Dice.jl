@@ -35,9 +35,10 @@ function infer(d::DistInt)
         if !(a ≈ 0)
             non_zero_index = i+1
         end
-        ans[i + 1] = a
+        ans[i + 1] = (i, a)
     end
     ans[1:non_zero_index]
+    # ans
 end
 
 max_bits(i::DistInt) =
@@ -314,6 +315,22 @@ function add_bits(p::DistInt, w::Int)
         ext[i] = DistBool(p.mgr, false)
     end
     DistInt(p.mgr, vcat(p.bits, ext))
+end
+
+function condinfer(b1::DistInt, b2::DistBool)
+    d = b1
+    b = b2    
+    mb = max_bits(d)
+    ans = Vector(undef, 2^mb)
+    non_zero_index = 0
+    for i=0:2^mb - 1
+        a = infer(Cond(prob_equals(d, i), b))
+        if !(a ≈ 0)
+            non_zero_index = i+1
+        end
+        ans[i + 1] = (i, a)
+    end
+    ans[1:non_zero_index]
 end
     
 

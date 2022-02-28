@@ -16,14 +16,13 @@ code = @dice begin
     end
     println(max_bits(sum[1]))
     sum[1]
-    # prob_equals(sum, 3)
 end
 
 # BDD analysis
-# bdd = compile(code)
+bdd = compile(code)
 # num_flips(bdd)
 # num_nodes(bdd)
-# infer(code, :bdd)
+infer(code, :bdd)
 
 function execute(code)
     @time infer(code, :bdd)
