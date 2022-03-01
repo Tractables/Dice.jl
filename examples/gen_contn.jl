@@ -5,15 +5,15 @@ using Distributions
 
 code = @dice begin
         
-    function uniform(b::Int, point::Int)
+    function uniform(b::Int, t::Type)
         x = Vector(undef, b)
         for i = b:-1:1
             x[i] = flip(0.5)
         end
-        return DistFix(x, point)
+        return t(x)
     end
 
-    function triangle(b::Int, point::Int)
+    function triangle(b::Int, t::Type)
         s = false
         n = 2^b
         x = Vector(undef, b)
@@ -24,69 +24,60 @@ code = @dice begin
             s = s || (x[i] && !y[i])
             n = n/2
         end
-        return DistFix(x, point)
+        return t(x)
     end
 
-    function discrete(p::Vector{Float64}, point)
+    function discrete(p::Vector{Float64}, t::Type)
         mb = length(p)
-        # v = Vector(undef, mb)
+        @show sum(p)
+        @assert sum(p) ≈ 1
         v = zeros(mb)
-        sum = 1
+        sum_ = 1
         for i=1:mb
-            if (p[i] ≈ sum)
+            @show p[i], sum_
+            @show p[i] ≈ sum_
+            if (p[i] > sum_)
                 v[i] = 1
                 break
             else
-                v[i] = p[i]/sum
+                v[i] = p[i]/sum_
             end
-            sum = sum - p[i]
+            sum_ = sum_ - p[i]
+            @show v[i]
             @assert v[i] >= 0
             @assert v[i] <= 1
         end
 
-        ans = DistFix(dicecontext(), mb-1, point)
+        ans = t(dicecontext(), mb-1)
         for i=mb-1:-1:1
-            ans = if flip(v[i]) DistFix(dicecontext(), i-1, point) else ans end
+            ans = if flip(v[i]) t(dicecontext(), i-1) else ans end
         end
         return ans
     end
 
-
-    function discrete(p::Vector{Float64})
-        mb = length(p)
-        # v = Vector(undef, mb)
-        v = zeros(mb)
-        sum = 1
-        for i=1:mb
-            if (p[i] >= sum)
-                v[i] = 1
-                break
-            else
-                v[i] = p[i]/sum
-            end
-            sum = sum - p[i]
-            # @show [i, v[i]]
-            @assert v[i] >= 0
-            @assert v[i] <= 1
-        end
-
-        ans = DistInt(dicecontext(), mb-1)
-        for i=mb-1:-1:1
-            ans = if flip(v[i]) DistInt(dicecontext(), i-1) else ans end
-        end
-        return ans
-    end
-
-    function anyline(bits::Int, p::Float64, point::Int)
+    function anyline(bits::Int, p::Float64, t::Type)
         @show p*2^bits
         @assert p*2^bits >= 0
         @assert p*2^bits <= 1
-        ans = Dice.ifelse(flip(p*2^bits), uniform(bits, point), triangle(bits, point))
+        ans = Dice.ifelse(flip(p*2^bits), uniform(bits, t), triangle(bits, t))
         return ans
     end
 
-    function gaussian(whole_bits::Int, pieces::Int, mean::Float64, std::Float64, point::Int)
-        d = Normal(mean, std)
+    function continuous(pieces::Int, t::Type{DistFixParam{T, F}}, d::ContinuousUnivariateDistribution) where {T, F}
+        # d = Normal(mean, std)
+        @show t
+        if t == DistInt
+            # @show T, F
+            whole_bits = 4
+            point = 0   
+        else
+            whole_bits = T
+            point = F
+        end
+
+        @show whole_bits, point
+
+        
         start = 0
         interval_sz = (2^whole_bits/pieces)
         # println(interval_sz)
@@ -111,12 +102,12 @@ code = @dice begin
         end
 
         rel_prob = areas/total_area
-        # @show rel_prob
-        b = discrete(rel_prob)
+        @show rel_prob
+        b = discrete(rel_prob, DistInt)
         a = end_pts[pieces][1]/areas[pieces]
         l = a > 1/2^bits
 
-        ans = DistFix(dicecontext(), 2^whole_bits, point)
+        ans = t(dicecontext(), 2^whole_bits)
   
         # @show bits
         for i=pieces:-1:1
@@ -131,10 +122,10 @@ code = @dice begin
             # @show i
             ans = if prob_equals(b, i-1) 
                     (if l
-                        DistFix(dicecontext(), ((i)*2^bits - 1), point) - anyline(bits, 2/2^bits - a, point)
+                        t(dicecontext(), ((i)*2^bits - 1)) - anyline(bits, 2/2^bits - a, t)
                     else
-                        DistFix(dicecontext(), (i - 1)*2^bits, point) + 
-                            anyline(bits, a, point)
+                        t(dicecontext(), (i - 1)*2^bits) + 
+                            anyline(bits, a, t)
                     end)[1]
                 else
                     ans
@@ -143,20 +134,17 @@ code = @dice begin
         return ans
     end
 
-    mu = gaussian(5, 16, 2.0, 1.0, 2)
-    d = prob_equals((gaussian(5, 16, 2.0, 1.0, 2) + mu)[1], DistFix(dicecontext(), 20, 2)) # == 5
-    # d &= prob_equals((gaussian(6, 8, 8.0, 1.0) + mu)[1], 18)
-    # ((n1 + n2)[1])
-    # CondBool(10 > mu && mu > 7, d)
-    # Cond(mu, d)
-    mu
+    # discrete([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.3], DistFixParam{3, 2})
+    # triangle(3, DistFixParam{3, 0})
+    # anyline(2, 0.1, DistFixParam{2, 1})
+    continuous(8, DistFixParam{4, 3}, Normal(1, 0.125))
 end
 
 
 
 bdd = compile(code)
 (infer(code, :bdd))
-@assert infer(code, :bdd) ≈ 0.5
+# @assert infer(code, :bdd) ≈ 0.5
 
 bdd = compile(code)
 num_flips(bdd)

@@ -19,7 +19,7 @@ code = @dice begin
     end
 
     a, b = uniform(4)
-    CondInt(a, b)
+    Cond(a, b)
 end
 
 # BDD analysis
