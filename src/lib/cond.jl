@@ -23,3 +23,5 @@ end
 function infer(c::Cond)
     condinfer(c.b1, c.b2)
 end
+
+bools(i::Cond) = vcat(bools(i.b1), bools(i.b2))

@@ -107,7 +107,7 @@ code = @dice begin
         return ans
     end
 
-    mu = gaussian(6, 8, 8.0, 1.0) #0 to 32, 2 linear pieces, mu = 4, sigma = 1
+    mu = gaussian(8, 16, 2.0, 0.5) #0 to 32, 2 linear pieces, mu = 4, sigma = 1
     sigma = 1
     d = prob_equals((gaussian(6, 8, 8.0, 1.0) + mu)[1], 18)
     # d &= prob_equals((gaussian(6, 8, 8.0, 1.0) + mu)[1], 18)
@@ -120,7 +120,8 @@ end
 
 
 bdd = compile(code)
-
+num_flips(bdd)
+num_nodes(bdd)
 a = (infer(code, :bdd))
 sum = 0
 for i=1:16
