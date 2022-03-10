@@ -55,6 +55,31 @@ code = @dice begin
         return ans
     end
 
+    function discrete2(p::Vector{Float64}, t::Type)
+
+        function recurse(p::Vector, i, s, e, prob::Vector)
+            if (i == 0)
+                flip(sum(prob[Int((s+e+1)/2):e])/sum(prob[s:e]))
+            else
+                # (Dice.ifelse(p[length(p) - i + 1], recurse(p, i-1, Int((s+e+1)/2), e, prob), recurse(p, i-1, s, Int((s+e-1)/2), prob)))
+                if p[length(p) - i + 1] recurse(p, i-1, Int((s+e+1)/2), e, prob) else recurse(p, i-1, s, Int((s+e-1)/2), prob) end
+                
+            end
+        end
+
+        mb = length(p)
+        add = Int(ceil(log2(mb)))
+        p_proxy = vcat(p, zeros(2^add - mb))
+        int_vector = []
+        
+        for i=1:add
+            @show i
+            a = recurse(int_vector, i-1, 1, 2^add, p_proxy)
+            push!(int_vector, a)
+        end
+        t(reverse(int_vector))
+    end
+
     function anyline(bits::Int, p::Float64, t::Type)
         # @show p*2^bits
         @assert p*2^bits >= 0
@@ -103,11 +128,13 @@ code = @dice begin
 
         rel_prob = areas/total_area
         # @show rel_prob
-        b = discrete(rel_prob, DistInt)
+        tria = triangle(bits, t)
+        unif = uniform(bits, t)
+        b = discrete2(rel_prob, DistInt)
         a = end_pts[pieces][1]/areas[pieces]
         l = a > 1/2^bits
 
-        ans = t(dicecontext(), 2^whole_bits)
+        ans = t(dicecontext(), 2^whole_bits-1)
   
         # @show bits
         for i=pieces:-1:1
@@ -122,10 +149,13 @@ code = @dice begin
             # @show i
             ans = if prob_equals(b, i-1) 
                     (if l
-                        t(dicecontext(), ((i)*2^bits - 1)) - anyline(bits, 2/2^bits - a, t)
+                        t(dicecontext(), ((i)*2^bits - 1)) - 
+                        # anyline(bits, 2/2^bits - a, t)
+                        Dice.ifelse(flip(2 - a*2^bits), unif, tria)
                     else
                         t(dicecontext(), (i - 1)*2^bits) + 
-                            anyline(bits, a, t)
+                            # anyline(bits, a, t)
+                            Dice.ifelse(flip(a*2^bits), unif, tria)
                     end)[1]
                 else
                     ans
@@ -134,16 +164,23 @@ code = @dice begin
         return ans
     end
 
-    mu = continuous(128, DistFixParam{8, 4}, Normal(4, 2))
-    d = true
-    data1 = (continuous(128, DistFixParam{8, 4}, Normal(4, 2)) + mu)
-    data2 = (continuous(128, DistFixParam{8, 4}, Normal(4, 2)) + mu)
-    data3 = (continuous(128, DistFixParam{8, 4}, Normal(4, 2)) + mu)
-    d &= prob_equals(data1[1], DistFixParam{8, 4}(dicecontext(), 144)) & !data1[2]
-    d &= prob_equals(data2[1], DistFixParam{8, 4}(dicecontext(), 144)) & !data2[2]
-    d &= prob_equals(data3[1], DistFixParam{8, 4}(dicecontext(), 144)) & !data3[2]
-    Cond(mu, d)
-    # mu
+    # mu = continuous(4, DistFixParam{4, 0}, Normal(8, 2))
+    mu = continuous(16, DistFixParam{8, 0}, Normal(128, 10))
+    # d = true
+    # data1 = (continuous(128, DistFixParam{8, 4}, Normal(4, 2)) + mu)
+    # d &= prob_equals(data1[1], DistFixParam{8, 4}(dicecontext(), 144)) & !data1[2]
+    # data2 = (continuous(128, DistFixParam{8, 4}, Normal(4, 2)) + mu)
+    # d &= prob_equals(data2[1], DistFixParam{8, 4}(dicecontext(), 144)) & !data2[2]
+    # data3 = (continuous(128, DistFixParam{8, 4}, Normal(4, 2)) + mu)
+
+
+    # d &= prob_equals(data3[1], DistFixParam{8, 4}(dicecontext(), 144)) & !data3[2]
+    # Cond(mu, d)
+    mu
+
+    # a = triangle(3, DistInt).bits
+    # if a[3] DistInt(4) else DistInt(a[1:2]) end
+    # Cond(DistInt(a), d)
 end
 
 

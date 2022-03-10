@@ -197,11 +197,14 @@ function Base.:-(t1::DistInt, t2::DistInt)
         borrow = t2.bits[i] | borrow 
     end
 
+    #------------------Lines that cause BDD size to be larger than ocaml counterpart-------------
     for i = 1:mab
         z[i] = ifelse(borrow, !z[i], z[i])
     end
     
     ans = ifelse(borrow, (DistInt(z) + 1)[1], DistInt(z))
+    #----------------------------------------------------------------------
+    ans = DistInt(z)
     ans, borrow
 end
 

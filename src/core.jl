@@ -81,7 +81,10 @@ rundice(d::DistBool) =
 infer(d::DistBool) =
     infer(d.mgr, d.bit)
 
-condinfer(b1::DistBool, b2::DistBool) = 
-infer(b1 & b2)/infer(b2)
-
+function condinfer(b1::DistBool, b2::DistBool)
+    a = b1 & b2
+    @show num_flips(a)
+    @show num_nodes(a)
+    infer(a)/infer(b2)
+end
 

@@ -112,6 +112,8 @@ code = @dice begin
 
         rel_prob = areas/total_area
         # @show rel_prob
+        unif = uniform(bits, 0)
+        tria = triangle(bits, 0)
         b = discrete(rel_prob)
         a = end_pts[pieces][1]/areas[pieces]
         l = a > 1/2^bits
@@ -129,12 +131,13 @@ code = @dice begin
             # @show bits
             # @show a
             # @show i
+            @show point
             ans = if prob_equals(b, i-1) 
                     (if l
-                        DistFix(dicecontext(), ((i)*2^bits - 1), point) - anyline(bits, 2/2^bits - a, point)
+                        DistFix(dicecontext(), ((i)*2^bits - 1), point) - Dice.ifelse(flip(2 - a*2^bits), unif, tria)
                     else
                         DistFix(dicecontext(), (i - 1)*2^bits, point) + 
-                            anyline(bits, a, point)
+                            Dice.ifelse(flip(a*2^bits), unif, tria)
                     end)[1]
                 else
                     ans
@@ -143,8 +146,8 @@ code = @dice begin
         return ans
     end
 
-    mu = gaussian(5, 16, 2.0, 1.0, 2)
-    d = prob_equals((gaussian(5, 16, 2.0, 1.0, 2) + mu)[1], DistFix(dicecontext(), 20, 2)) # == 5
+    mu = gaussian(8, 16, 2.0, 1.0, 0)
+    # d = prob_equals((gaussian(5, 16, 2.0, 1.0, 2) + mu)[1], DistFix(dicecontext(), 20, 2)) # == 5
     # d &= prob_equals((gaussian(6, 8, 8.0, 1.0) + mu)[1], 18)
     # ((n1 + n2)[1])
     # CondBool(10 > mu && mu > 7, d)

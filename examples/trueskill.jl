@@ -144,8 +144,8 @@ code = @dice begin
     perfB1 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillB
     perfB2 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillB
 
-    d = (perfA1[1] > perfB1[1]) & !perfA1[2] & !perfB1[2]
-    Cond((perfA2[1] > perfB2[1]) & !perfA2[2] & !perfB2[2], d)
+    d = (perfA2[1] > perfB2[1]) & !perfA2[2] & !perfB2[2]
+    Cond((perfA1[1] > perfB1[1]) & !perfA1[2] & !perfB1[2], d)
     # (perfA2[1] > perfB2[1]) & !perfA2[2] & !perfB2[2]
     # d
     # skillA

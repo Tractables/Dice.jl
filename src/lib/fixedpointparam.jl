@@ -8,12 +8,19 @@ end
 
 function DistFixParam{T, F}(b::Vector) where T where F
     # @assert length(b) == T
-    DistFixParam{T, F}(b[1].mgr, DistInt(b))
+    if (length(b) < T)
+        DistFixParam{T, F}(b[1].mgr, add_bits(DistInt(b), T - length(b)))
+    else
+        DistFixParam{T, F}(b[1].mgr, DistInt(b))
+    end
 end
 
 function DistFixParam{T, F}(mgr, i::Int) where T where F
     @assert i >= 0
-    DistFixParam{T, F}(mgr, DistInt(mgr, i))
+    a =  DistInt(mgr, i)
+    a = add_bits(a, T - max_bits(a))
+    @show max_bits(a)
+    DistFixParam{T, F}(mgr, a)
 end
 
 function ifelse(cond::DistBool, then::DistFixParam{T, F}, elze::DistFixParam{T, F}) where T where F

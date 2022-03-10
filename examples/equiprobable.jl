@@ -29,13 +29,10 @@ code = @dice begin
 
     function discrete(p::Vector{Float64}, t::Type)
         mb = length(p)
-        @show sum(p)
         @assert sum(p) ≈ 1
         v = zeros(mb)
         sum_ = 1
         for i=1:mb
-            @show p[i], sum_
-            @show p[i] ≈ sum_
             if (p[i] >= sum_)
                 v[i] = 1
                 break
@@ -61,7 +58,7 @@ code = @dice begin
             if (i == 0)
                 flip(sum(prob[Int((s+e+1)/2):e])/sum(prob[s:e]))
             else
-                (if p[length(p) - i + 1] recurse(p, i-1, Int((s+e+1)/2), e, prob) else recurse(p, i-1, s, Int((s+e-1)/2), prob) end)
+                (Dice.ifelse(p[length(p) - i + 1], recurse(p, i-1, Int((s+e+1)/2), e, prob), recurse(p, i-1, s, Int((s+e-1)/2), prob)))
             end
         end
 
@@ -79,7 +76,7 @@ code = @dice begin
     end
 
     function anyline(bits::Int, p::Float64, t::Type)
-        @show p*2^bits
+        # @show p*2^bits
         @assert p*2^bits >= 0
         @assert p*2^bits <= 1
         ans = Dice.ifelse(flip(p*2^bits), uniform(bits, t), triangle(bits, t))
@@ -87,23 +84,12 @@ code = @dice begin
     end
 
     function continuous(pieces::Int, t::Type{DistFixParam{T, F}}, d::ContinuousUnivariateDistribution) where {T, F}
-        # d = Normal(mean, std)
-        @show t
-        if t == DistInt
-            # @show T, F
-            whole_bits = 4
-            point = 0   
-        else
-            whole_bits = T
-            point = F
-        end
 
-        @show whole_bits, point
-
+        whole_bits = T
+        point = F
         
         start = 0
         interval_sz = (2^whole_bits/pieces)
-        # println(interval_sz)
         bits = Int(log2(interval_sz))
     
         areas = Vector(undef, pieces)
@@ -115,7 +101,6 @@ code = @dice begin
             p2 = p1 + 1/2^point
             p3 = start + (i)*interval_sz/2^point
             p4 = p3 - 1/2^point
-            @show [p1, p2, p3, p4]
     
             pts = [cdf.(d, p2) - cdf.(d, p1), cdf.(d, p3) - cdf.(d, p4)]
             end_pts[i] = pts
@@ -125,33 +110,39 @@ code = @dice begin
         end
 
         rel_prob = areas/total_area
-        @show rel_prob
-        tria = triangle(bits, t)
-        unif = uniform(bits, t)
-        b = discrete2(rel_prob, DistInt)
-        a = end_pts[pieces][1]/areas[pieces]
-        l = a > 1/2^bits
 
-        ans = t(dicecontext(), 2^whole_bits-1)
-  
-        # @show bits
+        a = Vector(undef, pieces)
+        l = Vector(undef, pieces)
+        ex= Vector(undef, pieces)
         for i=pieces:-1:1
             if (areas[i] == 0)
-                a = 0.0
+                a[i] = 0.0
             else
-                a = end_pts[i][1]/areas[i]
+                a[i] = end_pts[i][1]/areas[i]
             end
-            l = a > 1/2^bits
-            # @show bits
-            # @show a
-            # @show i
+            if a[i] > 1/2^bits
+                l[i] = -
+                ex[i] = i*2^bits - 1
+                a[i] = 2/2^bits - a[i]
+            else
+                l[i] = +
+                ex[i] = (i-1)*2^bits
+            end
+        end
+
+        
+        tria = triangle(bits, t)
+        unif = uniform(bits, t)
+        
+        b = discrete2(rel_prob, DistInt)
+
+        ans = l[pieces](t(dicecontext(), ex[pieces]), Dice.ifelse(flip(a[pieces]*2^bits), unif, tria))[1]
+    
+        for i=pieces-1:-1:1
             ans = if prob_equals(b, i-1) 
-                    (if l
-                        t(dicecontext(), ((i)*2^bits - 1)) - Dice.ifelse(flip(2^bits * (2/2^bits - a)), unif, tria)
-                    else
-                        t(dicecontext(), (i - 1)*2^bits) + Dice.ifelse(flip(2^bits*a), unif, tria)
-                            # anyline(bits, a, t)
-                    end)[1]
+                    (l[i](t(dicecontext(), ex[i]), 
+                        (if flip((a[i])*2^bits) unif else tria end)))[1]
+                        # (anyline(bits, a[i], t))))[1]
                 else
                     ans
                 end  
@@ -159,19 +150,14 @@ code = @dice begin
         return ans
     end
 
-    # discrete([0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.1, 0.3], DistFixParam{3, 2})
-    # triangle(3, DistFixParam{3, 0})
-    # anyline(2, 0.1, DistFixParam{2, 1})
-    continuous(16, DistFixParam{8, 0}, Normal(2, 1))
+    (continuous(4, DistFixParam{4, 0}, Normal(8, 2)))
 end
 
 
 
 bdd = compile(code)
-(infer(code, :bdd))
-# @assert infer(code, :bdd) ≈ 0.5
+a = (infer(code, :bdd))
 
-bdd = compile(code)
+
 num_flips(bdd)
 num_nodes(bdd)
-infer(code, :bdd)
