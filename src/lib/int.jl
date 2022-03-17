@@ -1,6 +1,6 @@
      
 # Unsigned Integers
-export DistInt, add_bits, max_bits
+export DistInt, add_bits, max_bits, round_division
 
 struct DistInt <: Dist{Int}
     mgr
@@ -286,6 +286,36 @@ function Base.:/(p1::DistInt, p2::DistInt) #p1/p2
     ans = vcat(ifelse(p2 > p1_proxy, DistBool(p1.mgr, false), DistBool(p1.mgr, true)), ans)
     ifelse(is_zero, p2, DistInt(p1.mgr, ans)), is_zero
 end 
+
+function round_division(p1::DistInt, p2::DistInt)
+    mb1 = max_bits(p1)
+    mb2 = max_bits(p2)
+    p1_bits = Vector(undef, 0)
+    ans = Vector(undef, 0)
+
+    is_zero = DistBool(p1.mgr, true)
+    for i=1:mb2
+        is_zero &= !p2.bits[i]
+    end
+
+
+    for i = mb1:-1:1
+        p1_proxy = DistInt(p1.mgr, p1_bits)
+        p1_bits = vcat(p1.bits[i:i], ifelse(p2 > p1_proxy, p1_proxy, (p1_proxy - p2)[1]).bits)
+        ans = vcat(ifelse(p2 > p1_proxy, DistBool(p1.mgr, false), DistBool(p1.mgr, true)), ans)
+    end
+    p1_proxy = DistInt(p1.mgr, p1_bits)
+    p1_bits = ifelse(p2 > p1_proxy, p1_proxy, (p1_proxy - p2)[1]).bits
+    ans = vcat(ifelse(p2 > p1_proxy, DistBool(p1.mgr, false), DistBool(p1.mgr, true)), ans)
+    ans2 = ifelse(is_zero, p2, DistInt(p1.mgr, p1_bits))
+    ans2 = ifelse(DistInt(p1.mgr, p1_bits) > DistInt(p1.mgr, p2.bits[2:mb2]), (DistInt(p1.mgr, ans) + 1)[1], DistInt(p1.mgr, ans))
+    # ans = ifelse()
+    # ifelse(is_zero, p2, DistInt(p1.mgr, ans)), 
+    # ifelse(is_zero, p2, ans)
+    ans2
+    # DistInt(p1.mgr, p1_bits) >
+    # DistInt(p1.mgr, p1.bits[2:mb1])
+end
 
 function Base.:%(p1::DistInt, p2::DistInt) #p1%p2
     mb1 = max_bits(p1)

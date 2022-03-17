@@ -5,9 +5,12 @@ version = "0.1.0"
 
 [deps]
 CUDD = "345a2cc7-28d8-58b2-abdf-cff77ea7d7f1"
+CairoMakie = "13f3f980-e62b-5c42-98c6-ff1f3baf88f0"
 DirectedAcyclicGraphs = "1e6dae5e-d6e2-422d-9af3-452e7a3785ee"
+Distances = "b4f34e82-e78d-54a5-968a-f98e89d6e8f7"
 IfElse = "615f187c-cbe4-4ef1-ba3b-2fcf58d6d173"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
+StatsBase = "2913bbd2-ae8a-5f71-8c99-4fb6c76f3a91"
 
 [compat]
 CUDD = "0.2.2"

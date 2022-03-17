@@ -165,7 +165,7 @@ code = @dice begin
     end
 
     # mu = continuous(4, DistFixParam{4, 0}, Normal(8, 2))
-    mu = continuous(16, DistFixParam{8, 0}, Normal(128, 10))
+    mu = continuous(32, DistFixParam{10, 0}, Normal(512, 131.282))
     # d = true
     # data1 = (continuous(128, DistFixParam{8, 4}, Normal(4, 2)) + mu)
     # d &= prob_equals(data1[1], DistFixParam{8, 4}(dicecontext(), 144)) & !data1[2]
@@ -196,3 +196,22 @@ bdd = compile(code)
 num_flips(bdd)
 num_nodes(bdd)
 infer(code, :bdd)
+
+function KL_div(a, T, F, d::ContinuousUnivariateDistribution)
+    d = Truncated(d, 0, 2^(T-F))
+    lower = 0
+    upper = lower + 2^F
+    p = Vector{Float64}(undef, 2^T)
+    for i=1:2^T
+        p[i] = cdf(d, upper) - cdf(d, lower)
+        lower = upper
+        upper = lower + 2^F
+    end
+    p = p[1:min(length(a), length(p))]
+    a = a[1:min(length(a), length(p))]
+    @show p
+    @show length(a)
+    kldivergence(p, map(a->a[2], a))
+end
+
+KL_div(a,10, 0, Normal(512, 131.282))

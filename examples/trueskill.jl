@@ -26,34 +26,30 @@ code = @dice begin
         end
         return t(x)
     end
+    
+    function discrete2(p::Vector{Float64}, t::Type)
 
-    function discrete(p::Vector{Float64}, t::Type)
-        mb = length(p)
-        @show p
-        @show sum(p)
-        @assert sum(p) ≈ 1
-        v = zeros(mb)
-        sum_ = 1
-        for i=1:mb
-            # @show p[i], sum_
-            # @show p[i] ≈ sum_
-            if (p[i] > sum_)
-                v[i] = 1
-                break
+        function recurse(p::Vector, i, s, e, prob::Vector)
+            if (i == 0)
+                flip(sum(prob[Int((s+e+1)/2):e])/sum(prob[s:e]))
             else
-                v[i] = p[i]/sum_
+                # (Dice.ifelse(p[length(p) - i + 1], recurse(p, i-1, Int((s+e+1)/2), e, prob), recurse(p, i-1, s, Int((s+e-1)/2), prob)))
+                if p[length(p) - i + 1] recurse(p, i-1, Int((s+e+1)/2), e, prob) else recurse(p, i-1, s, Int((s+e-1)/2), prob) end
+                
             end
-            sum_ = sum_ - p[i]
-            @show v[i]
-            @assert v[i] >= 0
-            @assert v[i] <= 1
         end
 
-        ans = t(dicecontext(), mb-1)
-        for i=mb-1:-1:1
-            ans = if flip(v[i]) t(dicecontext(), i-1) else ans end
+        mb = length(p)
+        add = Int(ceil(log2(mb)))
+        p_proxy = vcat(p, zeros(2^add - mb))
+        int_vector = []
+        
+        for i=1:add
+            @show i
+            a = recurse(int_vector, i-1, 1, 2^add, p_proxy)
+            push!(int_vector, a)
         end
-        return ans
+        t(reverse(int_vector))
     end
 
     function anyline(bits::Int, p::Float64, t::Type)
@@ -93,7 +89,7 @@ code = @dice begin
             p2 = p1 + 1/2^point
             p3 = start + (i)*interval_sz/2^point
             p4 = p3 - 1/2^point
-            # @show [p1, p2, p3, p4]
+            @show [p1, p2, p3, p4]
     
             pts = [cdf.(d, p2) - cdf.(d, p1), cdf.(d, p3) - cdf.(d, p4)]
             end_pts[i] = pts
@@ -101,14 +97,16 @@ code = @dice begin
             areas[i] = (pts[1] + pts[2])*2^(bits - 1)
             total_area += areas[i]
         end
-
+        @show areas
         rel_prob = areas/total_area
         # @show rel_prob
-        b = discrete(rel_prob, DistInt)
+        tria = triangle(bits, t)
+        unif = uniform(bits, t)
+        b = discrete2(rel_prob, DistInt)
         a = end_pts[pieces][1]/areas[pieces]
         l = a > 1/2^bits
 
-        ans = t(dicecontext(), 2^whole_bits)
+        ans = t(dicecontext(), 2^whole_bits-1)
   
         # @show bits
         for i=pieces:-1:1
@@ -123,10 +121,13 @@ code = @dice begin
             # @show i
             ans = if prob_equals(b, i-1) 
                     (if l
-                        t(dicecontext(), ((i)*2^bits - 1)) - anyline(bits, 2/2^bits - a, t)
+                        t(dicecontext(), ((i)*2^bits - 1)) - 
+                        # anyline(bits, 2/2^bits - a, t)
+                        Dice.ifelse(flip(2 - a*2^bits), unif, tria)
                     else
                         t(dicecontext(), (i - 1)*2^bits) + 
-                            anyline(bits, a, t)
+                            # anyline(bits, a, t)
+                            Dice.ifelse(flip(a*2^bits), unif, tria)
                     end)[1]
                 else
                     ans
@@ -135,20 +136,22 @@ code = @dice begin
         return ans
     end
 
-    skillA = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5))
+    # skillA = continuous(16, DistFixParam{8, 0}, Normal(2, 0.5))
 
-    perfA1 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillA
-    perfA2 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillA
-    skillB = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5))
+    # perfA1 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillA
+    # # perfA2 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillA
+    # skillB = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5))
 
-    perfB1 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillB
-    perfB2 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillB
+    # perfB1 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillB
+    # perfB2 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillB
 
-    d = (perfA2[1] > perfB2[1]) & !perfA2[2] & !perfB2[2]
-    Cond((perfA1[1] > perfB1[1]) & !perfA1[2] & !perfB1[2], d)
+    # d = (perfA2[1] > perfB2[1]) & !perfA2[2] & !perfB2[2]
+    # Cond((perfA1[1] > perfB1[1]) & !perfA1[2] & !perfB1[2], d)
     # (perfA2[1] > perfB2[1]) & !perfA2[2] & !perfB2[2]
     # d
     # skillA
+    # perfB1[1] > perfA1[1]
+    continuous(8, DistFixParam{4, 0}, Normal(512, 82.84789644012946*2))
 end
 
 

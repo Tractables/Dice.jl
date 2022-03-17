@@ -13,6 +13,7 @@ include("lib/cond.jl")
 include("lib/fixedpoint.jl")
 include("lib/signedint.jl")
 include("lib/fixedpointparam.jl")
+include("lib/basic.jl")
 # include("lib/tuple.jl")
 
 end # module

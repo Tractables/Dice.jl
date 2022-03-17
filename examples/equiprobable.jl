@@ -72,7 +72,7 @@ code = @dice begin
             a = recurse(int_vector, i-1, 1, 2^add, p_proxy)
             push!(int_vector, a)
         end
-        t(reverse(int_vector))
+        if add == 0 t(0) else t(reverse(int_vector)) end
     end
 
     function anyline(bits::Int, p::Float64, t::Type)
@@ -114,6 +114,7 @@ code = @dice begin
         a = Vector(undef, pieces)
         l = Vector(undef, pieces)
         ex= Vector(undef, pieces)
+        
         for i=pieces:-1:1
             if (areas[i] == 0)
                 a[i] = 0.0
@@ -131,17 +132,25 @@ code = @dice begin
         end
 
         
-        tria = triangle(bits, t)
-        unif = uniform(bits, t)
+        
+        # unif = uniform(bits, t)
         
         b = discrete2(rel_prob, DistInt)
+        flip_vector = Vector(undef, pieces)
+        for i = 1:pieces
+            flip_vector[i] = flip(a[i]*2^bits)
+        end
+        unif = uniform(bits, t)
+        tria = triangle(bits, t)
 
-        ans = l[pieces](t(dicecontext(), ex[pieces]), Dice.ifelse(flip(a[pieces]*2^bits), unif, tria))[1]
+
+        # ans = l[pieces](t(dicecontext(), ex[pieces]), Dice.ifelse(flip_vector[pieces], unif, tria))[1]
+        ans = t(dicecontext(), 2^whole_bits - 1)
     
-        for i=pieces-1:-1:1
+        for i=pieces:-1:1
             ans = if prob_equals(b, i-1) 
                     (l[i](t(dicecontext(), ex[i]), 
-                        (if flip((a[i])*2^bits) unif else tria end)))[1]
+                        (if flip_vector[i] unif else tria end)))[1]
                         # (anyline(bits, a[i], t))))[1]
                 else
                     ans
@@ -150,7 +159,7 @@ code = @dice begin
         return ans
     end
 
-    (continuous(4, DistFixParam{4, 0}, Normal(8, 2)))
+    (continuous(16, DistFixParam{8, 0}, Normal(8, 2)))
 end
 
 
@@ -160,4 +169,4 @@ a = (infer(code, :bdd))
 
 
 num_flips(bdd)
-num_nodes(bdd)
+num_nodes(bdd)    

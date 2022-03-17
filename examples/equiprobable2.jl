@@ -5,12 +5,12 @@ using Distributions
 
 code = @dice begin
         
-    function uniform(b::Int, t::Type)
+    function uniform(b::Int, t::Type{T}) where T
         x = Vector(undef, b)
         for i = b:-1:1
             x[i] = flip(0.5)
         end
-        return t(x)
+        return T(x)
     end
 
     function triangle(b::Int, t::Type)
@@ -42,7 +42,7 @@ code = @dice begin
                 v[i] = p[i]/sum_
             end
             sum_ = sum_ - p[i]
-            @show v[i]
+            # @show v[i]
             @assert v[i] >= 0
             @assert v[i] <= 1
         end
@@ -70,7 +70,7 @@ code = @dice begin
         int_vector = []
         
         for i=1:add
-            @show i
+            # @show i
             a = recurse(int_vector, i-1, 1, 2^add, p_proxy)
             push!(int_vector, a)
         end
@@ -112,20 +112,20 @@ code = @dice begin
         @assert pieces <= 2^(T-1)
         d = Truncated(d, 0, 2^(T-F))
         piece_size = [T]
-        @show piece_size
+        # @show piece_size
         while (length(piece_size) < pieces)
             prob = []
             lower = 0
             upper = 0
             for i = 1:length(piece_size)
-                @show lower
+                # @show lower
                 upper = lower + 2^piece_size[i]/2^(F)
-                @show upper
-                @show cdf(d, upper) - cdf(d, lower)
+                # @show upper
+                # @show cdf(d, upper) - cdf(d, lower)
                 append!(prob, cdf(d, upper) - cdf(d, lower))
                 lower = upper
             end
-            @show prob
+            # @show prob
             lastindex = length(prob)
             for j=length(prob):-1:1
                 if prob[j] ≈ 0
@@ -141,15 +141,16 @@ code = @dice begin
                 break
             else
                 
-                @show a
+                # @show a
                 piece_size = vcat(piece_size[1:a-1], [piece_size[a]-1, piece_size[a]-1], piece_size[a+1: lastindex])
-                @show piece_size
+                # @show piece_size
             end
         end
         piece_size
     end
 
     function continuous(pieces::Int, t::Type{DistFixParam{T, F}}, d::ContinuousUnivariateDistribution) where {T, F}
+        d = Truncated(d, 0, 2^(T-F))
         whole_bits = T
         point = F
 
@@ -158,7 +159,7 @@ code = @dice begin
         interval_sz = piece_dist(pieces, t, d)
         # interval_sz = Vector{Int64}([1, 1, 1, 1, 1, 1])
         pieces = length(interval_sz)
-        @show interval_sz
+        # @show pieces
         areas = Vector(undef, pieces)
         total_area = 0
     
@@ -168,7 +169,7 @@ code = @dice begin
             p2 = p1 + 1/2^point
             p3 = start + 2^interval_sz[i]/2^point
             p4 = p3 - 1/2^point
-            @show p1, p2, p3, p4
+            # @show p1, p2, p3, p4
             pts = [cdf.(d, p2) - cdf.(d, p1), cdf.(d, p3) - cdf.(d, p4)]
             end_pts[i] = pts
     
@@ -177,27 +178,16 @@ code = @dice begin
             start = start + 2^interval_sz[i]/2^point
         end
 
+        # @show areas
+
         rel_prob = areas/total_area
-        @show rel_prob
-        # unif = uniform(maximum(interval_sz), t).number.bits
-        
-        
+        # @show rel_prob
+
         b = discrete2(rel_prob, DistInt)
-        tria = Vector(undef, pieces)
-        for i=1:pieces
-            tria[i] = triangle(interval_sz[i], t)
-        end
-        unif = Vector(undef, pieces)
-        for i=1:pieces
-            unif[i] = uniform(interval_sz[i], t)
-        end
-        unif = Vector()
-        
-        
-        
-        
-        
+        unif = uniform(maximum(interval_sz), t).number.bits
+                
         a = end_pts[pieces][1]/areas[pieces]
+        # @show a
         # l = a > 1/2^bits
 
         ans = t(dicecontext(), 2^whole_bits-1)
@@ -207,6 +197,7 @@ code = @dice begin
         for i=1:length(interval_sz)
             position += 2^interval_sz[i]
         end
+        # @show position
         for i=pieces:-1:1
             if (areas[i] == 0)
                 a = 0.0
@@ -214,30 +205,29 @@ code = @dice begin
             else
                 a = end_pts[i][1]/areas[i]
             end
+            # @show a
             l = a > 1/2^interval_sz[i]
             # @show bits
             # @show a
             # @show i
             position -= 2^interval_sz[i]
+            # @show a * 2^interval_sz[i]
+            # @show position
             ans = 
                 if prob_equals(b, i-1) 
                     (if l
+                        # @show position + 2^interval_sz[i]
+                        @show position + 2^interval_sz[i] - 1
                         t(dicecontext(), position + 2^interval_sz[i] - 1) - 
                         # anyline(interval_sz[i], 2/2^interval_sz[i] - a, t)
-                        Dice.ifelse(flip(2 - a*2^interval_sz[i]), unif[interval_sz[i]], tria[interval_sz[i]])
+                        Dice.ifelse(flip(2 - a*2^interval_sz[i]), t(unif[1:interval_sz[i]]), triangle(interval_sz[i], t))
                     else
+                        # @show position
+                        @show position
                         t(dicecontext(), position) + 
                             # anyline(interval_sz[i], a, t)
-                            Dice.ifelse(flip(a*2^interval_sz[i]), unif[interval_sz[i]], tria[interval_sz[i]])
+                            Dice.ifelse(flip(a*2^interval_sz[i]), t(unif[1:interval_sz[i]]), triangle(interval_sz[i], t))
                     end)[1]
-
-                    # if prob_equals(b, i-1) 
-                    #     (if l
-                    #         t(dicecontext(), position + 2^interval_sz[i] - 1) - Dice.ifelse(flip((2/2^interval_sz[i] - a)*2^interval_sz[i]), uniform(interval_sz[i], t), triangle(interval_sz[i], t))
-                    #     else
-                    #         t(dicecontext(), position) + 
-                    #         Dice.ifelse(flip((a)*2^interval_sz[i]), uniform(interval_sz[i], t), triangle(interval_sz[i], t))
-                    #     end)[1]
                 else
                     ans
                 end  
@@ -252,7 +242,7 @@ code = @dice begin
     # (continuous(4, DistFixParam{10, 7}, Normal(1, 0.25)) + continuous(4, DistFixParam{10, 7}, Normal(1, 0.25)))[1]
     # continuous(4, DistFixParam{4, 3}, Beta(1, 1))
     # continuous(4, DistFixParam{4, 2}, Exponential(1))
-    continuous(16, DistFixParam{8, 0}, Normal(128, 10))
+    continuous(8, DistFixParam{4, 0}, Normal(8, 2))
 end
 
 
@@ -263,3 +253,29 @@ a = (infer(code, :bdd))
 
 num_flips(bdd)
 num_nodes(bdd)
+
+function KL_div(a, T, F, d::ContinuousUnivariateDistribution)
+    d = Truncated(d, 0, 2^(T-F))
+    lower = 0
+    upper = lower + 2^F
+    p = Vector{Float64}(undef, 2^T)
+    for i=1:2^T
+        p[i] = cdf(d, upper) - cdf(d, lower)
+        lower = upper
+        upper = lower + 2^F
+    end
+    
+    p[1:length(a)]
+    # @show sum(map(a->a[2], a))
+    # @show p
+    # @show length(a)
+    # ans = Vector(undef, length(a))
+    # for i=1:length(a)
+    #     ans[i] = p[i]*(log(p[i]) - log(a[i][2]))
+    # end
+    # ans
+    kldivergence(p, map(a->a[2], a))
+    # chebyshev(p, map(a->a[2], a))
+end
+
+d = KL_div(a, 4, 0, Normal(8, 2))
