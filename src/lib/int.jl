@@ -23,6 +23,7 @@ function DistInt(mgr, i::Int)
 end
 
 function DistInt(bits::Vector)
+    @assert !isempty(bits) "`DistInt` requires a bit width of at least 1"
     DistInt(bits[1].mgr, bits)
 end
 

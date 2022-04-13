@@ -1,37 +1,48 @@
-using Revise
 using Dice
-using Dice: num_flips, num_nodes, to_dice_ir
+using Dice: num_flips, num_nodes
 
+for n = 7:7
+    code = @dice begin
 
-code = @dice begin
-    function uniform(b::Int) # b is the bits for uniform, w is the bitwidth
-        x = Vector(undef, b)
-        for i = b:-1:1
-            x[i] = flip(0.5)
+        function uniform(bitrange::Int, bitwidth::Int)
+            ans = fill(DistBool(dicecontext(), false), bitwidth)
+            for i = 1:bitrange
+                ans[i] = flip(0.5)
+            end
+            DistInt(ans)
         end
-        return DistInt(x)
+
+        function gcd(a::DistInt, b::DistInt)
+            for _ = 1 : 1 + max_bits(b) ÷ log2(MathConstants.golden)
+                t = b
+                converged = prob_equals(b, 0)
+                amb, _ = (a % b)
+                b = if converged
+                        b
+                    else
+                        amb
+                    end
+                a = if converged
+                        a
+                    else
+                        t
+                    end
+            end
+            return a
+        end
+
+        a, _ = uniform(n, n+1) + 1
+        b, _ = uniform(n, n+1) + 1
+        g = gcd(a, b)
+        prob_equals(g, 1)
     end
 
-    function GCD(a, b)
-        ap = a
-        bp = b
-        while prob_equals(a, b)
-            ap = if ap > bp 
-                    (ap - bp)[1] else ap end
-            bp = if !(ap > bp) bp else (bp - ap)[1] end
-        end
-        return ap
-    end
+    @show n
+    @show 2^n
+    
+    bdd = compile(code)
+    @show num_flips(bdd)
+    @show num_nodes(bdd)
 
-    a = (add_bits(uniform(2), 1) + 1)[1]
-    b = (add_bits(uniform(2), 1) + 1)[1]
-    GCD(a, b)
-        
-
-
+    @time @show infer(code, :bdd)
 end
-
-bdd = compile(code)
-num_flips(bdd)
-num_nodes(bdd)
-infer(code, :bdd)

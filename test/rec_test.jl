@@ -5,8 +5,8 @@ using Dice: CuddMgr, DistBool
 
 code = @dice begin
     function test_rec(a::Int)
-        ans = if a <= 0
-                    flip(0.5)
+        if a <= 0
+            flip(0.5)
         else
             flip(0.5) & test_rec(a - 1)
         end
