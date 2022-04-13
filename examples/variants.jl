@@ -7,60 +7,7 @@ using Distances
 
 function single_gaussian(p::Int)
     code = @dice begin
-            
-        function uniform(b::Int, t::Type{T}) where T
-            x = Vector(undef, b)
-            for i = b:-1:1
-                x[i] = flip(0.5)
-            end
-            return T(x)
-        end
-
-        function triangle(b::Int, t::Type)
-            s = false
-            n = 2^b
-            x = Vector(undef, b)
-            y = Vector(undef, b)
-            for i = b:-1:1
-                x[i] = Dice.ifelse(s, flip(1/2), flip((3n - 2)/ (4n-4)))
-                y[i] = flip((n-2)/(3n-2))
-                s = s || (x[i] && !y[i])
-                n = n/2
-            end
-            return t(x)
-        end
-
-        function discrete2(p::Vector{Float64}, t::Type)
-
-            function recurse(p::Vector, i, s, e, prob::Vector)
-                if (i == 0)
-                    flip(sum(prob[Int((s+e+1)/2):e])/sum(prob[s:e]))
-                else
-                    (if p[length(p) - i + 1] recurse(p, i-1, Int((s+e+1)/2), e, prob) else recurse(p, i-1, s, Int((s+e-1)/2), prob) end)
-                end
-            end
-
-            mb = length(p)
-            add = Int(ceil(log2(mb)))
-            p_proxy = vcat(p, zeros(2^add - mb))
-            int_vector = []
-            
-            for i=1:add
-                # @show i
-                a = recurse(int_vector, i-1, 1, 2^add, p_proxy)
-                push!(int_vector, a)
-            end
-            if add == 0 t(dicecontext(), 0) else t(reverse(int_vector)) end
-        end
-
-        function anyline(bits::Int, p::Float64, t::Type)
-            # @show p*2^bits
-            @assert p*2^bits >= 0
-            @assert p*2^bits <= 1
-            ans = Dice.ifelse(flip(p*2^bits), uniform(bits, t), triangle(bits, t))
-            return ans
-        end
-
+        
         function max_index_not1(prob::Vector, piece::Vector)
             max = 0
             for i=1:length(prob)
@@ -141,7 +88,7 @@ function single_gaussian(p::Int)
             # @show interval_sz
             pieces = length(interval_sz)
             
-            areas = Vector(undef, pieces)
+            areas = Vector{Float64}(undef, pieces)
             total_area = 0
         
             end_pts = Vector(undef, pieces)
@@ -154,18 +101,21 @@ function single_gaussian(p::Int)
                 @show (p1, p2, p4, p3)
                 end_pts[i] = pts
         
-                areas[i] = (pts[1] + pts[2])*2^(interval_sz[i] - 1)
+                # areas[i] = (pts[1] + pts[2])*2^(interval_sz[i] - 1)
+                areas[i] = cdf.(d, p3) - cdf.(d, p1)
                 total_area += areas[i]
                 start = start + 2^interval_sz[i]/2^point
             end
 
-            @show end_pts
+            # @show end_pts
             # @show areas
             rel_prob = areas/total_area
-            @show total_area
+            # @show sum(rel_prob)
+            # @show total_area
             # @show rel_prob
+            @show interval_sz
             
-            b = discrete2(rel_prob, DistInt)
+            b = discrete2(dicecontext(), rel_prob, DistInt)
             flip_vector = Vector(undef, pieces)
             
 
@@ -177,61 +127,58 @@ function single_gaussian(p::Int)
             for i=1:length(interval_sz)
                 position += 2^interval_sz[i]
             end
+
             for i=pieces:-1:1
                 if (areas[i] == 0)
                     a = 0.0
 
                 else
-                    a = end_pts[i][1]/areas[i]
+                    if end_pts[i][1] > end_pts[i][2]
+                        a = end_pts[i][2]/areas[i]
+                    else
+                        a = end_pts[i][1]/areas[i]
+                    end
+
+                    # if end_pts[i][1] > end_pts[i][2]
+                    #     a = end_pts[i][2] * 2/ (2^interval_sz[i] * sum(end_pts[i]))
+                    # else
+                    #     a = end_pts[i][1] * 2/ (2^interval_sz[i] * sum(end_pts[i]))
+                    # end
                 end
-                l = a > 1/2^interval_sz[i]
+
+                @show end_pts[i]
+                l = end_pts[i][1] > end_pts[i][2]
+
                 position -= 2^interval_sz[i]
                 ans = 
                     if prob_equals(b, i-1) 
                         (if l
                             t(dicecontext(), position + 2^interval_sz[i] - 1) - 
-                            anyline(interval_sz[i], 2/2^interval_sz[i] - a, t)
+                            anyline(dicecontext(), interval_sz[i], a, t)
                             # Dice.ifelse(flip(2 - a*2^interval_sz[i]), t(unif[1:interval_sz[i]]), triangle(interval_sz[i], t))
                         else
                             t(dicecontext(), position) + 
-                                anyline(interval_sz[i], a, t)
+                                anyline(dicecontext(), interval_sz[i], a, t)
                                 # Dice.ifelse(flip(a*2^interval_sz[i]), t(unif[1:interval_sz[i]]), triangle(interval_sz[i], t))
                         end)[1]
                     else
                         ans
                     end  
             end
+            @show interval_sz
             return ans
         end
-
-        # skillA = continuous(16, DistFixParam{8, 0}, Normal(50, 10))
-
-        # perfA1 = continuous(16, DistFixParam{8, 0}, Normal(50, 15)) + skillA
-        # perfA2 = continuous(16, DistFixParam{8, 0}, Normal(50, 15)) + skillA
-        # skillB = continuous(16, DistFixParam{8, 0}, Normal(50, 10))
-        # perfB1 = continuous(16, DistFixParam{8, 0}, Normal(50, 15)) + skillB
-
-        # perfB2 = continuous(16, DistFixParam{8, 0}, Normal(50, 15)) + skillB
-        # # # # perfB2 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillB
-
-        # d = (perfA2[1] > perfB2[1]) & !perfA2[2] & !perfB2[2]
-        # Cond((perfA1[1] > perfB1[1]) & !perfA1[2] & !perfB1[2], d)
-        # # # (perfA2[1] > perfB2[1]) & !perfA2[2] & !perfB2[2]
-        # # # d
-        # skillA
-        # (perfB1[1] > perfA1[1]) & !perfA1[2] & !perfB1[2]
-        # perfA1[1]
-        # continuous(8, DistFixParam{2, 0}, Normal(2, 2))
-        d = continuous(p, DistFixParam{5, 0}, Normal(16, 16/3.09))
-        # d
+        d = continuous(p, DistFixParam{10, 0}, Normal(512, 512/3.09))
+        # anyline(dicecontext(), 2, 0.1, DistInt)
     end
     code
+    
 end
 
-code = single_gaussian(8)
+code = single_gaussian(16)
 bdd = compile(code)
 a = infer(code, :bdd)
-d = KL_div(a, 5, 0, Normal(16, 16/3.09))
+d = KL_div(a, 10, 0, Normal(512, 512/3.09))
 num_flips(bdd)
 num_nodes(bdd)
 k = KL_div(a, 10, 0, Normal(512, 82.84789644012946*2))
@@ -261,7 +208,7 @@ function KL_div(a, T, F, d::ContinuousUnivariateDistribution)
         ans[i] = p[i]*(log(p[i]) - log(a[i][2]))
     end
     # ans
-    # p
+    
     kldivergence(p, map(a->a[2], a))
     # chebyshev(p, map(a->a[2], a))
 end

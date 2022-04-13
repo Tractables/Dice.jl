@@ -23,6 +23,7 @@ function triangle(mgr, b::Int, t::Type)
 end
 
 function discrete2(mgr, p::Vector{Float64}, t::Type)
+    @assert sum(p) ≈ 1
 
     function recurse(p::Vector, i, s, e, prob::Vector)
         if (i == 0)
@@ -48,7 +49,6 @@ function discrete2(mgr, p::Vector{Float64}, t::Type)
 end
 
 function anyline(mgr, bits::Int, p::Float64, t::Type)
-    # @show p*2^bits
     @assert p*2^bits >= 0
     @assert p*2^bits <= 1
     ans = Dice.ifelse(DistBool(mgr, p*2^bits), uniform(mgr, bits, t), triangle(mgr, bits, t))

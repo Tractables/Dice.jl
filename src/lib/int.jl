@@ -154,6 +154,21 @@ function Base.:+(p1::DistInt, p2::DistInt)
     DistInt(t1.mgr, z), carry
 end
 
+
+# function Base.:+(t1::DistInt, t2::DistInt)
+#     last_sat_bit = 0
+#     mb = max_bits(p2)
+
+#     z = Vector{DistBool}(undef, mb)
+#     carry = false
+#     for i = 1:mb
+#         z[i] = (!t1.bits[i] & t2.bits[i]) | (t1.bits[i] & !t2.bits[i])
+#         z[i] = (!z[i] & carry) | (z[i] & !carry) #combine in one line or maybe add XOR too
+#         carry = (t1.bits[i] & t2.bits[i]) | (carry & (t1.bits[i] | t2.bits[i]))
+#     end
+#     DistInt(t1.mgr, z), carry
+# end
+
 Base.:+(p1::DistInt, p2::Int) =
     p1 + DistInt(p1.mgr, p2)
 

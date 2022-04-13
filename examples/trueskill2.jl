@@ -96,17 +96,17 @@ function single_gaussian(p::Int)
         # skillA
         # (perfB1[1] > perfA1[1]) & !perfA1[2] & !perfB1[2]
         # perfA1[1]
-        d = continuous(p, DistFixParam{10, 0}, Normal(100, 10))
+        d = continuous(p, DistFixParam{10, 0}, Normal(512, 512/3.09))
         d
     end
     code
 end
 
 
-code = single_gaussian(32)
+code = single_gaussian(16)
 bdd = compile(code)
 b = infer(code, :bdd)
-d = KL_div(b, 10, 0, Normal(100, 10))
+d = KL_div(b, 10, 0, Normal(512, 512/3.09))
 
 bdd = compile(code)
 num_flips(bdd)
@@ -131,7 +131,7 @@ function KL_div(a, T, F, d::ContinuousUnivariateDistribution)
         upper = lower + 2^F
     end
     
-    p[1:length(a)]
+    p = p[1:length(a)]
     # @show sum(map(a->a[2], a))
     # @show p
     # @show length(a)
@@ -141,9 +141,9 @@ function KL_div(a, T, F, d::ContinuousUnivariateDistribution)
     end
     plot(map(a -> a[2], a), ans)
         
-    # kldivergence(p, map(a->a[2], a))
+    kldivergence(p, map(a->a[2], a))
     # ans
-    p
+    # p
     # chebyshev(p, map(a->a[2], a))
 end
 

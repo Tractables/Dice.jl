@@ -12,21 +12,24 @@ code = @dice begin
         DistInt(ans)
     end
 
+    function dice_gcd(a, b)
+        for _ = 0 : 10
+            gt = a > b
+            lt = b > a
+            amb, _ = a - b
+            bma, _ = b - a
+            a = if gt amb else a end
+            b = if lt bma else b end
+        end
+        return a
+    end
+
     function gcd(a::DistInt, b::DistInt)
         for _ = 1 : 1 + max_bits(b) ÷ log2(MathConstants.golden)
-        # for _ = 1:8
+        # for _ = 1:1 + 5*max_bits(b)
             amb, _ = (a % b)
-            ambt = if prob_equals(amb, 0) 
-                    (if prob_equals(b, 1) DistInt(dicecontext(), 1) else DistInt(dicecontext(), 2) end) 
-                  else amb end
-            bt = if prob_equals(amb, 0) 
-                (if prob_equals(b, 1) DistInt(dicecontext(), 1) else DistInt(dicecontext(), 2) end) 
-              else b end
-            b, a = ambt, bt
-
-            # amb = if prob_equals(amb, 0) b else amb end
-            # b, a = amb, b
-            
+            amb = if prob_equals(amb, 0) b else amb end
+            b, a = amb, b
         end
         return a
     end
