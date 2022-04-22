@@ -25,4 +25,8 @@ end
 bdd = compile(code)
 num_flips(bdd)
 num_nodes(bdd)
-infer(code, :bdd)
+dist = infer(bdd)
+@assert sum(dist) ≈ 1
+@assert dist[1] ≈ 0.1
+@assert dist[2] ≈ 0.2
+@assert dist[3] ≈ 0.7
