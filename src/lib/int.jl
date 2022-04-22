@@ -52,6 +52,13 @@ function infer(d::DistInt)
     ans
 end
 
+function group_infer(f, d::DistInt, prior, prior_p::Float64)
+    group_infer(d.bits, prior, prior_p) do assignment, new_prior, new_p
+        v = sum(if is_set 2^(i-1) else 0 end for (i, is_set) in enumerate(assignment))
+        f(v, new_prior, new_p)
+    end
+end
+
 max_bits(i::DistInt) =
     length(i.bits)
 
