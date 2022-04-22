@@ -17,7 +17,13 @@ DistBool(mgr::DiceManager, b::Bool) =
     DistBool(mgr, constant(mgr, b))
 
 DistBool(mgr::DiceManager, p::Number) =
-    DistBool(mgr, new_var(mgr, p))
+    if iszero(p)
+        DistBool(mgr, false)
+    elseif isone(p)
+        DistBool(mgr, true)
+    else
+        DistBool(mgr, new_var(mgr, p))
+    end
 
 # display `DistBool` values depending on the manager type
 function Base.show(io::IO, x::DistBool) 
