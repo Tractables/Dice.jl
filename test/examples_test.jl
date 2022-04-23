@@ -31,6 +31,10 @@ using Suppressor: @suppress_out
     )
 
     @test_nowarn @suppress_out include(
+        "$(@__DIR__)/../examples/test_char.jl"
+    )
+
+    @test_nowarn @suppress_out include(
         "$(@__DIR__)/../examples/test_ifelse.jl"
     )
 
