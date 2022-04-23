@@ -140,6 +140,12 @@ Base.:>(x::DistInt, y::Int) = x > DistInt(x.mgr, y)
 
 Base.:>(x::Int, y::DistInt) = DistInt(y.mgr, x) > y
 
+Base.:<(x::DistInt, y::DistInt) = y > x
+
+Base.:<(x::Int, y::DistInt) = y > x
+
+Base.:<(x::DistInt, y::Int) = y > x
+
 # No canonical bitwidth
 function Base.:+(p1::DistInt, p2::DistInt)
     last_sat_bit = 0
@@ -334,6 +340,26 @@ function add_bits(p::DistInt, w::Int)
     end
     DistInt(p.mgr, vcat(p.bits, ext))
 end
-    
 
+# Possibly-temporary int utilities
+# TODO: Update once error handling is settled on
+function safe_inc(d::DistInt)
+    d_inc, carry = d + 1
+    if issat(carry)
+        return DistInt(d.mgr, [d_inc.bits;carry])
+    end
+    d_inc
+end
+
+function safe_add(x::DistInt, y::DistInt)
+    if max_bits(x) > max_bits(y)
+        x, y = y, x
+    end
+    z, carry = x + y
+    while issat(carry)
+        x, y = add_bits(x, 1), y
+        z, carry = x + y
+    end
+    z
+end
 
