@@ -38,6 +38,8 @@ function to_dice(code)
         end
         @capture(x, flip(P_)) && return :(DistBool($mgr, $P)) 
         @capture(x, DistInt(I_)) && return :(DistInt($mgr, $I)) 
+        @capture(x, DistChar(C_)) && return :(DistChar($mgr, $C))
+        @capture(x, DistString(C_)) && return :(DistString($mgr, $C))
         @capture(x, dicecontext()) && return :($mgr) 
         @capture(x, A_ || B_) && return :($A | $B) 
         @capture(x, A_ && B_) && return :($A & $B) 
