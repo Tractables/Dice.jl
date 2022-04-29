@@ -30,4 +30,8 @@ using Suppressor: @suppress_out
         "$(@__DIR__)/../examples/test_ifelse.jl"
     )
 
+    @test_nowarn @suppress_out include(
+        "$(@__DIR__)/../examples/test_constant_flips.jl"
+    )
+
 end
