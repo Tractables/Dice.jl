@@ -27,18 +27,36 @@ function DistInt(bits::Vector)
     DistInt(bits[1].mgr, bits)
 end
 
+# Divide-and-conquer inference algorithm for ints
+# Intuition: if a bit is always T/F, we halve the search space for satisfiable
+# assignments. We always infer a bit given assignments to previous bits.
 function infer(d::DistInt)
     mb = max_bits(d)
-    ans = Vector(undef, 2^mb)
-    non_zero_index = 0
-    for i=0:2^mb - 1
-        a = infer(prob_equals(d, i))
-        if !(a ≈ 0)
-            non_zero_index = i+1
+    ans = zeros(2^mb)
+    # Infer on bit i, given a satisfying assignment to previous bits (prior),
+    # Pr(prior), and the numerical value implied by prior (v)
+    function helper(i, prior, prior_p, v)
+        if i > mb
+            ans[v+1] = prior_p
+            return
         end
-        ans[i + 1] = a
+        sub_p = infer(prior & d.bits[i])
+        if sub_p != 0
+            helper(i + 1, prior & d.bits[i], sub_p, v + 2^(i-1))
+        end
+        if !(sub_p ≈ prior_p)
+            helper(i + 1, prior & !d.bits[i], prior_p-sub_p, v)
+        end
     end
-    ans[1:non_zero_index]
+    helper(1, true, 1, 0)
+    ans
+end
+
+function group_infer(f, d::DistInt, prior, prior_p::Float64)
+    group_infer(d.bits, prior, prior_p) do assignment, new_prior, new_p
+        v = sum(if is_set 2^(i-1) else 0 end for (i, is_set) in enumerate(assignment))
+        f(v, new_prior, new_p)
+    end
 end
 
 max_bits(i::DistInt) =
