@@ -15,7 +15,7 @@ ifelse(g::AbstractFloat, t, e) = g*t + (1-g)*e
 foo(true)
 foo(0.9)
 
-@code_ir foo(0.9) 
+IR(typeof(foo), Any) 
 
 ##################
 
@@ -26,7 +26,6 @@ function transform(ir)
     for block in blocks(ir)
         for br in copy(branches(block)) 
             !isconditional(br) && continue
-            @show br
 
             # add a polymorphism block to escape to when guard is non-boolean
             poly = block!(ir)
@@ -36,9 +35,8 @@ function transform(ir)
             
             # test whether guard is Bool, else go to polymorphism block
             cond = br.condition
-            @show cond
             isbool = push!(block, xcall(:isa, cond, :Bool))
-            brpoly = Branch(isbool, 3, [cond])
+            brpoly = Branch(isbool, length(blocks(ir)), [cond])
             pushfirst!(branches(block), brpoly) 
         end
     end
