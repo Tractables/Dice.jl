@@ -15,7 +15,7 @@ ifelse(g::AbstractFloat, t, e) = g*t + (1-g)*e
 foo(true)
 foo(0.9)
 
-IR(typeof(foo), Any) 
+IRTools.IR(typeof(foo), Any) 
 
 ##################
 
@@ -30,7 +30,8 @@ function transform(ir)
             # add a polymorphism block to escape to when guard is non-boolean
             poly = block!(ir)
             polycond = argument!(poly)
-            poly1 = push!(poly, xcall(:error, "control flow polymorphism not yet implemented"))
+            handler = gensym("polybrhandler")
+            poly1 = push!(poly, xcall(handler, polycond))
             return!(poly, poly1)
             
             # test whether guard is Bool, else go to polymorphism block
