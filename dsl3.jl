@@ -30,9 +30,12 @@ function transform(ir)
             # add a polymorphism block to escape to when guard is non-boolean
             poly = block!(ir)
             polycond = argument!(poly)
-            handler = gensym("polybrhandler")
-            poly1 = push!(poly, xcall(handler, polycond))
-            return!(poly, poly1)
+            handler1 = gensym("polybrhandler")
+            handler2 = gensym("polybrhandler")
+            poly1 = push!(poly, xcall(handler1, polycond))
+            poly2 = push!(poly, xcall(handler2, polycond))
+            poly3 = push!(poly, xcall(:ifelse, polycond, poly1, poly2))
+            return!(poly, poly3)
             
             # test whether guard is Bool, else go to polymorphism block
             cond = br.condition
