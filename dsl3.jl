@@ -11,18 +11,29 @@ function foo(x,y)
     end
 end
 
+# function foo(x,y)
+#     if x
+#         0.4  + y
+#     else
+#         0.1  +y
+#     end
+# end
+
 ifelse(g::AbstractFloat, t, e) = g*t + (1-g)*e
 
 foo(true,0.1)
 foo(0.9,0.1)
 
-IRTools.IR(typeof(foo), Any, Any) 
+IRTools.IR(typeof(foo), Any, Any; slots = false)
+IRTools.expand!(IRTools.IR(typeof(foo), Any, Any; slots = false))
 
 ##################
 
 using IRTools: blocks, block!, canbranch, IR, argument!, return!, xcall, func, isconditional, Branch
 
 function transform(ir)
+    # make sure all cross-block variable use is through block arguments
+    ir = IRTools.expand!(ir)
     # point each conditional `br`` to its polymorphism block
     @show ir
     for i in eachindex(blocks(ir))
