@@ -23,8 +23,10 @@ using IRTools: blocks, block!, canbranch, IR, argument!, return!, xcall, func, b
 
 function transform(ir)
     # point each conditional `br`` to its polymorphism block
-    for block in blocks(ir)
-        for br in copy(branches(block)) 
+    for i in eachindex(blocks(ir))
+        block = IRTools.block(ir,i)
+        polybrs = Branch[]
+        for br in branches(block) 
             !isconditional(br) && continue
 
             # add a polymorphism block to escape to when guard is non-boolean
@@ -40,9 +42,10 @@ function transform(ir)
             # test whether guard is Bool, else go to polymorphism block
             cond = br.condition
             isbool = push!(block, xcall(:isa, cond, :Bool))
-            brpoly = Branch(isbool, length(blocks(ir)), [cond])
-            pushfirst!(branches(block), brpoly) 
+            polybr = Branch(isbool, length(blocks(ir)), [cond])
+            push!(polybrs, polybr)
         end
+        prepend!(branches(block), polybrs) 
     end
     ir
 end
