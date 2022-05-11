@@ -4,6 +4,7 @@ using IRTools, IfElse
 # Motivation
 ##################
 
+# a function with control flow
 function foo(x,y)
     z = y*0.5
     if x
@@ -14,21 +15,22 @@ function foo(x,y)
 end
 
 # control flow depending on `Bool`` guards works by default
-foo(true,0.1) # 0.45
+foo(true, 0.1) # 0.45
 
 # we would like control flow to be polymorphic, 
 # for example to let `AbstractFloat` guards take the weighted average of both branches
-IfElse.ifelse(g::AbstractFloat, t, e) = g*t + (1-g)*e
+IfElse.ifelse(guard::AbstractFloat, then, elze) = guard*then + (1-guard)*elze
 
 # control flow depending on such `AbstractFloat` guards is not polymorphic by default
-foo(0.9,0.1) # ERROR: TypeError: non-boolean (Float64) used in boolean context
+foo(0.9, 0.1) # ERROR: TypeError: non-boolean (Float64) used in boolean context
 
 ##################
 # Implementation
 ##################
 
-using IRTools: blocks, block!, canbranch, IR, argument!, return!, xcall, func, isconditional, Branch, arguments
+using IRTools: blocks, block!, IR, argument!, return!, xcall, isconditional, Branch, arguments
 
+"Utility to translate between caller and function/block argument lists"
 function mapvars(block)
     vmap = Dict()
     callerargs = []
@@ -43,6 +45,7 @@ function mapvars(block)
     callerargs, lookup
 end
 
+"Transform IR to have polymorphic control flow and add helper function IR"
 function transform(ir)
     # ensure all cross-block variable use is through block arguments (make blocks functional)
     ir = IRTools.expand!(ir)
@@ -78,9 +81,11 @@ function transform(ir)
                 foreach(lookup, br.args)
                 foreach(lookup, args[j+1])                
                 
+                # put a new helper function on the TODO list for later
                 helper = gensym("polybr_help")
                 push!(helpers, (helper, copy(branches_rev), lookup, arguments(poly)))
 
+                # call helper function for each branch, return polymorphic IfElse value
                 branchargs = @view arguments(poly)[2:end]
                 call_then = push!(poly, xcall(Base.invokelatest, helper, true, branchargs...))
                 call_else = push!(poly, xcall(Base.invokelatest, helper, false, branchargs...))
@@ -138,6 +143,7 @@ function transform(ir)
     ir, helpers_ir
 end
 
+"Generate a version of the methods that has polymorphic control flow"
 function gen_poly_f(funtype, args...)
     ir = IR(funtype, args...)
     fir, helpers = transform(ir)
@@ -149,16 +155,30 @@ function gen_poly_f(funtype, args...)
             # return 0.5
         end
     end
-    @eval @generated function $(gensym("polybr"))($([Symbol(:arg, i) for i = 1:length(arguments(fir))]...))
+    polybr = @eval @generated function $(gensym("polybr"))($([Symbol(:arg, i) for i = 1:length(arguments(fir))]...))
         return IRTools.Inner.build_codeinfo($fir)
     end
+    # hide first argument
+    return (args...) -> polybr(nothing, args...)
 end
 
 ##################
 # Example
 ##################
 
+# apply source transformation
 foo2 = gen_poly_f(typeof(foo), Any, Any)
 
-foo2(nothing, true, 0.1) # 0.45
-foo2(nothing, 0.4, 0.1) #0.27
+# `Bool` guards still work (and evaluate only a single branch)
+foo2(true, 0.1) # 0.45
+
+# `AbstractFloat`` guards now also work
+foo2(0.4, 0.1) #0.27
+
+# if the compiler can prove that the guard is `Bool`, the additional code disappears
+@code_typed foo2(true, 0.1)
+
+# if the compiler can prove that the guard is not `Bool``, 
+# there is no traditional control flow, 
+# only calls to helper functions for both branches and `ifelse`
+@code_typed foo2(0.4, 0.1)
