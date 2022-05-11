@@ -143,16 +143,14 @@ function transform(ir)
     ir, helpers_ir
 end
 
-"Generate a version of the methods that has polymorphic control flow"
+"Generate a version of the method that has polymorphic control flow"
 function gen_poly_f(funtype, args...)
     ir = IR(funtype, args...)
     fir, helpers = transform(ir)
     for (helpername, helperir) in helpers
         # cf https://github.com/FluxML/IRTools.jl/blob/master/src/eval.jl
         @eval @generated function $(helpername)($([Symbol(:arg, i) for i = 1:length(arguments(helperir))]...))
-            # println("called helper")
             return IRTools.Inner.build_codeinfo($helperir)
-            # return 0.5
         end
     end
     polybr = @eval @generated function $(gensym("polybr"))($([Symbol(:arg, i) for i = 1:length(arguments(fir))]...))
