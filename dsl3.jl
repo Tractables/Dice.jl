@@ -197,9 +197,9 @@ function num_true(x)
 end
 
 num_true([0.2, 0.9]) # ERROR: TypeError: non-boolean (Float64) used in boolean context
-IRTools.expand!(@code_ir num_true([0.5]))
 
 num_true2 = gen_poly_f(typeof(num_true), Vector{Float64})
+
 num_true2([]) #0
 num_true2([0.2]) #0.2
 num_true2([0.2, 0.9]) # 0.2*(1-0.9)*1 + 0.2*0.9*2 = 0.38
