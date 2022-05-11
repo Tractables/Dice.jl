@@ -1,5 +1,7 @@
-using IRTools
+using IRTools, IfElse
 
+##################
+# Motivation
 ##################
 
 function foo(x,y)
@@ -11,22 +13,18 @@ function foo(x,y)
     end
 end
 
-# function foo(x,y)
-#     if x
-#         0.4  + y
-#     else
-#         0.1  +y
-#     end
-# end
+# control flow depending on `Bool`` guards works by default
+foo(true,0.1) # 0.45
 
-ifelse(g::AbstractFloat, t, e) = g*t + (1-g)*e
+# we would like control flow to be polymorphic, 
+# for example to let `AbstractFloat` guards take the weighted average of both branches
+IfElse.ifelse(g::AbstractFloat, t, e) = g*t + (1-g)*e
 
-foo(true,0.1)
-foo(0.9,0.1)
+# control flow depending on such `AbstractFloat` guards is not polymorphic by default
+foo(0.9,0.1) # ERROR: TypeError: non-boolean (Float64) used in boolean context
 
-IRTools.IR(typeof(foo), Any, Any; slots = false)
-IRTools.expand!(IRTools.IR(typeof(foo), Any, Any; slots = false))
-
+##################
+# Implementation
 ##################
 
 using IRTools: blocks, block!, canbranch, IR, argument!, return!, xcall, func, isconditional, Branch, arguments
@@ -80,13 +78,13 @@ function transform(ir)
                 foreach(lookup, br.args)
                 foreach(lookup, args[j+1])                
                 
-                helper = :myhelper #gensym()
+                helper = gensym("polybr_help")
                 push!(helpers, (helper, copy(branches_rev), lookup, arguments(poly)))
 
                 branchargs = @view arguments(poly)[2:end]
-                call_then = push!(poly, xcall(helper, true, branchargs...))
-                call_else = push!(poly, xcall(helper, false, branchargs...))
-                ite = push!(poly, xcall(:ifelse, lookup(cond), call_then, call_else))
+                call_then = push!(poly, xcall(Base.invokelatest, helper, true, branchargs...))
+                call_else = push!(poly, xcall(Base.invokelatest, helper, false, branchargs...))
+                ite = push!(poly, xcall(IfElse.ifelse, lookup(cond), call_then, call_else))
                 return!(poly, ite)
                 
                 # test whether guard is Bool, else go to polymorphism block
@@ -140,38 +138,27 @@ function transform(ir)
     ir, helpers_ir
 end
 
-tir = transform(IR(typeof(foo), Any, Any))
-
 function gen_poly_f(funtype, args...)
     ir = IR(funtype, args...)
     fir, helpers = transform(ir)
     for (helpername, helperir) in helpers
         # cf https://github.com/FluxML/IRTools.jl/blob/master/src/eval.jl
-        @show helpername
-        codeinfo = IRTools.build_codeinfo(helperir)
-        @show codeinfo
-        h = @eval @generated function $(helpername)($([Symbol(:arg, i) for i = 1:length(arguments(helperir))]...))
-            return $codeinfo
+        @eval @generated function $(helpername)($([Symbol(:arg, i) for i = 1:length(arguments(helperir))]...))
+            # println("called helper")
+            return IRTools.Inner.build_codeinfo($helperir)
+            # return 0.5
         end
-        @show methods(h)
-        @show typeof(h)
     end
-    func(fir)
+    @eval @generated function $(gensym("polybr"))($([Symbol(:arg, i) for i = 1:length(arguments(fir))]...))
+        return IRTools.Inner.build_codeinfo($fir)
+    end
 end
 
-f = gen_poly_f(typeof(foo), Any, Any)
+##################
+# Example
+##################
 
-f(nothing, true, 0.1)
-f(nothing, 0.4, 0.1)
-Base.invokelatest(f, nothing, 0.4, 0.1)
+foo2 = gen_poly_f(typeof(foo), Any, Any)
 
-tir
-dummy = :dummyf
-h = @eval @generated function $(dummy)($([Symbol(:arg, i) for i = 1:length(arguments(tir[1]))]...))
-    return IRTools.build_codeinfo($(tir[1]))
-end
-
-h
-typeof(h)
-@code_lowered h(nothing, true, 0.1)
-dummyf(nothing, true, 0.1)
+foo2(nothing, true, 0.1) # 0.45
+foo2(nothing, 0.4, 0.1) #0.27
