@@ -48,6 +48,7 @@ end
 function transform(ir)
     # ensure all cross-block variable use is through block arguments (make blocks functional)
     ir = IRTools.expand!(ir)
+    helpers = []
     # point each conditional `br`` to its polymorphism block
     for i in eachindex(blocks(ir))
         block = IRTools.block(ir,i)
@@ -73,16 +74,15 @@ function transform(ir)
 
                 # add arguments for guard, and variables that both branches depend on
                 polyargs, lookup = mapvars(poly) 
-                next_args_ord = collect(args[j+1])
                 
-                args_then = map(lookup, br.args)
-                f_then = gensym("poly_br_then")
-                call_then = push!(poly, xcall(f_then, args_then...))
-
-                else_args = map(lookup, next_args_ord)                
-                f_else = gensym("poly_br_else")
-                call_else = push!(poly, xcall(f_else, else_args...))
+                # look up all possible arguments for poly block
+                lookup(cond)
+                foreach(lookup, br.args)
+                foreach(lookup, args[j+1])                
                 
+                helper = gensym("poly_br")
+                call_then = push!(poly, xcall(helper, false, arguments(poly)...))
+                call_else = push!(poly, xcall(felper, true, arguments(poly)...))
                 ite = push!(poly, xcall(:ifelse, lookup(cond), call_then, call_else))
                 return!(poly, ite)
                 
