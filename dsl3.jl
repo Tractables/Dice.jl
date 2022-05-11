@@ -138,12 +138,12 @@ function transform(ir)
         end
         sym, help_ir
     end 
-    
+
     ir, helpers_ir
 end
 
 "Generate a version of the method that has polymorphic control flow"
-function gen_poly_f(funtype, args...)
+function gen_polybr_f(funtype, args...)
     ir = IR(funtype, args...)
     fir, helpers = transform(ir)
     for (helpername, helperir) in helpers
@@ -164,7 +164,7 @@ end
 ##################
 
 # apply source transformation
-foo2 = gen_poly_f(typeof(foo), Any, Any)
+foo2 = gen_polybr_f(typeof(foo), Any, Any)
 
 # `Bool` guards still work (and evaluate only a single branch)
 foo2(true, 0.1) # 0.45
@@ -197,7 +197,7 @@ end
 
 num_true([0.2, 0.9]) # ERROR: TypeError: non-boolean (Float64) used in boolean context
 
-num_true2 = gen_poly_f(typeof(num_true), Vector{Float64})
+num_true2 = gen_polybr_f(typeof(num_true), Vector{Float64})
 
 num_true2([]) #0
 num_true2([0.2]) #0.2
