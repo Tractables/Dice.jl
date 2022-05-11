@@ -35,7 +35,6 @@ function transform(ir)
     # ensure all cross-block variable use is through block arguments (make blocks functional)
     ir = IRTools.expand!(ir)
     # point each conditional `br`` to its polymorphism block
-    @show ir
     for i in eachindex(blocks(ir))
         block = IRTools.block(ir,i)
         branches = IRTools.branches(block) 
@@ -44,46 +43,63 @@ function transform(ir)
         args = [Set{IRTools.Variable}() for _ in 1:length(branches)]
 
         branches_rev = Branch[]
-        @show i
         for j in length(branches):-1:1
             # visit branches in reverse for data flow analysis and inserting branches
             br = branches[j]    
             push!(branches_rev, br)
-            @show j, br
-            
-            # collect variables that branch depends on
+        
+            if isconditional(br) 
+                @assert j < length(branches)
+                cond = br.condition
+
+                @assert cond isa IRTools.Variable # not sure if this will always be the case... (if false?)
+
+                # add a polymorphism block to escape to when guard is non-boolean
+                poly = block!(ir)
+
+                # add arguments for guard, and variables that both branches depend on
+                vmap = Dict()
+                polyargs = []
+                lookup(x) = get!(vmap, x) do 
+                    if (x isa IRTools.Variable) 
+                        push!(polyargs, x) # add to poly block argument list
+                        argument!(poly)
+                    else
+                        x # copy constants
+                    end
+                end 
+                next_args_ord = collect(args[j+1])
+                
+                args_then = map(lookup, br.args)
+                f_then = gensym("poly_br_then")
+                call_then = push!(poly, xcall(f_then, args_then...))
+
+                else_args = map(lookup, next_args_ord)                
+                f_else = gensym("poly_br_else")
+                call_else = push!(poly, xcall(f_else, else_args...))
+                
+                ite = push!(poly, xcall(:ifelse, lookup(cond), call_then, call_else))
+                return!(poly, ite)
+                
+                # test whether guard is Bool, else go to polymorphism block
+                isbool = push!(block, xcall(:isa, cond, :Bool))
+                polybr = Branch(isbool, length(blocks(ir)), polyargs)
+                push!(branches_rev, polybr)
+
+                # data flow for condition 
+                push!(args[j], br.condition)
+            end
+
+            # data flow for branch arguments
             for x in br.args 
                 if x isa IRTools.Variable
                     push!(args[j],x)
                 end
             end
-
-            if isconditional(br) 
-                # collect variable that branch condition depends on
-                cond = br.condition
-                (cond isa IRTools.Variable) && push!(args[j], br.condition)
-
-                # add a polymorphism block to escape to when guard is non-boolean
-                poly = block!(ir)
-                polycond = argument!(poly)
-                handler1 = gensym("polybrhandler")
-                handler2 = gensym("polybrhandler")
-                poly1 = push!(poly, xcall(handler1, polycond))
-                poly2 = push!(poly, xcall(handler2, polycond))
-                poly3 = push!(poly, xcall(:ifelse, polycond, poly1, poly2))
-                return!(poly, poly3)
-                
-                # test whether guard is Bool, else go to polymorphism block
-                isbool = push!(block, xcall(:isa, cond, :Bool))
-                polybr = Branch(isbool, length(blocks(ir)), [cond])
-                push!(branches_rev, polybr)
-
-                # cumulative data flow
-                if j < length(branches)
-                    union!(args[j], args[j+1])
-                end
+            # make data flow cumulative
+            if j < length(branches)
+                union!(args[j], args[j+1])
             end
-            @show args
         end
         empty!(branches)
         append!(branches, reverse!(branches_rev))
@@ -94,5 +110,5 @@ end
 tir = transform(IR(typeof(foo), Any, Any))
 
 f = func(tir)
-f(nothing, false,0.1)
+f(nothing, false, 0.1)
 f(nothing, 0.4,0.1)
