@@ -27,7 +27,12 @@ function discrete2(mgr, p::Vector{Float64}, t::Type)
 
     function recurse(p::Vector, i, s, e, prob::Vector)
         if (i == 0)
-            DistBool(mgr, sum(prob[Int((s+e+1)/2):e])/sum(prob[s:e]))
+            a = sum(prob[s:e])
+            if a == 0
+                DistBool(mgr, false)
+            else
+                DistBool(mgr, sum(prob[Int((s+e+1)/2):e])/sum(prob[s:e]))
+            end
         else
             (Dice.ifelse(p[length(p) - i + 1], recurse(p, i-1, Int((s+e+1)/2), e, prob), recurse(p, i-1, s, Int((s+e-1)/2), prob)))
             # if p[length(p) - i + 1] recurse(p, i-1, Int((s+e+1)/2), e, prob) else recurse(p, i-1, s, Int((s+e-1)/2), prob) end
@@ -51,6 +56,7 @@ end
 function anyline(mgr, bits::Int, p::Float64, t::Type)
     @assert p*2^bits >= 0
     @assert p*2^bits <= 1
+    @show p
     ans = Dice.ifelse(DistBool(mgr, p*2^bits), uniform(mgr, bits, t), triangle(mgr, bits, t))
     return ans
 end

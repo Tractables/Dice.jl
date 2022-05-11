@@ -4,61 +4,6 @@ using Dice: num_flips, num_nodes, to_dice_ir
 using Distributions
 
 code = @dice begin
-        
-    function uniform(b::Int, t::Type)
-        x = Vector(undef, b)
-        for i = b:-1:1
-            x[i] = flip(0.5)
-        end
-        return t(x)
-    end
-
-    function triangle(b::Int, t::Type)
-        s = false
-        n = 2^b
-        x = Vector(undef, b)
-        y = Vector(undef, b)
-        for i = b:-1:1
-            x[i] = Dice.ifelse(s, flip(1/2), flip((3n - 2)/ (4n-4)))
-            y[i] = flip((n-2)/(3n-2))
-            s = s || (x[i] && !y[i])
-            n = n/2
-        end
-        return t(x)
-    end
-    
-    function discrete2(p::Vector{Float64}, t::Type)
-
-        function recurse(p::Vector, i, s, e, prob::Vector)
-            if (i == 0)
-                flip(sum(prob[Int((s+e+1)/2):e])/sum(prob[s:e]))
-            else
-                # (Dice.ifelse(p[length(p) - i + 1], recurse(p, i-1, Int((s+e+1)/2), e, prob), recurse(p, i-1, s, Int((s+e-1)/2), prob)))
-                if p[length(p) - i + 1] recurse(p, i-1, Int((s+e+1)/2), e, prob) else recurse(p, i-1, s, Int((s+e-1)/2), prob) end
-                
-            end
-        end
-
-        mb = length(p)
-        add = Int(ceil(log2(mb)))
-        p_proxy = vcat(p, zeros(2^add - mb))
-        int_vector = []
-        
-        for i=1:add
-            @show i
-            a = recurse(int_vector, i-1, 1, 2^add, p_proxy)
-            push!(int_vector, a)
-        end
-        t(reverse(int_vector))
-    end
-
-    function anyline(bits::Int, p::Float64, t::Type)
-        # @show p*2^bits
-        @assert p*2^bits >= 0
-        @assert p*2^bits <= 1
-        ans = Dice.ifelse(flip(p*2^bits), uniform(bits, t), triangle(bits, t))
-        return ans
-    end
 
     function continuous(pieces::Int, t::Type{DistFixParam{T, F}}, d::ContinuousUnivariateDistribution) where {T, F}
         # d = Normal(mean, std)
@@ -136,22 +81,22 @@ code = @dice begin
         return ans
     end
 
-    # skillA = continuous(16, DistFixParam{8, 0}, Normal(2, 0.5))
+    skillA = continuous(16, DistFixParam{8, 0}, Normal(2, 0.5))
 
-    # perfA1 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillA
-    # # perfA2 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillA
-    # skillB = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5))
+    perfA1 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillA
+    # perfA2 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillA
+    skillB = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5))
 
-    # perfB1 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillB
-    # perfB2 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillB
+    perfB1 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillB
+    perfB2 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillB
 
-    # d = (perfA2[1] > perfB2[1]) & !perfA2[2] & !perfB2[2]
-    # Cond((perfA1[1] > perfB1[1]) & !perfA1[2] & !perfB1[2], d)
-    # (perfA2[1] > perfB2[1]) & !perfA2[2] & !perfB2[2]
-    # d
-    # skillA
-    # perfB1[1] > perfA1[1]
-    continuous(8, DistFixParam{4, 0}, Normal(512, 82.84789644012946*2))
+    d = (perfA2[1] > perfB2[1]) & !perfA2[2] & !perfB2[2]
+    Cond((perfA1[1] > perfB1[1]) & !perfA1[2] & !perfB1[2], d)
+    (perfA2[1] > perfB2[1]) & !perfA2[2] & !perfB2[2]
+    d
+    skillA
+    perfB1[1] > perfA1[1]
+    # continuous(8, DistFixParam{4, 0}, Normal(512, 82.84789644012946*2))
 end
 
 

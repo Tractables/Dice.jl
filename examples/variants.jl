@@ -5,6 +5,13 @@ using Distributions
 using StatsBase
 using Distances
 
+```
+This is the version of the algorithm with following features:
+1. Unequal linear pieces
+2. Probability under each linear piece being invariant
+3. The linear piece pass through the initial point
+```
+
 function single_gaussian(p::Int)
     code = @dice begin
         

@@ -8,25 +8,36 @@ using Distances
 `
 This is the version of the algorithm with following features:
 1. Equal linear pieces
-2. Probability under each linear piece is overall normalized
+2. Probability under each linear piece being invariant
+3. The linear piece does not necessarily pass through start point or end point
 `
+
 
 function single_gaussian(p::Int)
     code = @dice begin
 
         function continuous(pieces::Int, t::Type{DistFixParam{T, F}}, d::ContinuousUnivariateDistribution) where {T, F}
             d = Truncated(d, 0, 2^(T-F))
-            # @show t
             whole_bits = T
             point = F
 
-            # @show whole_bits, point
             start = 0
             interval_sz = (2^whole_bits/pieces)
+
+            @show interval_sz
+            @show interval_sz * pieces/2^F
+
+            while (cdf.(d, interval_sz*pieces/2^F) - cdf.(d, interval_sz*pieces/2^(F+1)) ≈ 0) & (interval_sz > 2)
+                interval_sz /= 2
+            end
+
+            @show interval_sz
+
+            
             
             bits = Int(log2(interval_sz))
-            # @show bits
             areas = Vector(undef, pieces)
+            trap_areas = Vector(undef, pieces)
             total_area = 0
         
             end_pts = Vector(undef, pieces)
@@ -35,34 +46,38 @@ function single_gaussian(p::Int)
                 p2 = p1 + 1/2^point
                 p3 = start + (i)*interval_sz/2^point
                 p4 = p3 - 1/2^point
-                # @show [p1, p2, p3, p4]
         
                 pts = [cdf.(d, p2) - cdf.(d, p1), cdf.(d, p3) - cdf.(d, p4)]
                 end_pts[i] = pts
         
-                areas[i] = (pts[1] + pts[2])*2^(bits - 1)
+                trap_areas[i] = (pts[1] + pts[2])*2^(bits - 1)
+                areas[i] = (cdf.(d, p3) - cdf.(d, p1))
+
                 total_area += areas[i]
             end
-            # @show areas
+
             rel_prob = areas/total_area
-            @show total_area
-            # @show rel_prob
+            @show areas
+            @show end_pts
+
             tria = triangle(dicecontext(), bits, t)
             unif = uniform(dicecontext(), bits, t)
+            @show rel_prob
             b = discrete2(dicecontext(), rel_prob, DistInt)
 
             ans = t(dicecontext(), 2^whole_bits-1)
     
-            # @show bits
             for i=pieces:-1:1
-                if (areas[i] == 0)
+                if (trap_areas[i] == 0)
                     a = 0.0
                 else
-                    a = end_pts[i][1]/areas[i]
+                    a = end_pts[i][1]/trap_areas[i]
                 end
-                # @show a
+                @show i, a
+                @show bits
+                @assert 2 - a*2^bits >= 0
                 l = a > 1/2^bits
-                # @show bits
+                
                 # @show a
                 # @show i
                 # @show a*2^bits
@@ -85,25 +100,8 @@ function single_gaussian(p::Int)
             return ans
         end
 
-        # skillA = continuous(8, DistFixParam{8, 0}, Normal(50, 10))
-
-        # perfA1 = continuous(8, DistFixParam{8, 0}, Normal(50, 15)) + skillA
-        # # perfA2 = continuous(8, DistFixParam{8, 0}, Normal(50, 15)) + skillA
-        # skillB = continuous(8, DistFixParam{8, 0}, Normal(50, 10))
-        # perfB1 = continuous(8, DistFixParam{8, 0}, Normal(50, 15)) + skillB
-
-        # perfB2 = continuous(8, DistFixParam{8, 0}, Normal(50, 15)) + skillB
-        # # # perfB2 = continuous(16, DistFixParam{8, 4}, Normal(2, 0.5)) + skillB
-
-        # # d = (perfA2[1] > perfB2[1]) & !perfA2[2] & !perfB2[2]
-        # # Cond((perfA1[1] > perfB1[1]) & !perfA1[2] & !perfB1[2], d)
-        # # # (perfA2[1] > perfB2[1]) & !perfA2[2] & !perfB2[2]
-        # # # d
-        # skillA
-        # (perfB1[1] > perfA1[1]) & !perfA1[2] & !perfB1[2]
-        # perfA1[1]
-        d = continuous(p, DistFixParam{10, 0}, Normal(512, 512/3.09))
-        d
+        d = continuous(p, DistFixParam{10, 1}, Beta(1, 1))
+        discrete
     end
     code
 end
@@ -111,7 +109,7 @@ end
 
 code = single_gaussian(8)
 bdd = compile(code)
-b = infer(code, :bdd)
+a = infer(code, :bdd)
 d = KL_div(b, 10, 0, Normal(512, 512/3.09))
 
 bdd = compile(code)
@@ -149,12 +147,12 @@ function KL_div(a, T, F, d::ContinuousUnivariateDistribution)
         
     kldivergence(p, map(a->a[2], a))
     # ans
-    # p
+    p
     # chebyshev(p, map(a->a[2], a))
 end
 
 count = 1
-data2 = Vector{Float64}(undef, 0)
+data = Vector{Float64}(undef, 0)
 i = 0
 equal = Vector(undef, 10)
 while count < 1024
@@ -166,6 +164,6 @@ while count < 1024
     equal[i] = a
     k = KL_div(a, 10, 0, Normal(512, 512/3.09))
     @show count, k, num_flips(bdd), num_nodes(bdd)
-    append!(data2, log2(k))
+    append!(data, log2(k))
     count = count*2
 end
