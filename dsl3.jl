@@ -138,8 +138,7 @@ function transform(ir)
         end
         sym, help_ir
     end 
-
-
+    
     ir, helpers_ir
 end
 
