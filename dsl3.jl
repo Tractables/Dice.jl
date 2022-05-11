@@ -31,6 +31,20 @@ IRTools.expand!(IRTools.IR(typeof(foo), Any, Any; slots = false))
 
 using IRTools: blocks, block!, canbranch, IR, argument!, return!, xcall, func, isconditional, Branch
 
+function mapvars(block)
+    vmap = Dict()
+    callerargs = []
+    lookup(x) = get!(vmap, x) do 
+        if (x isa IRTools.Variable) 
+            push!(callerargs, x) # add to block argument list
+            argument!(block)
+        else
+            x # copy constants
+        end
+    end 
+    callerargs, lookup
+end
+
 function transform(ir)
     # ensure all cross-block variable use is through block arguments (make blocks functional)
     ir = IRTools.expand!(ir)
@@ -58,16 +72,7 @@ function transform(ir)
                 poly = block!(ir)
 
                 # add arguments for guard, and variables that both branches depend on
-                vmap = Dict()
-                polyargs = []
-                lookup(x) = get!(vmap, x) do 
-                    if (x isa IRTools.Variable) 
-                        push!(polyargs, x) # add to poly block argument list
-                        argument!(poly)
-                    else
-                        x # copy constants
-                    end
-                end 
+                polyargs, lookup = mapvars(poly) 
                 next_args_ord = collect(args[j+1])
                 
                 args_then = map(lookup, br.args)
