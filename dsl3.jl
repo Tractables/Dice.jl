@@ -3,7 +3,7 @@ using IRTools
 ##################
 
 function foo(x,y)
-    z = y+0.05
+    z = y*0.5
     if x
         0.4 + z
     else
@@ -29,7 +29,7 @@ IRTools.expand!(IRTools.IR(typeof(foo), Any, Any; slots = false))
 
 ##################
 
-using IRTools: blocks, block!, canbranch, IR, argument!, return!, xcall, func, isconditional, Branch
+using IRTools: blocks, block!, canbranch, IR, argument!, return!, xcall, func, isconditional, Branch, arguments
 
 function mapvars(block)
     vmap = Dict()
@@ -76,13 +76,16 @@ function transform(ir)
                 polyargs, lookup = mapvars(poly) 
                 
                 # look up all possible arguments for poly block
-                lookup(cond)
+                lookup(cond) # guard is first argument
                 foreach(lookup, br.args)
                 foreach(lookup, args[j+1])                
                 
-                helper = gensym("poly_br")
-                call_then = push!(poly, xcall(helper, false, arguments(poly)...))
-                call_else = push!(poly, xcall(felper, true, arguments(poly)...))
+                helper = :myhelper #gensym()
+                push!(helpers, (helper, copy(branches_rev), lookup, arguments(poly)))
+
+                branchargs = @view arguments(poly)[2:end]
+                call_then = push!(poly, xcall(helper, true, branchargs...))
+                call_else = push!(poly, xcall(helper, false, branchargs...))
                 ite = push!(poly, xcall(:ifelse, lookup(cond), call_then, call_else))
                 return!(poly, ite)
                 
@@ -109,11 +112,66 @@ function transform(ir)
         empty!(branches)
         append!(branches, reverse!(branches_rev))
     end
-    ir
+
+    # generate helper ir
+    helpers_ir = map(helpers) do helper 
+        sym, branches_rev, lookup1, caller_args = helper
+
+        # add new block at the top
+        help_ir = copy(ir)
+        header = block!(help_ir, 1)
+
+        # introduce header arguments for each caller argument
+        _, lookup2 = mapvars(header) 
+        foreach(lookup2, caller_args)
+        lookup(x) = lookup2(lookup1(x))
+
+        # add branch statements translated to new variable vocabulary
+        branches = IRTools.branches(header) 
+        for i=length(branches_rev):-1:1
+            br = branches_rev[i]
+            br2 = Branch(lookup(br.condition), br.block+1, map(lookup, br.args))
+            push!(branches, br2)
+        end
+        sym, help_ir
+    end 
+
+
+    ir, helpers_ir
 end
 
 tir = transform(IR(typeof(foo), Any, Any))
 
-f = func(tir)
-f(nothing, false, 0.1)
-f(nothing, 0.4,0.1)
+function gen_poly_f(funtype, args...)
+    ir = IR(funtype, args...)
+    fir, helpers = transform(ir)
+    for (helpername, helperir) in helpers
+        # cf https://github.com/FluxML/IRTools.jl/blob/master/src/eval.jl
+        @show helpername
+        codeinfo = IRTools.build_codeinfo(helperir)
+        @show codeinfo
+        h = @eval @generated function $(helpername)($([Symbol(:arg, i) for i = 1:length(arguments(helperir))]...))
+            return $codeinfo
+        end
+        @show methods(h)
+        @show typeof(h)
+    end
+    func(fir)
+end
+
+f = gen_poly_f(typeof(foo), Any, Any)
+
+f(nothing, true, 0.1)
+f(nothing, 0.4, 0.1)
+Base.invokelatest(f, nothing, 0.4, 0.1)
+
+tir
+dummy = :dummyf
+h = @eval @generated function $(dummy)($([Symbol(:arg, i) for i = 1:length(arguments(tir[1]))]...))
+    return IRTools.build_codeinfo($(tir[1]))
+end
+
+h
+typeof(h)
+@code_lowered h(nothing, true, 0.1)
+dummyf(nothing, true, 0.1)
