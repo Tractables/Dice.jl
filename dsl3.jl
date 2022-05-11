@@ -180,3 +180,28 @@ foo2(0.4, 0.1) #0.27
 # there is no traditional control flow, 
 # only calls to helper functions for both branches and `ifelse`
 @code_typed foo2(0.4, 0.1)
+
+
+##################
+# While Loop Example
+##################
+
+# expected number of `true` sampled coins at start of list
+function num_true(x)
+    size = 0
+    while !isempty(x) && x[1]
+        x = x[2:end]
+        size += 1
+    end
+    size
+end
+
+num_true([0.2, 0.9]) # ERROR: TypeError: non-boolean (Float64) used in boolean context
+IRTools.expand!(@code_ir num_true([0.5]))
+
+num_true2 = gen_poly_f(typeof(num_true), Vector{Float64})
+num_true2([]) #0
+num_true2([0.2]) #0.2
+num_true2([0.2, 0.9]) # 0.2*(1-0.9)*1 + 0.2*0.9*2 = 0.38
+num_true2([0.2, 0.9, 0.4]) # 0.2*(1-0.9)*1 + 0.2*0.9*(1-0.4)*2 + 0.2*0.9*0.4*3 = 0.452
+num_true2([0.2, 0.9, 0.4, 0.0]) # 0.2*(1-0.9)*1 + 0.2*0.9*(1-0.4)*2 + 0.2*0.9*0.4*3 = 0.452
