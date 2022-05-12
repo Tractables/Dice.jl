@@ -1,5 +1,5 @@
 # Characters
-export DistChar
+export DistChar, valid_chars
 
 # Supported characters. Current selection is temporary
 valid_chars = ['a':'z';'A':'Z';[' ',',','.','\'','"','!','?','(',')','\n']]
