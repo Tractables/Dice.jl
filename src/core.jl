@@ -1,6 +1,6 @@
 import IfElse: ifelse
 
-export Dist, DistBool, prob_equals, infer, ifelse
+export Dist, DistBool, prob_equals, infer, ifelse, expectation, variance
 
 "A probability distribution over values of type `T`"
 abstract type Dist{T} end
@@ -81,10 +81,27 @@ rundice(d::DistBool) =
 infer(d::DistBool) =
     infer(d.mgr, d.bit)
 
+expectation(d::DistBool) = 
+    infer(d)
+
 function condinfer(b1::DistBool, b2::DistBool)
     a = b1 & b2
     @show num_flips(a)
     @show num_nodes(a)
     infer(a)/infer(b2)
+end
+
+function expectation(b1::DistBool, b2::DistBool)
+    condinfer(b1, b2)
+end
+
+function variance(b1::DistBool)
+    a = infer(b1)
+    a - a^2
+end
+
+function variance(b1::DistBool, b2::DistBool)
+    a = condinfer(b1, b2)
+    a - a^2
 end
 

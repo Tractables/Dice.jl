@@ -92,6 +92,26 @@ function condinfer(d::DistFixParam{T, F}, b::DistBool) where T where F
     ans[1:non_zero_index]
 end
 
+function expectation(d::DistFixParam{T, F}) where T where F
+    ans = expectation(d.number)
+    ans/2^F
+end
+
+function expectation(d::DistFixParam{T, F}, d2::DistBool) where T where F
+    ans = expectation(d.number, d2)
+    ans/2^F
+end
+
+function variance(d::DistFixParam{T, F}) where T where F
+    ans = variance(d.number)
+    ans/2^(2F)
+end
+
+function variance(d::DistFixParam{T, F}, d2::DistBool) where T where F
+    ans = variance(d.number, d2)
+    ans/2^(2F)
+end
+
 bools(x::DistFixParam) = bools(x.number)
 
 # bools(i::DistFixParam) = i.number.bits

@@ -130,3 +130,21 @@ function infer(code::DiceCode, algo)
     end
     infer(x) 
 end
+
+function expectation(code::DiceCode, algo)
+    x = if algo == :ocaml
+        to_dice_ir(code)
+    elseif algo == :bdd
+        compile(code)
+    end
+    expectation(x) 
+end 
+
+function variance(code::DiceCode, algo)
+    x = if algo == :ocaml
+        to_dice_ir(code)
+    elseif algo == :bdd
+        compile(code)
+    end
+    variance(x)
+end

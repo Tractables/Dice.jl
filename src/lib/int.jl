@@ -1,6 +1,6 @@
      
 # Unsigned Integers
-export DistInt, add_bits, max_bits, round_division
+export DistInt, add_bits, max_bits, round_division, expectation, variance
 
 struct DistInt <: Dist{Int}
     mgr
@@ -39,6 +39,17 @@ function infer(d::DistInt)
     end
     ans[1:non_zero_index]
     # ans
+end
+
+function expectation(d::DistInt)
+    mb = max_bits(d)
+    ans = 0
+    exponent = 1
+    for i = 1:mb
+        ans += exponent*infer(d.bits[i])
+        exponent *= 2
+    end
+    return ans
 end
 
 max_bits(i::DistInt) =
@@ -379,6 +390,79 @@ function condinfer(b1::DistInt, b2::DistBool)
         ans[i + 1] = (i, a)
     end
     ans[1:non_zero_index]
+end
+
+function expectation(b1::DistInt, b2::DistBool)
+    mb = max_bits(b1)
+    ans = 0
+    exponent = 1
+    for i = 1:mb
+        ans += exponent*expectation(b1.bits[i], b2)
+        exponent *= 2
+    end
+    return ans
+end
+
+function variance(b1::DistInt)
+    ans = 0
+    mb = max_bits(b1)
+    probs = Matrix(undef, mb, mb)
+    
+    for i = 1:mb
+        probs[i, i] = infer(b1.bits[i])
+        for j = i+1:mb
+            probs[i, j] = infer(b1.bits[i] & b1.bits[j])
+        end
+    end
+    @show probs
+    
+    exponent1 = 1
+    for i = 1:mb
+        @show i, exponent1
+        ans += exponent1*(probs[i, i] - probs[i, i]^2)
+        exponent2 = exponent1*2
+        for j = i+1:mb
+            exponent2 = 2*exponent2
+            bi = probs[i, i]
+            bj = probs[j, j]
+            bibj = probs[i, j]
+            @show i, j, exponent2
+            ans += exponent2 * (bibj - bi * bj)
+        end
+        exponent1 = exponent1*4
+    end
+    return ans
+end
+
+function variance(b1::DistInt, b2::DistBool)
+    ans = 0
+    mb = max_bits(b1)
+    probs = Matrix(undef, mb, mb)
+    
+    for i = 1:mb
+        @show condinfer(b1.bits[i], b2)
+        probs[i, i] = condinfer(b1.bits[i], b2)
+        for j = i+1:mb
+            probs[i, j] = condinfer(b1.bits[i] & b1.bits[j], b2)
+        end
+    end
+    
+    exponent1 = 1
+    for i = 1:mb
+        @show i, exponent1
+        ans += exponent1*(probs[i, i] - probs[i, i]^2)
+        exponent2 = exponent1*2
+        for j = i+1:mb
+            exponent2 = 2*exponent2
+            bi = probs[i, i]
+            bj = probs[j, j]
+            bibj = probs[i, j]
+            @show i, j, exponent2
+            ans += exponent2 * (bibj - bi * bj)
+        end
+        exponent1 = exponent1*4
+    end
+    return ans
 end
     
 
