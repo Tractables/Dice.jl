@@ -9,7 +9,7 @@ using Dice: CuddMgr, DistBool
                         a = DistFixParam{2, 1}([flip(0.5), flip(0.5)])
                         b = DistFixParam{2, 1}([flip(0.5), flip(0.5)])
                         prob_equals((a/b)[1], 0.5) 
-                       end), :bdd) ≈ 0.5
+                       end), :bdd) ≈ 0.25
     @test infer((@dice DistBool(dicecontext(), 0.5)), :bdd) ≈ 0.5
 
     @test infer((@dice prob_equals(DistInt(42), 42)), :bdd) ≈ 1
