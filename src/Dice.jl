@@ -9,6 +9,7 @@ include("dsl.jl")
 include("ocaml.jl")
 
 include("lib/infer.jl")
+include("lib/dwe.jl")
 include("lib/int.jl")
 include("lib/cond.jl")
 include("lib/char.jl")

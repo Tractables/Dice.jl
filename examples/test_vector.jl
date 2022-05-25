@@ -61,8 +61,10 @@ code = @dice begin
     i = DistInt([f1, !f1])
 
     c = if flip(0.1) flip(false) else flip(true) end
-    s = prob_setindex(s, i, c)
-    prob_equals([flip(false), flip(true), flip(false)], s)
+    s = prob_setindex(DWE(s), DWE(i), DWE(c))
+    prob_equals(DWE(DistVector([flip(false), flip(true), flip(false)])), s)
 end
 bdd = compile(code)
-@assert infer(bdd) ≈ 0.6*0.7*0.9
+dist, error = infer(bdd)
+@assert dist[true] ≈ 0.6*0.7*0.9
+@assert error ≈ 0

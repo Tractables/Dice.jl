@@ -1,7 +1,7 @@
 # Strings
 export DistString, prob_setindex
 
-struct DistString
+struct DistString <: Dist{String}
     mgr
     chars::Vector{DistChar}
     len::DistInt
@@ -61,20 +61,21 @@ Base.:+(s::DistString, c::Char) =
     s + DistChar(s.mgr, c)
 
 # Divide-and-conquer getindex
-# TODO: update once error handling behavior settled on
 function Base.getindex(d::DistString, idx::DistInt)
     if length(d.chars) == 0
-        return DistChar(d.mgr, 'a')  # To prevent runtime index errors.
+        return DistChar(d.mgr, 'a'), DistBool(d.mgr, true)
     end
     function helper(i, v)
-        if v >= length(d.chars)
-            return last(d.chars)
+        if v > length(d.chars)
+            return DistChar(d.mgr, 'a'), DistBool(d.mgr, true)
+        elseif v == length(d.chars)
+            return last(d.chars), (idx > d.len) | prob_equals(idx, 0)
         end
         if i > length(idx.bits)
             return if v == 0
-                last(d.chars)  # This could be anything, just to prevent index error 
+                DistChar(d.mgr, 'a'), DistBool(d.mgr, true)
             else
-                d.chars[v]
+                d.chars[v], (idx > d.len) | prob_equals(idx, 0)
             end
         end
         ifelse(idx.bits[i], helper(i+1, v+2^(i-1)), helper(i+1, v))
@@ -82,28 +83,26 @@ function Base.getindex(d::DistString, idx::DistInt)
     return helper(1, 0)
 end
 
-# TODO: update once error handling behavior settled on
 function Base.getindex(s::DistString, idx::Int)
     if idx < 1 || idx > length(s.chars)
-        DistChar(s.mgr, 'a')
+        DistChar(s.mgr, 'a'), DistBool(s.mgr, true)
     else
-        s.chars[idx]
+        s.chars[idx], idx > s.len
     end
 end
 
-# TODO: update once error handling behavior settled on
 function prob_setindex(s::DistString, idx::DistInt, c::DistChar)
     chars = collect(s.chars)
     for i = 1:length(s.chars)
         chars[i] = ifelse(prob_equals(idx, i), c, s.chars[i])
     end
-    DistString(s.mgr, chars, s.len)
+    DistString(s.mgr, chars, s.len), (idx > s.len) | prob_equals(idx, 0)
 end
 
 function prob_setindex(s::DistString, idx::Int, c::DistChar)
     chars = collect(s.chars)
     chars[idx] = c
-    DistString(s.mgr, chars, s.len)
+    DistString(s.mgr, chars, s.len), (idx > s.len) | prob_equals(idx, 0)
 end
 
 function prob_setindex(s::DistString, idx, c::Char)
@@ -115,10 +114,10 @@ function Base.:+(s::DistString, t::DistString)
     chars = Vector(undef, length(s.chars) + length(t.chars))
     for i = 1:length(chars)
         if i <= length(s.chars)
-            chars[i] = ifelse(s.len > (i - 1), s.chars[i], t[(i - s.len)[1]])
+            chars[i] = ifelse(s.len > (i - 1), s.chars[i], t[(i - s.len)[1]][1])
         else
             # Subtraction could overflow, but we don't care - accessing chars beyond len is UB
-            chars[i] = t[(i - s.len)[1]]
+            chars[i] = t[(i - s.len)[1]][1]
         end
     end
     DistString(s.mgr, chars, len)

@@ -1,7 +1,7 @@
 # Vectors
 export DistVector, prob_append, prob_extend
 
-struct DistVector
+struct DistVector <: Dist{Vector}
     mgr
     contents::Vector
     len::DistInt
@@ -58,17 +58,16 @@ function prob_append(d::DistVector, x)
 end
 
 # Divide-and-conquer getindex
-# TODO: update once error handling behavior settled on
 function Base.getindex(d::DistVector, idx::DistInt)
     function helper(i, v)
         if v >= length(d.contents)
-            return last(d.contents)
+            return last(d.contents), (idx > d.len) | prob_equals(idx, 0)
         end
         if i > length(idx.bits)
             return if v == 0
-                last(d.contents) # This could be anything, just to prevent index error 
+                last(d.contents), DistBool(d.mgr, true)
             else
-                d.contents[v]
+                d.contents[v], (idx > d.len) | prob_equals(idx, 0)
             end
         end
         ifelse(idx.bits[i], helper(i+1, v+2^(i-1)), helper(i+1, v))
@@ -76,17 +75,20 @@ function Base.getindex(d::DistVector, idx::DistInt)
     return helper(1, 0)
 end
 
-# TODO: update once error handling behavior settled on
-Base.getindex(d::DistVector, idx::Int) =
-    d.contents[idx]
+function Base.getindex(d::DistVector, idx::Int)
+    if idx < 1 || idx > length(d.contents)
+        last(d.contents), DistBool(d.mgr, true)
+    else
+        d.contents[idx], (idx > d.len) | prob_equals(idx, 0)
+    end
+end
 
-# TODO: update once error handling behavior settled on
 function prob_setindex(d::DistVector, idx::DistInt, x)
     contents = Vector(undef, length(d.contents))
     for i = 1:length(contents)
         contents[i] = ifelse(prob_equals(idx, i), x, d.contents[i])
     end
-    DistVector(d.mgr, contents, d.len)
+    DistVector(d.mgr, contents, d.len), (idx > d.len) | prob_equals(idx, 0)
 end
 
 function prob_extend(u::DistVector, v::DistVector)
@@ -97,10 +99,10 @@ function prob_extend(u::DistVector, v::DistVector)
     contents = Vector(undef, length(u.contents) + length(v.contents))
     for i = 1:length(contents)
         if i <= length(u.contents)
-            contents[i] = ifelse(u.len > (i - 1), u.contents[i], v[(i - u.len)[1]])
+            contents[i] = ifelse(u.len > (i - 1), u.contents[i], v[(i - u.len)[1]][1])
         else
             # Subtraction could overflow, but we don't care - accessing chars beyond len is UB
-            contents[i] = v[(i - u.len)[1]]
+            contents[i] = v[(i - u.len)[1]][1]
         end
     end
     DistVector(u.mgr, contents, len)

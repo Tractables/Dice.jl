@@ -25,7 +25,7 @@ function to_dice(code)
             @assert length(x.args) == 3 "@dice macro only supports purely functional if-then-else"
             # return :($ite($(x.args...)))
             return :(begin $ite_guard = $(x.args[1])
-                    if ($(ite_guard) isa DistBool)
+                    if ($(ite_guard) isa DistBool || $(ite_guard) isa DWE)
                         Dice.ifelse($(ite_guard), $(x.args[2:3]...))
                     else
                         (if $(ite_guard)

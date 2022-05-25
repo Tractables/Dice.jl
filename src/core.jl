@@ -82,6 +82,9 @@ ifelse(cond::DistBool, x::DistBool, y::Bool) =
 ifelse(cond::DistBool, x::Bool, y::Bool) = 
     ifelse(cond, DistBool(cond.mgr, x), DistBool(cond.mgr, y))
 
+ifelse(cond::DistBool, then::Tuple, elze::Tuple) =
+    tuple([ifelse(cond, t, e) for (t, e) in zip(then, elze)]...)
+
 bools(b::DistBool) = [b]
 
 rundice(d::DistBool) =

@@ -31,19 +31,19 @@ dist = infer(bdd)
 
 # Test getindex, setindex
 code = @dice begin
-    s = if flip(0.6) DistString("abc") else DistString("xyz") end
+    s = DWE(if flip(0.6) DistString("abc") else DistString("xyz") end)
 
     # Choose whether to change index 1 (Pr=0.3) or 2 (Pr = 0.7)
-    f1 = flip(0.3)
-    i = DistInt([f1, !f1])
+    i = DWE(if flip(0.3) DistInt(1) else DistInt(2) end)
 
-    c = if flip(0.1) DistChar('d') else DistChar('e') end
+    c = DWE(if flip(0.1) DistChar('d') else DistChar('e') end)
     s = prob_setindex(s, i, c)
-    prob_equals("aec", s)
+    prob_equals(DWE(DistString("aec")), s)
 end
 bdd = compile(code)
-@assert infer(bdd) ≈ 0.6*0.7*0.9
-
+dist, err = infer(bdd)
+@assert dist[true] ≈ 0.6*0.7*0.9
+@assert err ≈ 0
 
 # Test lessthan
 code = @dice begin

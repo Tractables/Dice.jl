@@ -1,6 +1,6 @@
 export DistEnum
 
-struct DistEnum
+struct DistEnum <: Dist{Enum}
     mgr
     enum::Type
     i::DistInt
