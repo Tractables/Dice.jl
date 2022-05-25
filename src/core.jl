@@ -73,11 +73,14 @@ function ifelse(cond::DistBool, then::DistBool, elze::DistBool)
     DistBool(cond.mgr, ite(cond.mgr, cond.bit, then.bit, elze.bit))
 end
 
-ifelse(cond::DistBool, x, y) = 
+ifelse(cond::DistBool, x::Bool, y::DistBool) = 
     ifelse(cond, DistBool(cond.mgr, x), y)
 
-ifelse(cond::DistBool, x::DistBool, y) = 
+ifelse(cond::DistBool, x::DistBool, y::Bool) = 
     ifelse(cond, x, DistBool(cond.mgr, y))
+
+ifelse(cond::DistBool, x::Bool, y::Bool) = 
+    ifelse(cond, DistBool(cond.mgr, x), DistBool(cond.mgr, y))
 
 bools(b::DistBool) = [b]
 
