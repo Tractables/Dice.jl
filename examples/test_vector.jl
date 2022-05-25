@@ -26,12 +26,11 @@ dist = infer(bdd)
 @assert dist[[7, 6, 5, 100, 555]] ≈ 2/5 * 2/3 * 9/10
 @assert dist[[7, 6, 5, 333, 444]] ≈ 2/5 * 1/3 * 1/10
 @assert dist[[7, 6, 5, 555]] ≈ 2/5 * 1/3 * 9/10
-@assert infer(prob_equals(bdd, [1, 2, 3, 4, 100, 333, 444])) ≈ 3/5 * 2/3 * 1/10
 
 
 # Test concatenation for empty vectors
 code = @dice begin
-    prob_extend(DistVector([]), DistVector([]))
+    prob_extend(DistVector{DistInt}(), DistVector{DistInt}())
 end
 bdd = compile(code)
 dist = infer(bdd)
@@ -40,7 +39,7 @@ dist = infer(bdd)
 
 
 code = @dice begin
-    prob_extend(DistVector([]), [DistString("hi")])
+    prob_extend(DistVector{DistString}(Vector{DistString}()), [DistString("hi")])
 end
 bdd = compile(code)
 dist = infer(bdd)
