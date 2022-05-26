@@ -27,19 +27,17 @@ top_n = 40  # Only the top_n most likely strings are printed
 code = @dice begin
     function expand_term(lhs, max_depth)
         if typeof(lhs) == Terms
-            DistVector(Vector{DistEnum}([DistEnum(lhs)])), DistBool(dicecontext(), false)
+            DistTree(DistEnum(lhs))
         elseif max_depth == 0
-            DistVector(Vector{DistEnum}()), flip(true)
+            DWE(DistTree(DistEnum(Alice)), flip(true))
         else
-            expansion_error_tups = []
+            expansions = []
             for (rhs, p) in rules[lhs]
-                expansion = DistVector{DistEnum}(Vector{DistEnum}())
-                err = flip(false)
+                expansion = DistTree(DistEnum(Alice))
                 for subterm in rhs
-                    x = expand_term(subterm, max_depth - 1)
-                    expansion, err = prob_extend(expansion, x[1]), err | x[2] 
+                    expansion = prob_append_child(expansion, expand_term(subterm, max_depth - 1))
                 end
-                push!(expansion_error_tups, (expansion, err))
+                push!(expansions, expansion)
             end
             
             # Find flip weights
@@ -51,31 +49,18 @@ code = @dice begin
             end
 
             # Choose rhs
-            rhs, error = expansion_error_tups[1]
+            rhs = expansions[1]
             for i in 2:length(rules[lhs])
                 f = flip(v[i])
-                rhs = if f expansion_error_tups[i][1] else rhs end
-                error = if f expansion_error_tups[i][2] else error end
+                rhs = if f expansions[i] else rhs end
             end
-            rhs, error
+            rhs
         end
     end
-    rhs, error = expand_term(start_term, num_steps)
-    [rhs, error]
+    leaves(expand_term(start_term, num_steps))
 end
 bdd = compile(code)
-error_p = 0
-dist = Dict()
-group_infer(bdd[2], true, 1.0) do error, prior, p
-    if error
-        # We don't care about rhs if there is error; normally we would call group_infer again
-        global error_p = p 
-    else
-        group_infer(bdd[1], prior, p) do assignment, _, p
-            dist[assignment] = p
-        end
-    end
-end
+dist, error_p = infer(bdd)
 println("Probability of error: $(error_p)")
 dist = sort([(x, val) for (x, val) in dist], by= xv -> -xv[2])  # by decreasing probability
 print_dict(dist[1:min(length(dist),top_n)])
@@ -124,5 +109,5 @@ Vector{Tuple{Vector{Any}, Float64}} with 40 entries
    Any[Bob, and, Bob, and, Bob, saw]       => 0.0021504
    Any[Alice, and, Alice, and, Bob, saw]   => 0.0021504
    Any[Bob, and, Alice, and, Alice, saw]   => 0.0021504
-145 nodes, 23 flips
+558 nodes, 23 flips
 ==#

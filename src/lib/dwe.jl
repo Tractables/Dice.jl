@@ -76,5 +76,6 @@ end
 
 # Unary operations
 Base.:!(x::DWE) = dwe_wrap(!x.d, x.err)
+leaves(x::DWE) = dwe_wrap(leaves(x.d), x.err)
 
 bools(x::DWE) = vcat(bools(x.d), bools(x.err))

@@ -1,17 +1,17 @@
 # Trees
 export DistTree, prob_append_child, prob_extend_children, leaves
 
-struct DistTree{T} <: Dist{Any} where T <: Dist
+struct DistTree{T} <: Dist{Any} where T <: Any
     mgr
     val::T
     children::DistVector{DistTree{T}}
 end
 
-function DistTree{T}(mgr, val::T) where T <: Dist
+function DistTree{T}(mgr, val::T) where T <: Any
     DistTree{T}(mgr, val, DistVector{DistTree{T}}(mgr))
 end
 
-function DistTree(mgr, val::T) where T <: Dist
+function DistTree(mgr, val::T) where T <: Any
     DistTree{T}(mgr, val, DistVector{DistTree{T}}(mgr))
 end
 
@@ -32,13 +32,13 @@ ifelse(c::DistBool, x::DistTree, y::DistTree) =
 prob_equals(x::DistTree, y::DistTree) =
     prob_equals(x.val, y.val) & prob_equals(x.children, y.children)
 
-prob_append_child(d::DistTree{T}, child::DistTree{T}) where T <: Dist = 
+prob_append_child(d::DistTree{T}, child::DistTree{T}) where T <: Any = 
     DistTree{T}(d.mgr, d.val, prob_append(d.children, child))
 
-prob_extend_children(d::DistTree{T}, children::DistVector{DistTree{T}}) where T <: Dist = 
+prob_extend_children(d::DistTree{T}, children::DistVector{DistTree{T}}) where T <: Any = 
     DistTree{T}(d.mgr, d.val, prob_extend(d.children, children))
 
-function leaves(d::DistTree{T})::DistVector{T} where T <: Dist
+function leaves(d::DistTree{T})::DistVector{T} where T <: Any
     children_leaves = DistVector{T}(d.mgr, Vector{T}())
     for (i, child) in enumerate(d.children.contents)
         children_leaves = ifelse(i > d.children.len,
