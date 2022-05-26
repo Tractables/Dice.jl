@@ -1,6 +1,6 @@
      
 # Integers
-export DistInt, add_bits, max_bits
+export DistInt, add_bits, max_bits, safe_add
 
 struct DistInt <: Dist{Int}
     mgr
