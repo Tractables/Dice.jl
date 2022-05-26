@@ -16,6 +16,7 @@ include("lib/char.jl")
 include("lib/string.jl")
 include("lib/enum.jl")
 include("lib/vector.jl")
+include("lib/tree.jl")
 # include("lib/tuple.jl")
 
 end # module

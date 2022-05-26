@@ -62,7 +62,10 @@ for op in (:ifelse, :prob_setindex)
 end
 
 # Binary operations
-for op in (:(Base.:+), :(Base.:-), :(Base.:*), :(Base.:/), :(Base.:%), :(Base.:&), :(Base.:|), :(Base.getindex), :prob_equals, :prob_append, :prob_extend)
+for op in (:(Base.:+), :(Base.:-), :(Base.:*), :(Base.:/), :(Base.:%),
+        :(Base.:&), :(Base.:|), :(Base.:>), :(Base.:<), :(Base.getindex), 
+        :prob_equals, :prob_append, :prob_extend, :prob_append_child, 
+        :prob_extend_children)
     eval(quote
         $op(x::DWE, y::DWE) = dwe_wrap($op(x.d, y.d), x.err | y.err)
         # Allow promotion to DWE

@@ -44,6 +44,19 @@ function to_dice(code)
         @capture(x, DistVector{T_}()) && return :(DistVector{$T}($mgr))
         @capture(x, DistVector(V_)) && return :(DistVector($mgr, $V))
         @capture(x, DistVector{T_}(V_)) && return :(DistVector{$T}($mgr, $V))
+        # DistTree has a variable number of arguments (value or value and children)
+        @capture(x, DistTree(A__)) && (begin
+            if length(A) >= 1 && A[1] == mgr  # Only add mgr once
+                return :(DistTree($(A...)))
+            end
+            return :(DistTree($mgr, $(A...)))
+        end)
+        @capture(x, DistTree{T_}(A__)) && (begin
+            if length(A) >= 1 && A[1] == mgr  # Only add mgr once
+                return :(DistTree{$T}($(A...)))
+            end
+            return :(DistTree{$T}($mgr, $(A...)))
+        end)
         @capture(x, dicecontext()) && return :($mgr) 
         @capture(x, A_ || B_) && return :($A | $B) 
         @capture(x, A_ && B_) && return :($A & $B) 
