@@ -9,6 +9,6 @@ end
 
 bdd = compile(code)
 res = infer(bdd)
-@assert sum(res) == 1
-@assert res[107 + 1] == 1
+@assert length(res) == 1
+@assert res[107] == 1
 @assert num_flips(bdd) == 0

@@ -35,4 +35,4 @@ code = @dice begin
     prob_equals(x, y)
 end
 bdd = compile(code)
-@assert infer(bdd) ≈ (1/10)^2 + (2/10)^2 + (7/10)^2
+@assert infer_bool(bdd) ≈ (1/10)^2 + (2/10)^2 + (7/10)^2

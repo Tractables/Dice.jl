@@ -16,7 +16,7 @@ dist = infer(bdd)
 @assert dist["sanbox"] ≈ 3/25
 @assert dist["sanddwich"] ≈ 1/25
 @assert dist["sanddbox"] ≈ 9/25
-@assert infer(prob_equals(bdd, "sandwich")) ≈ 7/150
+@assert infer_bool(prob_equals(bdd, "sandwich")) ≈ 7/150
 
 
 # Test concatenation for empty strings
@@ -52,7 +52,7 @@ code = @dice begin
     s < t
 end
 bdd = compile(code)
-@assert infer(bdd) ≈ 0.6 * 0.4
+@assert infer_bool(bdd) ≈ 0.6 * 0.4
 
 
 # Test lessthan for identical strings
@@ -60,7 +60,7 @@ code = @dice begin
     DistString("abc") < DistString("abc")
 end
 bdd = compile(code)
-@assert infer(bdd) ≈ 0
+@assert infer_bool(bdd) ≈ 0
 
 
 # Test lessthan for strings that differ only in length
@@ -68,4 +68,4 @@ code = @dice begin
     DistString("abc") < DistString("abca")
 end
 bdd = compile(code)
-@assert infer(bdd) ≈ 1
+@assert infer_bool(bdd) ≈ 1

@@ -24,7 +24,7 @@ end
 
 # BDD analysis
 bdd = compile(code)
-infer(code, :bdd)
+infer(bdd)
 
 # IR analysis
 # to_dice_ir(code)

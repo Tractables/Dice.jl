@@ -91,8 +91,7 @@ code = @dice begin
     )
 end
 bdd = compile(code)
-dist = infer(bdd)
-@assert dist ≈ 0.4
+@assert infer_bool(bdd) ≈ 0.4
 
 # Test leaves
 code = @dice begin

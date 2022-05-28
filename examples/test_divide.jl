@@ -24,27 +24,27 @@ end
 code = code_div(1, 1, 1)
 bdd = compile(code)
 # println(infer(code, :bdd))
-@assert infer(code, :bdd) ≈ 0.25
+@assert infer_bool(code, :bdd) ≈ 0.25
 
 code = code_div(2, 1, 2)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.125
+@assert infer_bool(code, :bdd) ≈ 0.125
 
 code = code_div(2, 1, 4)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.125
+@assert infer_bool(code, :bdd) ≈ 0.125
 
 code = code_div(1, 2, 0)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.375
+@assert infer_bool(code, :bdd) ≈ 0.375
 
 code = code_div(1, 2, 1)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.25
+@assert infer_bool(code, :bdd) ≈ 0.25
 
 code = code_div(1, 2, 2)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.125
+@assert infer_bool(code, :bdd) ≈ 0.125
 # #         bdd = compile(code)
 # # num_flips(bdd)
 # # num_nodes(bdd)

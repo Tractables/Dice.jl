@@ -30,4 +30,4 @@ code = @dice begin
     c1 < DistChar('b')
 end
 bdd = compile(code)
-@assert infer(bdd) ≈ 1/10
+@assert infer_bool(bdd) ≈ 1/10

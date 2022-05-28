@@ -1,6 +1,6 @@
      
 # Integers
-export DistInt, add_bits, max_bits, safe_add
+export DistInt, add_bits, max_bits, safe_add, infer_int
 
 struct DistInt <: Dist{Int}
     mgr
@@ -30,7 +30,7 @@ end
 # Divide-and-conquer inference algorithm for ints
 # Intuition: if a bit is always T/F, we halve the search space for satisfiable
 # assignments. We always infer a bit given assignments to previous bits.
-function infer(d::DistInt)
+function infer_int(d::DistInt)
     mb = max_bits(d)
     ans = zeros(2^mb)
     # Infer on bit i, given a satisfying assignment to previous bits (prior),

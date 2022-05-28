@@ -8,4 +8,4 @@ end
 
 bdd = compile(code)
 @assert length(bdd.bits) > 0
-infer(code, :bdd)
+infer(bdd)

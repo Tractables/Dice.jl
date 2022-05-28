@@ -22,24 +22,24 @@ end
 # BDD analysis
 code = code_div(1, 1, 0)
 bdd = compile(code)
-println(infer(code, :bdd))
-@assert infer(code, :bdd) ≈ 0.5
+println(infer_bool(code, :bdd))
+@assert infer_bool(code, :bdd) ≈ 0.5
 
 code = code_div(2, 1, 1)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0
+@assert infer_bool(code, :bdd) ≈ 0
 
 code = code_div(2, 1, 0)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.5
+@assert infer_bool(code, :bdd) ≈ 0.5
 
 code = code_div(1, 2, 0)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.375
+@assert infer_bool(code, :bdd) ≈ 0.375
 
 code = code_div(1, 2, 2)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.125
+@assert infer_bool(code, :bdd) ≈ 0.125
 
 # #         bdd = compile(code)
 # # num_flips(bdd)

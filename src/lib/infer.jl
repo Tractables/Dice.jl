@@ -25,7 +25,7 @@ end
 #   x, a new_prior equivalent to (prior & (d = x)), and Pr(new_prior)
 function group_infer(f, d::DistBool, prior, prior_p::Float64)
     new_prior = d & prior
-    p = infer(new_prior)
+    p = infer_bool(new_prior)
     if p != 0
         f(true, new_prior, p)
     end

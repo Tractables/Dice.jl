@@ -21,39 +21,39 @@ end
 # BDD analysis
 code = code_arith(+, 2, 2, 0)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.0625
+@assert infer_bool(code, :bdd) ≈ 0.0625
 
 code = code_arith(+, 2, 3, 0)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.03125
+@assert infer_bool(code, :bdd) ≈ 0.03125
 
 code = code_arith(+, 3, 2, 0)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.03125
+@assert infer_bool(code, :bdd) ≈ 0.03125
 
 code = code_arith(-, 2, 2, 0)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.25
+@assert infer_bool(code, :bdd) ≈ 0.25
 
 code = code_arith(-, 1, 2, 0)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.25
+@assert infer_bool(code, :bdd) ≈ 0.25
 
 code = code_arith(-, 3, 2, 0)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.125
+@assert infer_bool(code, :bdd) ≈ 0.125
 
 code = code_arith(*, 2, 2, 0)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.4375
+@assert infer_bool(code, :bdd) ≈ 0.4375
 
 code = code_arith(*, 1, 2, 0)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.625
+@assert infer_bool(code, :bdd) ≈ 0.625
 
 code = code_arith(*, 3, 2, 0)
 bdd = compile(code)
-@assert infer(code, :bdd) ≈ 0.34375
+@assert infer_bool(code, :bdd) ≈ 0.34375
 
 
 # #         bdd = compile(code)

@@ -10,7 +10,7 @@ end
 # BDD analysis
 bdd = compile(code)
 num_flips(bdd), num_nodes(bdd)
-infer(code, :bdd)
+infer_bool(code, :bdd)
 
 # IR analysis
 println(to_dice_ir(code))

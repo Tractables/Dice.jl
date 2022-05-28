@@ -44,7 +44,7 @@ new_var(mgr::CuddMgr, prob) = begin
     x
 end
 
-function infer(mgr::CuddMgr, x)
+function infer_bool(mgr::CuddMgr, x)
     
     cache = Dict{Tuple{Ptr{Nothing},Bool},Float64}()
     t = constant(mgr, true)
