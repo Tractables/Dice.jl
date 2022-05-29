@@ -31,6 +31,36 @@ function infer(d::DWE)
     ans, error_p[1]
 end
 
+function infer_bool(d::DWE{DistBool})
+    dist, error_p = infer(d)
+    dist[true], error_p
+end
+
+function infer_with_observation(d::DWE, observation::DistBool)
+    ans = Dict()
+    error_p = [0.]
+    group_infer(observation, true, 1.0) do observation_met, observe_prior, denom
+        if !observation_met return end
+        group_infer(d.err, observe_prior, denom) do error, error_prior, error_p_
+            if error
+                # Hack to assign out of scope, there must a better way...
+                error_p[1] = error_p_/denom
+                return
+            end
+            group_infer(d.d, error_prior, error_p_) do assignment, _, p
+                if haskey(ans, assignment)
+                    # If this prints, some group_infer implementation is probably inefficent.
+                    println("Warning: Multiple paths to same assignment.")
+                    ans[assignment] += p/denom
+                else
+                    ans[assignment] = p/denom
+                end
+            end
+        end
+    end
+    ans, error_p[1]
+end
+
 # Check if output is a Tuple{Dist, DistBool}; include DistBool in error if so
 function dwe_wrap(x, err)
     if x isa Tuple{Dist, DistBool}

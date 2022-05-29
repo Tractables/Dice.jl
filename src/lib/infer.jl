@@ -1,4 +1,4 @@
-export infer, group_infer
+export infer, group_infer, infer_with_observation, @Pr
 
 # Efficient infer for any distribution for which group_infer is defined
 function infer(d)
@@ -13,6 +13,47 @@ function infer(d)
         end
     end
     ans
+end
+
+macro Pr(code)
+    # TODO: use MacroTools or similar to make this more flexible. It would be
+    # to support arbitrary expressions, as long as they aren't ambiguous
+    # (e.g. multiple |'s ) - or we use || instead of | for boolean or?
+    msg = ("@Pr requires the form `@Pr(X)` or `Pr(X | Y)`. As an alternative to"
+        * " the macro, consider `infer_with_observation(X, Y)`.")
+    if code isa Symbol
+        temp = gensym()
+        return quote
+            $temp = $(esc(code))
+            if $temp isa DistBool || $temp isa DWE{DistBool}
+                infer_bool($temp)
+            else
+                infer($temp)
+            end
+        end
+    else
+        @assert (length(code.args) == 3 && code.args[1] == :|) msg
+        temp = gensym()
+        return quote
+            $temp = $(esc(code.args[2]))
+            if $temp isa DistBool || $temp isa DWE{DistBool}
+                infer_with_observation($temp, $(esc(code.args[3])))[true]
+            else
+                infer_with_observation($temp, $(esc(code.args[3])))
+            end
+        end
+    end
+end
+
+function infer_with_observation(d::Dist, observation::DistBool)
+    dist = Dict()
+    group_infer(observation, true, 1.0) do observation_met, observe_prior, denom
+        if !observation_met return end
+        group_infer(d, observe_prior, denom) do assignment, _, p
+            dist[assignment] = p/denom
+        end
+    end
+    dist
 end
 
 # Workhorse for group_infer; it's DistBools all the way down
