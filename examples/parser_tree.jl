@@ -3,32 +3,55 @@ using Dice: num_flips, num_nodes
 using Revise
 include("util.jl")
 
-@enum Symbols S X Y a b c
-terminals = [a, b, c]
+# @enum Symbols S X Y a b c
+# terminals = [a, b, c]
+
+# rules = Dict([
+#     (S,  # LHS (always a single nonterminal)
+#         [([X], 0.6),  # Potential RHS, probability
+#         ([Y], 0.4)]),
+#     (X,
+#         [([a, b, Y], 0.5),
+#         ([a], 0.5)]),
+#     (Y,
+#         [([X, b, c], 0.3),
+#         ([c], 0.7)]),
+# ])
+
+# start_term = S
+# num_steps = 4
+# top_n = 40  # Only the top_n most likely strings are printed
+# expected_sentence = [a, b, c]
+
+@enum Symbols ran saw Alice Bob and S NP VP V
+terminals = [Alice, Bob, and, ran, saw]
 
 rules = Dict([
     (S,  # LHS (always a single nonterminal)
-        [([X], 0.6),  # Potential RHS, probability
-        ([Y], 0.4)]),
-    (X,
-        [([a, b, Y], 0.5),
-        ([a], 0.5)]),
-    (Y,
-        [([X, b, c], 0.3),
-        ([c], 0.7)]),
+        [([NP, VP], 1.0)]), # Potential RHS, probability
+    (NP,
+        [([Alice], 0.4),
+        ([Bob], 0.4),
+        ([NP, and, NP], 0.2)]),
+    (VP,
+        [([V], 0.7),
+        ([V, NP], 0.3)]),
+    (V,
+        [([ran], 0.4),
+        ([saw], 0.6)])
 ])
 
 start_term = S
 num_steps = 4
 top_n = 40  # Only the top_n most likely strings are printed
-expected_sentence = [a, b, c]
+expected_sentence = [Alice, and, Bob, and, Alice, saw, Bob]
 
 code = @dice begin
     function expand_term(lhs, max_depth)
         if lhs in terminals
             DistTree(DistEnum(lhs))
         elseif max_depth == 0
-            DWE(DistTree(DistEnum(X)), flip(true))  # Dummy node, just indicate that there is error
+            DWE(DistTree(DistEnum(start_term)), flip(true))  # Dummy node, just indicate that there is error
         else
             expansions = []
             for (rhs, p) in rules[lhs]
@@ -59,30 +82,17 @@ code = @dice begin
     tree = expand_term(start_term, num_steps)
     sentence = leaves(tree)
     observe = prob_equals(sentence, DistVector([DistEnum(term) for term in expected_sentence]))
-    tree.d, observe.d, tree.err
+    tree, observe.d  # discard the error for the observe
 end
-bdd = compile(code)
-tree_bdd, observe_bdd, error_bdd = bdd
-dist = Dict()
-error_p = 0.
-group_infer(observe_bdd, true, 1.0) do observe, observe_prior, denom
-    if !observe return end
-    group_infer(error_bdd, observe_prior, denom) do error, prior, p
-        if error
-            # We don't care about rhs if there is error; normally we would call group_infer again
-            global error_p = p/denom
-            println(error_p)
-        else
-            group_infer(tree_bdd, prior, p) do assignment, _, p
-                dist[assignment] = p/denom
-            end
-        end
-    end
-end
+tree, observe = compile(code)
+dist, error_p = @Pr(tree | observe)
 println("Probability of error: $(error_p)")
-dist = sort([(join(x, ' '), val) for (x, val) in dist], by= xv -> -xv[2])  # by decreasing probability
-print_dict(dist[1:min(length(dist),top_n)])
-println("$(num_nodes(bdd)) nodes, $(num_flips(bdd)) flips")
+print_dict(dist)
+println("$(num_nodes([tree, observe])) nodes, $(num_flips([tree, observe])) flips")
+
+# To visualize trees:
+example_tree = collect(dist)[1][1]
+print_tree(example_tree)
 
 #==
 Probability of error: 0.0
