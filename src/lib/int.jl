@@ -1,30 +1,24 @@
      
 # Integers
-export DistInt, add_bits, max_bits, safe_add, infer_int
+export DistInt, add_bits, max_bits, safe_add
 
 struct DistInt <: Dist{Int}
-    mgr
     # first index is least significant bit
     # most significant bits that are always false are trimmed
     bits::Vector{DistBool}
 end
 
-function DistInt(mgr, i::Int)
+function DistInt(i::Int)
     @assert i >= 0
     # num_b = num_bits(i)
     num_b = ndigits(i, base = 2)
     bits = Vector{DistBool}(undef, num_b)
     for bit_idx = 1:num_b
         b::Bool = i & 1
-        @inbounds bits[bit_idx] = DistBool(mgr, b) 
+        @inbounds bits[bit_idx] = DistBool(b) 
         i = i >> 1
     end
-    DistInt(mgr, bits)
-end
-
-function DistInt(bits::Vector)
-    @assert !isempty(bits) "`DistInt` requires a bit width of at least 1"
-    DistInt(bits[1].mgr, bits)
+    DistInt(bits)
 end
 
 # Divide-and-conquer inference algorithm for ints
@@ -52,8 +46,8 @@ function infer_int(d::DistInt)
     ans
 end
 
-function group_infer(f, d::DistInt, prior, prior_p::Float64)
-    group_infer(d.bits, prior, prior_p) do assignment, new_prior, new_p
+function group_infer(f, inferer, d::DistInt, prior, prior_p::Float64)
+    group_infer(inferer, d.bits, prior, prior_p) do assignment, new_prior, new_p
         v = sum(if is_set 2^(i-1) else 0 end for (i, is_set) in enumerate(assignment))
         f(v, new_prior, new_p)
     end
@@ -85,7 +79,7 @@ function prob_equals(x::DistInt, y::DistInt)
 end
 
 prob_equals(x::DistInt, y::Int) = 
-    prob_equals(x, DistInt(x.mgr, y))
+    prob_equals(x, DistInt(y))
 
 prob_equals(x::Int, y::DistInt) =
     prob_equals(y, x)
@@ -112,7 +106,7 @@ function ifelse(cond::DistBool, then::DistInt, elze::DistInt)
                 last_sat_bit = i
             end
         end
-        DistInt(cond.mgr, z[1:last_sat_bit])
+        DistInt(z[1:last_sat_bit])
     end
 end
 
@@ -136,9 +130,9 @@ function Base.:>(x::DistInt, y::DistInt)
     eq
 end
 
-Base.:>(x::DistInt, y::Int) = x > DistInt(x.mgr, y)
+Base.:>(x::DistInt, y::Int) = x > DistInt(y)
 
-Base.:>(x::Int, y::DistInt) = DistInt(y.mgr, x) > y
+Base.:>(x::Int, y::DistInt) = DistInt(x) > y
 
 Base.:<(x::DistInt, y::DistInt) = y > x
 
@@ -175,14 +169,14 @@ function Base.:+(p1::DistInt, p2::DistInt)
         #     last_sat_bit = i
         # end
     end
-    DistInt(t1.mgr, z), carry
+    DistInt(z), carry
 end
 
 Base.:+(p1::DistInt, p2::Int) =
-    p1 + DistInt(p1.mgr, p2)
+    p1 + DistInt(p2)
 
 Base.:+(p1::Int, p2::DistInt) = 
-    DistInt(p2.mgr, p1) + p2
+    DistInt(p1) + p2
 
 function Base.:+(p1::Tuple{DistInt, DistBool}, p2::DistInt)
     a = p1[1] + p2
@@ -230,10 +224,10 @@ function Base.:-(t1::DistInt, t2::DistInt)
 end
 
 Base.:-(p1::DistInt, p2::Int) =
-    p1 - DistInt(p1.mgr, p2)
+    p1 - DistInt(p2)
 
 Base.:-(p1::Int, p2::DistInt) = 
-    DistInt(p2.mgr, p1) - p2
+    DistInt(p1) - p2
 
 function Base.:*(p1::DistInt, p2::DistInt)
     mbp1 = max_bits(p1)
@@ -246,7 +240,7 @@ function Base.:*(p1::DistInt, p2::DistInt)
         mb1, mb2 = mbp2, mbp1
     end
 
-    P = DistInt(p1.mgr, 0)
+    P = DistInt(0)
     P = add_bits(P, mb1 - 1)
     shifted_bits = t1.bits
     carry = false
@@ -255,9 +249,9 @@ function Base.:*(p1::DistInt, p2::DistInt)
             carry |= ifelse(t2.bits[i], shifted_bits[mb1], false)
             println(mb1)
             println(shifted_bits)
-            shifted_bits = vcat(DistBool(p1.mgr, false), shifted_bits[1:mb1 - 1])
+            shifted_bits = vcat(DistBool(false), shifted_bits[1:mb1 - 1])
         end
-        added = ifelse(t2.bits[i], DistInt(p1.mgr, shifted_bits), DistInt(p1.mgr, 0))
+        added = ifelse(t2.bits[i], DistInt(shifted_bits), DistInt(0))
         res = (P + added)
         P = res[1]
         carry |= res[2]
@@ -266,10 +260,10 @@ function Base.:*(p1::DistInt, p2::DistInt)
 end 
 
 Base.:*(p1::DistInt, p2::Int) =
-    p1 * DistInt(p1.mgr, p2)
+    p1 * DistInt(p2)
 
 Base.:*(p1::Int, p2::DistInt) = 
-    DistInt(p2.mgr, p1) * p2
+    DistInt(p1) * p2
 
 function Base.:*(p1::Tuple{DistInt, DistBool}, p2::DistInt)
     a = p1[1] * p2
@@ -292,20 +286,20 @@ function Base.:/(p1::DistInt, p2::DistInt) #p1/p2
     p1_bits = Vector(undef, 0)
     ans = Vector(undef, 0)
 
-    is_zero = DistBool(p1.mgr, true)
+    is_zero = DistBool(true)
     for i=1:mb2
         is_zero &= !p2.bits[i]
     end
 
 
     for i = mb1:-1:1
-        p1_proxy = DistInt(p1.mgr, p1_bits)
+        p1_proxy = DistInt(p1_bits)
         p1_bits = vcat(p1.bits[i:i], ifelse(p2 > p1_proxy, p1_proxy, (p1_proxy - p2)[1]).bits)
-        ans = vcat(ifelse(p2 > p1_proxy, DistBool(p1.mgr, false), DistBool(p1.mgr, true)), ans)
+        ans = vcat(ifelse(p2 > p1_proxy, DistBool(false), DistBool(true)), ans)
     end
-    p1_proxy = DistInt(p1.mgr, p1_bits)
-    ans = vcat(ifelse(p2 > p1_proxy, DistBool(p1.mgr, false), DistBool(p1.mgr, true)), ans)
-    ifelse(is_zero, p2, DistInt(p1.mgr, ans)), is_zero
+    p1_proxy = DistInt(p1_bits)
+    ans = vcat(ifelse(p2 > p1_proxy, DistBool(false), DistBool(true)), ans)
+    ifelse(is_zero, p2, DistInt(ans)), is_zero
 end 
 
 function Base.:%(p1::DistInt, p2::DistInt) #p1%p2
@@ -313,18 +307,18 @@ function Base.:%(p1::DistInt, p2::DistInt) #p1%p2
     mb2 = max_bits(p2)
     p1_bits = Vector(undef, 0)
 
-    is_zero = DistBool(p1.mgr, true)
+    is_zero = DistBool(true)
     for i=1:mb2
         is_zero &= !p2.bits[i]
     end
 
     for i = mb1:-1:1
-        p1_proxy = DistInt(p1.mgr, p1_bits)
+        p1_proxy = DistInt(p1_bits)
         p1_bits = vcat(p1.bits[i], ifelse(p2 > p1_proxy, p1_proxy, (p1_proxy - p2)[1]).bits)
     end
-    p1_proxy = DistInt(p1.mgr, p1_bits)
+    p1_proxy = DistInt(p1_bits)
     p1_bits = ifelse(p2 > p1_proxy, p1_proxy, (p1_proxy - p2)[1]).bits
-    ifelse(is_zero, p2, DistInt(p1.mgr, p1_bits)), is_zero
+    ifelse(is_zero, p2, DistInt(p1_bits)), is_zero
     # DistInt(p1.mgr, p1_bits), DistBool(p1.mgr, false)
     # end
 end 
@@ -336,9 +330,9 @@ function add_bits(p::DistInt, w::Int)
     mb = max_bits(p)
     ext = Vector(undef, w)
     for i= w:-1:1
-        ext[i] = DistBool(p.mgr, false)
+        ext[i] = DistBool(false)
     end
-    DistInt(p.mgr, vcat(p.bits, ext))
+    DistInt(vcat(p.bits, ext))
 end
 
 # Possibly-temporary int utilities
@@ -346,7 +340,7 @@ end
 function safe_inc(d::DistInt)
     d_inc, carry = d + 1
     if issat(carry)
-        return DistInt(d.mgr, [d_inc.bits;carry])
+        return DistInt([d_inc.bits;carry])
     end
     d_inc
 end

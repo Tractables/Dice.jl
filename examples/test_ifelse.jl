@@ -2,7 +2,7 @@ using Dice
 using Dice: ifelse
 
 code = @dice begin
-    b = DistInt([DistBool(dicecontext(), false)])
+    b = DistInt([DistBool(false)])
     ifelse(flip(0.5), b, b)
 end
 

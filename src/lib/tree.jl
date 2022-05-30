@@ -2,22 +2,21 @@
 export DistTree, prob_append_child, prob_extend_children, leaves
 
 struct DistTree{T} <: Dist{Any} where T <: Any
-    mgr
     val::T
     children::DistVector{DistTree{T}}
 end
 
-function DistTree{T}(mgr, val::T) where T <: Any
-    DistTree{T}(mgr, val, DistVector{DistTree{T}}(mgr))
+function DistTree{T}(val::T) where T <: Any
+    DistTree{T}(val, DistVector{DistTree{T}}())
 end
 
-function DistTree(mgr, val::T) where T <: Any
-    DistTree{T}(mgr, val, DistVector{DistTree{T}}(mgr))
+function DistTree(val::T) where T <: Any
+    DistTree{T}(val, DistVector{DistTree{T}}())
 end
 
-function group_infer(f, d::DistTree, prior, prior_p::Float64)
-    group_infer(d.val, prior, prior_p) do val, val_prior, val_p
-        group_infer(d.children, val_prior, val_p) do children, children_prior, children_p
+function group_infer(f, inferer, d::DistTree, prior, prior_p::Float64)
+    group_infer(inferer, d.val, prior, prior_p) do val, val_prior, val_p
+        group_infer(inferer, d.children, val_prior, val_p) do children, children_prior, children_p
             f((val, children), children_prior, children_p)
         end
     end
@@ -27,19 +26,19 @@ bools(d::DistTree) =
     bools(vcat(bools(d.val), bools(d.children)))
 
 ifelse(c::DistBool, x::DistTree, y::DistTree) =
-    DistTree(c.mgr, ifelse(c, x.val, y.val), ifelse(c, x.children, y.children))
+    DistTree(ifelse(c, x.val, y.val), ifelse(c, x.children, y.children))
 
 prob_equals(x::DistTree, y::DistTree) =
     prob_equals(x.val, y.val) & prob_equals(x.children, y.children)
 
 prob_append_child(d::DistTree{T}, child::DistTree{T}) where T <: Any = 
-    DistTree{T}(d.mgr, d.val, prob_append(d.children, child))
+    DistTree{T}(d.val, prob_append(d.children, child))
 
 prob_extend_children(d::DistTree{T}, children::DistVector{DistTree{T}}) where T <: Any = 
-    DistTree{T}(d.mgr, d.val, prob_extend(d.children, children))
+    DistTree{T}(d.val, prob_extend(d.children, children))
 
 function leaves(d::DistTree{T})::DistVector{T} where T <: Any
-    children_leaves = DistVector{T}(d.mgr, Vector{T}())
+    children_leaves = DistVector{T}(Vector{T}())
     for (i, child) in enumerate(d.children.contents)
         children_leaves = ifelse(i > d.children.len,
             children_leaves,
@@ -47,7 +46,7 @@ function leaves(d::DistTree{T})::DistVector{T} where T <: Any
         )
     end
     ifelse(prob_equals(d.children.len, 0),
-        DistVector(d.mgr, [d.val]),
+        DistVector([d.val]),
         children_leaves
     )
 end

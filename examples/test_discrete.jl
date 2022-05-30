@@ -23,8 +23,8 @@ code = @dice begin
 end 
 
 bdd = compile(code)
-num_flips(bdd)
-num_nodes(bdd)
+# num_flips(bdd)
+# num_nodes(bdd)
 dist = infer(bdd)
 @assert sum(values(dist)) ≈ 1
 @assert dist[0] ≈ 0.1

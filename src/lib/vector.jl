@@ -2,26 +2,25 @@
 export DistVector, prob_append, prob_extend
 
 struct DistVector{T} <: Dist{Vector} where T <: Dist
-    mgr
     contents::Vector{T}
     len::DistInt
 end
 
-function DistVector{T}(mgr) where T <: Dist
-    DistVector(mgr, Vector{T}(), DistInt(mgr, 0))
+function DistVector{T}() where T <: Dist
+    DistVector(Vector{T}(), DistInt(0))
 end
 
-function DistVector{T}(mgr, contents::Vector{T}) where T <: Dist
-    DistVector(mgr, contents, DistInt(mgr, length(contents)))
+function DistVector{T}(contents::Vector{T}) where T <: Dist
+    DistVector(contents, DistInt(length(contents)))
 end
 
-function DistVector(mgr, contents::Vector)
-    DistVector(mgr, contents, DistInt(mgr, length(contents)))
+function DistVector(contents::Vector)
+    DistVector(contents, DistInt(length(contents)))
 end
 
-function group_infer(f, d::DistVector, prior, prior_p::Float64)
-    group_infer(d.len, prior, prior_p) do len, len_prior, len_p
-        group_infer(d.contents[1:len], len_prior, len_p) do v, v_prior, v_p
+function group_infer(f, inferer, d::DistVector, prior, prior_p::Float64)
+    group_infer(inferer, d.len, prior, prior_p) do len, len_prior, len_p
+        group_infer(inferer, d.contents[1:len], len_prior, len_p) do v, v_prior, v_p
             f(v, v_prior, v_p)
         end
     end
@@ -36,7 +35,7 @@ function prob_equals(x::DistVector{T}, y::DistVector{T}) where T <: Dist
 end
 
 prob_equals(x::DistVector{T}, y::Vector{T}) where T <: Dist =
-    prob_equals(x, DistVector(x.mgr, y))
+    prob_equals(x, DistVector(y))
 
 prob_equals(x::Vector{T}, y::DistVector{T}) where T <: Dist =
     prob_equals(y, x)
@@ -53,7 +52,7 @@ function ifelse(cond::DistBool, then::DistVector{T}, elze::DistVector{T})::DistV
             v[i] = ifelse(cond, then.contents[i], elze.contents[i])
         end
     end
-    DistVector(cond.mgr, v, ifelse(cond, then.len, elze.len))
+    DistVector(v, ifelse(cond, then.len, elze.len))
 end
 
 function prob_append(d::DistVector{T}, x::T)::DistVector{T} where T <: Dist
@@ -62,7 +61,7 @@ function prob_append(d::DistVector{T}, x::T)::DistVector{T} where T <: Dist
         v[i] = ifelse(prob_equals(d.len, i-1), x, d.contents[i])
     end
     v[length(d.contents) + 1] = x
-    DistVector(d.mgr, v, safe_inc(d.len))
+    DistVector(v, safe_inc(d.len))
 end
 
 # Divide-and-conquer getindex
@@ -73,7 +72,7 @@ function Base.getindex(d::DistVector{T}, idx::DistInt)::Tuple{T, DistBool} where
         end
         if i > length(idx.bits)
             return if v == 0
-                last(d.contents), DistBool(d.mgr, true)
+                last(d.contents), DistBool(true)
             else
                 d.contents[v], (idx > d.len) | prob_equals(idx, 0)
             end
@@ -85,9 +84,9 @@ end
 
 function Base.getindex(d::DistVector{T}, idx::Int)::Tuple{T, DistBool} where T <: Dist
     if idx < 1 || idx > length(d.contents)
-        last(d.contents), DistBool(d.mgr, true)
+        last(d.contents), DistBool(true)
     else
-        d.contents[idx], (idx > d.len) | prob_equals(idx, 0)
+        d.contents[idx], (idx > d.len)
     end
 end
 
@@ -96,7 +95,7 @@ function prob_setindex(d::DistVector{T}, idx::DistInt, x::T)::Tuple{DistVector{T
     for i = 1:length(contents)
         contents[i] = ifelse(prob_equals(idx, i), x, d.contents[i])
     end
-    DistVector(d.mgr, contents, d.len), (idx > d.len) | prob_equals(idx, 0)
+    DistVector(contents, d.len), (idx > d.len) | prob_equals(idx, 0)
 end
 
 function prob_extend(u::DistVector{T}, v::DistVector{T})::DistVector{T} where T <: Dist
@@ -114,14 +113,14 @@ function prob_extend(u::DistVector{T}, v::DistVector{T})::DistVector{T} where T 
             contents[i] = v[(i - u.len)[1]][1]
         end
     end
-    DistVector(u.mgr, contents, len)
+    DistVector(contents, len)
 end
 
 prob_extend(s::DistVector{T}, t::Vector{T}) where T <: Dist =
-    prob_extend(s, DistVector(s.mgr, t))
+    prob_extend(s, DistVector(t))
     
 prob_extend(s::Vector{T}, t::DistVector{T}) where T <: Dist =
-    prob_extend(DistVector(t.mgr, s), t)
+    prob_extend(DistVector(s), t)
 
 bools(d::DistVector) =
     vcat(collect(Iterators.flatten(bools(c) for c in d.contents)), bools(d.len))

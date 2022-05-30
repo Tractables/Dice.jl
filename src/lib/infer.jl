@@ -1,9 +1,15 @@
 export infer, group_infer, infer_with_observation, @Pr
 
 # Efficient infer for any distribution for which group_infer is defined
-function infer(d)
+function infer(d; flip_order=nothing, flip_order_reverse=false)
+    mgr, compiler = dist_to_mgr_and_compiler(d; flip_order=flip_order, flip_order_reverse=flip_order_reverse)
+    inferer = x -> infer_bool(mgr, compiler(x))
+    infer(inferer, d)
+end
+
+function infer(inferer, d) 
     ans = Dict()
-    group_infer(d, true, 1.0) do assignment, _, p
+    group_infer(inferer, d, true, 1.0) do assignment, _, p
         if haskey(ans, assignment)
             # If this prints, some group_infer implementation is probably inefficent.
             println("Warning: Multiple paths to same assignment.")
@@ -13,6 +19,23 @@ function infer(d)
         end
     end
     ans
+end
+
+function infer_with_observation(d::Dist, observation::DistBool; flip_order=nothing, flip_order_reverse=false)
+    mgr, compiler = dist_to_mgr_and_compiler([d, observation]; flip_order=flip_order, flip_order_reverse=flip_order_reverse)
+    inferer = x -> infer_bool(mgr, compiler(x))
+    infer_with_observation(inferer, d, observation)
+end
+
+function infer_with_observation(inferer, d::Dist, observation::DistBool)
+    dist = Dict()
+    group_infer(inferer, observation, true, 1.0) do observation_met, observe_prior, denom
+        if !observation_met return end
+        group_infer(inferer, d, observe_prior, denom) do assignment, _, p
+            dist[assignment] = p/denom
+        end
+    end
+    dist
 end
 
 macro Pr(code)
@@ -45,17 +68,6 @@ macro Pr(code)
     end
 end
 
-function infer_with_observation(d::Dist, observation::DistBool)
-    dist = Dict()
-    group_infer(observation, true, 1.0) do observation_met, observe_prior, denom
-        if !observation_met return end
-        group_infer(d, observe_prior, denom) do assignment, _, p
-            dist[assignment] = p/denom
-        end
-    end
-    dist
-end
-
 # Workhorse for group_infer; it's DistBools all the way down
 # Params:
 #   d is the Dist to infer on
@@ -64,9 +76,9 @@ end
 # Behavior:
 #   For each satisfying assignment x of d such that prior is true, calls f with:
 #   x, a new_prior equivalent to (prior & (d = x)), and Pr(new_prior)
-function group_infer(f, d::DistBool, prior, prior_p::Float64)
+function group_infer(f, inferer, d::DistBool, prior, prior_p::Float64)
     new_prior = d & prior
-    p = infer_bool(new_prior)
+    p = inferer(new_prior)
     if p != 0
         f(true, new_prior, p)
     end
@@ -76,14 +88,14 @@ function group_infer(f, d::DistBool, prior, prior_p::Float64)
 end
 
 # We can infer a vector if we can infer the elements
-function group_infer(f, vec::AbstractVector, prior, prior_p::Float64)
+function group_infer(f, inferer, vec::AbstractVector, prior, prior_p::Float64)
     if length(vec) == 0
         f([], prior, prior_p)
         return
     end
-    group_infer(vec[1], prior, prior_p) do assignment, new_prior, new_p
+    group_infer(inferer, vec[1], prior, prior_p) do assignment, new_prior, new_p
         rest = @view vec[2:length(vec)]
-        group_infer(rest, new_prior, new_p) do rest_assignment, rest_prior, rest_p
+        group_infer(inferer, rest, new_prior, new_p) do rest_assignment, rest_prior, rest_p
             assignments = vcat([assignment], rest_assignment)  # todo: try linkedlist instead
             f(assignments, rest_prior, rest_p)
         end
@@ -91,8 +103,8 @@ function group_infer(f, vec::AbstractVector, prior, prior_p::Float64)
 end
 
 # Defer to group_infer for vectors (which support @view, useful for efficiency)
-function group_infer(f, tup::Tuple, prior, prior_p::Float64)
-    group_infer(collect(tup), prior, prior_p) do vec_assignment, new_prior, p
+function group_infer(f, inferer, tup::Tuple, prior, prior_p::Float64)
+    group_infer(inferer, collect(tup), prior, prior_p) do vec_assignment, new_prior, p
         f(tuple(vec_assignment...), new_prior, p)
     end
 end

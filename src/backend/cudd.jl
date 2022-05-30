@@ -1,4 +1,5 @@
 # compilation backend that uses CUDD
+export CuddMgr, constant, biconditional, conjoin, disjoin, negate, ite, new_var, infer_bool, num_nodes
 
 using CUDD
 
@@ -44,7 +45,7 @@ new_var(mgr::CuddMgr, prob) = begin
     x
 end
 
-function infer_bool(mgr::CuddMgr, x)
+function infer_bool(mgr::CuddMgr, x::Ptr{Nothing})
     
     cache = Dict{Tuple{Ptr{Nothing},Bool},Float64}()
     t = constant(mgr, true)
@@ -124,15 +125,15 @@ isnegliteral(mgr::CuddMgr, x) =
     isliteral(mgr,x) && 
     (x !== Cudd_bddIthVar(mgr.cuddmgr, decisionvar(mgr,x)))
 
-issat(x::DistBool) =
-    issat(x.mgr, x.bit)
-
 issat(mgr::CuddMgr, x) =
     x !== constant(mgr, false)
 
 
 isvalid(x::DistBool) =
-    isvalid(x.mgr, x.bit)
+    x == DistTrue()
+
+issat(x::DistBool) =
+    x != DistFalse()
 
 isvalid(mgr::CuddMgr, x) =
     x === constant(mgr, true)

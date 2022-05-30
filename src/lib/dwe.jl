@@ -7,18 +7,24 @@ struct DWE{T} <: Any where T <: Dist
     err::DistBool
 end
 
-DWE(d::T) where T <: Dist = DWE{T}(d, DistBool(d.mgr, false))
+DWE(d::T) where T <: Dist = DWE{T}(d, DistBool(false))
 
-function infer(d::DWE)
+function infer(d::DWE; flip_order=nothing, flip_order_reverse=false)
+    mgr, compiler = dist_to_mgr_and_compiler(d; flip_order=flip_order, flip_order_reverse=flip_order_reverse)
+    inferer = x -> infer_bool(mgr, compiler(x))
+    infer(inferer, d)
+end
+
+function infer(inferer, d::DWE)
     ans = Dict()
     error_p = [0.]
-    group_infer(d.err, true, 1.0) do error, error_prior, error_p_
+    group_infer(inferer, d.err, true, 1.0) do error, error_prior, error_p_
         if error
             # Hack to assign out of scope, there must a better way...
             error_p[1] = error_p_
             return
         end
-        group_infer(d.d, error_prior, error_p_) do assignment, _, p
+        group_infer(inferer, d.d, error_prior, error_p_) do assignment, _, p
             if haskey(ans, assignment)
                 # If this prints, some group_infer implementation is probably inefficent.
                 println("Warning: Multiple paths to same assignment.")
@@ -37,17 +43,23 @@ function infer_bool(d::DWE{DistBool})
 end
 
 function infer_with_observation(d::DWE, observation::DistBool)
+    mgr, compiler = dist_to_mgr_and_compiler([d, observation])
+    inferer = x -> infer_bool(mgr, compiler(x))
+    infer_with_observation(inferer, d, observation)
+end
+
+function infer_with_observation(inferer, d::DWE, observation::DistBool)
     ans = Dict()
     error_p = [0.]
-    group_infer(observation, true, 1.0) do observation_met, observe_prior, denom
+    group_infer(inferer, observation, true, 1.0) do observation_met, observe_prior, denom
         if !observation_met return end
-        group_infer(d.err, observe_prior, denom) do error, error_prior, error_p_
+        group_infer(inferer, d.err, observe_prior, denom) do error, error_prior, error_p_
             if error
                 # Hack to assign out of scope, there must a better way...
                 error_p[1] = error_p_/denom
                 return
             end
-            group_infer(d.d, error_prior, error_p_) do assignment, _, p
+            group_infer(inferer, d.d, error_prior, error_p_) do assignment, _, p
                 if haskey(ans, assignment)
                     # If this prints, some group_infer implementation is probably inefficent.
                     println("Warning: Multiple paths to same assignment.")
