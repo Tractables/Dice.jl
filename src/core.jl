@@ -1,7 +1,8 @@
 import IfElse: ifelse
 
-export Dist, DistBool, prob_equals, infer_bool, ifelse, flip, bools, dist_to_mgr_and_compiler, flips_left_to_right, flips_by_instantiation_order, flips_by_deepest_depth, flips_by_shallowest_depth, flips_by_freq
+export Dist, DistBool, prob_equals, infer_bool, ifelse, flip, bools, dist_to_mgr_and_compiler, flips_left_to_right, flips_by_instantiation_order, flips_by_deepest_depth, flips_by_shallowest_depth, flips_by_freq, clear_flips, flip_probs, Flip, children
 
+export DistAnd, DistOr, DistNot, DistIte, DistTrue, DistFalse
 "A probability distribution over values of type `T`"
 abstract type Dist{T} end
 
@@ -45,6 +46,12 @@ end
 
 flip_next_id = 1
 flip_probs = Dict{Int, AbstractFloat}()
+# for debugging purposes... GC is ideal
+function clear_flips() 
+    global flip_next_id = 1
+    global flip_probs = Dict{Int, AbstractFloat}()
+end
+
 function flip(p::Real)
     if iszero(p)
         return DistFalse()
@@ -140,87 +147,83 @@ ifelse(cond::DistBool, then::Tuple, elze::Tuple) = tuple([ifelse(cond, t, e) for
 
 bools(b::DistBool) = [b]
 
-struct FlipTree
-    flip_or_children::Union{Flip, Vector{FlipTree}}
-end
-
-FlipTree(x::DistAnd) = FlipTree(Vector{FlipTree}([FlipTree(x.x), FlipTree(x.y)]))
-FlipTree(x::DistOr) = FlipTree(Vector{FlipTree}([FlipTree(x.x), FlipTree(x.y)]))
+children(x::DistAnd) = [x.x, x.y]
+children(x::DistOr) = [x.x, x.y]
 # Choose to have NOT not add depth because they are cheap for BDDs, worth experimenting though
-FlipTree(x::DistNot) = FlipTree(x.x)
-FlipTree(x::DistEquals) = FlipTree(Vector{FlipTree}([FlipTree(x.x), FlipTree(x.y)]))
-FlipTree(x::DistIte) = FlipTree(Vector{FlipTree}([FlipTree(x.c), FlipTree(x.t), FlipTree(x.e)]))
-FlipTree(x::DistTrue) = FlipTree(Vector{FlipTree}())
-FlipTree(x::DistFalse) = FlipTree(Vector{FlipTree}())
-FlipTree(x::AbstractVector{T}) where T <: DistBool = FlipTree(Vector{FlipTree}([FlipTree(y) for y in x]))
+children(x::DistNot) = [x.x]
+children(x::DistEquals) = [x.x, x.y]
+children(x::DistIte) = [x.c, x.t, x.e]
+children(x::DistTrue) = []
+children(x::DistFalse) = []
+children(x::AbstractVector{T}) where T <: DistBool = x
 
-function flips_left_to_right(x::FlipTree)::Vector{Int}
+function flips_left_to_right(x)::Vector{Int}
     flip_ids = Vector{Int}()
     flips_left_to_right_helper(x, flip_ids)
     unique(flip_ids)
 end
 
-function flips_left_to_right_helper(x::FlipTree, flip_ids::Vector{Int})
-    if x.flip_or_children isa Flip
-        push!(flip_ids, x.flip_or_children.id)
+function flips_left_to_right_helper(x, flip_ids::Vector{Int})
+    if x isa Flip
+        push!(flip_ids, x.id)
     else
-        for child in x.flip_or_children
+        for child in children(x)
             flips_left_to_right_helper(child, flip_ids)
         end
     end
 end
 
-function flips_by_instantiation_order(x::FlipTree)::Vector{Int}
+function flips_by_instantiation_order(x)::Vector{Int}
     sort(flips_left_to_right(x))
 end
 
-function flips_by_freq(x::FlipTree)::Vector{Int}
+function flips_by_freq(x)::Vector{Int}
     flip_id_ctr = Dict{Int, Int}()
     flips_by_freq_helper(x, flip_id_ctr)
     [kv[1] for kv in sort(collect(flip_id_ctr), by=kv->(kv[2], -kv[1]))]
 end
 
-function flips_by_freq_helper(x::FlipTree, flip_id_ctr::Dict{Int, Int})
-    if x.flip_or_children isa Flip
-        flip_id_ctr[x.flip_or_children.id] = get(flip_id_ctr, x.flip_or_children.id, 0) + 1
+function flips_by_freq_helper(x, flip_id_ctr::Dict{Int, Int})
+    if x isa Flip
+        flip_id_ctr[x.id] = get(flip_id_ctr, x.id, 0) + 1
     else
-        for child in x.flip_or_children
+        for child in children(x)
             flips_by_freq_helper(child, flip_id_ctr)
         end
     end
 end
 
-function flips_by_deepest_depth(x::FlipTree)::Vector{Int}
+function flips_by_deepest_depth(x)::Vector{Int}
     flip_id_to_depth = Dict{Int, Int}()
     flips_by_deepest_depth_helper(x, 0, flip_id_to_depth)
-    [kv[1] for kv in sort(collect(flip_id_to_depth), by=kv->kv[2])]
+    [kv[1] for kv in sort(collect(flip_id_to_depth), by=kv->(kv[2], -kv[1]))]
 end
 
-function flips_by_deepest_depth_helper(x::FlipTree, depth::Int, flip_id_to_depth::Dict{Int, Int})
-    if x.flip_or_children isa Flip
-        if !haskey(flip_id_to_depth, x.flip_or_children.id) || depth > flip_id_to_depth[x.flip_or_children.id]
-            flip_id_to_depth[x.flip_or_children.id] = depth
+function flips_by_deepest_depth_helper(x, depth::Int, flip_id_to_depth::Dict{Int, Int})
+    if x isa Flip
+        if !haskey(flip_id_to_depth, x.id) || depth > flip_id_to_depth[x.id]
+            flip_id_to_depth[x.id] = depth
         end
     else
-        for child in x.flip_or_children
+        for child in children(x)
             flips_by_deepest_depth_helper(child, depth + 1, flip_id_to_depth)
         end
     end
 end
 
-function flips_by_shallowest_depth(x::FlipTree)::Vector{Int}
+function flips_by_shallowest_depth(x)::Vector{Int}
     flip_id_to_depth = Dict{Int, Int}()
     flips_by_shallowest_depth_helper(x, 0, flip_id_to_depth)
-    [kv[1] for kv in sort(collect(flip_id_to_depth), by=kv->kv[2])]
+    [kv[1] for kv in sort(collect(flip_id_to_depth), by=kv->(kv[2], -kv[1]))]
 end
 
-function flips_by_shallowest_depth_helper(x::FlipTree, depth::Int, flip_id_to_depth::Dict{Int, Int})
-    if x.flip_or_children isa Flip
-        if !haskey(flip_id_to_depth, x.flip_or_children.id) || depth < flip_id_to_depth[x.flip_or_children.id]
-            flip_id_to_depth[x.flip_or_children.id] = depth
+function flips_by_shallowest_depth_helper(x, depth::Int, flip_id_to_depth::Dict{Int, Int})
+    if x isa Flip
+        if !haskey(flip_id_to_depth, x.id) || depth < flip_id_to_depth[x.id]
+            flip_id_to_depth[x.id] = depth
         end
     else
-        for child in x.flip_or_children
+        for child in children(x)
             flips_by_shallowest_depth_helper(child, depth + 1, flip_id_to_depth)
         end
     end
@@ -229,10 +232,11 @@ end
 # Lock in the flip order for a dist
 # Returns mgr and function to compile computation graph to BDD
 function dist_to_mgr_and_compiler(x; flip_order=nothing, flip_order_reverse=false)
+    # x = hoist(x)
     if flip_order === nothing
         flip_order = flips_by_instantiation_order
     end
-    flips_ordered = flip_order(FlipTree(bools(x)))
+    flips_ordered = flip_order(bools(x))
     if flip_order_reverse
         reverse!(flips_ordered)
     end
