@@ -151,11 +151,11 @@ num_nodes(mgr::CuddMgr, xs::Vector{<:Ptr}; as_add=true) = begin
 end
 
 
-num_flips(bits::Vector{DistBool}) =  
-    num_vars(bits[1].mgr, map(b -> b.bit, bits))
+# num_flips(bits::Vector{DistBool}) =  
+#     num_vars(bits[1].mgr, map(b -> b.bit, bits))
 
-num_flips(x) =  
-    num_flips(bools(x))
+# num_flips(x) =  
+#     num_flips(bools(x))
 
 num_vars(mgr::CuddMgr, xs::Vector{<:Ptr}) = begin
     Cudd_VectorSupportSize(mgr.cuddmgr, xs, length(xs))

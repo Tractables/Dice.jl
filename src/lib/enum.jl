@@ -5,6 +5,10 @@ struct DistEnum <: Dist{Enum}
     i::DistInt
 end
 
+function replace_helper(d::DistEnum, mapping)
+    DistEnum(d.enum, replace(d.i, mapping))
+end
+
 function DistEnum(case)
     @assert typeof(case) <: Enum
     DistEnum(typeof(case), DistInt(Int(case)))

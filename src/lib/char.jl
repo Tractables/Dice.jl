@@ -13,6 +13,10 @@ function DistChar(c::Char)
     DistChar(DistInt(char_idx[c]))
 end
 
+function replace_helper(d::DistChar, mapping)
+    DistString(replace(d.i, mapping))
+end
+
 function group_infer(f, inferer, d::DistChar, prior, prior_p::Float64)
     group_infer(inferer, d.i, prior, prior_p) do n, new_prior, p
         f(valid_chars[n+1], new_prior, p)

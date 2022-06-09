@@ -6,6 +6,10 @@ struct DistVector{T} <: Dist{Vector} where T <: Dist
     len::DistInt
 end
 
+function replace_helper(d::DistVector{T}, mapping) where T <: Dist
+    DistVector{T}([replace(c, mapping) for c in d.contents], replace(d.len, mapping))
+end
+
 function DistVector{T}() where T <: Dist
     DistVector(Vector{T}(), DistInt(0))
 end

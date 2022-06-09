@@ -1,6 +1,6 @@
      
 # Integers
-export DistInt, add_bits, max_bits, safe_add
+export DistInt, add_bits, max_bits, safe_add, ifelse
 
 struct DistInt <: Dist{Int}
     # first index is least significant bit
@@ -19,6 +19,10 @@ function DistInt(i::Int)
         i = i >> 1
     end
     DistInt(bits)
+end
+
+function replace_helper(i::DistInt, mapping)
+    DistInt([replace(bit, mapping) for bit in i.bits])
 end
 
 # Divide-and-conquer inference algorithm for ints

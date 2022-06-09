@@ -2,6 +2,7 @@ using Dice
 using Dates
 
 struct TestInput
+    name::String
     computation_graph::Union{Dist, DWE}
     observe::Union{DistBool, Nothing}
 end
@@ -12,10 +13,17 @@ struct FlipOrder
     name_reversed::String
 end
 
+struct TestParams
+    order::FlipOrder
+    reverse::Bool
+    hoist::Bool
+end
+
 include("network_verification.jl")
 include("grammar_recursive.jl")
 include("parser_tree.jl")
 include("caesar_ex_str.jl")
+include("bwh_unif.jl")
 
 
 function results_to_csv(name, results)

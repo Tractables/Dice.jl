@@ -14,6 +14,10 @@ function DistTree(val::T) where T <: Any
     DistTree{T}(val, DistVector{DistTree{T}}())
 end
 
+function replace_helper(d::DistTree{T}, mapping) where T <: Any
+    DistTree{T}(replace(d.val, mapping), replace(d.children, mapping))
+end
+
 function group_infer(f, inferer, d::DistTree, prior, prior_p::Float64)
     group_infer(inferer, d.val, prior, prior_p) do val, val_prior, val_p
         group_infer(inferer, d.children, val_prior, val_p) do children, children_prior, children_p

@@ -9,6 +9,10 @@ end
 
 DWE(d::T) where T <: Dist = DWE{T}(d, DistBool(false))
 
+function replace_helper(d::DWE, mapping)
+    DWE(replace(d.d, mapping), replace(d.err, mapping))
+end
+
 function infer(d::DWE; flip_order=nothing, flip_order_reverse=false)
     mgr, compiler = dist_to_mgr_and_compiler(d; flip_order=flip_order, flip_order_reverse=flip_order_reverse)
     inferer = x -> infer_bool(mgr, compiler(x))

@@ -1,6 +1,6 @@
 import IfElse: ifelse
 
-export Dist, DistBool, prob_equals, infer_bool, ifelse, flip, bools, dist_to_mgr_and_compiler, flips_left_to_right, flips_by_instantiation_order, flips_by_deepest_depth, flips_by_shallowest_depth, flips_by_freq, clear_flips, flip_probs, Flip, children
+export Dist, DistBool, prob_equals, infer_bool, ifelse, flip, bools, dist_to_mgr_and_compiler, flips_left_to_right, flips_by_instantiation_order, flips_by_deepest_depth, flips_by_shallowest_depth, flips_by_freq, clear_flips, flip_probs, Flip, children, replace, replace_helper, hoist
 
 export DistAnd, DistOr, DistNot, DistIte, DistTrue, DistFalse
 "A probability distribution over values of type `T`"
@@ -156,6 +156,7 @@ children(x::DistIte) = [x.c, x.t, x.e]
 children(x::DistTrue) = []
 children(x::DistFalse) = []
 children(x::AbstractVector{T}) where T <: DistBool = x
+children(x::Tuple) = collect(x)
 
 function flips_left_to_right(x)::Vector{Int}
     flip_ids = Vector{Int}()
@@ -229,10 +230,132 @@ function flips_by_shallowest_depth_helper(x, depth::Int, flip_id_to_depth::Dict{
     end
 end
 
+
+function gather_constraints(root)
+    flip_to_constraints = Dict{Int, Set{Int}}()
+    function helper(d, constraints)
+        if d isa Flip
+            if haskey(flip_to_constraints, d.id)
+                intersect!(flip_to_constraints[d.id], constraints)
+            else
+                flip_to_constraints[d.id] = constraints
+            end
+        elseif d isa DistIte
+            then_and_constraints, then_or_constraints = collect_and_or(d.c)
+            else_and_constraints = Set([-id for id in then_or_constraints])
+            helper(d.t, then_and_constraints)
+            helper(d.e, else_and_constraints)
+        else
+            for child in children(d)
+                helper(child, constraints)
+            end
+        end
+    end
+
+    helper(root, Set())
+    flip_to_constraints
+end
+
+function probs_and_constraints_to_remapping(flip_probs, flip_to_constraints)
+    prob_to_flips = Dict{AbstractFloat, Any}()
+    for (flip, p) in flip_probs
+        if !haskey(prob_to_flips, p)
+            prob_to_flips[p] = Vector()
+        end
+        push!(prob_to_flips[p], flip)
+    end
+
+    flip_remapping = Dict{Int, Int}()
+
+    for (_, flips) in prob_to_flips
+        literal_to_flip = Dict{Int, Int}()
+        for flip in flips
+            if haskey(flip_to_constraints, flip)
+                for lit in flip_to_constraints[flip]
+                    lit = get(flip_remapping, abs(lit), abs(lit)) * sign(lit)
+                    if haskey(literal_to_flip, -lit)
+                        parent = literal_to_flip[-lit]
+                        flip_remapping[flip] = parent
+                    else
+                        literal_to_flip[lit] = flip  # note: this overrides
+                    end
+                end
+            end
+        end
+    end
+    flip_remapping
+end
+
+# Returns (what must hold if d, what mustn't hold if !d)
+function collect_and_or(d::DistBool)
+    if d isa Flip
+        Set([d.id]), Set([d.id])  # literal can be AND or OR
+    elseif d isa DistTrue
+        Set(), Set() #nothing  # do not tighten AND constraints, kill OR constraints
+    elseif d isa DistFalse
+        Set(), Set()  # do not tighten either set of constraints
+    elseif d isa DistAnd
+        # todo: optimize by only collecting AND
+        x_and, x_or = collect_and_or(d.x)
+        y_and, y_or = collect_and_or(d.y)
+        union(x_and, y_and), Set() # nothing
+    elseif d isa DistOr
+        # todo: optimize by only collecting OR
+        x_and, x_or = collect_and_or(d.x)
+        y_and, y_or = collect_and_or(d.y)
+        Set(), union(x_or, y_or)
+    elseif d isa DistNot
+        and, or = collect_and_or(d.x)
+        Set(-x for x in or), Set(-x for x in and)  # De Morgan
+    elseif d isa DistIte
+        t_and, t_or = collect_and_or(d.t)
+        e_and, e_or = collect_and_or(d.e)
+        intersect(t_and, e_and), intersect(t_or, e_or)
+    else
+        println("Unimplemented collect_and_or case: $(typeof(d))")  # if only this were OCaml
+        Set(), Set()  # kill known constraints
+    end
+end
+
+replace_cache = Dict()
+function replace(d, remapping)
+    key = (objectid(d), hash(remapping))
+    if !haskey(replace_cache, key)
+        replace_cache[key] = replace_helper(d, remapping)
+    end
+    replace_cache[key]
+end
+
+replace_helper(d::DistAnd, remapping) = DistAnd(replace(d.x, remapping), replace(d.y, remapping))
+replace_helper(d::DistOr, remapping) = DistOr(replace(d.x, remapping), replace(d.y, remapping))
+replace_helper(d::DistNot, remapping) = DistNot(replace(d.x, remapping))
+replace_helper(d::DistIte, remapping) = DistIte(replace(d.c, remapping), replace(d.t, remapping), replace(d.e, remapping))
+replace_helper(d::DistTrue, remapping) = d
+replace_helper(d::DistFalse, remapping) = d
+replace_helper(d::Flip, remapping) = if haskey(remapping, d.id) Flip(remapping[d.id]) else d end
+
+replace_helper(d::Tuple, remapping) = tuple([replace(c, remapping) for c in d])
+
+function hoist_dist(d)
+    flip_to_constraints = gather_constraints(bools(d))
+    remapping = probs_and_constraints_to_remapping(flip_probs, flip_to_constraints)
+    # println(remapping)
+    replace(d, remapping), remapping
+end
+
+function num_flips(bits::AbstractVector{DistBool})
+    length(flips_left_to_right(bits))
+end
+
 # Lock in the flip order for a dist
 # Returns mgr and function to compile computation graph to BDD
-function dist_to_mgr_and_compiler(x; flip_order=nothing, flip_order_reverse=false)
+function dist_to_mgr_and_compiler(x; flip_order=nothing, flip_order_reverse=false, hoist=false, hacky_callback=identity)
     # x = hoist(x)
+    x, remapping = if hoist
+        hoist_dist(x)
+    else
+        x, Dict()
+    end
     if flip_order === nothing
         flip_order = flips_by_instantiation_order
     end
@@ -240,23 +363,14 @@ function dist_to_mgr_and_compiler(x; flip_order=nothing, flip_order_reverse=fals
     if flip_order_reverse
         reverse!(flips_ordered)
     end
+
+    hacky_callback(num_flips(bools(x)))
     
     mgr = CuddMgr()
     flip_vars = Dict()
     for flip_id in flips_ordered
         flip_vars[flip_id] = new_var(mgr, flip_probs[flip_id])
     end
-
-    # to_bdd(x::DistAnd) = conjoin(mgr, to_bdd(x.x), to_bdd(x.y))
-    # to_bdd(x::DistOr) = disjoin(mgr, to_bdd(x.x), to_bdd(x.y))
-    # to_bdd(x::DistNot) = negate(mgr, to_bdd(x.x))
-    # to_bdd(x::DistEquals) = biconditional(mgr, to_bdd(x.x), to_bdd(x.y))
-    # to_bdd(x::DistIte) = ite(mgr, to_bdd(x.c), to_bdd(x.t), to_bdd(x.e))
-    # to_bdd(x::DistTrue) = constant(mgr, true)
-    # to_bdd(x::DistFalse) = constant(mgr, false)
-    # to_bdd(x::Flip) = flip_vars[x.id]
-    # return mgr, to_bdd
-
     # TODO: do we need to memoize?
     cache = Dict{UInt64, Ptr{Nothing}}()
     function to_bdd_mem(x)
@@ -266,14 +380,14 @@ function dist_to_mgr_and_compiler(x; flip_order=nothing, flip_order_reverse=fals
         end
         cache[oid]
     end
-    to_bdd(x::DistAnd) = conjoin(mgr, to_bdd_mem(x.x), to_bdd_mem(x.y))
-    to_bdd(x::DistOr) = disjoin(mgr, to_bdd_mem(x.x), to_bdd_mem(x.y))
-    to_bdd(x::DistNot) = negate(mgr, to_bdd_mem(x.x))
-    to_bdd(x::DistEquals) = biconditional(mgr, to_bdd_mem(x.x), to_bdd_mem(x.y))
-    to_bdd(x::DistIte) = ite(mgr, to_bdd_mem(x.c), to_bdd_mem(x.t), to_bdd_mem(x.e))
-    to_bdd(x::DistTrue) = constant(mgr, true)
-    to_bdd(x::DistFalse) = constant(mgr, false)
-    to_bdd(x::Flip) = flip_vars[x.id]
+    function to_bdd(x::DistAnd) x = replace(x, remapping); conjoin(mgr, to_bdd_mem(x.x), to_bdd_mem(x.y)) end
+    function to_bdd(x::DistOr) x = replace(x, remapping); disjoin(mgr, to_bdd_mem(x.x), to_bdd_mem(x.y)) end
+    function to_bdd(x::DistNot) x = replace(x, remapping); negate(mgr, to_bdd_mem(x.x)) end
+    function to_bdd(x::DistEquals) x = replace(x, remapping); biconditional(mgr, to_bdd_mem(x.x), to_bdd_mem(x.y)) end
+    function to_bdd(x::DistIte) x = replace(x, remapping); ite(mgr, to_bdd_mem(x.c), to_bdd_mem(x.t), to_bdd_mem(x.e)) end
+    to_bdd(_::DistTrue) = constant(mgr, true)
+    to_bdd(_::DistFalse) = constant(mgr, false)
+    to_bdd(x::Flip) = flip_vars[replace(x, remapping).id]
     return mgr, to_bdd_mem
 end
 
