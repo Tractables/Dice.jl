@@ -24,7 +24,7 @@ start_term = "S"
 num_steps = 4
 top_n = 40  # Only the top_n most likely strings are printed
 
-code = @dice begin
+comp_graph = @dice begin
     function expand_term(lhs, max_depth)
         if typeof(lhs) == Terms
             DistTree(DistEnum(lhs))
@@ -59,12 +59,11 @@ code = @dice begin
     end
     leaves(expand_term(start_term, num_steps))
 end
-bdd = compile(code)
-dist, error_p = infer(bdd)
+dist, error_p = infer(comp_graph)
 println("Probability of error: $(error_p)")
 dist = sort([(x, val) for (x, val) in dist], by= xv -> -xv[2])  # by decreasing probability
 print_dict(dist[1:min(length(dist),top_n)])
-println("$(num_nodes(bdd)) nodes, $(num_flips(bdd)) flips")
+println("$(num_nodes(comp_graph)) nodes, $(num_flips(comp_graph)) flips")
 
 #==
 Probability of error: 0.048763514880000025

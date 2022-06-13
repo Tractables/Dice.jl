@@ -1,7 +1,7 @@
 using Dice
 
 # Test concatenation, appending, ifelse
-code = @dice begin
+cg = @dice begin
     v = if flip(3/5)
         DistVector([DistInt(1),DistInt(2),DistInt(3),DistInt(4)])
     else
@@ -15,8 +15,7 @@ code = @dice begin
     end
     prob_extend(v, v2)
 end
-bdd = compile(code)
-dist = infer(bdd)
+dist = infer(cg)
 @assert sum(values(dist)) ≈ 1
 @assert dist[[1, 2, 3, 4, 100, 333, 444]] ≈ 3/5 * 2/3 * 1/10
 @assert dist[[1, 2, 3, 4, 100, 555]] ≈ 3/5 * 2/3 * 9/10
@@ -29,30 +28,28 @@ dist = infer(bdd)
 
 
 # Test concatenation for empty vectors
-code = @dice begin
+cg = @dice begin
     prob_extend(DistVector{DistInt}(), DistVector{DistInt}())
 end
-bdd = compile(code)
-dist = infer(bdd)
+dist = infer(cg)
 @assert sum(values(dist)) ≈ 1
 @assert dist[[]] ≈ 1
 
 
-code = @dice begin
+cg = @dice begin
     prob_extend(DistVector{DistString}(Vector{DistString}()), [DistString("hi")])
 end
-bdd = compile(code)
-dist = infer(bdd)
+dist = infer(cg)
 @assert sum(values(dist)) ≈ 1
 @assert dist[["hi"]] ≈ 1
 
 
 # Test getindex, setindex
-code = @dice begin
+cg = @dice begin
     s = if flip(0.6)
-        DistVector([flip(false), flip(false), flip(false)])
+        DistVector(Vector{DistBool}([flip(false), flip(false), flip(false)]))
     else
-        DistVector([flip(true), flip(true)])
+        DistVector(Vector{DistBool}([flip(true), flip(true)]))
     end
 
     # Choose whether to change index 1 (Pr=0.3) or 2 (Pr = 0.7)
@@ -63,7 +60,6 @@ code = @dice begin
     s = prob_setindex(DWE(s), DWE(i), DWE(c))
     prob_equals(DWE(DistVector([flip(false), flip(true), flip(false)])), s)
 end
-bdd = compile(code)
-dist, error = infer(bdd)
+dist, error = infer(cg)
 @assert dist[true] ≈ 0.6*0.7*0.9
 @assert error ≈ 0

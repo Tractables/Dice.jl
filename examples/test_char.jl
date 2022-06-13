@@ -1,6 +1,6 @@
 using Dice
 
-code = @dice begin
+c = @dice begin
     if flip(1/10)
         DistChar('a')
     elseif flip(2/9)
@@ -11,23 +11,23 @@ code = @dice begin
         DistChar('!')
     end
 end
-bdd = compile(code)
-dist = infer(bdd)
+
+dist = infer(c)
 @assert sum(values(dist)) ≈ 1
 @assert dist['a'] ≈ 1/10
 @assert dist['D'] ≈ 2/10
 @assert dist[' '] ≈ 3/10
 @assert dist['!'] ≈ 4/10
 
-code = @dice begin
-    c1 = if flip(1/10)
+c = @dice begin
+    if flip(1/10)
         DistChar('a')
     elseif flip(2/9)
         DistChar('b')
-    else
+    elseif flip(3/7)
         DistChar('c')
+    else
+        DistChar('b')
     end
-    c1 < DistChar('b')
 end
-bdd = compile(code)
-@assert infer_bool(bdd) ≈ 1/10
+@assert infer_bool(c < DistChar('b')) ≈ 1/10
