@@ -1,6 +1,7 @@
 using Revise
 using Dice
 using Dice: num_flips, num_nodes
+
 include("util.jl")
 
 char_freqs = get_char_freqs_from_url("https://raw.githubusercontent.com/teropa/nlp/master/resources/corpora/gutenberg/shakespeare-macbeth.txt")

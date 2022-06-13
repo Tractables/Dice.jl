@@ -60,6 +60,7 @@ function get_char_freqs_from_url(corpus_url)
     [counts[c]/length(corpus) for c in valid_chars]
 end
 
+# TODO remove
 function uniform(domain::AbstractVector{Int})
     p = zeros(maximum(domain) + 1)
     for x in domain
@@ -68,6 +69,7 @@ function uniform(domain::AbstractVector{Int})
     discrete(p)
 end
 
+# TODO remove
 function discrete(p::Vector{Float64})
     mb = length(p)
     v = Vector(undef, mb)
