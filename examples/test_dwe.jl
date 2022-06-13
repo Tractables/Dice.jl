@@ -1,5 +1,4 @@
 using Dice
-using Revise
 
 # + that returns a Tuple{DistInt, DistBool}
 cg = @dice begin
