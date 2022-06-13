@@ -1,7 +1,7 @@
 # Trees
 export DistTree, prob_append_child, prob_extend_children, leaves
 
-struct DistTree{T} <: Dist{Any} where T <: Any
+mutable struct DistTree{T} <: Dist{Any} where T <: Any
     val::T
     children::DistVector{DistTree{T}}
 end

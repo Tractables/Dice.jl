@@ -1,6 +1,6 @@
 import IfElse: ifelse
 
-export Dist, DistBool, prob_equals, infer_bool, ifelse, flip, bools, dist_to_mgr_and_compiler, flips_left_to_right, flips_by_instantiation_order, flips_by_deepest_depth, flips_by_shallowest_depth, flips_by_freq, clear_flips, flip_probs, Flip, children, replace, replace_helper, hoist
+export Dist, DistBool, prob_equals, infer_bool, ifelse, flip, bools, dist_to_mgr_and_compiler, flips_left_to_right, flips_by_instantiation_order, flips_by_deepest_depth, flips_by_shallowest_depth, flips_by_freq, clear_flips, flip_probs, Flip, children, hoist!
 
 export DistAnd, DistOr, DistNot, DistIte, DistTrue, DistFalse
 "A probability distribution over values of type `T`"
@@ -11,26 +11,26 @@ abstract type DiceManager end
 
 abstract type DistBool <: Dist{Bool} end
 
-struct DistAnd <: DistBool
+mutable struct DistAnd <: DistBool
     x::DistBool
     y::DistBool
 end
 
-struct DistOr <: DistBool
+mutable struct DistOr <: DistBool
     x::DistBool
     y::DistBool
 end
 
-struct DistNot <: DistBool
+mutable struct DistNot <: DistBool
     x::DistBool
 end
 
-struct DistEquals <: DistBool
+mutable struct DistEquals <: DistBool
     x::DistBool
     y::DistBool
 end
 
-struct DistIte <: DistBool
+mutable struct DistIte <: DistBool
     c::DistBool
     t::DistBool
     e::DistBool
@@ -40,7 +40,7 @@ struct DistTrue <: DistBool end
 
 struct DistFalse <: DistBool end
 
-struct Flip <: DistBool
+mutable struct Flip <: DistBool
     id::Int
 end
 
@@ -317,45 +317,41 @@ function collect_and_or(d::DistBool)
     end
 end
 
-replace_cache = Dict()
-function replace(d, remapping)
+replace_cache = Set()
+function replace_flips!(d, remapping)
     key = (objectid(d), hash(remapping))
-    if !haskey(replace_cache, key)
-        replace_cache[key] = replace_helper(d, remapping)
+    if key in replace_cache
+        return
     end
-    replace_cache[key]
+    push!(replace_cache, key)
+    if d isa Flip
+        if haskey(remapping, d.id)
+            d.id = remapping[d.id]
+        end
+    else
+        for child in children(d)
+            replace_flips!(child, remapping)
+        end
+    end
 end
 
-replace_helper(d::DistAnd, remapping) = DistAnd(replace(d.x, remapping), replace(d.y, remapping))
-replace_helper(d::DistOr, remapping) = DistOr(replace(d.x, remapping), replace(d.y, remapping))
-replace_helper(d::DistNot, remapping) = DistNot(replace(d.x, remapping))
-replace_helper(d::DistIte, remapping) = DistIte(replace(d.c, remapping), replace(d.t, remapping), replace(d.e, remapping))
-replace_helper(d::DistTrue, remapping) = d
-replace_helper(d::DistFalse, remapping) = d
-replace_helper(d::Flip, remapping) = if haskey(remapping, d.id) Flip(remapping[d.id]) else d end
-
-replace_helper(d::Tuple, remapping) = tuple([replace(c, remapping) for c in d])
-
-function hoist_dist(d)
+function hoist!(d)
     flip_to_constraints = gather_constraints(bools(d))
     remapping = probs_and_constraints_to_remapping(flip_probs, flip_to_constraints)
-    # println(remapping)
-    replace(d, remapping), remapping
+    replace_flips!(bools(d), remapping)
 end
 
-function num_flips(bits::AbstractVector{DistBool})
+function num_flips(bits::AbstractVector{T}) where T <: DistBool
     length(flips_left_to_right(bits))
+end
+
+function num_flips(d)
+    num_flips(bools(d))
 end
 
 # Lock in the flip order for a dist
 # Returns mgr and function to compile computation graph to BDD
-function dist_to_mgr_and_compiler(x; flip_order=nothing, flip_order_reverse=false, hoist=false, hacky_callback=identity)
-    # x = hoist(x)
-    x, remapping = if hoist
-        hoist_dist(x)
-    else
-        x, Dict()
-    end
+function dist_to_mgr_and_compiler(x; flip_order=nothing, flip_order_reverse=false)
     if flip_order === nothing
         flip_order = flips_by_instantiation_order
     end
@@ -363,8 +359,6 @@ function dist_to_mgr_and_compiler(x; flip_order=nothing, flip_order_reverse=fals
     if flip_order_reverse
         reverse!(flips_ordered)
     end
-
-    hacky_callback(num_flips(bools(x)))
     
     mgr = CuddMgr()
     flip_vars = Dict()
@@ -380,14 +374,14 @@ function dist_to_mgr_and_compiler(x; flip_order=nothing, flip_order_reverse=fals
         end
         cache[oid]
     end
-    function to_bdd(x::DistAnd) x = replace(x, remapping); conjoin(mgr, to_bdd_mem(x.x), to_bdd_mem(x.y)) end
-    function to_bdd(x::DistOr) x = replace(x, remapping); disjoin(mgr, to_bdd_mem(x.x), to_bdd_mem(x.y)) end
-    function to_bdd(x::DistNot) x = replace(x, remapping); negate(mgr, to_bdd_mem(x.x)) end
-    function to_bdd(x::DistEquals) x = replace(x, remapping); biconditional(mgr, to_bdd_mem(x.x), to_bdd_mem(x.y)) end
-    function to_bdd(x::DistIte) x = replace(x, remapping); ite(mgr, to_bdd_mem(x.c), to_bdd_mem(x.t), to_bdd_mem(x.e)) end
+    function to_bdd(x::DistAnd) conjoin(mgr, to_bdd_mem(x.x), to_bdd_mem(x.y)) end
+    function to_bdd(x::DistOr) disjoin(mgr, to_bdd_mem(x.x), to_bdd_mem(x.y)) end
+    function to_bdd(x::DistNot) negate(mgr, to_bdd_mem(x.x)) end
+    function to_bdd(x::DistEquals) biconditional(mgr, to_bdd_mem(x.x), to_bdd_mem(x.y)) end
+    function to_bdd(x::DistIte) ite(mgr, to_bdd_mem(x.c), to_bdd_mem(x.t), to_bdd_mem(x.e)) end
     to_bdd(_::DistTrue) = constant(mgr, true)
     to_bdd(_::DistFalse) = constant(mgr, false)
-    to_bdd(x::Flip) = flip_vars[replace(x, remapping).id]
+    to_bdd(x::Flip) = flip_vars[x.id]  # If KeyError - make sure all flips are contained in the dist passed in to dist_to_mgr_and_compiler
     return mgr, to_bdd_mem
 end
 

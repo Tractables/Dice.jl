@@ -3,20 +3,19 @@ include("tests_h.jl")
 ############################ CONFIG ###########################
 
 RESULTS_DIR = "results"
-NOTES = ""
+NOTES = "deleteme"
 
 tests_inputs = [
-    TestInput("network", network(), nothing)
+    # TestInput("network", network(), nothing)
     TestInput("bwh_unif", bwh_discrete32, nothing)
-    TestInput("caesar", caesar()...)
+    # TestInput("caesar", caesar()...)
     TestInput("grammar", grammar(), nothing)
     TestInput("tree", tree()...)
 ]
 
 tests = [
     TestParams(fo, false, hoist)
-    for hoist in (false, true)
-    for rev in (false,true)
+    for rev in (false,)#true)
     for fo in [
         FlipOrder(flips_by_instantiation_order, "inst", "inst (D)"), 
         FlipOrder(flips_left_to_right, "LTR", "RTL"),
@@ -24,6 +23,7 @@ tests = [
         FlipOrder(flips_by_shallowest_depth, "sd", "sd (D)"), 
         FlipOrder(flips_by_freq, "freq", "freq (D)")
     ]
+    for hoist in (false, true)
 ]
 
 ###############################################################
@@ -32,12 +32,16 @@ tests = [
 if !isdir(RESULTS_DIR)
     mkdir(RESULTS_DIR)
 end
-dir = RESULTS_DIR * "/" * Dates.format(now(), "yyyy-mm-dd_HH-MM-SS")
+dir = RESULTS_DIR * "/" * Dates.format(now(), "yyyy-mm-dd_HH-MM-SS") * " " * NOTES
 mkdir(dir)
 
-if length(NOTES) > 0
-    touch(RESULTS_DIR * "/" * NOTES)
+open(dir * "/" * "hyperparams.txt", "w") do file
+    write(file, "Tests:\n")
+    write(file, string(tests))
+    write(file, "\n\nTest inputs:\n")
+    write(file, string(tests_inputs))
 end
+
 log_file = open(dir * "/" * "log.txt", "w")
 
 header = vcat(["name"], [
@@ -61,12 +65,11 @@ for ti in tests_inputs
     write(log_file, "Starting test $(ti.name)\n")
     for test in tests
         flip_order = test.order
-        rev = test.reverse
         println("FO: $(flip_order.order_func)")
-        println("Rev: $(rev)")
+        println("Rev: $(test.reverse)")
         println("Hoist: $(test.hoist)")
         write(log_file, "FO: $(flip_order.order_func)\n")
-        write(log_file, "Rev: $(rev)\n")
+        write(log_file, "Rev: $(test.reverse)\n")
         write(log_file, "Hoist: $(test.hoist)\n")
         # println(rev)
         boolsable = if ti.observe === nothing
@@ -74,7 +77,13 @@ for ti in tests_inputs
         else
             ti.computation_graph, ti.observe
         end
-        mgr, to_bdd = dist_to_mgr_and_compiler(boolsable; flip_order=flip_order.order_func, flip_order_reverse=rev, hoist=test.hoist, hacky_callback=nflips -> push!(result_num_flips, nflips))
+        if test.hoist
+            hoist!(boolsable)
+        end
+        push!(result_num_flips, num_flips(boolsable))
+        mgr, to_bdd = dist_to_mgr_and_compiler(boolsable;
+                                               flip_order=flip_order.order_func,
+                                               flip_order_reverse=test.reverse)
         nn = []
         function inferer(d)
             push!(

@@ -1,6 +1,6 @@
 export DistEnum
 
-struct DistEnum <: Dist{Enum}
+mutable struct DistEnum <: Dist{Enum}
     enum::Type
     i::DistInt
 end

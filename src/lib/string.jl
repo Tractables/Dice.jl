@@ -1,7 +1,7 @@
 # Strings
 export DistString, prob_setindex
 
-struct DistString <: Dist{String}
+mutable struct DistString <: Dist{String}
     chars::Vector{DistChar}
     len::DistInt
 end

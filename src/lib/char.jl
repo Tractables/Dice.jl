@@ -5,7 +5,7 @@ export DistChar, valid_chars
 valid_chars = ['a':'z';'A':'Z';[' ',',','.','\'','"','!','?','(',')','\n']]
 char_idx = Dict((c, i-1) for (i , c) in enumerate(valid_chars))
 
-struct DistChar <: Dist{Char}
+mutable struct DistChar <: Dist{Char}
     i::DistInt
 end
 

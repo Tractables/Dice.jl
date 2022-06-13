@@ -1,7 +1,7 @@
 # Vectors
 export DistVector, prob_append, prob_extend
 
-struct DistVector{T} <: Dist{Vector} where T <: Dist
+mutable struct DistVector{T} <: Dist{Vector} where T <: Dist
     contents::Vector{T}
     len::DistInt
 end

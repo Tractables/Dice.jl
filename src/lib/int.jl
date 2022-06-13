@@ -2,7 +2,7 @@
 # Integers
 export DistInt, add_bits, max_bits, safe_add, ifelse
 
-struct DistInt <: Dist{Int}
+mutable struct DistInt <: Dist{Int}
     # first index is least significant bit
     # most significant bits that are always false are trimmed
     bits::Vector{DistBool}
