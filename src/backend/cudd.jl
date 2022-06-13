@@ -1,4 +1,5 @@
 # compilation backend that uses CUDD
+export CuddMgr, constant, biconditional, conjoin, disjoin, negate, ite, new_var, infer_bool, num_nodes
 
 using CUDD
 
@@ -44,7 +45,7 @@ new_var(mgr::CuddMgr, prob) = begin
     x
 end
 
-function infer(mgr::CuddMgr, x)
+function infer_bool(mgr::CuddMgr, x::Ptr{Nothing})
     
     cache = Dict{Tuple{Ptr{Nothing},Bool},Float64}()
     t = constant(mgr, true)
@@ -124,25 +125,35 @@ isnegliteral(mgr::CuddMgr, x) =
     isliteral(mgr,x) && 
     (x !== Cudd_bddIthVar(mgr.cuddmgr, decisionvar(mgr,x)))
 
-issat(x::DistBool) =
-    issat(x.mgr, x.bit)
-
 issat(mgr::CuddMgr, x) =
     x !== constant(mgr, false)
 
 
 isvalid(x::DistBool) =
-    isvalid(x.mgr, x.bit)
+    x isa DistTrue
+
+issat(x::DistBool) =
+    !(x isa DistFalse)
 
 isvalid(mgr::CuddMgr, x) =
     x === constant(mgr, true)
 
 
-num_nodes(bits::Vector{DistBool}; as_add=true) =  
-    num_nodes(bits[1].mgr, map(b -> b.bit, bits); as_add)
+# num_nodes(bits::Vector{DistBool}; as_add=true) =  
+#     num_nodes(bits[1].mgr, map(b -> b.bit, bits); as_add)
 
-num_nodes(x; as_add=true) =  
-    num_nodes(bools(x); as_add)
+# num_nodes(x; as_add=true) =  
+#     num_nodes(bools(x); as_add)
+
+function num_nodes(d, suppress_warning=false)
+    if !suppress_warning
+        println("Warning: this version of num_nodes compiles the computation graph an ")
+        println("extra time, and always uses the default flip order. To suppress this ")
+        println("message, use suppress_warning=true.")
+    end
+    mgr, to_bdd = dist_to_mgr_and_compiler(d)
+    num_nodes(mgr, map(to_bdd, bools(d)))
+end
 
 num_nodes(mgr::CuddMgr, xs::Vector{<:Ptr}; as_add=true) = begin
     as_add && (xs = map(x -> rref(Cudd_BddToAdd(mgr.cuddmgr, x)), xs))
@@ -150,11 +161,11 @@ num_nodes(mgr::CuddMgr, xs::Vector{<:Ptr}; as_add=true) = begin
 end
 
 
-num_flips(bits::Vector{DistBool}) =  
-    num_vars(bits[1].mgr, map(b -> b.bit, bits))
+# num_flips(bits::Vector{DistBool}) =  
+#     num_vars(bits[1].mgr, map(b -> b.bit, bits))
 
-num_flips(x) =  
-    num_flips(bools(x))
+# num_flips(x) =  
+#     num_flips(bools(x))
 
 num_vars(mgr::CuddMgr, xs::Vector{<:Ptr}) = begin
     Cudd_VectorSupportSize(mgr.cuddmgr, xs, length(xs))

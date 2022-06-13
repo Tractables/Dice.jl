@@ -15,7 +15,6 @@ function to_dice(code)
     # manual hygiene
     mgr = gensym(:mgr)
     ite = gensym(:ite)
-    ite_guard = gensym(:ite)
 
     transformed_code = postwalk(esc(code)) do x
         # TODO: replace by custom desugaring that is still lazy for boolean guards
@@ -24,8 +23,9 @@ function to_dice(code)
         if x isa Expr && (x.head == :if || x.head == :elseif)
             @assert length(x.args) == 3 "@dice macro only supports purely functional if-then-else"
             # return :($ite($(x.args...)))
+            ite_guard = gensym(:ite)
             return :(begin $ite_guard = $(x.args[1])
-                    if ($(ite_guard) isa DistBool)
+                    if ($(ite_guard) isa DistBool || $(ite_guard) isa Dice.DWE)
                         Dice.ifelse($(ite_guard), $(x.args[2:3]...))
                     else
                         (if $(ite_guard)
@@ -36,62 +36,13 @@ function to_dice(code)
                     end
                 end)
         end
-        @capture(x, flip(P_)) && return :(DistBool($mgr, $P)) 
-        @capture(x, DistInt(I_)) && return :(DistInt($mgr, $I)) 
-        @capture(x, DistChar(C_)) && return :(DistChar($mgr, $C))
-        @capture(x, DistString(C_)) && return :(DistString($mgr, $C))
-        @capture(x, DistEnum(C_)) && return :(DistEnum($mgr, $C))
-        @capture(x, DistVector(V_)) && return :(DistVector($mgr, $V))
-        @capture(x, dicecontext()) && return :($mgr) 
         @capture(x, A_ || B_) && return :($A | $B) 
         @capture(x, A_ && B_) && return :($A & $B) 
         return x
     end
-
-    return quote
-        
-        DiceCode( $(esc(mgr)) -> begin
-        
-            # $(esc(ite))(args...) = 
-            #     if typeof(args[1]) == DistBool
-            #         ifelse(args...)
-            #     else
-            #         if args[1]
-            #             args[2]
-            #         else
-            #             args[3]
-            #         end
-            #     end
-
-            
-            # transformed user code
-            $transformed_code
-        end)
-    end
+    return transformed_code
 end
 
 macro dice(code)
     to_dice(code)
-end
-
-function compile(code::DiceCode)
-    code.interpret(CuddMgr())
-end
-
-function to_dice_ir(code::DiceCode)
-    interpretation = code.interpret(IrMgr())
-    treeify(interpretation.bit)
-end
-
-function rundice(code::DiceCode)
-    rundice(to_dice_ir(code)) 
-end
-
-function infer(code::DiceCode, algo)
-    x = if algo == :ocaml
-        to_dice_ir(code)
-    elseif algo == :bdd
-        compile(code)
-    end
-    infer(x) 
 end

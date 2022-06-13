@@ -1,7 +1,7 @@
 using Dice
 
 # Test concatenation, appending, ifelse
-code = @dice begin
+cg = @dice begin
     v = if flip(3/5)
         DistVector([DistInt(1),DistInt(2),DistInt(3),DistInt(4)])
     else
@@ -15,8 +15,7 @@ code = @dice begin
     end
     prob_extend(v, v2)
 end
-bdd = compile(code)
-dist = infer(bdd)
+dist = infer(cg)
 @assert sum(values(dist)) ≈ 1
 @assert dist[[1, 2, 3, 4, 100, 333, 444]] ≈ 3/5 * 2/3 * 1/10
 @assert dist[[1, 2, 3, 4, 100, 555]] ≈ 3/5 * 2/3 * 9/10
@@ -26,34 +25,31 @@ dist = infer(bdd)
 @assert dist[[7, 6, 5, 100, 555]] ≈ 2/5 * 2/3 * 9/10
 @assert dist[[7, 6, 5, 333, 444]] ≈ 2/5 * 1/3 * 1/10
 @assert dist[[7, 6, 5, 555]] ≈ 2/5 * 1/3 * 9/10
-@assert infer(prob_equals(bdd, [1, 2, 3, 4, 100, 333, 444])) ≈ 3/5 * 2/3 * 1/10
 
 
 # Test concatenation for empty vectors
-code = @dice begin
-    prob_extend(DistVector([]), DistVector([]))
+cg = @dice begin
+    prob_extend(DistVector{DistInt}(), DistVector{DistInt}())
 end
-bdd = compile(code)
-dist = infer(bdd)
+dist = infer(cg)
 @assert sum(values(dist)) ≈ 1
 @assert dist[[]] ≈ 1
 
 
-code = @dice begin
-    prob_extend(DistVector([]), [DistString("hi")])
+cg = @dice begin
+    prob_extend(DistVector{DistString}(Vector{DistString}()), [DistString("hi")])
 end
-bdd = compile(code)
-dist = infer(bdd)
+dist = infer(cg)
 @assert sum(values(dist)) ≈ 1
 @assert dist[["hi"]] ≈ 1
 
 
 # Test getindex, setindex
-code = @dice begin
+cg = @dice begin
     s = if flip(0.6)
-        DistVector([flip(false), flip(false), flip(false)])
+        DistVector(Vector{DistBool}([flip(false), flip(false), flip(false)]))
     else
-        DistVector([flip(true), flip(true)])
+        DistVector(Vector{DistBool}([flip(true), flip(true)]))
     end
 
     # Choose whether to change index 1 (Pr=0.3) or 2 (Pr = 0.7)
@@ -61,8 +57,9 @@ code = @dice begin
     i = DistInt([f1, !f1])
 
     c = if flip(0.1) flip(false) else flip(true) end
-    s = prob_setindex(s, i, c)
-    prob_equals([flip(false), flip(true), flip(false)], s)
+    s = prob_setindex(DWE(s), DWE(i), DWE(c))
+    prob_equals(DWE(DistVector([flip(false), flip(true), flip(false)])), s)
 end
-bdd = compile(code)
-@assert infer(bdd) ≈ 0.6*0.7*0.9
+dist, error = infer(cg)
+@assert dist[true] ≈ 0.6*0.7*0.9
+@assert error ≈ 0

@@ -1,18 +1,21 @@
 export DistEnum
 
-struct DistEnum
-    mgr
+mutable struct DistEnum <: Dist{Enum}
     enum::Type
     i::DistInt
 end
 
-function DistEnum(mgr, case)
-    @assert typeof(case) <: Enum
-    DistEnum(mgr, typeof(case), DistInt(mgr, Int(case)))
+function replace_helper(d::DistEnum, mapping)
+    DistEnum(d.enum, replace(d.i, mapping))
 end
 
-function group_infer(f, d::DistEnum, prior, prior_p::Float64)
-    group_infer(d.i, prior, prior_p) do n, new_prior, p
+function DistEnum(case)
+    @assert typeof(case) <: Enum
+    DistEnum(typeof(case), DistInt(Int(case)))
+end
+
+function group_infer(f, inferer, d::DistEnum, prior, prior_p::Float64)
+    group_infer(inferer, d.i, prior, prior_p) do n, new_prior, p
         f(d.enum(n), new_prior, p)
     end
 end
@@ -23,14 +26,14 @@ function prob_equals(x::DistEnum, y::DistEnum)
 end
 
 prob_equals(x::DistEnum, y) =
-    prob_equals(x, DistEnum(x.mgr, x.enum, y))
+    prob_equals(x, DistEnum(x.enum, y))
 
 prob_equals(x, y::DistEnum) =
-    prob_equals(DistEnum(y.mgr, y.enum, x), y)
+    prob_equals(DistEnum(y.enum, x), y)
 
 function ifelse(cond::DistBool, then::DistEnum, elze::DistEnum)
     @assert then.enum == elze.enum
-    DistEnum(cond.mgr, then.enum, ifelse(cond, then.i, elze.i))
+    DistEnum(then.enum, ifelse(cond, then.i, elze.i))
 end
 
 bools(c::DistEnum) =

@@ -29,19 +29,19 @@ code = @dice begin
     rparen = DistEnum(₎)
     function expand_term(lhs, max_depth)
         if lhs in terminals
-            DistVector([DistEnum(lhs)]), flip(false)
+            DistVector{DistEnum}(Vector{DistEnum}([DistEnum(lhs)])), flip(false)
         elseif max_depth == 0
-            DistVector([]), flip(true)
+            DistVector{DistEnum}(Vector{DistEnum}()), flip(true)
         else
             expansion_error_tups = []
             for (rhs, p) in rules[lhs]
-                expansion = DistVector([])
-                error = flip(false)
+                expansion = DistVector{DistEnum}(Vector{DistEnum}())
+                err = flip(false)
                 for subterm in rhs
                     x = expand_term(subterm, max_depth - 1)
-                    expansion, error = prob_extend(expansion, x[1]), error | x[2] 
+                    expansion, err = prob_extend(expansion, x[1]), err | x[2] 
                 end
-                push!(expansion_error_tups, (expansion, error))
+                push!(expansion_error_tups, (expansion, err))
             end
             
             # Find flip weights
@@ -62,13 +62,13 @@ code = @dice begin
             if max_depth == num_steps  # Wrapping first iteration w start NT unnecessary
                 rhs, error
             else
-                rhs_wrapped = prob_extend(DistVector([DistEnum(lhs), DistEnum(₍)]), prob_append(rhs, DistEnum(₎)))
+                rhs_wrapped = prob_extend(DistVector{DistEnum}(Vector{DistEnum}([DistEnum(lhs), DistEnum(₍)])), prob_append(rhs, DistEnum(₎)))
                 rhs_wrapped, error
             end
         end
     end
     rhs, error = expand_term(start_term, num_steps)
-    rhs_terms = DistVector([])
+    rhs_terms = DistVector(Vector{DistEnum}())
     for i = 1:length(rhs.contents)
         is_terminal = false
         for terminal in terminals
@@ -80,7 +80,7 @@ code = @dice begin
             rhs_terms
         end
     end
-    observe = prob_equals(rhs_terms, DistVector([DistEnum(term) for term in expected_sentence]))
+    observe = prob_equals(rhs_terms, DistVector(Vector{DistEnum}([DistEnum(term) for term in expected_sentence])))
     rhs, error, observe
 end
 bdd = compile(code)

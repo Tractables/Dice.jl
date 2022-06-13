@@ -5,75 +5,65 @@ include("util.jl")
 
 @enum Terms ran saw Alice Bob and
 
-function grammar()
+rules = Dict([
+    ("S",  # LHS (always a single nonterminal)
+        [(["NP", "VP"], 1.0)]), # Potential RHS, probability
+    ("NP",
+        [([Alice], 0.4),
+        ([Bob], 0.4),
+        (["NP", and, "NP"], 0.2)]),
+    ("VP",
+        [(["V"], 0.7),
+        (["V", "NP"], 0.3)]),
+    ("V",
+        [([ran], 0.4),
+        ([saw], 0.6)])
+])
 
-    rules = Dict([
-        ("S",  # LHS (always a single nonterminal)
-            [(["NP", "VP"], 1.0)]), # Potential RHS, probability
-        ("NP",
-            [([Alice], 0.4),
-            ([Bob], 0.4),
-            (["NP", and, "NP"], 0.2)]),
-        ("VP",
-            [(["V"], 0.7),
-            (["V", "NP"], 0.3)]),
-        ("V",
-            [([ran], 0.4),
-            ([saw], 0.6)])
-    ])
+start_term = "S"
+num_steps = 4
+top_n = 40  # Only the top_n most likely strings are printed
 
-    start_term = "S"
-    num_steps = 4
-    top_n = 40  # Only the top_n most likely strings are printed
-
-    grammar = @dice begin
-        function expand_term(lhs, max_depth)
-            if typeof(lhs) == Terms
-                DistVector(Vector{DistEnum}([DistEnum(lhs)])), DistBool(false)
-            elseif max_depth == 0
-                DistVector(Vector{DistEnum}()), flip(true)
-            else
-                expansion_error_tups = []
-                for (rhs, p) in rules[lhs]
-                    expansion = DistVector{DistEnum}(Vector{DistEnum}())
-                    err = flip(false)
-                    for subterm in rhs
-                        x = expand_term(subterm, max_depth - 1)
-                        expansion, err = prob_extend(expansion, x[1]), err | x[2] 
-                    end
-                    push!(expansion_error_tups, (expansion, err))
+comp_graph = @dice begin
+    function expand_term(lhs, max_depth)
+        if typeof(lhs) == Terms
+            DistTree(DistEnum(lhs))
+        elseif max_depth == 0
+            DWE(DistTree(DistEnum(Alice)), flip(true))
+        else
+            expansions = []
+            for (rhs, p) in rules[lhs]
+                expansion = DistTree(DistEnum(Alice))
+                for subterm in rhs
+                    expansion = prob_append_child(expansion, expand_term(subterm, max_depth - 1))
                 end
-                
-                # Find flip weights
-                v = Vector(undef, length(rules[lhs]))
-                s = 1.
-                for (i, (rhs, p)) in reverse(collect(enumerate(rules[lhs])))
-                    v[i] = p/s
-                    s -= p
-                end
-
-                # Choose rhs
-                rhs, error = expansion_error_tups[1]
-                for i in 2:length(rules[lhs])
-                    f = flip(v[i])
-                    rhs = if f expansion_error_tups[i][1] else rhs end
-                    error = if f expansion_error_tups[i][2] else error end
-                end
-                rhs, error
+                push!(expansions, expansion)
             end
-        end
-        rhs, e = expand_term(start_term, num_steps)
-        DWE(rhs, e)
-    end
-end
-# mgr, to_bdd = dist_to_mgr_and_compiler(rhswe)
-# inferer = d -> infer_bool(mgr, to_bdd(d))
-# dist, error_p = infer(inferer, rhswe)
+            
+            # Find flip weights
+            v = Vector(undef, length(rules[lhs]))
+            s = 1.
+            for (i, (rhs, p)) in reverse(collect(enumerate(rules[lhs])))
+                v[i] = p/s
+                s -= p
+            end
 
-# println("Probability of error: $(error_p)")
-# dist = sort([(x, val) for (x, val) in dist], by= xv -> -xv[2])  # by decreasing probability
-# print_dict(dist[1:min(length(dist),top_n)])
-# println("$(num_nodes(mgr, map(to_bdd, bools(rhswe)))) nodes")
+            # Choose rhs
+            rhs = expansions[1]
+            for i in 2:length(rules[lhs])
+                f = flip(v[i])
+                rhs = if f expansions[i] else rhs end
+            end
+            rhs
+        end
+    end
+    leaves(expand_term(start_term, num_steps))
+end
+dist, error_p = infer(comp_graph)
+println("Probability of error: $(error_p)")
+dist = sort([(x, val) for (x, val) in dist], by= xv -> -xv[2])  # by decreasing probability
+print_dict(dist[1:min(length(dist),top_n)])
+println("$(num_nodes(comp_graph)) nodes, $(num_flips(comp_graph)) flips")
 
 #==
 Probability of error: 0.048763514880000025
@@ -118,5 +108,5 @@ Vector{Tuple{Vector{Any}, Float64}} with 40 entries
    Any[Bob, and, Bob, and, Bob, saw]       => 0.0021504
    Any[Alice, and, Alice, and, Bob, saw]   => 0.0021504
    Any[Bob, and, Alice, and, Alice, saw]   => 0.0021504
-145 nodes
+558 nodes, 23 flips
 ==#

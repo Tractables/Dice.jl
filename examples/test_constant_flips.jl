@@ -1,14 +1,11 @@
 using Dice
 using Dice: num_flips, num_nodes
 
-code = @dice begin
-    seven = if flip(0) DistInt(3) else DistInt(7) end
-    hundred = if flip(1) DistInt(100) else DistInt(200) end
-    (seven + hundred)[1]
-end
+seven = Dice.ifelse(flip(0), DistInt(3), DistInt(7))
+hundred = Dice.ifelse(flip(1), DistInt(100), DistInt(200))
+cg = (seven + hundred)[1]
 
-bdd = compile(code)
-res = infer(bdd)
-@assert sum(res) == 1
-@assert res[107 + 1] == 1
-@assert num_flips(bdd) == 0
+res = infer(cg)
+@assert length(res) == 1
+@assert res[107] == 1
+@assert num_flips(cg) == 0

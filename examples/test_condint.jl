@@ -1,7 +1,7 @@
 using Dice
-using Dice: num_flips, num_nodes, to_dice_ir
+using Dice: num_flips, num_nodes
 
-code = @dice begin
+cg = @dice begin
     function uniform(b::Int)
         a = b/2
         d = true
@@ -23,8 +23,8 @@ code = @dice begin
 end
 
 # BDD analysis
-bdd = compile(code)
-infer(code, :bdd)
+# bdd = compile(code)
+infer(cg)
 
 # IR analysis
 # to_dice_ir(code)

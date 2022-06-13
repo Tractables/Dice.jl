@@ -7,7 +7,7 @@ struct CondBool <: Dist{Bool}
 end
 
 function infer(c::CondBool)
-    infer(c.b1 & c.b2)/infer(c.b2)
+    infer_bool(c.b1 & c.b2)/infer_bool(c.b2)
 end
 
 struct CondInt <: Dist{Int}
