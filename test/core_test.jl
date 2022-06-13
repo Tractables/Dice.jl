@@ -5,11 +5,9 @@ using Dice: CuddMgr, DistBool
 
 @testset "DistBool Tests" begin
     
-    mgr = CuddMgr()
-
-    t = DistBool(mgr, true)
-    f = DistBool(mgr, false)
-    x = DistBool(mgr, 0.5)
+    t = DistTrue()
+    f = DistFalse()
+    x = DistBool(0.5)
 
     @test Dice.isvalid(prob_equals(x & t, x))
     @test Dice.isvalid(prob_equals(x & f, f))

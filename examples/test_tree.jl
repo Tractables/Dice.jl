@@ -1,5 +1,4 @@
 using Dice
-using Revise
 
 # Test four ways to construct
 cg = @dice begin

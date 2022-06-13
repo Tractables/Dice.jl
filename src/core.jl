@@ -85,7 +85,12 @@ Base.:&(x::DistFalse, y::DistBool) = DistFalse()
 Base.:&(x::DistBool, y::DistFalse) = DistFalse()
 Base.:&(x::DistTrue, y::DistBool) = y
 Base.:&(x::DistBool, y::DistTrue) = x
-Base.:&(x::DistBool, y::DistBool) = DistAnd(x, y)
+Base.:&(x::DistBool, y::DistBool) = 
+    if x isa Flip && y isa Flip && x.id == y.id
+        x
+    else
+        DistAnd(x, y)
+    end
 
 Base.:&(x::DistBool, y::Bool) = x & DistBool(y)
 Base.:&(x::Bool, y::DistBool) = DistBool(x) & y
@@ -98,7 +103,12 @@ Base.:|(x::DistFalse, y::DistBool) = y
 Base.:|(x::DistBool, y::DistFalse) = x
 Base.:|(x::DistTrue, y::DistBool) = DistTrue()
 Base.:|(x::DistBool, y::DistTrue) = DistTrue()
-Base.:|(x::DistBool, y::DistBool) = DistOr(x, y)
+Base.:|(x::DistBool, y::DistBool) = 
+    if x isa Flip && y isa Flip && x.id == y.id
+        x
+    else
+        DistOr(x, y)
+    end
 
 Base.:|(x::DistBool, y::Bool) = x | DistBool(y)
 Base.:|(x::Bool, y::DistBool) = DistBool(x) | y
@@ -116,7 +126,12 @@ prob_equals(x::DistFalse, y::DistBool) = !y
 prob_equals(x::DistBool, y::DistFalse) = !x
 prob_equals(x::DistTrue, y::DistBool) = y
 prob_equals(x::DistBool, y::DistTrue) = x
-prob_equals(x::DistBool, y::DistBool) = DistEquals(x, y)
+prob_equals(x::DistBool, y::DistBool) =
+    if x isa Flip && y isa Flip && x.id == y.id
+        DistTrue()
+    else
+        DistEquals(x, y)
+    end
 
 prob_equals(x::DistBool, y::Bool) = prob_equals(x, DistBool(y))
 prob_equals(x::Bool, y::DistBool) = prob_equals(DistBool(x), y)

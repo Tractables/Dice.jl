@@ -3,29 +3,31 @@ using Test
 using Dice
 using Dice: CuddMgr, DistBool
 
-@testset "Cudd Backend Tests" begin
+# Removing with switch to computation graph backend
+
+# @testset "Cudd Backend Tests" begin
     
-    mgr = CuddMgr()
+#     mgr = CuddMgr()
 
-    x = DistBool(mgr, 0.1)
+#     x = DistBool(mgr, 0.1)
 
-    @test !!x == x
-    @test Dice.isliteral(x)
-    @test Dice.isliteral(!x)
+#     @test !!x == x
+#     @test Dice.isliteral(x)
+#     @test Dice.isliteral(!x)
 
-    @test Dice.isposliteral(x)
-    @test Dice.isnegliteral(!x)
+#     @test Dice.isposliteral(x)
+#     @test Dice.isnegliteral(!x)
 
-    @test !Dice.isposliteral(!x)
-    @test !Dice.isnegliteral(x)
+#     @test !Dice.isposliteral(!x)
+#     @test !Dice.isnegliteral(x)
 
-    @test !Dice.Cudd_IsComplement(x.bit)
-    @test Dice.Cudd_IsComplement((!x).bit)
+#     @test !Dice.Cudd_IsComplement(x.bit)
+#     @test Dice.Cudd_IsComplement((!x).bit)
 
-    @test Dice.Cudd_Regular(x.bit) === x.bit
-    @test Dice.Cudd_Regular((!x).bit) === x.bit
+#     @test Dice.Cudd_Regular(x.bit) === x.bit
+#     @test Dice.Cudd_Regular((!x).bit) === x.bit
 
-    # @test infer(x) ≈ 0.1
-    # @test infer(!x) ≈ 0.9
+#     # @test infer(x) ≈ 0.1
+#     # @test infer(!x) ≈ 0.9
 
-end
+# end
