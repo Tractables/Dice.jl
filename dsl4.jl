@@ -36,10 +36,10 @@ end
 
 # because dynamos with context don't work currently with lambdas, we use global state for now
 
-const path = []
+const path = DistBool[]
 const errors = []
 
-function IRTools.cond(guard::Dist, then, elze) 
+function IRTools.cond(guard::DistBool, then, elze) 
     push!(path, guard)
     t = then()
     pop!(path)
@@ -50,7 +50,7 @@ function IRTools.cond(guard::Dist, then, elze)
 end
 
 function error(msg) 
-    push!(errors, (copy(path), msg))
+    push!(errors, (reduce(&, path), msg))
     nothing
 end
 
