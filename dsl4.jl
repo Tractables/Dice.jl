@@ -59,9 +59,9 @@ function finite_quotient(x,y)
         error("0/0 is undefined")
         false
    elseif x && !y 
-        true
-   else
         false
+   else
+        true
    end
 end
 
