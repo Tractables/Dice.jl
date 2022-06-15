@@ -36,8 +36,9 @@ end
 
 # because dynamos with context don't work currently with lambdas, we use global state for now
 
-const path = DistBool[]
-const errors = []
+path = DistBool[DistTrue()]  # made un-const for debugging ease
+errors = Tuple{DistBool, String}[(DistFalse(), "dummy")]  # made un-const for debugging ease
+observation = DistTrue()
 
 function IRTools.cond(guard::DistBool, then, elze) 
     push!(path, guard)
@@ -54,6 +55,11 @@ function error(msg)
     nothing
 end
 
+function observe(x)
+    global observation &= !reduce(&, path) | x
+    nothing
+end
+
 function finite_quotient(x,y)
    if !x && !y
         error("0/0 is undefined")
@@ -65,8 +71,17 @@ function finite_quotient(x,y)
    end
 end
 
-dice_formula() do 
-    finite_quotient(foo(0.5), foo(0.5))
+quo = dice_formula() do 
+    finite_quotient(flip(0.5), flip(0.5))
+end
+total_error = reduce(|, [err for (err, msg) in errors])
+dist, error_p = infer(DWE(quo, total_error))
+
+d = dice_formula() do 
+    flipA = flip(0.3)
+    flipB = flip(0.5)
+    observe(flipA)
+    !prob_equals(flipA, flipB)
 end
 
-errors
+dist = infer_with_observation(d, observation)
