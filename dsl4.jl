@@ -10,9 +10,24 @@ using IfElse: ifelse
 using IRTools
 using IRTools: @dynamo, IR, recurse!, self
 
+path_sym = gensym("path")
+errors_sym = gensym("errors")
+observation_sym = gensym("observation")
+code_sym = gensym("code")
+
 # pirate `IRTools.cond`` but keep default behavior on Bool guards
 IRTools.cond(guard::Bool, then, elze) = guard ? then() : elze()
 IRTools.cond(guard, then, elze) = ifelse(guard, then(), elze())
+
+macro dice(code)
+    esc(quote
+        global $path_sym = DistBool[DistTrue()]
+        global $errors_sym = Tuple{DistBool, String}[(DistFalse(), "dummy")]
+        global $observation_sym = DistTrue()
+        global $code_sym = () -> $code
+        dice_formula($code_sym), $errors_sym, $observation_sym
+    end)
+end
 
 @dynamo function dice_formula(a...)
     ir = IR(a...)
@@ -26,7 +41,7 @@ dice_formula(::typeof(unsafe_copyto!), args...) = unsafe_copyto!(args...)
 
 foo(x) = flip(x) ? flip(x/2) : flip(x/4)
 
-dice_formula() do 
+@dice begin 
     foo(0.9)
 end
 
@@ -34,13 +49,8 @@ end
 # add path conditions
 #############################################
 
-# because dynamos with context don't work currently with lambdas, we use global state for now
-
-path = DistBool[DistTrue()]  # made un-const for debugging ease
-errors = Tuple{DistBool, String}[(DistFalse(), "dummy")]  # made un-const for debugging ease
-observation = DistTrue()
-
-function IRTools.cond(guard::DistBool, then, elze) 
+function IRTools.cond(guard::DistBool, then, elze)
+    path = eval(path_sym)
     push!(path, guard)
     t = then()
     pop!(path)
@@ -50,12 +60,16 @@ function IRTools.cond(guard::DistBool, then, elze)
     ifelse(guard, t, e)
 end
 
-function error(msg) 
+function error(msg)
+    path = eval(path_sym)
+    errors = eval(errors_sym)
     push!(errors, (reduce(&, path), msg))
     nothing
 end
 
 function observe(x)
+    path = eval(path_sym)
+    observation = eval(observation_sym)
     global observation &= !reduce(&, path) | x
     nothing
 end
@@ -71,13 +85,13 @@ function finite_quotient(x,y)
    end
 end
 
-quo = dice_formula() do 
+quo, errors, observation = @dice begin
     finite_quotient(flip(0.5), flip(0.5))
 end
 total_error = reduce(|, [err for (err, msg) in errors])
 dist, error_p = infer(DWE(quo, total_error))
 
-d = dice_formula() do 
+d, errors, observation = @dice begin
     flipA = flip(0.3)
     flipB = flip(0.5)
     observe(flipA)
