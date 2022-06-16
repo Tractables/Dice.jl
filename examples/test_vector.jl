@@ -63,3 +63,19 @@ end
 dist, error = infer(cg)
 @assert dist[true] ≈ 0.6*0.7*0.9
 @assert error ≈ 0
+
+# Test prob_startswith
+cg = @dice begin
+    s = DistVector(DistBool[flip(false), flip(0.3), flip(false)])
+    t = DistVector(DistBool[flip(false), flip(true)])
+    prob_startswith(s, t)
+end
+@assert infer_bool(cg) ≈ 0.3
+
+cg = @dice begin
+    s = DistVector(DistBool[flip(false)])
+    s = if flip(0.3) s else prob_append(s, flip(0.4)) end
+    t = DistVector(DistBool[flip(0.9), flip(true)])
+    prob_startswith(s, t)
+end
+@assert infer_bool(cg) ≈ 0.1 * 0.7 * 0.4
