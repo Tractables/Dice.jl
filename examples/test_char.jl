@@ -31,3 +31,6 @@ c = @dice begin
     end
 end
 @assert infer_bool(c < DistChar('b')) ≈ 1/10
+@assert infer_bool(c <= DistChar('b')) ≈ 7/10
+@assert infer_bool(c >= DistChar('b')) ≈ 9/10
+@assert infer_bool(c > DistChar('b')) ≈ 3/10

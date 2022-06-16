@@ -50,3 +50,11 @@ Base.:<(x::DistChar, y::DistChar) = y > x
 Base.:<(x::DistChar, y::Char) = y > x
 
 Base.:<(x::Char, y::DistChar) = y > x
+
+Base.:(>=)(x::DistChar, y::DistChar) = !(x < y)
+Base.:(>=)(x::Char, y::DistChar) = DistChar(x) >= y
+Base.:(>=)(x::DistChar, y::Char) = x >= DistChar(y)
+
+Base.:(<=)(x::DistChar, y::DistChar) = !(x > y)
+Base.:(<=)(x::Char, y::DistChar) = DistChar(x) <= y
+Base.:(<=)(x::DistChar, y::Char) = x <= DistChar(y)

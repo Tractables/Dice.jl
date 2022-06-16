@@ -156,3 +156,11 @@ Base.:<(x::DistString, y::DistString) = y > x
 Base.:<(x::String, y::DistString) = y > x
 
 Base.:<(x::DistString, y::String) = y > x
+
+Base.:(>=)(x::DistString, y::DistString) = !(x < y)
+Base.:(>=)(x::String, y::DistString) = DistString(x) >= y
+Base.:(>=)(x::DistString, y::String) = x >= DistString(y)
+
+Base.:(<=)(x::DistString, y::DistString) = !(x > y)
+Base.:(<=)(x::String, y::DistString) = DistString(x) <= y
+Base.:(<=)(x::DistString, y::String) = x <= DistString(y)

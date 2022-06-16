@@ -63,3 +63,11 @@ cg = @dice begin
     DistString("abc") < DistString("abca")
 end
 @assert infer_bool(cg) ≈ 1
+
+# Test leq, geq
+@assert infer_bool(DistString("abc") <= DistString("abc")) == 1
+@assert infer_bool(DistString("abc") >= DistString("abc")) == 1
+@assert infer_bool(DistString("abcd") <= DistString("abc")) == 0
+@assert infer_bool("abc" <= DistString("abc")) == 1
+@assert infer_bool(DistString("abc") >= "abc") == 1
+@assert infer_bool("abcd" <= DistString("abc")) == 0

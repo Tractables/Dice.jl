@@ -144,6 +144,14 @@ Base.:<(x::Int, y::DistInt) = y > x
 
 Base.:<(x::DistInt, y::Int) = y > x
 
+Base.:(>=)(x::DistInt, y::DistInt) = !(x < y)
+Base.:(>=)(x::Int, y::DistInt) = DistInt(x) >= y
+Base.:(>=)(x::DistInt, y::Int) = x >= DistInt(y)
+
+Base.:(<=)(x::DistInt, y::DistInt) = !(x > y)
+Base.:(<=)(x::Int, y::DistInt) = DistInt(x) <= y
+Base.:(<=)(x::DistInt, y::Int) = x <= DistInt(y)
+
 # No canonical bitwidth
 function Base.:+(p1::DistInt, p2::DistInt)
     last_sat_bit = 0
