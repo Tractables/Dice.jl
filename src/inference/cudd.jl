@@ -145,7 +145,7 @@ isvalid(mgr::CuddMgr, x) =
 # num_nodes(x; as_add=true) =  
 #     num_nodes(bools(x); as_add)
 
-function num_nodes(d, suppress_warning=false)
+function num_nodes(d; suppress_warning=false)
     if !suppress_warning
         println("Warning: this version of num_nodes compiles the computation graph an ")
         println("extra time, and always uses the default flip order. To suppress this ")
