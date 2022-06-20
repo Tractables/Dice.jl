@@ -1,6 +1,6 @@
 import IfElse: ifelse
 
-export Dist, DistBool, prob_equals, infer_bool, ifelse, flip, bools, dist_to_mgr_and_compiler, flips_left_to_right, flips_by_instantiation_order, flips_by_deepest_depth, flips_by_shallowest_depth, flips_by_freq, clear_flips, flip_probs, Flip, children, hoist!
+export Dist, DistBool, prob_equals, infer_bool, ifelse, flip, bools, dist_to_mgr_and_compiler, flips_left_to_right, flips_by_instantiation_order, flips_by_deepest_depth, flips_by_shallowest_depth, flips_by_freq, clear_flips, flip_probs, Flip, children, hoist!, to_dist
 
 export DistAnd, DistOr, DistNot, DistIte, DistTrue, DistFalse
 "A probability distribution over values of type `T`"
@@ -75,6 +75,10 @@ DistBool(p::Real) =
     else
         flip(p)
     end
+
+to_dist(b::Bool) = DistBool(b)
+
+to_dist(d::Dist) = d
 
 # Abuse of method overloading to keep computation graph flat
 Base.:&(x::DistFalse, y::DistFalse) = DistFalse()

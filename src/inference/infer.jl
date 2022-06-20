@@ -12,7 +12,7 @@ function infer(inferer, d)
     group_infer(inferer, d, true, 1.0) do assignment, _, p
         if haskey(ans, assignment)
             # If this prints, some group_infer implementation is probably inefficent.
-            println("Warning: Multiple paths to same assignment.")
+            println("Warning: Multiple paths to same assignment: $(assignment)")
             ans[assignment] += p
         else
             ans[assignment] = p

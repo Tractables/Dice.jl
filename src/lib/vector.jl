@@ -22,6 +22,15 @@ function DistVector(contents::Vector)
     DistVector(contents, DistInt(length(contents)))
 end
 
+function to_dist(v::AbstractVector)
+    @assert !isempty(v)
+    contents = [to_dist(x) for x in v]
+    for x in contents
+        @assert typeof(x) == typeof(contents[1])
+    end
+    DistVector(Vector{typeof(contents[1])}(contents))
+end
+
 function group_infer(f, inferer, d::DistVector, prior, prior_p::Float64)
     group_infer(inferer, d.len, prior, prior_p) do len, len_prior, len_p
         group_infer(inferer, d.contents[1:len], len_prior, len_p) do v, v_prior, v_p

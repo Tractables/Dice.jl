@@ -10,6 +10,8 @@ function DistString(s::String)
     DistString([DistChar(c) for c in s], DistInt(length(s)))
 end
 
+to_dist(s::String) = DistString(s)
+
 function replace_helper(d::DistString, mapping)
     DistString([replace(c, mapping) for c in d.chars], replace(d.len, mapping))
 end

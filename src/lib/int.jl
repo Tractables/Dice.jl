@@ -1,6 +1,6 @@
      
 # Integers
-export DistInt, add_bits, max_bits, safe_add, ifelse
+export DistInt, add_bits, max_bits, safe_add, ifelse, infer_int
 
 mutable struct DistInt <: Dist{Int}
     # first index is least significant bit
@@ -21,6 +21,8 @@ function DistInt(i::Int)
     DistInt(bits)
 end
 
+to_dist(i::Int) = DistInt(i)
+
 function replace_helper(i::DistInt, mapping)
     DistInt([replace(bit, mapping) for bit in i.bits])
 end
@@ -38,7 +40,7 @@ function infer_int(d::DistInt)
             ans[v+1] = prior_p
             return
         end
-        sub_p = infer(prior & d.bits[i])
+        sub_p = infer_bool(prior & d.bits[i])
         if sub_p != 0
             helper(i + 1, prior & d.bits[i], sub_p, v + 2^(i-1))
         end

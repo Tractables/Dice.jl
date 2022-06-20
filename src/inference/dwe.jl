@@ -9,6 +9,8 @@ end
 
 DWE(d::T) where T <: Dist = DWE{T}(d, DistBool(false))
 
+to_dist(d::DWE) = d
+
 function replace_helper(d::DWE, mapping)
     DWE(replace(d.d, mapping), replace(d.err, mapping))
 end
@@ -31,7 +33,7 @@ function infer(inferer, d::DWE)
         group_infer(inferer, d.d, error_prior, error_p_) do assignment, _, p
             if haskey(ans, assignment)
                 # If this prints, some group_infer implementation is probably inefficent.
-                println("Warning: Multiple paths to same assignment.")
+                println("Warning: Multiple paths to same assignment: $(assignment)")
                 ans[assignment] += p
             else
                 ans[assignment] = p
@@ -66,7 +68,7 @@ function infer_with_observation(inferer, d::DWE, observation::DistBool)
             group_infer(inferer, d.d, error_prior, error_p_) do assignment, _, p
                 if haskey(ans, assignment)
                     # If this prints, some group_infer implementation is probably inefficent.
-                    println("Warning: Multiple paths to same assignment.")
+                    println("Warning: Multiple paths to same assignment: $(assignment)")
                     ans[assignment] += p/denom
                 else
                     ans[assignment] = p/denom

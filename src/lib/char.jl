@@ -13,6 +13,8 @@ function DistChar(c::Char)
     DistChar(DistInt(char_idx[c]))
 end
 
+to_dist(c::Char) = DistChar(c)
+
 function replace_helper(d::DistChar, mapping)
     DistString(replace(d.i, mapping))
 end
