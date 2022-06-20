@@ -2,7 +2,7 @@ using Dice
 using Dice: num_flips, num_nodes
 
 cg = @dice begin
-    function uniform(b::Int)
+    function Main.uniform(b::Int)
         a = b/2
         d = true
         bits = Vector(undef, b)

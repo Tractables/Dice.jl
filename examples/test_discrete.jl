@@ -2,7 +2,7 @@ using Dice
 using Dice: num_flips, num_nodes
 
 a = [0.1, 0.2, 0.7]
-function discrete(p::Vector{Float64})
+function Main.discrete(p::Vector{Float64})
     mb = length(p)
     v = Vector(undef, mb)
     sum = 1

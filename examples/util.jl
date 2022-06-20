@@ -59,28 +59,3 @@ function get_char_freqs_from_url(corpus_url)
     end
     [counts[c]/length(corpus) for c in valid_chars]
 end
-
-# TODO remove
-function uniform(domain::AbstractVector{Int})
-    p = zeros(maximum(domain) + 1)
-    for x in domain
-        p[x + 1] = 1/length(domain)
-    end
-    discrete(p)
-end
-
-# TODO remove
-function discrete(p::Vector{Float64})
-    mb = length(p)
-    v = Vector(undef, mb)
-    sum = 1
-    for i=1:mb
-        v[i] = p[i]/sum
-        sum = sum - p[i]
-    end
-    ans = DistInt(mb-1)
-    for i=mb-1:-1:1
-        ans = Dice.ifelse(flip(v[i]), DistInt(i-1), ans)
-    end
-    return ans
-end

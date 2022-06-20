@@ -10,6 +10,7 @@ include("lib/string.jl")
 include("lib/enum.jl")
 include("lib/vector.jl")
 include("lib/tree.jl")
+include("lib/sample.jl")
 # include("lib/tuple.jl")
 
 include("inference/infer.jl")

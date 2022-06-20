@@ -1,7 +1,7 @@
 using Dice
 using Dice: num_flips, num_nodes
 
-function uniform(b::Int, w::Int) # b is the bits for uniform, w is the bitwidth
+function Main.uniform(b::Int, w::Int) # b is the bits for uniform, w is the bitwidth
     x = Vector(undef, b)
     for i = b:-1:1
         x[i] = flip(0.5)

@@ -62,4 +62,8 @@ using Suppressor: @suppress_out
         "$(@__DIR__)/../examples/test_dwe.jl"
     )
 
+    @test_nowarn @suppress_out include(
+        "$(@__DIR__)/../examples/test_sample.jl"
+    )
+
 end
