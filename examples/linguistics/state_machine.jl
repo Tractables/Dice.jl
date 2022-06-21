@@ -31,7 +31,7 @@ for step_i in 1:num_steps
     # Consider each state we can be at
     for (state1, transitions) in machine
         # Choose next state and char label as if we are at state1
-        cand_state, cand_c = discrete(
+        cand_state, cand_c = discrete_bwh(
             ((DistInt(state2), DistChar(char_label)), p)
             for (state2, char_label, p) in transitions
         )
