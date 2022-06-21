@@ -82,25 +82,25 @@ print_dict(sentence_dist)
 Probability sentence starts with [Alice, and]: 0.08425824255999999
 Probability of error: 0.04876351487999998
 Distribution over sentences:
-   [Bob, saw]                                                          => 0.168
-   [Alice, saw]                                                        => 0.168
-   [Alice, ran]                                                        => 0.11199999999999996
-   [Bob, ran]                                                          => 0.11199999999999996
-   [Bob, saw, Bob]                                                     => 0.02880000000000002
-   [Bob, saw, Alice]                                                   => 0.02880000000000002
-   [Alice, saw, Bob]                                                   => 0.028800000000000006
-   [Alice, saw, Alice]                                                 => 0.028800000000000006
-   [Bob, ran, Alice]                                                   => 0.01920000000000001
-   [Bob, ran, Bob]                                                     => 0.01920000000000001
-   [Alice, ran, Alice]                                                 => 0.0192
-   [Alice, ran, Bob]                                                   => 0.0192
-   [Alice, and, Bob, saw]                                              => 0.013439999999999999
-   [Alice, and, Alice, saw]                                            => 0.013439999999999999
-   [Bob, and, Bob, saw]                                                => 0.013439999999999987
-   [Bob, and, Alice, saw]                                              => 0.013439999999999987
-   [Bob, and, Alice, ran]                                              => 0.008960000000000017
-   [Bob, and, Bob, ran]                                                => 0.008960000000000017
-   [Alice, and, Bob, ran]                                              => 0.008959999999999994
-   [Alice, and, Alice, ran]                                            => 0.008959999999999994
-   ⋮                                                                   => ⋮
+   [Alice, saw]             => 0.168
+   [Bob, saw]               => 0.168
+   [Alice, ran]             => 0.11199999999999996
+   [Bob, ran]               => 0.11199999999999996
+   [Bob, saw, Alice]        => 0.02880000000000002
+   [Bob, saw, Bob]          => 0.02880000000000002
+   [Alice, saw, Alice]      => 0.028800000000000006
+   [Alice, saw, Bob]        => 0.028800000000000006
+   [Bob, ran, Bob]          => 0.01920000000000001
+   [Bob, ran, Alice]        => 0.01920000000000001
+   [Alice, ran, Alice]      => 0.0192
+   [Alice, ran, Bob]        => 0.0192
+   [Alice, and, Bob, saw]   => 0.013439999999999999
+   [Alice, and, Alice, saw] => 0.013439999999999999
+   [Bob, and, Alice, saw]   => 0.013439999999999987
+   [Bob, and, Bob, saw]     => 0.013439999999999987
+   [Bob, and, Alice, ran]   => 0.008960000000000017
+   [Bob, and, Bob, ran]     => 0.008960000000000017
+   [Alice, and, Alice, ran] => 0.008959999999999994
+   [Alice, and, Bob, ran]   => 0.008959999999999994
+   ⋮                        => ⋮
 ==#

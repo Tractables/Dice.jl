@@ -1,18 +1,16 @@
 function print_dict(d; top_n=20)
     top_n === nothing && (top_n = length(d))
+    truncated = top_n < length(d)
 
     d = sort(collect(d), by= xv -> -xv[2])  # by decreasing probability
-
-    # Make dists over trees, tups, vectors print a bit more nicely
-    d = [(to_str_pretty(k), v) for (k, v) in d]
+    d = d[1:top_n]  # truncate
+    d = [(to_str_pretty(k), v) for (k, v) in d]  # print trees/tups/vectors more nicely
 
     widest = if length(d) > 0 maximum(length(string(k)) for (k, _) in d) else 0 end
     for (i, (k, v)) in enumerate(d)
-        if i <= top_n
-            println("   $(rpad(k, widest, ' ')) => $(v)")
-        end
+        println("   $(rpad(k, widest, ' ')) => $(v)")
     end
-    if top_n < length(d)
+    if truncated
         println("   $(rpad('⋮', widest, ' ')) => ⋮")
     end
 end
