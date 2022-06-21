@@ -1,11 +1,25 @@
-function print_dict(d)
+function print_dict(d; top_n=20)
+    top_n === nothing && (top_n = length(d))
+
     d = sort(collect(d), by= xv -> -xv[2])  # by decreasing probability
-    println("$(typeof(d)) with $(length(d)) entries")
+
+    # Make dists over trees, tups, vectors print a bit more nicely
+    d = [(to_str_pretty(k), v) for (k, v) in d]
+
     widest = if length(d) > 0 maximum(length(string(k)) for (k, _) in d) else 0 end
-    for (k, v) in d
-        println("   $(rpad(k, widest, ' ')) => $(v)")
+    for (i, (k, v)) in enumerate(d)
+        if i <= top_n
+            println("   $(rpad(k, widest, ' ')) => $(v)")
+        end
+    end
+    if top_n < length(d)
+        println("   $(rpad('⋮', widest, ' ')) => ⋮")
     end
 end
+
+to_str_pretty(x) = string(x)
+to_str_pretty(x::Vector) = "[" * join((to_str_pretty(y) for y in x), ", ") * "]"
+to_str_pretty(x::Tuple) = "(" * join((to_str_pretty(y) for y in x), ", ") * ")"
 
 # Prints trees as returned from inference on DistTree
 # tree := (val, [tree, tree, tree...])
