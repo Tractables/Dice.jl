@@ -18,7 +18,11 @@ to_dist(case::T) where T <: Enum = DistEnum(case)
 
 function group_infer(f, inferer, d::DistEnum, prior, prior_p::Float64)
     group_infer(inferer, d.i, prior, prior_p) do n, new_prior, p
-        f(d.enum(n), new_prior, p)
+        # TODO: fix this hack
+        # Erroneous paths may cause integer values outside of enum, so return
+        # dummy value. Note that this may cause "Multiple paths to same assignment"
+        # warning.
+        f(if n <= d.enum.size d.enum(n) else d.enum(1) end, new_prior, p)
     end
 end
 
