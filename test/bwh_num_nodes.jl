@@ -12,7 +12,7 @@ function generate_code_bwh(p::Vector{Float64})
         @assert last(prefix_sums) ≈ 1 "Distribution should sum to 1"
         function helper(i, j)
             if i == j
-                DistInt(dicecontext(), i - 1)
+                DistInt(i - 1)
             else
                 first_half_end = (i + j - 1) ÷ 2
                 first_half_p = prefix_sums[first_half_end] - prefix_sums[i] + p[i]
@@ -27,15 +27,14 @@ function generate_code_bwh(p::Vector{Float64})
 end
 
 function test_bwh_num_nodes(p::Vector{Float64})
-    code = generate_code_bwh(p)
-    bdd = compile(code)
-    @assert infer(code, :bdd) ≈ p  # Verify correctness
+    cg = generate_code_bwh(p)
+    @assert infer_int(cg) ≈ p  # Verify correctness
 
-    nn = num_nodes(bdd)
+    nn = num_nodes(cg)
     num_bits = round(Int, log2(length(p)))
     @assert nn == bwh_num_nodes(num_bits)  # Verify num bits
 
-    println("BWH for a $(num_bits)-bit distribution: $(nn) nodes, $(num_flips(bdd)) flips")
+    println("BWH for a $(num_bits)-bit distribution: $(nn) nodes, $(num_flips(cg)) flips")
 end
 
 dist_2 = [0.5, 0.5]

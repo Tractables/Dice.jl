@@ -1,7 +1,7 @@
 using Revise
 using Dice
 using Dice: num_flips, num_nodes
-include("util.jl")
+include("../util.jl")
 
 function caesar()
     corpus_url = "https://raw.githubusercontent.com/teropa/nlp/master/resources/corpora/gutenberg/shakespeare-macbeth.txt"

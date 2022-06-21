@@ -6,11 +6,11 @@ RESULTS_DIR = "results"
 NOTES = "deleteme"
 
 tests_inputs = [
-    # TestInput("network", network(), nothing)
-    TestInput("bwh_unif", bwh_discrete32, nothing)
-    # TestInput("caesar", caesar()...)
-    TestInput("grammar", grammar(), nothing)
-    TestInput("tree", tree()...)
+    TestInput("network", network(), nothing)
+    # TestInput("bwh_unif", bwh_discrete32, nothing)
+    # # TestInput("caesar", caesar()...)
+    # TestInput("grammar", grammar(), nothing)
+    # TestInput("tree", tree()...)
 ]
 
 tests = [

@@ -1,7 +1,7 @@
 using Dice
 using Dice: num_flips, num_nodes
 using Revise
-include("util.jl")
+include("../util.jl")
 
 @enum Terms ran saw Alice Bob and
 

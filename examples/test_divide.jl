@@ -1,7 +1,7 @@
 using Dice
 using Dice: num_flips, num_nodes
 
-function Main.uniform(b::Int, w::Int) # b is the bits for uniform, w is the bitwidth
+function my_uniform(b::Int, w::Int) # b is the bits for uniform, w is the bitwidth
     x = Vector(undef, b)
     for i = b:-1:1
         x[i] = flip(0.5)
@@ -10,8 +10,8 @@ function Main.uniform(b::Int, w::Int) # b is the bits for uniform, w is the bitw
 end
 
 function cg_div(b1::Int, b2::Int, res::Int)
-    a = (uniform(b1, b1+1) + 1)[1]
-    b = (uniform(b2, b2))
+    a = (my_uniform(b1, b1+1) + 1)[1]
+    b = (my_uniform(b2, b2))
     y = (a/b)
     # println(y)
     # y[1]
