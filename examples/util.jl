@@ -3,7 +3,7 @@ function print_dict(d; top_n=20)
     truncated = top_n < length(d)
 
     d = sort(collect(d), by= xv -> -xv[2])  # by decreasing probability
-    d = d[1:top_n]  # truncate
+    truncated && (d = d[1:top_n])  # truncate
     d = [(to_str_pretty(k), v) for (k, v) in d]  # print trees/tups/vectors more nicely
 
     widest = if length(d) > 0 maximum(length(string(k)) for (k, _) in d) else 0 end
