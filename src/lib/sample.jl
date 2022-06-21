@@ -36,7 +36,7 @@ function discrete(dist_p_tups)
     ans = last(dist_p_tups)[1]
     for i = (length(dist_p_tups) - 1):-1:1
         (val, weight) = dist_p_tups[i]
-        ans = @dice if flip(v[val]) val else ans end
+        ans = @dice_ite if flip(v[val]) val else ans end
     end
     return ans
 end

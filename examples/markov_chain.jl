@@ -1,7 +1,7 @@
 using Dice
 using Dice: num_flips, num_nodes, to_dice_ir
 
-code = @dice begin
+code = @dice_ite begin
     n = 10
     x = Vector(undef, n)
     x[1] = flip(0.5)

@@ -2,7 +2,7 @@ using Dice
 using Dice: num_flips, num_nodes
 
 function network()
-    @dice begin
+    @dice_ite begin
         # network reachability example from the dice paper
 
         function diamond(s1)

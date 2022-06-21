@@ -1,7 +1,7 @@
 using Dice
 using Dice: num_flips, num_nodes
 
-cg = @dice begin
+cg = @dice_ite begin
     function my_uniform(b::Int)
         a = b/2
         d = true

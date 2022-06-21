@@ -6,7 +6,7 @@ using Dice: num_flips, num_nodes, ifelse
 sbk_num_nodes(n) = 2^n * (n - 1) + 3
 
 function generate_code_sbk(p::Vector{Float64})
-    @dice begin
+    @dice_ite begin
         function helper(i)
             if i == length(p)
                 DistInt(i - 1)
@@ -48,7 +48,7 @@ end
 sbk_num_nodes(n) = 2^n * (n - 1) + 3      - 2^(n - 1) + 1
 
 function generate_code_sbk(p::Vector{Float64})
-    @dice begin
+    @dice_ite begin
         function discrete(p::Vector{Float64})
             mb = length(p)
             v = Vector(undef, mb)

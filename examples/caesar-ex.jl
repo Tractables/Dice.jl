@@ -2,7 +2,7 @@ using Revise
 using Dice
 using Dice: num_flips, num_nodes, to_dice_ir
 
-code = @dice begin
+code = @dice_ite begin
     function discrete(p::Vector{Float64})
         mb = length(p)
         v = Vector(undef, mb)

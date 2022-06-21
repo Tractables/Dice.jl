@@ -6,7 +6,7 @@ using Dice: num_flips, num_nodes, ifelse
 bwh_num_nodes(n) = 2^(n + 1) - n
 
 function generate_code_bwh(p::Vector{Float64})
-    @dice begin
+    @dice_ite begin
         @assert ispow2(length(p)) "Distribution length should be power of 2"
         prefix_sums = accumulate(+, p)
         @assert last(prefix_sums) ≈ 1 "Distribution should sum to 1"

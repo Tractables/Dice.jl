@@ -26,7 +26,7 @@ function grammar()
     num_steps = 4
     top_n = 40  # Only the top_n most likely strings are printed
 
-    grammar = @dice begin
+    grammar = @dice_ite begin
         function expand_term(lhs, max_depth)
             if typeof(lhs) == Terms
                 DistVector(Vector{DistEnum}([DistEnum(lhs)])), DistBool(false)

@@ -13,7 +13,7 @@ function caesar()
     end
     valid_char_freqs = [counts[c]/length(corpus) for c in valid_chars]
 
-    caesar_original, caesar_observe = @dice begin
+    caesar_original, caesar_observe = @dice_ite begin
         function discrete(p::Vector{Float64})
             mb = length(p)
             v = Vector(undef, mb)
