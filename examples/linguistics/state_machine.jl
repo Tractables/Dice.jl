@@ -31,7 +31,7 @@ for step_i in 1:num_steps
     # Consider each state we can be at
     for (state1, transitions) in machine
         # Choose next state and char label as if we are at state1
-        cand_state, cand_c = discrete_bwh(
+        cand_state, cand_c = discrete(
             ((DistInt(state2), DistChar(char_label)), p)
             for (state2, char_label, p) in transitions
         )
@@ -55,11 +55,11 @@ print_dict(str_dist)
 println("$(num_nodes([str, reached_accepting_state], suppress_warning=true)) nodes, $(num_flips([str, reached_accepting_state])) flips")
 
 #==
-Probability of not reaching accepting state in 5 steps: 0.37696
+Probability of not reaching accepting state in 5 steps: 0.3769599999999999
    il    => 0.15
    al    => 0.09000000000000001
    ime   => 0.075
-   ame   => 0.045000000000000005
+   ame   => 0.044999999999999984
    isil  => 0.029999999999999995
    til   => 0.029999999999999995
    asil  => 0.018000000000000002
@@ -69,13 +69,13 @@ Probability of not reaching accepting state in 5 steps: 0.37696
    isime => 0.014999999999999998
    imoil => 0.01125
    asal  => 0.010800000000000002
-   isame => 0.009
    asime => 0.009
-   tame  => 0.009
-   amoil => 0.006750000000000001
+   isame => 0.008999999999999992
+   tame  => 0.008999999999999992
    imoal => 0.006750000000000001
+   amoil => 0.006749999999999995
    tisil => 0.005999999999999998
    ttil  => 0.005999999999999998
    ⋮     => ⋮
-259 nodes, 22 flips
+186 nodes, 22 flips
 ==#
