@@ -61,10 +61,10 @@ tree, error = symbol_to_tree(start_sym, num_steps)
 sentence = leaves(tree)
 observe = prob_equals(sentence, to_dist(expected_sentence))
 
-# DWE ("dist with error") records error
-# error_p is the probability error is true given observe
-# dist is the distribution over trees, excluding execution paths where error is true, given observe
-# observe re-normalizes probabilities but error does not.
+# DWE ("dist with error") records error.
+# dist is the distribution over trees, excluding execution paths where error is true, given observe.
+# error_p is the probability error is true given observe.
+# Note: observe re-normalizes probabilities but error does not.
 dist, error_p = infer_with_observation(DWE(tree, error), observe)
 @assert sum(values(dist)) + error_p ≈ 1
 

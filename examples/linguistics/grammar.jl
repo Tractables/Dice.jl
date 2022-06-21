@@ -58,11 +58,12 @@ function expand_symbol(sym, max_depth)
     end
 end
 
-# DWE ("dist with error") records error
-sentence, error = expand_symbol(start_sym, num_steps);
+sentence, error = expand_symbol(start_sym, num_steps)
 has_prefix = prob_startswith(sentence, to_dist(prefix))
 
-# sentence_dist is the distribution over sentences in execution paths where error is false
+# DWE ("dist with error") records error.
+# sentence_dist is the distribution over sentences in execution paths where error is false.
+# error_p is the probability error is true given observe.
 sentence_dist, error_p = infer(DWE(sentence, error))
 @assert sum(values(sentence_dist)) + error_p ≈ 1
 
