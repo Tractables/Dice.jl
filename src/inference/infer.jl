@@ -50,7 +50,7 @@ function infer(inferer,
             group_infer(inferer, d, error_prior, error_p_) do assignment, _, p
                 if haskey(ans, assignment)
                     # If this prints, some group_infer implementation is probably inefficent.
-                    println("Warning: Multiple paths to same assignment: $(assignment)")
+                    # println("Warning: Multiple paths to same assignment: $(assignment)")
                     ans[assignment] += p/denom
                 else
                     ans[assignment] = p/denom
