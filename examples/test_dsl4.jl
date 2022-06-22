@@ -1,6 +1,7 @@
 using Dice
 
 function finite_quotient(x,y)
+    require_dice_transformation()
     if !x && !y
         prob_error("0/0 is undefined")
         false
@@ -11,34 +12,29 @@ function finite_quotient(x,y)
     end
 end
 
-
-foo(x) = flip(x) ? flip(x/2) : flip(x/4)
-
-@dice begin 
-    foo(0.9)
-end
-
 quo, errors, observation = @dice begin
     finite_quotient(flip(0.5), flip(0.5))
 end
 total_error = reduce(|, [err for (err, msg) in errors])
-dist, error_p = infer(DWE(quo, total_error))
+dist, error_p = infer(quo, err=total_error)
+@assert dist[true] ≈ 0.5
+@assert error_p ≈ 0.25
 
 function less_than(a, b)
+    require_dice_transformation()
     if a & !b
         return DistTrue()
     end
     return DistFalse()
 end
 
-infer(@dice begin less_than(flip(0.3), flip(0.5)) end)
+d, errors, obs = @dice less_than(flip(0.3), flip(0.5))
+@assert infer_bool(d, observation=obs) ≈ 0.15
 
-d, a, observation = @dice begin
+d, a, obs = @dice begin
     flipA = flip(0.3)
     flipB = flip(0.5)
+    observe(flipA)
     less_than(flipA, flipB)
-    # observe(flipA)
-    # !prob_equals(flipA, flipB)
 end
-
-dist = infer_with_observation(d, observation)
+@assert infer_bool(d, observation=obs) ≈ 0.5
