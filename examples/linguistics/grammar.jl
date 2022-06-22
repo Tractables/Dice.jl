@@ -58,27 +58,26 @@ function expand_symbol(sym, max_depth)
     end
 end
 
-sentence, error = expand_symbol(start_sym, num_steps)
+sentence, err = expand_symbol(start_sym, num_steps)
 has_prefix = prob_startswith(sentence, to_dist(prefix))
 
-# DWE ("dist with error") records error.
-# sentence_dist is the distribution over sentences in execution paths where error is false.
-# error_p is the probability error is true given observe.
-sentence_dist, error_p = infer(DWE(sentence, error))
-@assert sum(values(sentence_dist)) + error_p ≈ 1
+# dist is the distribution over sentences in execution paths where error is false.
+# error_p is the probability error is true.
+dist, error_p = infer(sentence, err=err)
+@assert sum(values(dist)) + error_p ≈ 1
 
-# we already calculated error_p, so no need to wrap in a DWE again
 # note that has_prefix_p undercounts, as we do not consider execution paths that error
-has_prefix_p = infer_bool(has_prefix & !error)
+has_prefix_p = infer_bool(has_prefix & !err)
 
-# This would do the same thing, recalculating the same value for error_p:
-# has_prefix_p, error_p = infer_bool(DWE(has_prefix, error))
+# This does the same thing, recalculating the same value for error_p:
+# inf_res = infer(has_prefix, err=err)
+# has_prefix_p, error_p = inf_res[true], inf_res.error_p
 
 println("Probability sentence starts with $(to_str_pretty(prefix)): $(has_prefix_p)")
 println("Probability of error: $(error_p)")
 println("Distribution over sentences:")
-print_dict(sentence_dist)
-comp_graphs = [sentence, error, has_prefix]
+print_dict(dist)
+comp_graphs = [sentence, err, has_prefix]
 println("$(num_nodes(comp_graphs, suppress_warning=true)) nodes, $(num_flips(comp_graphs)) flips")
 
 #==

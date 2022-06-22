@@ -1,13 +1,14 @@
 using Dice
 
 for discrete_impl in [discrete, discrete_sbk]
-    dist = infer(discrete_impl([
+    local dist, err = infer(discrete_impl([
         (DistString("abc"), 0.3),
         (DistString(""), 0.1),
         (DistString("dice"), 0.2),
         (DistString("no"), 0.),
         (DistString("fifth"), 0.4),
     ]))
+    @assert err == 0
     @assert length(dist) == 4
     @assert dist["abc"] ≈ 0.3
     @assert dist[""] ≈ 0.1

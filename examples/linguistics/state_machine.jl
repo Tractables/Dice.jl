@@ -45,10 +45,10 @@ for step_i in 1:num_steps
     global state = next_state
 end
 
-# DWE ("dist with error") records error, which in this case is true in execution paths
+# Infer with recorded error, which in this case is true in execution paths
 # where we fail to reach an accepting state within our steps bound.
 reached_accepting_state = reduce(|, [prob_equals(state, DistInt(acceptor)) for acceptor in acceptors])
-str_dist, non_accepting_p = infer(DWE(str, !reached_accepting_state))
+str_dist, non_accepting_p = infer(str, err=!reached_accepting_state)
 
 println("Probability of not reaching accepting state in $(num_steps) steps: $(non_accepting_p)")
 print_dict(str_dist)

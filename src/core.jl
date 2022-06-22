@@ -404,7 +404,7 @@ function dist_to_mgr_and_compiler(x; flip_order=nothing, flip_order_reverse=fals
     return mgr, to_bdd_mem
 end
 
-function infer_bool(d::DistBool)
-    mgr, to_bdd = dist_to_mgr_and_compiler(d)
-    infer_bool(mgr, to_bdd(d))
+function infer_bool(d::DistBool; observation::DistBool=DistTrue())
+    mgr, to_bdd = dist_to_mgr_and_compiler([d, observation])
+    infer_bool(mgr, to_bdd(d & observation))/infer_bool(mgr, to_bdd(observation))
 end

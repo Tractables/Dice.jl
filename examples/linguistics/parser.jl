@@ -57,21 +57,20 @@ function symbol_to_tree(sym, max_depth)
     end
 end
 
-tree, error = symbol_to_tree(start_sym, num_steps)
+tree, err = symbol_to_tree(start_sym, num_steps)
 sentence = leaves(tree)
 observe = prob_equals(sentence, to_dist(expected_sentence))
 
-# DWE ("dist with error") records error.
-# dist is the distribution over trees, excluding execution paths where error is true, given observe.
-# error_p is the probability error is true given observe.
+# dist is the distribution over trees, excluding execution paths where err is true, given observe.
+# error_p is the probability err is true given observe.
 # Note: observe re-normalizes probabilities but error does not.
-dist, error_p = infer_with_observation(DWE(tree, error), observe)
+dist, error_p = infer(tree, err=err, observation=observe)
 @assert sum(values(dist)) + error_p ≈ 1
 
 println("Probability of error: $(error_p)")
 println("Distribution over trees:")
 print_dict(dist)
-println("$(num_nodes([tree, observe], suppress_warning=true)) nodes, $(num_flips([tree, observe])) flips")
+println("$(num_nodes([tree, observe, err], suppress_warning=true)) nodes, $(num_flips([tree, observe, err])) flips")
 
 # To visualize trees:
 example_tree = collect(dist)[1][1]
@@ -82,7 +81,7 @@ Probability of error: 0.0
 Distribution over trees:
    (S, [(X, [(a, []), (b, []), (Y, [(c, [])])])]) => 0.7777777777777779
    (S, [(Y, [(X, [(a, [])]), (b, []), (c, [])])]) => 0.22222222222222224
-17 nodes, 5 flips
+20 nodes, 5 flips
 S
 └── X        
     ├── a    

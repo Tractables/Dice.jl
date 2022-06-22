@@ -4,7 +4,8 @@ code = @dice_ite begin
     f = flip(0.2)
     [!f, (if f DistInt(3) else DistInt(7) end, f)]
 end
-dist = infer(code)
+dist, err = infer(code)
+@assert err == 0
 @assert sum(v for v in values(dist)) ≈ 1
 @assert dist[[true, (7, false)]] ≈ 0.8
 @assert dist[[false, (3, true)]] ≈ 0.2

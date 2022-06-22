@@ -1,41 +1,64 @@
 export infer, group_infer, infer_with_observation, @Pr
 
+struct InferenceResult
+    dist::Dict
+    error_p::AbstractFloat
+end
+
+# Allow tuple destructuring
+Base.iterate(x::InferenceResult) = (x.dist, 1)
+Base.iterate(x::InferenceResult, state) = if state == 1 (x.error_p, 2) else nothing end
+
+# Make a few functions go through to dist
+for f in (:(Base.length), :(Base.getindex), :(Base.keys), :(Base.values), :(Base.haskey), :(Base.get))
+    eval(quote $f(x::InferenceResult, args...) = $f(x.dist, args...) end)
+end
+
 # Efficient infer for any distribution for which group_infer is defined
-function infer(d; flip_order=nothing, flip_order_reverse=false)
-    mgr, compiler = dist_to_mgr_and_compiler(d; flip_order=flip_order, flip_order_reverse=flip_order_reverse)
-    inferer = x -> infer_bool(mgr, compiler(x))
-    infer(inferer, d)
-end
-
-function infer(inferer, d) 
-    ans = Dict()
-    group_infer(inferer, d, true, 1.0) do assignment, _, p
-        if haskey(ans, assignment)
-            # If this prints, some group_infer implementation is probably inefficent.
-            println("Warning: Multiple paths to same assignment: $(assignment)")
-            ans[assignment] += p
-        else
-            ans[assignment] = p
-        end
+function infer(d;
+            observation::DistBool=DistTrue(),
+            err::DistBool=DistFalse(),
+            flip_order=nothing,
+            flip_order_reverse=false)
+    if d isa DWE
+        err |= d.err
+        d = d.d
     end
-    ans
-end
-
-function infer_with_observation(d::Dist, observation::DistBool; flip_order=nothing, flip_order_reverse=false)
-    mgr, compiler = dist_to_mgr_and_compiler([d, observation]; flip_order=flip_order, flip_order_reverse=flip_order_reverse)
+    mgr, compiler = dist_to_mgr_and_compiler(
+        [d, observation, err];
+        flip_order=flip_order,
+        flip_order_reverse=flip_order_reverse
+    )
     inferer = x -> infer_bool(mgr, compiler(x))
-    infer_with_observation(inferer, d, observation)
+    infer(inferer, d, observation, err)
 end
 
-function infer_with_observation(inferer, d::Dist, observation::DistBool)
-    dist = Dict()
+function infer(inferer,
+            d,
+            observation::DistBool=DistTrue(),
+            err::DistBool=DistFalse())
+    ans = Dict()
+    error_p = Ref(0.)
     group_infer(inferer, observation, true, 1.0) do observation_met, observe_prior, denom
         if !observation_met return end
-        group_infer(inferer, d, observe_prior, denom) do assignment, _, p
-            dist[assignment] = p/denom
+        group_infer(inferer, err, observe_prior, denom) do error, error_prior, error_p_
+            if error
+                # Hack to assign out of scope, there must a better way...
+                error_p[] = error_p_/denom
+                return
+            end
+            group_infer(inferer, d, error_prior, error_p_) do assignment, _, p
+                if haskey(ans, assignment)
+                    # If this prints, some group_infer implementation is probably inefficent.
+                    println("Warning: Multiple paths to same assignment: $(assignment)")
+                    ans[assignment] += p/denom
+                else
+                    ans[assignment] = p/denom
+                end
+            end
         end
     end
-    dist
+    InferenceResult(ans, error_p[])
 end
 
 macro Pr(code)
@@ -43,12 +66,12 @@ macro Pr(code)
     # to support arbitrary expressions, as long as they aren't ambiguous
     # (e.g. multiple |'s ) - or we use || instead of | for boolean or?
     msg = ("@Pr requires the form `@Pr(X)` or `Pr(X | Y)`. As an alternative to"
-        * " the macro, consider `infer_with_observation(X, Y)`.")
+        * " the macro, consider `infer(X, observation=Y)`.")
     if code isa Symbol
         temp = gensym()
         return quote
             $temp = $(esc(code))
-            if $temp isa DistBool || $temp isa DWE{DistBool}
+            if $temp isa DistBool
                 infer_bool($temp)
             else
                 infer($temp)
@@ -57,12 +80,14 @@ macro Pr(code)
     else
         @assert (length(code.args) == 3 && code.args[1] == :|) msg
         temp = gensym()
+        temp2 = gensym()
         return quote
             $temp = $(esc(code.args[2]))
-            if $temp isa DistBool || $temp isa DWE{DistBool}
-                infer_with_observation($temp, $(esc(code.args[3])))[true]
+            $temp2 = $(esc(code.args[3]))
+            if $temp isa DistBool
+                infer_bool($temp, observation=$temp2)
             else
-                infer_with_observation($temp, $(esc(code.args[3])))
+                infer($temp, observation=$temp2)
             end
         end
     end
