@@ -1,7 +1,7 @@
 using Test
 
 using Dice
-using Dice: CuddMgr, DistBool
+using Dice: DistBool
 
 code = @dice_ite begin
     function test_rec(a::Int)

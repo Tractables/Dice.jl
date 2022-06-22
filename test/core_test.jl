@@ -1,7 +1,7 @@
 using Test
 
 using Dice
-using Dice: CuddMgr, DistBool
+using Dice: DistBool
 
 @testset "DistBool Tests" begin
     

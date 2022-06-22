@@ -19,8 +19,8 @@ function replace_helper(d::DistChar, mapping)
     DistString(replace(d.i, mapping))
 end
 
-function group_infer(f, inferer, d::DistChar, prior, prior_p::Float64)
-    group_infer(inferer, d.i, prior, prior_p) do n, new_prior, p
+function group_infer(f, d::DistChar, prior, prior_p::Float64)
+    group_infer(d.i, prior, prior_p) do n, new_prior, p
         f(valid_chars[n+1], new_prior, p)
     end
 end

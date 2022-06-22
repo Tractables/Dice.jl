@@ -16,9 +16,9 @@ function replace_helper(d::DistString, mapping)
     DistString([replace(c, mapping) for c in d.chars], replace(d.len, mapping))
 end
 
-function group_infer(f, inferer, d::DistString, prior, prior_p::Float64)
-    group_infer(inferer, d.len, prior, prior_p) do len, len_prior, len_p
-        group_infer(inferer, d.chars[1:len], len_prior, len_p) do chars, chars_prior, chars_p
+function group_infer(f, d::DistString, prior, prior_p::Float64)
+    group_infer(d.len, prior, prior_p) do len, len_prior, len_p
+        group_infer(d.chars[1:len], len_prior, len_p) do chars, chars_prior, chars_p
             f(join(chars), chars_prior, chars_p)
         end
     end

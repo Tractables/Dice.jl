@@ -1,9 +1,8 @@
 using Test
 
 using Dice
-using Dice: CuddMgr, DistBool
+using Dice: DistBool
 
-# Removing with switch to computation graph backend
 
 # @testset "Cudd Backend Tests" begin
     

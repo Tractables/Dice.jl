@@ -31,9 +31,9 @@ function to_dist(v::AbstractVector)
     DistVector(Vector{typeof(contents[1])}(contents))
 end
 
-function group_infer(f, inferer, d::DistVector, prior, prior_p::Float64)
-    group_infer(inferer, d.len, prior, prior_p) do len, len_prior, len_p
-        group_infer(inferer, d.contents[1:len], len_prior, len_p) do v, v_prior, v_p
+function group_infer(f, d::DistVector, prior, prior_p::Float64)
+    group_infer(d.len, prior, prior_p) do len, len_prior, len_p
+        group_infer(d.contents[1:len], len_prior, len_p) do v, v_prior, v_p
             f(v, v_prior, v_p)
         end
     end

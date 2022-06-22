@@ -18,9 +18,9 @@ function replace_helper(d::DistTree{T}, mapping) where T <: Any
     DistTree{T}(replace(d.val, mapping), replace(d.children, mapping))
 end
 
-function group_infer(f, inferer, d::DistTree, prior, prior_p::Float64)
-    group_infer(inferer, d.val, prior, prior_p) do val, val_prior, val_p
-        group_infer(inferer, d.children, val_prior, val_p) do children, children_prior, children_p
+function group_infer(f, d::DistTree, prior, prior_p::Float64)
+    group_infer(d.val, prior, prior_p) do val, val_prior, val_p
+        group_infer(d.children, val_prior, val_p) do children, children_prior, children_p
             f((val, children), children_prior, children_p)
         end
     end

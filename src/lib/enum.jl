@@ -16,8 +16,8 @@ end
 
 to_dist(case::T) where T <: Enum = DistEnum(case)
 
-function group_infer(f, inferer, d::DistEnum, prior, prior_p::Float64)
-    group_infer(inferer, d.i, prior, prior_p) do n, new_prior, p
+function group_infer(f, d::DistEnum, prior, prior_p::Float64)
+    group_infer(d.i, prior, prior_p) do n, new_prior, p
         # TODO: fix this hack
         # Erroneous paths may cause integer values outside of enum, so return
         # dummy value. Note that this may cause "Multiple paths to same assignment"
