@@ -47,8 +47,7 @@ end
 # Returns (expansion, error), where error is true in execution paths where we hit
 # the depth bound without being able to expand all nonterminals.
 function expand_symbol(sym, max_depth)
-    # @dice_ite converts if/elseif/else to IfElse.ifelse
-    @dice_ite if sym isa Terminals.Terminals_
+    if sym isa Terminals.Terminals_
         DistVector(DistEnum[DistEnum(sym)]), DistFalse()  # Terminal, no error
     elseif max_depth == 0
         DistVector{DistEnum}(), DistTrue()  # Unexpandable nonterminal, error
