@@ -51,12 +51,12 @@ function infer(inferer,
         d;
         observation::Union{DistBool, Nothing}=nothing,
         err::Union{DistBool, Nothing}=nothing)
+    observation === nothing && (observation = DistTrue())
+    err === nothing && (err = DistFalse())
     if d isa DWE
         err |= d.err
         d = d.d
     end
-    observation === nothing && (observation = DistTrue())
-    err === nothing && (err = DistFalse())
     ans = Dict()
     error_p = Ref(0.)
     group_infer(inferer, observation, true, 1.0) do observation_met, observe_prior, denom
