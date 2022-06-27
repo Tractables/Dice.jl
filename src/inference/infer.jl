@@ -14,6 +14,24 @@ for f in (:(Base.length), :(Base.getindex), :(Base.keys), :(Base.values), :(Base
     eval(quote $f(x::InferenceResult, args...) = $f(x.dist, args...) end)
 end
 
+function Base.:(==)(x::InferenceResult, y::InferenceResult)
+    length(x.dist) != length(y.dist) && return false
+    for (k, v) in x.dist
+        !haskey(y.dist, k) && return false
+        y.dist[k] != v && return false
+    end
+    x.error_p == y.error_p
+end
+
+function Base.isapprox(x::InferenceResult, y::InferenceResult; atol::Real=0, rtol::Real=atol>0 ? 0 : √eps())
+    length(x.dist) != length(y.dist) && return false
+    for (k, v) in x.dist
+        !haskey(y.dist, k) && return false
+        !Base.isapprox(y.dist[k], v, atol=atol, rtol=rtol) && return false
+    end
+    Base.isapprox(x.error_p, y.error_p, atol=atol, rtol=rtol)
+end
+
 # Efficient infer for any distribution for which group_infer is defined
 function infer(d;
         observation::Union{DistBool, Nothing}=nothing,
