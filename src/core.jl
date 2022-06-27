@@ -172,48 +172,62 @@ children(x::DistOr) = [x.x, x.y]
 children(x::DistNot) = [x.x]
 children(x::DistEquals) = [x.x, x.y]
 children(x::DistIte) = [x.c, x.t, x.e]
-children(x::DistTrue) = []
-children(x::DistFalse) = []
+children(::DistTrue) = []
+children(::DistFalse) = []
 children(x::AbstractVector{T}) where T <: DistBool = x
 children(x::Tuple) = collect(x)
+children(::Flip) = []
 
-function flips_left_to_right(x)::Vector{Int}
-    flip_ids = Vector{Int}()
-    flips_left_to_right_helper(x, flip_ids)
-    unique(flip_ids)
+# Calls f for each node in x's DAG in a "preorder" traversal, once for each node.
+function compgraph_dfs(f, x)
+    compgraph_dfs_helper(f, x, Base.IdSet())
 end
 
-function flips_left_to_right_helper(x, flip_ids::Vector{Int})
-    if x isa Flip
-        push!(flip_ids, x.id)
-    else
+function compgraph_dfs_helper(f, x, seen)
+    if x ∉ seen
+        push!(seen, x)
+        f(x)
         for child in children(x)
-            flips_left_to_right_helper(child, flip_ids)
+            compgraph_dfs_helper(f, child, seen)
         end
     end
 end
 
+function flips_left_to_right(x)::Vector{Int}
+    flip_ids_set = Set{Int}()
+    flip_ids = Vector{Int}()
+    compgraph_dfs(x) do y
+        if y isa Flip && y.id ∉ flip_ids_set
+            push!(flip_ids_set, y.id)
+            push!(flip_ids, y.id)
+        end
+    end
+    flip_ids
+end
+
 function flips_by_instantiation_order(x)::Vector{Int}
-    sort(flips_left_to_right(x))
+    flip_ids_set = Set{Int}()
+    compgraph_dfs(x) do y
+        if y isa Flip
+            push!(flip_ids_set, y.id)
+        end
+    end
+    sort(collect(flip_ids_set))
 end
 
 function flips_by_freq(x)::Vector{Int}
     flip_id_ctr = Dict{Int, Int}()
-    flips_by_freq_helper(x, flip_id_ctr)
+    compgraph_dfs(x) do y
+        if y isa Flip
+            flip_id_ctr[y.id] = get(flip_id_ctr, y.id, 0) + 1
+        end
+    end
     [kv[1] for kv in sort(collect(flip_id_ctr), by=kv->(kv[2], -kv[1]))]
 end
 
-function flips_by_freq_helper(x, flip_id_ctr::Dict{Int, Int})
-    if x isa Flip
-        flip_id_ctr[x.id] = get(flip_id_ctr, x.id, 0) + 1
-    else
-        for child in children(x)
-            flips_by_freq_helper(child, flip_id_ctr)
-        end
-    end
-end
-
 function flips_by_deepest_depth(x)::Vector{Int}
+    # TODO: Make faster by rewriting similar to compgraph_dfs()
+    println("WARNING: flips_by_deepest_depth will be very slow as it revisits old nodes.")
     flip_id_to_depth = Dict{Int, Int}()
     flips_by_deepest_depth_helper(x, 0, flip_id_to_depth)
     [kv[1] for kv in sort(collect(flip_id_to_depth), by=kv->(kv[2], -kv[1]))]
@@ -232,6 +246,8 @@ function flips_by_deepest_depth_helper(x, depth::Int, flip_id_to_depth::Dict{Int
 end
 
 function flips_by_shallowest_depth(x)::Vector{Int}
+    # TODO: Make faster by rewriting similar to compgraph_dfs()
+    println("WARNING: flips_by_shallowest_depth will be very slow as it revisits old nodes.")
     flip_id_to_depth = Dict{Int, Int}()
     flips_by_shallowest_depth_helper(x, 0, flip_id_to_depth)
     [kv[1] for kv in sort(collect(flip_id_to_depth), by=kv->(kv[2], -kv[1]))]
