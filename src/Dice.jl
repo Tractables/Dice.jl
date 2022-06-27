@@ -11,6 +11,7 @@ include("lib/enum.jl")
 include("lib/vector.jl")
 include("lib/tree.jl")
 include("lib/sample.jl")
+include("lib/ocaml_interface.jl")
 # include("lib/tuple.jl")
 
 include("inference/infer.jl")
