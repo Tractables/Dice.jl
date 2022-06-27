@@ -1,4 +1,4 @@
-export infer, group_infer, infer_with_observation, @Pr
+export infer, group_infer, infer_with_observation, @Pr, InferenceResult
 
 struct InferenceResult
     dist::Dict
@@ -16,27 +16,29 @@ end
 
 # Efficient infer for any distribution for which group_infer is defined
 function infer(d;
-            observation::DistBool=DistTrue(),
-            err::DistBool=DistFalse(),
-            flip_order=nothing,
-            flip_order_reverse=false)
-    if d isa DWE
-        err |= d.err
-        d = d.d
-    end
+        observation::Union{DistBool, Nothing}=nothing,
+        err::Union{DistBool, Nothing}=nothing,
+        flip_order=nothing,
+        flip_order_reverse=false)
     mgr, compiler = dist_to_mgr_and_compiler(
-        [d, observation, err];
+        filter((!) ∘ isnothing, [d, observation, err]);
         flip_order=flip_order,
         flip_order_reverse=flip_order_reverse
     )
     inferer = x -> infer_bool(mgr, compiler(x))
-    infer(inferer, d, observation, err)
+    infer(inferer, d, observation=observation, err=err)
 end
 
 function infer(inferer,
-            d,
-            observation::DistBool=DistTrue(),
-            err::DistBool=DistFalse())
+        d;
+        observation::Union{DistBool, Nothing}=nothing,
+        err::Union{DistBool, Nothing}=nothing)
+    if d isa DWE
+        err |= d.err
+        d = d.d
+    end
+    observation === nothing && (observation = DistTrue())
+    err === nothing && (err = DistFalse())
     ans = Dict()
     error_p = Ref(0.)
     group_infer(inferer, observation, true, 1.0) do observation_met, observe_prior, denom
@@ -50,7 +52,7 @@ function infer(inferer,
             group_infer(inferer, d, error_prior, error_p_) do assignment, _, p
                 if haskey(ans, assignment)
                     # If this prints, some group_infer implementation is probably inefficent.
-                    # println("Warning: Multiple paths to same assignment: $(assignment)")
+                    println("Warning: Multiple paths to same assignment: $(assignment)")
                     ans[assignment] += p/denom
                 else
                     ans[assignment] = p/denom
@@ -62,7 +64,7 @@ function infer(inferer,
 end
 
 macro Pr(code)
-    # TODO: use MacroTools or similar to make this more flexible. It would be
+    # TODO: use MacroTools or similar to make this more flexible. It would be ideal
     # to support arbitrary expressions, as long as they aren't ambiguous
     # (e.g. multiple |'s ) - or we use || instead of | for boolean or?
     msg = ("@Pr requires the form `@Pr(X)` or `Pr(X | Y)`. As an alternative to"
@@ -111,6 +113,10 @@ function group_infer(f, inferer, d::DistBool, prior, prior_p::Float64)
         f(false, !d & prior, prior_p - p)
     end
 end
+
+group_infer(f, inferer, ::DistTrue, prior, prior_p::Float64) = f(true, prior, prior_p)
+
+group_infer(f, inferer, ::DistFalse, prior, prior_p::Float64) = f(false, prior, prior_p)
 
 # We can infer a vector if we can infer the elements
 function group_infer(f, inferer, vec::AbstractVector, prior, prior_p::Float64)
