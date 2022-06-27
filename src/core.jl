@@ -1,6 +1,6 @@
 import IfElse: ifelse
 
-export Dist, DistBool, prob_equals, infer, ifelse, expectation, variance
+export Dist, DistBool, prob_equals, infer, ifelse, expectation, variance, dump_dot
 
 "A probability distribution over values of type `T`"
 abstract type Dist{T} end
@@ -86,8 +86,8 @@ expectation(d::DistBool) =
 
 function condinfer(b1::DistBool, b2::DistBool)
     a = b1 & b2
-    @show num_flips(a)
-    @show num_nodes(a)
+    # @show num_flips(a)
+    # @show num_nodes(a)
     infer(a)/infer(b2)
 end
 
@@ -104,4 +104,8 @@ function variance(b1::DistBool, b2::DistBool)
     a = condinfer(b1, b2)
     a - a^2
 end
+
+# function dump_dot(b::DistBool, filename, as_add=true)
+#     dump_dot(b, filename, as_add)
+# end
 

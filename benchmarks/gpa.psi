@@ -1,0 +1,18 @@
+def main(){
+    d1 := 4*Beta(8, 2)
+    d2 := 8*Beta(5, 5)
+    gpa1 := if flip(0.)
+
+    gpa1 := if flip(0.95) {d1} else 
+                {if flip(0.15) {0} else
+                    {4};};
+
+    gpa2 := if flip(0.99) {d2} else 
+                {if flip(0.1) {0} else
+                    {8};};
+
+    n = flip(0.25)
+    final := if n {gpa1} else {gpa2} end
+    cobserve(final, 8)
+    return (n);
+}

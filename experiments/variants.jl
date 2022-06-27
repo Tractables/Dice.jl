@@ -19,8 +19,10 @@ function single_gaussian(p::Int)
             max = 0
             for i=1:length(prob)
                 if piece[i] == 1
+                    @show piece[i]
                     continue
                 else
+                    @show piece[i]
                     if (max == 0)
                         max = i
                     else
@@ -45,6 +47,7 @@ function single_gaussian(p::Int)
             # @show piece_size
             while (length(piece_size) < pieces)
                 prob = []
+                mass = []
                 lower = 0
                 upper = 0
                 for i = 1:length(piece_size)
@@ -53,9 +56,10 @@ function single_gaussian(p::Int)
                     # @show upper
                     # @show cdf(d, upper) - cdf(d, lower)
                     append!(prob, cdf(d, upper) - cdf(d, lower))
+                    # append!(prob, abs((pdf(d, upper) - pdf(d, lower)) / (upper - lower)))
                     lower = upper
                 end
-                # @show prob
+                @show prob
                 lastindex = length(prob)
                 for j=length(prob):-1:1
                     if prob[j] ≈ 0
@@ -67,6 +71,7 @@ function single_gaussian(p::Int)
 
 
                 a = max_index_not1(prob[1:lastindex], piece_size[1:lastindex])
+                @show a
                 if a == 0
                     break
                     # @show prob
@@ -92,10 +97,11 @@ function single_gaussian(p::Int)
 
             start = 0
             interval_sz = piece_dist(pieces, t, d)
-            # @show interval_sz
+            @show interval_sz
             pieces = length(interval_sz)
             
             areas = Vector{Float64}(undef, pieces)
+            # trap_areas = Vector{Float64}(undef, pieces)
             total_area = 0
         
             end_pts = Vector(undef, pieces)
@@ -109,6 +115,7 @@ function single_gaussian(p::Int)
                 end_pts[i] = pts
         
                 # areas[i] = (pts[1] + pts[2])*2^(interval_sz[i] - 1)
+                # trap_areas[i] = (pts[1] + pts[2])*2^(interval_sz[i] - 1)
                 areas[i] = cdf.(d, p3) - cdf.(d, p1)
                 total_area += areas[i]
                 start = start + 2^interval_sz[i]/2^point
@@ -127,7 +134,7 @@ function single_gaussian(p::Int)
             
 
             a = end_pts[pieces][1]/areas[pieces]
-            ans = t(dicecontext(), 2^whole_bits-1)
+            ans = t(dicecontext(), Float64(2^whole_bits-1))
     
             # @show bits
             position = 0
@@ -153,6 +160,12 @@ function single_gaussian(p::Int)
                     # end
                 end
 
+                # if (trap_areas[i] == 0)
+                #     a = 0.0
+                # else
+                #     a = end_pts[i][1]/trap_areas[i]
+                # end
+
                 @show end_pts[i]
                 l = end_pts[i][1] > end_pts[i][2]
 
@@ -160,11 +173,11 @@ function single_gaussian(p::Int)
                 ans = 
                     if prob_equals(b, i-1) 
                         (if l
-                            t(dicecontext(), position + 2^interval_sz[i] - 1) - 
+                            t(dicecontext(), Float64(position + 2^interval_sz[i] - 1)) - 
                             anyline(dicecontext(), interval_sz[i], a, t)
                             # Dice.ifelse(flip(2 - a*2^interval_sz[i]), t(unif[1:interval_sz[i]]), triangle(interval_sz[i], t))
                         else
-                            t(dicecontext(), position) + 
+                            t(dicecontext(), Float64(position)) + 
                                 anyline(dicecontext(), interval_sz[i], a, t)
                                 # Dice.ifelse(flip(a*2^interval_sz[i]), t(unif[1:interval_sz[i]]), triangle(interval_sz[i], t))
                         end)[1]
@@ -175,14 +188,14 @@ function single_gaussian(p::Int)
             @show interval_sz
             return ans
         end
-        d = continuous(p, DistFixParam{10, 0}, Normal(512, 512/3.09))
+        d = continuous(p, DistFixParam{10, 0}, Normal(200, 50))
         # anyline(dicecontext(), 2, 0.1, DistInt)
     end
     code
     
 end
 
-code = single_gaussian(16)
+code = single_gaussian(64)
 bdd = compile(code)
 a = infer(code, :bdd)
 d = KL_div(a, 10, 0, Normal(512, 512/3.09))

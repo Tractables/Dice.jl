@@ -62,6 +62,7 @@ function prob_equals(x::DistInt, y::DistInt)
     shared = min(max_bits(x), max_bits(y))
     eq = true
     for i=max_bits(x):-1:shared+1
+        # @show length(x.bits)
         eq &= !(x.bits[i])
         !issat(eq) && return eq
     end
@@ -224,11 +225,11 @@ function Base.:-(t1::DistInt, t2::DistInt)
     end
 
     #------------------Lines that cause BDD size to be larger than ocaml counterpart-------------
-    for i = 1:mab
-        z[i] = ifelse(borrow, !z[i], z[i])
-    end
+    # for i = 1:mab
+    #     z[i] = ifelse(borrow, !z[i], z[i])
+    # end
     
-    ans = ifelse(borrow, (DistInt(z) + 1)[1], DistInt(z))
+    # ans = ifelse(borrow, (DistInt(z) + 1)[1], DistInt(z))
     #----------------------------------------------------------------------
     ans = DistInt(z)
     ans, borrow
@@ -258,8 +259,8 @@ function Base.:*(p1::DistInt, p2::DistInt)
     for i=1:mb2
         if (i != 1)
             carry |= ifelse(t2.bits[i], shifted_bits[mb1], false)
-            println(mb1)
-            println(shifted_bits)
+            # println(mb1)
+            # println(shifted_bits)
             shifted_bits = vcat(DistBool(p1.mgr, false), shifted_bits[1:mb1 - 1])
         end
         added = ifelse(t2.bits[i], DistInt(p1.mgr, shifted_bits), DistInt(p1.mgr, 0))

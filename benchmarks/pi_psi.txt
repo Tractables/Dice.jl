@@ -1,0 +1,41 @@
+real	0m0.653s
+user	0m0.652s
+sys	0m0.024s
+
+real	0m0.648s
+user	0m0.649s
+sys	0m0.020s
+
+real	0m0.645s
+user	0m0.653s
+sys	0m0.016s
+
+real	0m0.648s
+user	0m0.660s
+sys	0m0.012s
+
+real	0m0.647s
+user	0m0.641s
+sys	0m0.028s
+
+real	0m0.650s
+user	0m0.652s
+sys	0m0.020s
+
+real	0m0.649s
+user	0m0.648s
+sys	0m0.020s
+
+real	0m0.648s
+user	0m0.641s
+sys	0m0.028s
+
+real	0m0.653s
+user	0m0.659s
+sys	0m0.016s
+
+real	0m0.653s
+user	0m0.662s
+sys	0m0.012s
+
+Mean 0.6713

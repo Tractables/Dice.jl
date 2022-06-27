@@ -65,7 +65,7 @@ function single_gaussian(p::Int)
             @show rel_prob
             b = discrete2(dicecontext(), rel_prob, DistInt)
 
-            ans = t(dicecontext(), 2^whole_bits-1)
+            ans = t(dicecontext(), Float64(2^whole_bits-1))
     
             for i=pieces:-1:1
                 if (trap_areas[i] == 0)
@@ -84,12 +84,12 @@ function single_gaussian(p::Int)
                 ans = if prob_equals(b, i-1) 
                         (if l
                             # @show i*2^bits-1
-                            t(dicecontext(), ((i)*2^bits - 1)) - 
+                            t(dicecontext(), Float64((i)*2^bits - 1)) - 
                             # anyline(dicecontext(), bits, 2/2^bits - a, t)
                             Dice.ifelse(flip(2 - a*2^bits), unif, tria)
                         else
                             # @show (i-1)*2^bits
-                            t(dicecontext(), (i - 1)*2^bits) + 
+                            t(dicecontext(), Float64((i - 1)*2^bits)) + 
                                 # anyline(dicecontext(), bits, a, t)
                                 Dice.ifelse(flip(a*2^bits), unif, tria)
                         end)[1]
@@ -100,14 +100,14 @@ function single_gaussian(p::Int)
             return ans
         end
 
-        d = continuous(p, DistFixParam{10, 1}, Beta(1, 1))
-        discrete
+        d = continuous(p, DistFixParam{10, 0}, Normal(200, 50))
+        d
     end
     code
 end
 
 
-code = single_gaussian(8)
+code = single_gaussian(64)
 bdd = compile(code)
 a = infer(code, :bdd)
 d = KL_div(b, 10, 0, Normal(512, 512/3.09))

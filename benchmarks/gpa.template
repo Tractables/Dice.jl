@@ -1,0 +1,38 @@
+float n
+n = flip(0.5)
+float final
+float p2
+float p
+
+if (n == 0) {
+    p = bernoulli(0.95)
+    if (p) {
+        final = 4*beta(8, 2)
+    }
+    else {
+        p2 = bernoulli(0.15)
+        if (p2) {
+            final = 0
+        }
+        else {
+            final = 4
+        }
+    }
+}
+else {
+    p = bernoulli(0.99)
+    if (p) {
+        final = 8*beta(5, 5)
+    }
+    else {
+        p2 = bernoulli(0.1)
+        if (p2) {
+            final = 0
+        }
+        else {
+            final = 8
+        }
+    }
+}
+
+hardObserve(final == 8)

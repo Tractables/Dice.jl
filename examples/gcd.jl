@@ -36,6 +36,7 @@ code = @dice begin
     b, _ = uniform(n, n+1) + 1
     g = gcd(a, b)
     # prob_equals(g, 1)
+    a = a + 1
     g
 end
 
