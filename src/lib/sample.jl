@@ -17,7 +17,9 @@ function discrete_int(p)
     end
 
     prefix_sums = accumulate(+, p)
-    @assert last(prefix_sums) ≈ 1 "Probabilities must sum to 1"
+    # Slightly looser approximate equality requirement as we use discrete_int
+    # for some .bif files converted to Dice.jl programs.
+    @assert isapprox(last(prefix_sums), 1, atol=1e-5) "Probabilities must sum to 1"
 
     function helper(i, j)
         if i == j
