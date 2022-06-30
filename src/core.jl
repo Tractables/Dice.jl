@@ -1,11 +1,13 @@
 import IfElse: ifelse
+using DirectedAcyclicGraphs
+import DirectedAcyclicGraphs: children, NodeType, DAG, Inner, Leaf
 
 export Dist, DistBool, prob_equals, infer_bool, ifelse, flip, bools, dist_to_mgr_and_compiler, flips_left_to_right, flips_by_instantiation_order, flips_by_deepest_depth, flips_by_shallowest_depth, flips_by_freq, clear_flips, flip_probs, Flip, children, hoist!, to_dist, num_flips, compgraph_size
 
-export DistAnd, DistOr, DistNot, DistIte, DistTrue, DistFalse
+export DistAnd, DistOr, DistNot, DistIte, DistTrue, DistFalse, DistBools
 
 "A probability distribution over values of type `T`"
-abstract type Dist{T} end
+abstract type Dist{T} <: DAG end
 
 "The global context of a dice program analysis"
 abstract type DiceManager end
@@ -44,6 +46,13 @@ struct DistFalse <: DistBool end
 mutable struct Flip <: DistBool
     id::Int
 end
+
+# Wrap Vector{Bool} on behalf of DAG
+mutable struct DistBools <: Dist{Vector{Bool}}
+    bools::Vector{DistBool}
+end
+
+DistBools(x::Dist) = DistBools(bools(x))
 
 flip_next_id = 1
 flip_probs = Dict{Int, AbstractFloat}()
@@ -169,47 +178,32 @@ ifelse(cond::DistBool, then::Tuple, elze::Tuple) = tuple([ifelse(cond, t, e) for
 
 bools(b::DistBool) = [b]
 
+NodeType(::Type{<:DistAnd}) = Inner()
+NodeType(::Type{<:DistOr}) = Inner()
+NodeType(::Type{<:DistNot}) = Inner()
+NodeType(::Type{<:DistEquals}) = Inner()
+NodeType(::Type{<:DistIte}) = Inner()
+NodeType(::Type{<:DistBools}) = Inner()
+NodeType(::Type{<:DistTrue}) = Leaf()
+NodeType(::Type{<:DistFalse}) = Leaf()
+NodeType(::Type{<:Flip}) = Leaf()
+
 children(x::DistAnd) = [x.x, x.y]
 children(x::DistOr) = [x.x, x.y]
-# Choose to have NOT not add depth because they are cheap for BDDs, worth experimenting though
 children(x::DistNot) = [x.x]
 children(x::DistEquals) = [x.x, x.y]
 children(x::DistIte) = [x.c, x.t, x.e]
 children(::DistTrue) = []
 children(::DistFalse) = []
-children(x::AbstractVector{T}) where T <: DistBool = x
-children(x::Tuple) = collect(x)
+children(x::DistBools) = x.bools
 children(::Flip) = []
 
-# Calls f for each node in x's DAG in a "preorder" traversal, once for each node.
-function compgraph_dfs(f, x)
-    compgraph_dfs_helper(f, x, Base.IdSet())
-end
-
-function compgraph_dfs_helper(f, x, seen)
-    if x ∉ seen
-        push!(seen, x)
-        f(x)
-        for child in children(x)
-            compgraph_dfs_helper(f, child, seen)
-        end
-    end
-end
-
-function compgraph_size(x::Vector{DistBool})
-    sz = 0
-    compgraph_dfs(x) do _
-        sz += 1
-    end
-    sz
-end
-
-compgraph_size(x) = compgraph_size(bools(x))
+compgraph_size(x) = DirectedAcyclicGraphs.num_nodes(DistBools(x))
 
 function flips_left_to_right(x)::Vector{Int}
     flip_ids_set = Set{Int}()
     flip_ids = Vector{Int}()
-    compgraph_dfs(x) do y
+    foreach(DistBools(x)) do y
         if y isa Flip && y.id ∉ flip_ids_set
             push!(flip_ids_set, y.id)
             push!(flip_ids, y.id)
@@ -220,7 +214,7 @@ end
 
 function flips_by_instantiation_order(x)::Vector{Int}
     flip_ids_set = Set{Int}()
-    compgraph_dfs(x) do y
+    foreach(DistBools(x)) do y
         if y isa Flip
             push!(flip_ids_set, y.id)
         end
@@ -228,10 +222,10 @@ function flips_by_instantiation_order(x)::Vector{Int}
     sort(collect(flip_ids_set))
 end
 
-# TODO: this is wrong because compgraph_dfs visits each node once...
+# TODO: this is wrong because foreach visits each node once...
 function flips_by_freq(x)::Vector{Int}
     flip_id_ctr = Dict{Int, Int}()
-    compgraph_dfs(x) do y
+    foreach(x) do y
         if y isa Flip
             flip_id_ctr[y.id] = get(flip_id_ctr, y.id, 0) + 1
         end
@@ -240,7 +234,7 @@ function flips_by_freq(x)::Vector{Int}
 end
 
 function flips_by_deepest_depth(x)::Vector{Int}
-    # TODO: Make faster by rewriting similar to compgraph_dfs()
+    # TODO: Make faster by rewriting with DirectedAcyclicGraphs
     println("WARNING: flips_by_deepest_depth will be very slow as it revisits old nodes.")
     flip_id_to_depth = Dict{Int, Int}()
     flips_by_deepest_depth_helper(x, 0, flip_id_to_depth)
@@ -260,7 +254,7 @@ function flips_by_deepest_depth_helper(x, depth::Int, flip_id_to_depth::Dict{Int
 end
 
 function flips_by_shallowest_depth(x)::Vector{Int}
-    # TODO: Make faster by rewriting similar to compgraph_dfs()
+    # TODO: Make faster by rewriting with DirectedAcyclicGraphs
     println("WARNING: flips_by_shallowest_depth will be very slow as it revisits old nodes.")
     flip_id_to_depth = Dict{Int, Int}()
     flips_by_shallowest_depth_helper(x, 0, flip_id_to_depth)
