@@ -80,6 +80,8 @@ to_dist(b::Bool) = DistBool(b)
 
 to_dist(d::Dist) = d
 
+Base.show(io::IO, x::DistBool) = print(io, "$(typeof(x))@$(hash(x)÷ 10000000000000)")
+
 # Abuse of method overloading to keep computation graph flat
 Base.:&(x::DistFalse, y::DistFalse) = DistFalse()
 Base.:&(x::DistFalse, y::DistTrue) = DistFalse()
