@@ -214,40 +214,40 @@ for j = 0:12
 end
 plot(x, y)
 
-bits = 1
+bits = 0
 pieces = 1
-f = gaussian_uniform_eq(pieces, bits, false, false, 1)
+f = uniform_gaussian_eq(pieces, bits, false, false, 1)
 a = compile(f)
 num_nodes(a)
 num_flips(a)
 infer(a)
 dump_dot(a, "rough.dot")
 
-bits = 1
+bits = 0
 pieces = 2
-f = gaussian_uniform_eq(pieces, bits, false, false, 1)
+f = uniform_gaussian_eq(pieces, bits, false, false, 1)
 a = compile(f)
 num_nodes(a)
 num_flips(a)
 infer(a)
 dump_dot(a, "rough2.dot")
 
-bits = 1
+bits = 0
 pieces = 4
-f = gaussian_uniform_eq(pieces, bits, false, false, 1)
-a = compile(f)
-num_nodes(a)
-num_flips(a)
-infer(a)
-dump_dot(a, "rough3.dot")
-
-bits = 1
-pieces = 8
 f = uniform_gaussian_eq(pieces, bits, false, false, 1)
 a = compile(f)
 num_nodes(a)
 num_flips(a)
 infer(a)
 dump_dot(a, "rough3.dot")
+
+bits = 0
+pieces = 8
+f = uniform_gaussian_eq(pieces, bits, false, false, 1)
+a = compile(f)
+num_nodes(a)
+num_flips(a)
+infer(a)
+dump_dot(a, "rough4.dot")
 
 

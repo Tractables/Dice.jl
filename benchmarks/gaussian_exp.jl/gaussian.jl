@@ -4,12 +4,49 @@ using Dice: num_flips, num_nodes, to_dice_ir
 using Distributions
 using StatsBase
 using Distances
-using Plots
+using Plots; gr()
 
-function gaussian(p::Int, binbits::Int, b::Bool, b2::Bool, flag::Int)
+function KL_div(a, d::ContinuousUnivariateDistribution, upper, lower, interval)
+    d = Truncated(d, lower, upper)
+    len = Int((upper - lower)/interval)
+    lower2 = a[1][1]
+    upper2 = a[length(a)][1]
+    lower_index = 1
+    upper_index = length(a)
+    for i = 1:length(a)
+        if a[i][2] == 0.0
+            lower2 = a[i+1][1]
+            lower_index = i+1
+        else
+            break
+        end
+    end
+    for i = length(a):-1:1
+        if a[i][2] == 0.0
+            upper2 = a[i-1][1]
+            upper_index = i-1
+        else
+            break
+        end
+    end
+    len = Int((upper2 - lower2)/interval)
+    p = Vector{Float64}(undef, upper_index - lower_index + 1)
+    for i=1:upper_index - lower_index + 1
+        @show lower2 + i*interval, lower2 + (i-1)*interval
+        p[i] = cdf(d, lower2 + i*interval) - cdf(d, lower2 + (i-1)*interval)
+    end
+    # @show upper_index, lower_index
+    # @show lower2 + (upper_index - lower_index)*interval, upper2
+    @assert lower2 + (upper_index - lower_index)*interval == upper2
+    # @show upper2, lower2
+    @show a[lower_index:upper_index]
+    kldivergence(p, map(a->a[2], a[lower_index: upper_index]))
+end
+
+function gaussian(p::Int, binbits::Int, flag::Int)
     code = @dice begin
         t = DistSigned{binbits+5, binbits}
-        a = continuous(dicecontext(), p, t, Normal(0, 1), b, b2)
+        a = continuous(dicecontext(), p, t, Normal(0, 1), flag)
         # prob_equals(a, t(dicecontext(), -2.0))
         a
     end
@@ -17,16 +54,17 @@ function gaussian(p::Int, binbits::Int, b::Bool, b2::Bool, flag::Int)
 end
 
 for i = 0:4
-    a = gaussian(2^i, 0, false, false, 1)
-    @show expectation(a, :bdd)
+    a = gaussian(2^i, 0, 1)
 end
 
-x = Vector(undef, 32)
+flag = 0
+x = Vector(undef, 128)
 y = Vector(undef, 6)
 for i = 0:4
-    a = gaussian(2^i, 0, false, false, 1)
+    a = gaussian(2^i, 0, flag)
     b = infer(a, :bdd)
     # @show b
+    # @show KL_div(b, Normal(0, 1), 16, -16, 1)
     x = map(a -> a[1], b)
     y[i+1] = map(a -> a[2], b)
 end
@@ -36,7 +74,23 @@ for i=1:32
     z[i] = cdf(d, i - 16) - cdf(d, i - 17)
 end
 y[6] = z
-plot(x, y, labels = [1 2 4 8 16])
+plot(x, y, labels = [1 2 4 8 16 "gt"])
+
+flag = [0 1 3]
+x = [0; 1; 2; 3; 4; 5; 6]
+y = Vector(undef, 3)
+for fl in 1:length(flag)
+    z = Vector(undef, 7)
+    for i = 0:6
+        a = gaussian(2^i, 2, flag[fl])
+        b = infer(a, :bdd)
+        # z[i+1] = KL_div(b, Normal(0, 1), 16, -16, 0.25)
+        z[i+1] = abs(expectation(a, :bdd) + 0.125) + 0.125
+        # z[i+1] = abs(variance(a, :bdd) - 1)
+    end
+    y[fl] = z
+end
+plot(x, y, labels = ["cdf" "pdf" "cdf of halves"], yaxis=:log, legend=:topright)
 
 function gaussian_uniform(p::Int, binbits::Int, b::Bool, b2::Bool, flag::Int)
     code = @dice begin
