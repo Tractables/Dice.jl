@@ -30,8 +30,10 @@ end
 # Divide-and-conquer inference algorithm for ints
 # Intuition: if a bit is always T/F, we halve the search space for satisfiable
 # assignments. We always infer a bit given assignments to previous bits.
-# TODO: reuse same inferrer, add observation, flip order, hoisting params
+# TODO: add observation, flip order, hoisting params
 function infer_int(d::DistInt)
+    mgr, compiler = dist_to_mgr_and_compiler(d)
+    inferer = x -> infer_bool(mgr, compiler(x))
     mb = max_bits(d)
     ans = zeros(2^mb)
     # Infer on bit i, given a satisfying assignment to previous bits (prior),
@@ -41,7 +43,7 @@ function infer_int(d::DistInt)
             ans[v+1] = prior_p
             return
         end
-        sub_p = infer_bool(prior & d.bits[i])
+        sub_p = inferer(prior & d.bits[i])
         if sub_p != 0
             helper(i + 1, prior & d.bits[i], sub_p, v + 2^(i-1))
         end
