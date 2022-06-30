@@ -426,3 +426,7 @@ function infer_bool(d::DistBool; observation::DistBool=DistTrue())
     mgr, to_bdd = dist_to_mgr_and_compiler([d, observation])
     infer_bool(mgr, to_bdd(d & observation))/infer_bool(mgr, to_bdd(observation))
 end
+
+function infer_bool(inferer, d::DistBool; observation::DistBool=DistTrue())
+    inferer(d & observation)/inferer(observation)
+end
