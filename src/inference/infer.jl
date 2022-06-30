@@ -71,9 +71,9 @@ function infer(inferer,
                 if haskey(ans, assignment)
                     # If this prints, some group_infer implementation is probably inefficent.
                     println("Warning: Multiple paths to same assignment: $(assignment)")
-                    ans[assignment] += p/denom
+                    ans[assignment] += p#/denom
                 else
-                    ans[assignment] = p/denom
+                    ans[assignment] = p#/denom
                 end
             end
         end
@@ -124,7 +124,7 @@ end
 function group_infer(f, inferer, d::DistBool, prior, prior_p::Float64)
     new_prior = d & prior
     p = inferer(new_prior)
-    if p != 0
+    if p > 0
         f(true, new_prior, p)
     end
     if !(p ≈ prior_p)
@@ -137,16 +137,26 @@ group_infer(f, inferer, ::DistTrue, prior, prior_p::Float64) = f(true, prior, pr
 group_infer(f, inferer, ::DistFalse, prior, prior_p::Float64) = f(false, prior, prior_p)
 
 # We can infer a vector if we can infer the elements
-function group_infer(f, inferer, vec::AbstractVector, prior, prior_p::Float64)
+function group_infer(f, inferer, vec::AbstractVector, prior, prior_p::Float64, index=0, prior_str="")
     if length(vec) == 0
         f([], prior, prior_p)
         return
     end
-    group_infer(inferer, vec[1], prior, prior_p) do assignment, new_prior, new_p
-        rest = @view vec[2:length(vec)]
-        group_infer(inferer, rest, new_prior, new_p) do rest_assignment, rest_prior, rest_p
-            assignments = vcat([assignment], rest_assignment)  # todo: try linkedlist instead
-            f(assignments, rest_prior, rest_p)
+    if vec[1] isa DistChar
+        group_infer(inferer, vec[1], prior, prior_p, index, prior_str) do assignment, new_prior, new_p
+            rest = @view vec[2:length(vec)]
+            group_infer(inferer, rest, new_prior, new_p, index+1, prior_str * assignment) do rest_assignment, rest_prior, rest_p
+                assignments = vcat([assignment], rest_assignment)  # todo: try linkedlist instead
+                f(assignments, rest_prior, rest_p)
+            end
+        end
+    else
+        group_infer(inferer, vec[1], prior, prior_p) do assignment, new_prior, new_p
+            rest = @view vec[2:length(vec)]
+            group_infer(inferer, rest, new_prior, new_p, index+1) do rest_assignment, rest_prior, rest_p
+                assignments = vcat([assignment], rest_assignment)  # todo: try linkedlist instead
+                f(assignments, rest_prior, rest_p)
+            end
         end
     end
 end

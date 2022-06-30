@@ -403,13 +403,12 @@ function dist_to_mgr_and_compiler(x; flip_order=nothing, flip_order_reverse=fals
         flip_vars[flip_id] = new_var(mgr, flip_probs[flip_id])
     end
     # TODO: do we need to memoize?
-    cache = Dict{UInt64, Ptr{Nothing}}()
+    cache = IdDict()
     function to_bdd_mem(x)
-        oid = objectid(x)
-        if !haskey(cache, oid)
-            cache[oid] = to_bdd(x)
+        if !haskey(cache, x)
+            cache[x] = to_bdd(x)
         end
-        cache[oid]
+        cache[x]
     end
     function to_bdd(x::DistAnd) conjoin(mgr, to_bdd_mem(x.x), to_bdd_mem(x.y)) end
     function to_bdd(x::DistOr) disjoin(mgr, to_bdd_mem(x.x), to_bdd_mem(x.y)) end

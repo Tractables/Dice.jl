@@ -68,17 +68,17 @@ Base.:+(s::DistString, c::Char) =
 # Divide-and-conquer getindex
 function Base.getindex(d::DistString, idx::DistInt)
     if length(d.chars) == 0
-        return DistChar('a'), DistBool(true)
+        return DistChar('!'), DistBool(true)
     end
     function helper(i, v)
         if v > length(d.chars)
-            return DistChar('a'), DistBool(true)
+            return DistChar('!'), DistBool(true)
         elseif v == length(d.chars)
             return last(d.chars), (idx > d.len) | prob_equals(idx, 0)
         end
         if i > length(idx.bits)
             return if v == 0
-                DistChar('a'), DistBool(true)
+                DistChar('!'), DistBool(true)
             else
                 d.chars[v], (idx > d.len) | prob_equals(idx, 0)
             end
@@ -90,7 +90,7 @@ end
 
 function Base.getindex(s::DistString, idx::Int)
     if idx < 1 || idx > length(s.chars)
-        DistChar('a'), DistBool(true)
+        DistChar('!'), DistBool(true)
     else
         s.chars[idx], idx > s.len
     end

@@ -2,7 +2,7 @@
 export DistChar, valid_chars
 
 # Supported characters. Current selection is temporary
-valid_chars = ['a':'z';'A':'Z';[' ',',','.','\'','"','!','?','(',')','\n']]
+valid_chars = [['_'];'a':'z';'A':'Z';[' ',',','.','\'','"','!','?','(',')','\n']]
 char_idx = Dict((c, i-1) for (i , c) in enumerate(valid_chars))
 
 mutable struct DistChar <: Dist{Char}
@@ -10,6 +10,7 @@ mutable struct DistChar <: Dist{Char}
 end
 
 function DistChar(c::Char)
+    # println(char_idx[c])
     DistChar(DistInt(char_idx[c]))
 end
 
@@ -19,9 +20,16 @@ function replace_helper(d::DistChar, mapping)
     DistString(replace(d.i, mapping))
 end
 
-function group_infer(f, inferer, d::DistChar, prior, prior_p::Float64)
+function group_infer(f, inferer, d::DistChar, prior, prior_p::Float64, index=nothing, prior_str="")
+    # TODO: fix this hack
+    # Erroneous paths may cause integer values outside of enum, so return
+    # dummy value. Note that this may cause "Multiple paths to same assignment"
+    # warning.
     group_infer(inferer, d.i, prior, prior_p) do n, new_prior, p
-        f(valid_chars[n+1], new_prior, p)
+        index;
+        c = if n < length(valid_chars) valid_chars[n+1] else '⚠' end
+        # println(index, '\t', prior_str, '\t', c, '\t', prior_p, '\t', p)
+        f(c, new_prior, p)
     end
 end
 
