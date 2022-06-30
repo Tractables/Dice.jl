@@ -2,7 +2,7 @@ include("tests_h.jl")
 
 ############################ CONFIG ###########################
 
-RESULTS_DIR = "results"
+RESULTS_DIR = "examples/hoisting_flip_order_experiments/results"
 NOTES = "deleteme"
 
 tests_inputs = [
@@ -92,11 +92,7 @@ for ti in tests_inputs
             )
             infer_bool(mgr, to_bdd(d))
         end
-        inf_res = if ti.observe === nothing
-            infer(inferer, ti.computation_graph)
-        else
-            infer_with_observation(inferer, ti.computation_graph, ti.observe)
-        end
+        inf_res = tuple(collect(infer(inferer, ti.computation_graph, observation=ti.observe))...)
         write_inf_res(log_file, inf_res)
         write(log_file, "\n")
 

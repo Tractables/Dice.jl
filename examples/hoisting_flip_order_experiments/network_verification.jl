@@ -10,7 +10,7 @@ function network()
             s2 = if route s1 else false end
             s3 = if route false else s1 end
             drop = flip(0.0001)
-            s2 || (s3 && !drop)
+            s2 | (s3 & !drop)
         end
 
         net = true
