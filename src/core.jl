@@ -217,6 +217,7 @@ function flips_by_instantiation_order(x)::Vector{Int}
     sort(collect(flip_ids_set))
 end
 
+# TODO: this is wrong because compgraph_dfs visits each node once...
 function flips_by_freq(x)::Vector{Int}
     flip_id_ctr = Dict{Int, Int}()
     compgraph_dfs(x) do y
