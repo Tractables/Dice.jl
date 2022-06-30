@@ -146,7 +146,7 @@ function shifted_continuous(mgr, pieces::Int, t::Type{DistFixParam{T, F}}, d::Co
     return ans
 end
 
-function continuous(mgr, pieces::Int, t::Type{DistSigned{T, F}}, d::ContinuousUnivariateDistribution, flag, flag2) where {T, F}
+function continuous(mgr, pieces::Int, t::Type{DistSigned{T, F}}, d::ContinuousUnivariateDistribution, flag::Int) where {T, F}
     # println("Signed continuous")
     d = Truncated(d, -(2^(T-1-F)), (2^(T-1-F)))
     whole_bits = T
@@ -172,10 +172,22 @@ function continuous(mgr, pieces::Int, t::Type{DistSigned{T, F}}, d::ContinuousUn
         p3 = start + (i)*interval_sz/2^point 
         p4 = p3 - 1/2^point 
 
-
-        pts = [cdf.(d, p2) - cdf.(d, p1), cdf.(d, p3) - cdf.(d, p4)]
+        if flag == 0
+            # probability mass at end points
+            pts = [cdf.(d, p2) - cdf.(d, p1), cdf.(d, p3) - cdf.(d, p4)]
+        elseif flag == 1
+            # pdfs at the end points p1 and p3
+            pts = [pdf(d, p1), pdf(d, p3)]
+        elseif flag == 2
+            # pdfs at the end points p1 and p4
+            pts = [pdf(d, p1), pdf(d, p4)]
+        else
+            # probability mass of two halves
+            pts = [cdf(d, (p1+p3)/2) - cdf(d, p1), cdf(d, p3) - cdf(d, (p1+p3)/2)]
+        end
         end_pts[i] = pts
 
+        #TODO: figure out the correct expression for trap_areas for different end points
         trap_areas[i] = (pts[1] + pts[2])*2^(bits - 1)
         areas[i] = (cdf.(d, p3) - cdf.(d, p1))
         # @show p1, p3
@@ -191,14 +203,15 @@ function continuous(mgr, pieces::Int, t::Type{DistSigned{T, F}}, d::ContinuousUn
     
     #Move flips here
     piece_flips = Vector(undef, pieces)
+    l_vector = Vector(undef, pieces)
     for i=pieces:-1:1
         if (trap_areas[i] == 0)
             a = 0.0
         else
             a = end_pts[i][1]/trap_areas[i]
         end
-        l = a > 1/2^bits
-        if l
+        l_vector[i] = a > 1/2^bits
+        if l_vector[i]
             piece_flips[i] = DistBool(mgr, 2 - a*2^bits)
         else
             piece_flips[i] = DistBool(mgr, a*2^bits)
@@ -210,53 +223,15 @@ function continuous(mgr, pieces::Int, t::Type{DistSigned{T, F}}, d::ContinuousUn
     ans = t(mgr, (2^(T-1)-1)/2^F)
 
     for i=pieces:-1:1
-        if (trap_areas[i] == 0)
-            a = 0.0
-        else
-            a = end_pts[i][1]/trap_areas[i]
-        end
-        # @show i, a
-        # @show bits
-        # @assert 2 - a*2^bits >= 0
-        l = a > 1/2^bits
-        
-        # @show a
-        # @show i
-        # @show a*2^bits
         ans = Dice.ifelse( prob_equals(b, i-1), 
-                (if l
-                    if flag2
-                        (t(mgr, (i*2^bits - 1)/2^F - 2^(T-1 - F)) 
-                        - 
-                        (if flag 
-                            anyline(mgr, bits, 2/2^bits - a, t)
-                        else
-                            # Dice.ifelse(DistBool(mgr, 2 - a*2^bits), unif, tria)
-                            Dice.ifelse(piece_flips[i], unif, tria)
-                        end))[1]
-                    else
-                        # (t(mgr, (i*2^bits - 1)/2^F - 2^(T-1 - F)) 
-                        # - 
-                        # (t(mgr, (i - 1)*2^bits/2^F - 2^(T - 1 - F)) 
-                        # + 
-                        (if flag 
-                            anyline(mgr, bits, 2/2^bits - a, t)
-                        else
-                            Dice.ifelse(piece_flips[i], 
-                                        (t(mgr, (i - 1)*2^bits/2^F - 2^(T - 1 - F)) + unif)[1], 
-                                        (t(mgr, (i*2^bits - 1)/2^F - 2^(T-1 - F)) - tria)[1])
-                        end)
-                    end
+                (if l_vector[i]
+                    Dice.ifelse(piece_flips[i], 
+                    (t(mgr, (i - 1)*2^bits/2^F - 2^(T - 1 - F)) + unif)[1], 
+                    (t(mgr, (i*2^bits - 1)/2^F - 2^(T-1 - F)) - tria)[1])
                 else
-                    # @show (i-1)*2^bits
-                    (t(mgr, (i - 1)*2^bits/2^F - 2^(T - 1 - F)) 
-                    + 
-                    (if flag 
-                        anyline(mgr, bits, a, t)
-                    else
-                        # Dice.ifelse(DistBool(mgr, a*2^bits), unif, tria)
-                        Dice.ifelse(piece_flips[i], unif, tria)
-                    end))[1]
+                    (t(mgr, (i - 1)*2^bits/2^F - 2^(T - 1 - F)) + 
+                        Dice.ifelse(piece_flips[i], unif, tria))[1]
+                    
                 end),
                 ans)  
     end
@@ -359,4 +334,6 @@ function continuous(mgr, pieces::Int, t::Type{DistFixParam{T, F}}, d::Continuous
     end
     return ans
 end
+
+
 
