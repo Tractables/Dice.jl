@@ -1,8 +1,9 @@
 import IfElse: ifelse
 
-export Dist, DistBool, prob_equals, infer_bool, ifelse, flip, bools, dist_to_mgr_and_compiler, flips_left_to_right, flips_by_instantiation_order, flips_by_deepest_depth, flips_by_shallowest_depth, flips_by_freq, clear_flips, flip_probs, Flip, children, hoist!, to_dist, num_flips
+export Dist, DistBool, prob_equals, infer_bool, ifelse, flip, bools, dist_to_mgr_and_compiler, flips_left_to_right, flips_by_instantiation_order, flips_by_deepest_depth, flips_by_shallowest_depth, flips_by_freq, clear_flips, flip_probs, Flip, children, hoist!, to_dist, num_flips, compgraph_size
 
 export DistAnd, DistOr, DistNot, DistIte, DistTrue, DistFalse
+
 "A probability distribution over values of type `T`"
 abstract type Dist{T} end
 
@@ -194,6 +195,16 @@ function compgraph_dfs_helper(f, x, seen)
         end
     end
 end
+
+function compgraph_size(x::Vector{DistBool})
+    sz = 0
+    compgraph_dfs(x) do _
+        sz += 1
+    end
+    sz
+end
+
+compgraph_size(x) = compgraph_size(bools(x))
 
 function flips_left_to_right(x)::Vector{Int}
     flip_ids_set = Set{Int}()
