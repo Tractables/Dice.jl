@@ -1,5 +1,5 @@
 # compilation backend that uses CUDD
-export CuddMgr, constant, biconditional, conjoin, disjoin, negate, ite, new_var, infer_bool, num_nodes
+export CuddMgr, constant, biconditional, conjoin, disjoin, negate, ite, new_var, infer_bool, num_nodes, dump_dot
 
 using CUDD
 
@@ -179,8 +179,10 @@ decisionvar(_::CuddMgr, x) =
     Cudd_NodeReadIndex(x)
 
 
-dump_dot(bits::Vector{DistBool}, filename; as_add=true) =
-    dump_dot(bits[1].mgr, map(b -> b.bit, bits), filename; as_add)
+function dump_dot(bits::Vector{DistBool}, filename; as_add=true)
+    mgr, compiler = dist_to_mgr_and_compiler(bits)
+    dump_dot(mgr, map(compiler, bits), filename; as_add)
+end
 
 dump_dot(x, filename; as_add=true) =  
     dump_dot(bools(x), filename; as_add)
