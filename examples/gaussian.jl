@@ -3,7 +3,7 @@ using Dice
 using Dice: num_flips, num_nodes, to_dice_ir
 using Distributions
 
-code = @dice begin
+code = @dice_ite begin
     # triangle distribution
 
     function triangle(b::Int)

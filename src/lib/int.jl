@@ -1,6 +1,6 @@
      
 # Integers
-export DistInt, add_bits, max_bits, safe_add, ifelse
+export DistInt, add_bits, max_bits, safe_add, ifelse, infer_int
 
 mutable struct DistInt <: Dist{Int}
     # first index is least significant bit
@@ -21,6 +21,8 @@ function DistInt(i::Int)
     DistInt(bits)
 end
 
+to_dist(i::Int) = DistInt(i)
+
 function replace_helper(i::DistInt, mapping)
     DistInt([replace(bit, mapping) for bit in i.bits])
 end
@@ -28,7 +30,10 @@ end
 # Divide-and-conquer inference algorithm for ints
 # Intuition: if a bit is always T/F, we halve the search space for satisfiable
 # assignments. We always infer a bit given assignments to previous bits.
+# TODO: add observation, flip order, hoisting params
 function infer_int(d::DistInt)
+    mgr, compiler = dist_to_mgr_and_compiler(d)
+    inferer = x -> infer_bool(mgr, compiler(x))
     mb = max_bits(d)
     ans = zeros(2^mb)
     # Infer on bit i, given a satisfying assignment to previous bits (prior),
@@ -38,7 +43,7 @@ function infer_int(d::DistInt)
             ans[v+1] = prior_p
             return
         end
-        sub_p = infer(prior & d.bits[i])
+        sub_p = inferer(prior & d.bits[i])
         if sub_p != 0
             helper(i + 1, prior & d.bits[i], sub_p, v + 2^(i-1))
         end
@@ -143,6 +148,14 @@ Base.:<(x::DistInt, y::DistInt) = y > x
 Base.:<(x::Int, y::DistInt) = y > x
 
 Base.:<(x::DistInt, y::Int) = y > x
+
+Base.:(>=)(x::DistInt, y::DistInt) = !(x < y)
+Base.:(>=)(x::Int, y::DistInt) = DistInt(x) >= y
+Base.:(>=)(x::DistInt, y::Int) = x >= DistInt(y)
+
+Base.:(<=)(x::DistInt, y::DistInt) = !(x > y)
+Base.:(<=)(x::Int, y::DistInt) = DistInt(x) <= y
+Base.:(<=)(x::DistInt, y::Int) = x <= DistInt(y)
 
 # No canonical bitwidth
 function Base.:+(p1::DistInt, p2::DistInt)

@@ -1,7 +1,7 @@
 using Dice
 
 @enum Colors red green blue
-cg = @dice begin
+cg = @dice_ite begin
     if flip(1/10)
         DistEnum(red)
     else
@@ -18,7 +18,7 @@ dist = infer(cg)
 @assert dist[green] ≈ 2/10
 @assert dist[blue] ≈ 7/10
 
-cg = @dice begin
+cg = @dice_ite begin
     x = if flip(1/10)
         DistEnum(red)
     elseif flip(2/9)

@@ -9,7 +9,7 @@ include("util.jl")
 num_steps = 4
 top_n = 40  # Only the top_n most likely strings are printed
 
-code = @dice begin
+code = @dice_ite begin
     function S(max_depth)
         if max_depth == 0
             DistVector([DistEnum(ERROR)])

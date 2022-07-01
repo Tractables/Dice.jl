@@ -1,5 +1,5 @@
 # Vectors
-export DistVector, prob_append, prob_extend
+export DistVector, prob_append, prob_extend, prob_startswith
 
 mutable struct DistVector{T} <: Dist{Vector} where T <: Dist
     contents::Vector{T}
@@ -20,6 +20,15 @@ end
 
 function DistVector(contents::Vector)
     DistVector(contents, DistInt(length(contents)))
+end
+
+function to_dist(v::AbstractVector)
+    @assert !isempty(v)
+    contents = [to_dist(x) for x in v]
+    for x in contents
+        @assert typeof(x) == typeof(contents[1])
+    end
+    DistVector(Vector{typeof(contents[1])}(contents))
 end
 
 function group_infer(f, inferer, d::DistVector, prior, prior_p::Float64)
@@ -125,6 +134,18 @@ prob_extend(s::DistVector{T}, t::Vector{T}) where T <: Dist =
     
 prob_extend(s::Vector{T}, t::DistVector{T}) where T <: Dist =
     prob_extend(DistVector(s), t)
+
+function prob_startswith(u::DistVector{T}, v::DistVector{T}) where T <: Dist
+    ((u.len >= v.len)
+        &
+    reduce(
+        &,
+        [
+            (i > v.len) | prob_equals(u[i][1], v[i][1])
+            for i in 1:length(v.contents)
+        ]
+    ))
+end
 
 bools(d::DistVector) =
     vcat(collect(Iterators.flatten(bools(c) for c in d.contents)), bools(d.len))

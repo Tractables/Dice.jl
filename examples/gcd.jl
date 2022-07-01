@@ -2,7 +2,7 @@ using Dice
 using Dice: num_flips, num_nodes
 
 for n = 7:7
-    code = @dice begin
+    code = @dice_ite begin
 
         function uniform(bitrange::Int, bitwidth::Int)
             ans = fill(DistBool(dicecontext(), false), bitwidth)

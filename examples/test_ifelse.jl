@@ -1,7 +1,7 @@
 using Dice
 using Dice: ifelse
 
-cg = @dice begin
+cg = @dice_ite begin
     b = DistInt([DistBool(false)])
     ifelse(flip(0.5), b, b)
 end

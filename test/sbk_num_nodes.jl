@@ -5,31 +5,28 @@ using Dice: num_flips, num_nodes, ifelse
 # Number of nodes SBK needs to model a distribution on n bits
 sbk_num_nodes(n) = 2^n * (n - 1) + 3
 
-function generate_code_sbk(p::Vector{Float64})
-    @dice begin
-        function helper(i)
-            if i == length(p)
-                DistInt(i - 1)
-            else
-                ifelse(flip(p[i] / sum(p[i:length(p)])),
-                    DistInt(dicecontext(), i - 1),
-                    helper(i + 1))
-            end
+function sbk(p::Vector{Float64})
+    function helper(i)
+        if i == length(p)
+            DistInt(i - 1)
+        else
+            ifelse(flip(p[i] / sum(p[i:length(p)])),
+                DistInt(i - 1),
+                helper(i + 1))
         end
-        helper(1)
     end
+    helper(1)
 end
 
 function test_sbk_num_nodes(p::Vector{Float64})
-    code = generate_code_sbk(p)
-    bdd = compile(code)
-    @assert infer(code, :bdd) ≈ p  # Verify correctness
+    cg = sbk(p)
+    @assert infer_int(cg) ≈ p  # Verify correctness
 
-    nn = num_nodes(bdd)
+    nn = num_nodes(cg)
     num_bits = round(Int, log2(length(p)))
     @assert nn == sbk_num_nodes(num_bits)  # Verify num bits
 
-    println("SBK for a $(num_bits)-bit distribution: $(nn) nodes, $(num_flips(bdd)) flips")
+    println("SBK for a $(num_bits)-bit distribution: $(nn) nodes, $(num_flips(cg)) flips")
 end
 
 dist_2 = [0.5, 0.5]
@@ -48,7 +45,7 @@ end
 sbk_num_nodes(n) = 2^n * (n - 1) + 3      - 2^(n - 1) + 1
 
 function generate_code_sbk(p::Vector{Float64})
-    @dice begin
+    @dice_ite begin
         function discrete(p::Vector{Float64})
             mb = length(p)
             v = Vector(undef, mb)
