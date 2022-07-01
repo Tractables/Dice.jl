@@ -92,6 +92,10 @@ end
 
     @test pr(dice(f2)) ≈ 1 - 0.6
 
+    f2b() = f2() & flip(0.8)
+    @test pr(dice(f2b) )≈ (1 - 0.6) * 0.8
+    @test pr(@dice f2b()) ≈ (1 - 0.6) * 0.8
+
     f3 = @dice begin
         x = true
         if flip(0.6)

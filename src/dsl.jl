@@ -33,15 +33,19 @@ struct MetaDist
     err
 end
 
+struct DiceDyna
+
+end
+
 "Assert that the current code must be run within an @dice evaluation"
 assert_dice() = error("This code must be called from within an @dice evaluation.")
 
-dice(::typeof(assert_dice)) = nothing
+(::DiceDyna)(::typeof(assert_dice)) = nothing
 
-@dynamo function dice(a...)
+@dynamo function (dyna::DiceDyna)(a...)
     ir = IR(a...)
     (ir === nothing) && return
-    recurse!(ir, dice)
+    recurse!(ir)
     return IRTools.functional(ir)
 end
 
@@ -51,13 +55,14 @@ for f in :[getfield, typeof, Core.apply_type, typeassert, (===), ifelse,
         isa, Core.arraysize, repr, print, println, Base.vect, Broadcast.broadcasted,
         Broadcast.materialize, Core.Compiler.return_type, Base.union!, Base.getindex, Base.haskey,
         Base.pop!, Base.setdiff, unsafe_copyto!].args
-    @eval dice(::typeof($f), args...) = $f(args...)
+    @eval (::DiceDyna)(::typeof($f), args...) = $f(args...)
 end
 
-# __dsl_path__ = Ref{Any}(nothing)
-# __dsl_errors__ = Ref{Any}(nothing)
-# __dsl_observation__ = Ref{Any}(nothing)
-# __dsl_code__ = Ref{Any}(nothing)
+function dice(f) 
+    dyna = DiceDyna()
+    dyna(f)
+end
+
 macro dice(code)
     esc(quote
 #         __dsl_path__[] = DistBool[DistTrue()]
