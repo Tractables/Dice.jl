@@ -10,6 +10,8 @@ function DistString(s::String)
     DistString([DistChar(c) for c in s], DistInt(length(s)))
 end
 
+to_dist(s::String) = DistString(s)
+
 function replace_helper(d::DistString, mapping)
     DistString([replace(c, mapping) for c in d.chars], replace(d.len, mapping))
 end
@@ -156,3 +158,11 @@ Base.:<(x::DistString, y::DistString) = y > x
 Base.:<(x::String, y::DistString) = y > x
 
 Base.:<(x::DistString, y::String) = y > x
+
+Base.:(>=)(x::DistString, y::DistString) = !(x < y)
+Base.:(>=)(x::String, y::DistString) = DistString(x) >= y
+Base.:(>=)(x::DistString, y::String) = x >= DistString(y)
+
+Base.:(<=)(x::DistString, y::DistString) = !(x > y)
+Base.:(<=)(x::String, y::DistString) = DistString(x) <= y
+Base.:(<=)(x::DistString, y::String) = x <= DistString(y)

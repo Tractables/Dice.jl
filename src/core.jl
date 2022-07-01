@@ -1,10 +1,13 @@
 import IfElse: ifelse
+using DirectedAcyclicGraphs
+import DirectedAcyclicGraphs: children, NodeType, DAG, Inner, Leaf
 
-export Dist, DistBool, prob_equals, infer_bool, ifelse, flip, bools, dist_to_mgr_and_compiler, flips_left_to_right, flips_by_instantiation_order, flips_by_deepest_depth, flips_by_shallowest_depth, flips_by_freq, clear_flips, flip_probs, Flip, children, hoist!
+export Dist, DistBool, prob_equals, infer_bool, ifelse, flip, bools, dist_to_mgr_and_compiler, flips_left_to_right, flips_by_instantiation_order, flips_by_deepest_depth, flips_by_shallowest_depth, flips_by_freq, clear_flips, flip_probs, Flip, children, hoist!, to_dist, num_flips, compgraph_size
 
-export DistAnd, DistOr, DistNot, DistIte, DistTrue, DistFalse
+export DistAnd, DistOr, DistNot, DistIte, DistTrue, DistFalse, DistBools
+
 "A probability distribution over values of type `T`"
-abstract type Dist{T} end
+abstract type Dist{T} <: DAG end
 
 "The global context of a dice program analysis"
 abstract type DiceManager end
@@ -44,6 +47,13 @@ mutable struct Flip <: DistBool
     id::Int
 end
 
+# Wrap Vector{Bool} on behalf of DAG
+mutable struct DistBools <: Dist{Vector{Bool}}
+    bools::Vector{DistBool}
+end
+
+DistBools(x::Dist) = DistBools(bools(x))
+
 flip_next_id = 1
 flip_probs = Dict{Int, AbstractFloat}()
 # for debugging purposes... GC is ideal
@@ -75,6 +85,12 @@ DistBool(p::Real) =
     else
         flip(p)
     end
+
+to_dist(b::Bool) = DistBool(b)
+
+to_dist(d::Dist) = d
+
+Base.show(io::IO, x::DistBool) = print(io, "$(typeof(x))@$(hash(x)÷ 10000000000000)")
 
 # Abuse of method overloading to keep computation graph flat
 Base.:&(x::DistFalse, y::DistFalse) = DistFalse()
@@ -162,54 +178,64 @@ ifelse(cond::DistBool, then::Tuple, elze::Tuple) = tuple([ifelse(cond, t, e) for
 
 bools(b::DistBool) = [b]
 
+NodeType(::Type{<:DistAnd}) = Inner()
+NodeType(::Type{<:DistOr}) = Inner()
+NodeType(::Type{<:DistNot}) = Inner()
+NodeType(::Type{<:DistEquals}) = Inner()
+NodeType(::Type{<:DistIte}) = Inner()
+NodeType(::Type{<:DistBools}) = Inner()
+NodeType(::Type{<:DistTrue}) = Leaf()
+NodeType(::Type{<:DistFalse}) = Leaf()
+NodeType(::Type{<:Flip}) = Leaf()
+
 children(x::DistAnd) = [x.x, x.y]
 children(x::DistOr) = [x.x, x.y]
-# Choose to have NOT not add depth because they are cheap for BDDs, worth experimenting though
 children(x::DistNot) = [x.x]
 children(x::DistEquals) = [x.x, x.y]
 children(x::DistIte) = [x.c, x.t, x.e]
-children(x::DistTrue) = []
-children(x::DistFalse) = []
-children(x::AbstractVector{T}) where T <: DistBool = x
-children(x::Tuple) = collect(x)
+children(::DistTrue) = []
+children(::DistFalse) = []
+children(x::DistBools) = x.bools
+children(::Flip) = []
+
+compgraph_size(x) = DirectedAcyclicGraphs.num_nodes(DistBools(x))
 
 function flips_left_to_right(x)::Vector{Int}
+    flip_ids_set = Set{Int}()
     flip_ids = Vector{Int}()
-    flips_left_to_right_helper(x, flip_ids)
-    unique(flip_ids)
-end
-
-function flips_left_to_right_helper(x, flip_ids::Vector{Int})
-    if x isa Flip
-        push!(flip_ids, x.id)
-    else
-        for child in children(x)
-            flips_left_to_right_helper(child, flip_ids)
+    foreach(DistBools(x)) do y
+        if y isa Flip && y.id ∉ flip_ids_set
+            push!(flip_ids_set, y.id)
+            push!(flip_ids, y.id)
         end
     end
+    flip_ids
 end
 
 function flips_by_instantiation_order(x)::Vector{Int}
-    sort(flips_left_to_right(x))
+    flip_ids_set = Set{Int}()
+    foreach(DistBools(x)) do y
+        if y isa Flip
+            push!(flip_ids_set, y.id)
+        end
+    end
+    sort(collect(flip_ids_set))
 end
 
+# TODO: this is wrong because foreach visits each node once...
 function flips_by_freq(x)::Vector{Int}
     flip_id_ctr = Dict{Int, Int}()
-    flips_by_freq_helper(x, flip_id_ctr)
+    foreach(x) do y
+        if y isa Flip
+            flip_id_ctr[y.id] = get(flip_id_ctr, y.id, 0) + 1
+        end
+    end
     [kv[1] for kv in sort(collect(flip_id_ctr), by=kv->(kv[2], -kv[1]))]
 end
 
-function flips_by_freq_helper(x, flip_id_ctr::Dict{Int, Int})
-    if x isa Flip
-        flip_id_ctr[x.id] = get(flip_id_ctr, x.id, 0) + 1
-    else
-        for child in children(x)
-            flips_by_freq_helper(child, flip_id_ctr)
-        end
-    end
-end
-
 function flips_by_deepest_depth(x)::Vector{Int}
+    # TODO: Make faster by rewriting with DirectedAcyclicGraphs
+    println("WARNING: flips_by_deepest_depth will be very slow as it revisits old nodes.")
     flip_id_to_depth = Dict{Int, Int}()
     flips_by_deepest_depth_helper(x, 0, flip_id_to_depth)
     [kv[1] for kv in sort(collect(flip_id_to_depth), by=kv->(kv[2], -kv[1]))]
@@ -228,6 +254,8 @@ function flips_by_deepest_depth_helper(x, depth::Int, flip_id_to_depth::Dict{Int
 end
 
 function flips_by_shallowest_depth(x)::Vector{Int}
+    # TODO: Make faster by rewriting with DirectedAcyclicGraphs
+    println("WARNING: flips_by_shallowest_depth will be very slow as it revisits old nodes.")
     flip_id_to_depth = Dict{Int, Int}()
     flips_by_shallowest_depth_helper(x, 0, flip_id_to_depth)
     [kv[1] for kv in sort(collect(flip_id_to_depth), by=kv->(kv[2], -kv[1]))]
@@ -400,7 +428,11 @@ function dist_to_mgr_and_compiler(x; flip_order=nothing, flip_order_reverse=fals
     return mgr, to_bdd_mem
 end
 
-function infer_bool(d::DistBool)
-    mgr, to_bdd = dist_to_mgr_and_compiler(d)
-    infer_bool(mgr, to_bdd(d))
+function infer_bool(d::DistBool; observation::DistBool=DistTrue())
+    mgr, to_bdd = dist_to_mgr_and_compiler([d, observation])
+    infer_bool(mgr, to_bdd(d & observation))/infer_bool(mgr, to_bdd(observation))
+end
+
+function infer_bool(inferer, d::DistBool; observation::DistBool=DistTrue())
+    inferer(d & observation)/inferer(observation)
 end

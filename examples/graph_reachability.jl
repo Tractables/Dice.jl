@@ -22,7 +22,7 @@ r = reachable(adjacency_sampled, 1, n)
 println("Sampled graph reachability: ", r)
 
 # run on random graph
-code = @dice begin
+code = @dice_ite begin
     adjacency_rand = [flip(0.5) for i=1:n, j=1:n]
     reachable(adjacency_rand, 1, n)
 end

@@ -1,6 +1,6 @@
 using Dice
 
-c = @dice begin
+c = @dice_ite begin
     if flip(1/10)
         DistChar('a')
     elseif flip(2/9)
@@ -19,7 +19,7 @@ dist = infer(c)
 @assert dist[' '] ≈ 3/10
 @assert dist['!'] ≈ 4/10
 
-c = @dice begin
+c = @dice_ite begin
     if flip(1/10)
         DistChar('a')
     elseif flip(2/9)
@@ -31,3 +31,6 @@ c = @dice begin
     end
 end
 @assert infer_bool(c < DistChar('b')) ≈ 1/10
+@assert infer_bool(c <= DistChar('b')) ≈ 7/10
+@assert infer_bool(c >= DistChar('b')) ≈ 9/10
+@assert infer_bool(c > DistChar('b')) ≈ 3/10

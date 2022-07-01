@@ -1,15 +1,16 @@
 using Dice
-code = @dice begin
+code = @dice_ite begin
     b = DistInt(7)
     f = flip(0.2)
     [!f, (if f DistInt(3) else DistInt(7) end, f)]
 end
-dist = infer(code)
+dist, err = infer(code)
+@assert err == 0
 @assert sum(v for v in values(dist)) ≈ 1
 @assert dist[[true, (7, false)]] ≈ 0.8
 @assert dist[[false, (3, true)]] ≈ 0.2
 
-code = @dice begin
+code = @dice_ite begin
     # four-sided die
     die = safe_add(DistInt(1), DistInt([flip(0.5), flip(0.5)]))
     odd = die.bits[1]
@@ -22,13 +23,13 @@ die, odd, at_most_three = code
 @assert @Pr(at_most_three) ≈ 3/4
 @assert @Pr(odd | at_most_three) ≈ 2/3
 
-t, f = @dice begin
+t, f = @dice_ite begin
     flip(true), flip(false)
 end
 @assert @Pr(t) == 1
 @assert @Pr(f) == 0
 
-i, f = @dice begin
+i, f = @dice_ite begin
     f = flip(0.3)
     i = DWE(DistInt(2)) + if f DistInt(1) else DistInt(2) end
     i, f
@@ -38,7 +39,7 @@ dist, err = @Pr(i | f)  # infer_with_observation(i, f)
 @assert length(dist) == 1
 @assert err == 0
 
-i, f = @dice begin
+i, f = @dice_ite begin
     f = flip(0.3)
     i = DWE(DistInt(2)) + if f DistInt(1) else DistInt(2) end
     i = if flip(0.1) i / DistInt(0) else i end

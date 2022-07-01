@@ -21,7 +21,7 @@ acceptors = [4]
 num_steps = 15
 top_n = 20  # Only the top_n most likely strings are printed
 
-code = @dice begin
+code = @dice_ite begin
     str = Vector(undef, num_steps)
     state = DistInt(start)
 

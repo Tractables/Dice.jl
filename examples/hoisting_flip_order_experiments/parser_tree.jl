@@ -1,7 +1,7 @@
 using Dice
 using Dice: num_flips, num_nodes, DWE
 using Revise
-include("util.jl")
+include("../util.jl")
 
 @enum Symbols S X Y a b c
 
@@ -48,7 +48,7 @@ function tree()
     # top_n = 40  # Only the top_n most likely strings are printed
     # expected_sentence = [Alice, and, Bob, and, Alice, saw, Bob]
 
-    tree, tree_observe = @dice begin
+    tree, tree_observe = @dice_ite begin
         function expand_term(lhs, max_depth)
             if lhs in terminals
                 DistTree(DistEnum(lhs))

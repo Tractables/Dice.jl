@@ -1,11 +1,23 @@
-function print_dict(d)
+function print_dict(d; top_n=20)
+    top_n === nothing && (top_n = length(d))
+    truncated = top_n < length(d)
+
     d = sort(collect(d), by= xv -> -xv[2])  # by decreasing probability
-    println("$(typeof(d)) with $(length(d)) entries")
+    truncated && (d = d[1:top_n])  # truncate
+    d = [(to_str_pretty(k), v) for (k, v) in d]  # print trees/tups/vectors more nicely
+
     widest = if length(d) > 0 maximum(length(string(k)) for (k, _) in d) else 0 end
-    for (k, v) in d
+    for (i, (k, v)) in enumerate(d)
         println("   $(rpad(k, widest, ' ')) => $(v)")
     end
+    if truncated
+        println("   $(rpad('⋮', widest, ' ')) => ⋮")
+    end
 end
+
+to_str_pretty(x) = string(x)
+to_str_pretty(x::Vector) = "[" * join((to_str_pretty(y) for y in x), ", ") * "]"
+to_str_pretty(x::Tuple) = "(" * join((to_str_pretty(y) for y in x), ", ") * ")"
 
 # Prints trees as returned from inference on DistTree
 # tree := (val, [tree, tree, tree...])
@@ -58,27 +70,4 @@ function get_char_freqs_from_url(corpus_url)
         counts[c] += 1
     end
     [counts[c]/length(corpus) for c in valid_chars]
-end
-
-function uniform(domain::AbstractVector{Int})
-    p = zeros(maximum(domain) + 1)
-    for x in domain
-        p[x + 1] = 1/length(domain)
-    end
-    discrete(p)
-end
-
-function discrete(p::Vector{Float64})
-    mb = length(p)
-    v = Vector(undef, mb)
-    sum = 1
-    for i=1:mb
-        v[i] = p[i]/sum
-        sum = sum - p[i]
-    end
-    ans = DistInt(mb-1)
-    for i=mb-1:-1:1
-        ans = Dice.ifelse(flip(v[i]), DistInt(i-1), ans)
-    end
-    return ans
 end
