@@ -3,7 +3,7 @@ using Dice
 using Dice: Flip, ifelse
 using DirectedAcyclicGraphs
 
-@testset "DistBool Core Tests" begin
+@testset "DistBool core" begin
     
     @test flip(0.5).prob ≈ 0.5
     @test flip(0.9).prob ≈ 0.9 
@@ -55,10 +55,19 @@ using DirectedAcyclicGraphs
     
 end
 
-@testset "DistBool Probability Tests" begin
+@testset "DistBool probability" begin
     @test pr(flip(0.78)) ≈ 0.78
     @test pr(flip(0.78) & flip(0.41)) ≈ 0.78 * 0.41
     @test pr(flip(0.78) | flip(0.41)) ≈ 1 - (1-0.78) * (1-0.41)
+
+    f = flip(0.78)
+    @test pr(f & f) ≈ 0.78
+    @test pr(f | f) ≈ 0.78
+    @test pr(f | !f) ≈ 1.00
+    @test pr(f & !f) ≈ 0.00
+
+    @test pr(false) ≈ 0.00
+    @test pr(true) ≈ 1.00
 end
 
 @testset "DistBool mapreduce" begin
