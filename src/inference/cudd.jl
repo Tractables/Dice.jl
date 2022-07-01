@@ -37,30 +37,6 @@ end
 # Core CUDD API
 ##################################
 
-constant(mgr::CuddMgr, c:: Bool) = 
-    c ? Cudd_ReadOne(mgr.cuddmgr) : Cudd_ReadLogicZero(mgr.cuddmgr)
-
-biconditional(mgr::CuddMgr, x, y) =
-    rref(Cudd_bddXnor(mgr.cuddmgr, x, y))
-
-conjoin(mgr::CuddMgr, x, y) =
-    rref(Cudd_bddAnd(mgr.cuddmgr, x, y))
-
-disjoin(mgr::CuddMgr, x, y) =
-    rref(Cudd_bddOr(mgr.cuddmgr, x, y))
-
-negate(::CuddMgr, x) = 
-    Cudd_Not(x)
-
-ite(mgr::CuddMgr, cond, then, elze) =
-    rref(Cudd_bddIte(mgr.cuddmgr, cond, then, elze))
-
-new_var(mgr::CuddMgr, prob) = begin
-    x = rref(Cudd_bddNewVar(mgr.cuddmgr))
-    mgr.probs[decisionvar(mgr, x)] = prob
-    x
-end
-
 function pr(mgr::CuddMgr, x::Ptr{Nothing})
     
     cache = Dict{Tuple{Ptr{Nothing},Bool},Float64}()
@@ -88,6 +64,30 @@ function pr(mgr::CuddMgr, x::Ptr{Nothing})
     
     logprob = rec(x, false)
     exp(logprob)
+end
+
+constant(mgr::CuddMgr, c:: Bool) = 
+    c ? Cudd_ReadOne(mgr.cuddmgr) : Cudd_ReadLogicZero(mgr.cuddmgr)
+
+biconditional(mgr::CuddMgr, x, y) =
+    rref(Cudd_bddXnor(mgr.cuddmgr, x, y))
+
+conjoin(mgr::CuddMgr, x, y) =
+    rref(Cudd_bddAnd(mgr.cuddmgr, x, y))
+
+disjoin(mgr::CuddMgr, x, y) =
+    rref(Cudd_bddOr(mgr.cuddmgr, x, y))
+
+negate(::CuddMgr, x) = 
+    Cudd_Not(x)
+
+ite(mgr::CuddMgr, cond, then, elze) =
+    rref(Cudd_bddIte(mgr.cuddmgr, cond, then, elze))
+
+new_var(mgr::CuddMgr, prob) = begin
+    x = rref(Cudd_bddNewVar(mgr.cuddmgr))
+    mgr.probs[decisionvar(mgr, x)] = prob
+    x
 end
 
 function Base.show(io::IO, mgr::CuddMgr, x) 
