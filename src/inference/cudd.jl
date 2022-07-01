@@ -1,9 +1,16 @@
-# compilation backend that uses CUDD
-export CuddMgr, constant, biconditional, conjoin, disjoin, negate, ite, new_var, infer_bool, num_nodes, dump_dot
-
 using CUDD
 
-mutable struct CuddMgr <: DiceManager
+##################################
+# CUDD Inference
+##################################
+
+function pr(x::Dist{Bool}, ::Cudd)
+    mgr = CuddMgr() 
+    bdd = compile(mgr, x)
+    pr(mgr, bdd)
+end
+
+mutable struct CuddMgr
     cuddmgr::Ptr{Nothing}
     probs::Dict{Int,Float64}
 end
@@ -17,8 +24,17 @@ function CuddMgr()
     end
 end
 
+function compile(mgr::CuddMgr, x::Dist{Bool})
+    # TODO implement proper referencing and de-referencing of BDD nodes
+    fl(x::Flip) = new_var(mgr, x.prob) 
+    fi(n::DistAnd, call) = conjoin(mgr, call(n.x), call(n.y))
+    fi(n::DistOr, call) = disjoin(mgr, call(n.x), call(n.y))
+    fi(n::DistNot, call) = negate(mgr, call(n.x))
+    foldup(x, fl, fi, Ptr{Nothing})
+end
+
 ##################################
-# core functionality
+# Core CUDD API
 ##################################
 
 constant(mgr::CuddMgr, c:: Bool) = 
@@ -45,7 +61,7 @@ new_var(mgr::CuddMgr, prob) = begin
     x
 end
 
-function infer_bool(mgr::CuddMgr, x::Ptr{Nothing})
+function pr(mgr::CuddMgr, x::Ptr{Nothing})
     
     cache = Dict{Tuple{Ptr{Nothing},Bool},Float64}()
     t = constant(mgr, true)
@@ -74,10 +90,6 @@ function infer_bool(mgr::CuddMgr, x::Ptr{Nothing})
     exp(logprob)
 end
 
-##################################
-# additional CUDD-based functionality
-##################################
-
 function Base.show(io::IO, mgr::CuddMgr, x) 
     if !issat(mgr, x)
         print(io, "(false)") 
@@ -96,30 +108,17 @@ function Base.show(io::IO, x::CuddMgr)
     print(io, "$(typeof(x))@$(hash(x)÷ 10000000000000)")
 end
 
-
 isconstant(x) =
     isone(Cudd_IsConstant(x))
-
-
-isliteral(x::DistBool) =
-    isliteral(x.mgr, x.bit)
 
 isliteral(::CuddMgr, x) =
     (!isconstant(x) &&
      isconstant(Cudd_T(x)) &&
      isconstant(Cudd_E(x)))
 
-
-isposliteral(x::DistBool) =
-    isposliteral(x.mgr, x.bit)
-
 isposliteral(mgr::CuddMgr, x) =
     isliteral(mgr,x) && 
     (x === Cudd_bddIthVar(mgr.cuddmgr, decisionvar(mgr,x)))
-
-
-isnegliteral(x::DistBool) =
-    isnegliteral(x.mgr, x.bit)
 
 isnegliteral(mgr::CuddMgr, x) =
     isliteral(mgr,x) && 
@@ -128,65 +127,22 @@ isnegliteral(mgr::CuddMgr, x) =
 issat(mgr::CuddMgr, x) =
     x !== constant(mgr, false)
 
-
-isvalid(x::DistBool) =
-    x isa DistTrue
-
-issat(x::DistBool) =
-    !(x isa DistFalse)
-
 isvalid(mgr::CuddMgr, x) =
     x === constant(mgr, true)
-
-
-# num_nodes(bits::Vector{DistBool}; as_add=true) =  
-#     num_nodes(bits[1].mgr, map(b -> b.bit, bits); as_add)
-
-# num_nodes(x; as_add=true) =  
-#     num_nodes(bools(x); as_add)
-
-function num_nodes(d; suppress_warning=false)
-    if !suppress_warning
-        println("Warning: this version of num_nodes compiles the computation graph an ")
-        println("extra time, and always uses the default flip order. To suppress this ")
-        println("message, use suppress_warning=true.")
-    end
-    mgr, to_bdd = dist_to_mgr_and_compiler(d)
-    num_nodes(mgr, map(to_bdd, bools(d)))
-end
 
 num_nodes(mgr::CuddMgr, xs::Vector{<:Ptr}; as_add=true) = begin
     as_add && (xs = map(x -> rref(Cudd_BddToAdd(mgr.cuddmgr, x)), xs))
     Cudd_SharingSize(xs, length(xs))
 end
 
-
-# num_flips(bits::Vector{DistBool}) =  
-#     num_vars(bits[1].mgr, map(b -> b.bit, bits))
-
-# num_flips(x) =  
-#     num_flips(bools(x))
-
-num_vars(mgr::CuddMgr, xs::Vector{<:Ptr}) = begin
+num_vars(mgr::CuddMgr, xs::Vector{<:Ptr}) =
     Cudd_VectorSupportSize(mgr.cuddmgr, xs, length(xs))
-end
         
 num_vars(mgr::CuddMgr) =
     Cudd_ReadSize(mgr.cuddmgr)
 
-
 decisionvar(_::CuddMgr, x) =
     Cudd_NodeReadIndex(x)
-
-
-function dump_dot(bits::Vector{DistBool}, filename; as_add=true)
-    mgr, compiler = dist_to_mgr_and_compiler(bits)
-    dump_dot(mgr, map(compiler, bits), filename; as_add)
-end
-
-dump_dot(x, filename; as_add=true) =  
-    dump_dot(bools(x), filename; as_add)
-
 mutable struct FILE end
 
 dump_dot(mgr::CuddMgr, xs::Vector{<:Ptr}, filename; as_add=true) = begin
@@ -199,10 +155,6 @@ dump_dot(mgr::CuddMgr, xs::Vector{<:Ptr}, filename; as_add=true) = begin
     @assert ccall(:fclose, Cint, (Ptr{FILE},), outfile) == 0
     nothing
 end
-
-##################################
-# CUDD Utilities
-##################################
 
 rref(x) = begin 
     ref(x)

@@ -3,7 +3,7 @@ using Dice
 using Dice: Flip, ifelse
 using DirectedAcyclicGraphs
 
-@testset "DistBool Tests" begin
+@testset "DistBool Core Tests" begin
     
     @test flip(0.5).prob ≈ 0.5
     @test flip(0.9).prob ≈ 0.9 
@@ -53,4 +53,20 @@ using DirectedAcyclicGraphs
     @test num_nodes(ifelse(flip(0.5), f, g)) == 7
     @test ifelse(flip(0.5), f, f) == f
     
+end
+
+@testset "DistBool Probability Tests" begin
+    @test pr(flip(0.78)) ≈ 0.78
+    @test pr(flip(0.78) & flip(0.41)) ≈ 0.78 * 0.41
+    @test pr(flip(0.78) | flip(0.41)) ≈ 1 - (1-0.78) * (1-0.41)
+end
+
+@testset "DistBool mapreduce" begin
+
+    probs = [1/i for i=2:20]
+    x = mapreduce(p -> !flip(p), &, probs)  # all tails
+
+    @test num_nodes(x) == 19*2+18
+    @test pr(x) ≈ prod(1 .- probs)
+
 end

@@ -1,6 +1,6 @@
 module Dice
 
-include("dist.jl")
-include("distbool.jl")
+include("dist/dist.jl")
+include("inference/inference.jl")
 
 end # module
