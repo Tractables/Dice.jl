@@ -2,7 +2,7 @@ using MacroTools: postwalk, @capture
 using IRTools
 using IRTools: @dynamo, IR, recurse!, self
 
-export @dice_ite
+export @dice_ite, @dice, dice
 
 "Syntactic macro to make if-then-else supported by dice"
 macro dice_ite(code)
@@ -26,7 +26,6 @@ macro dice_ite(code)
     end
 end
 
-
 "A distribution computed by a dice program with metadata on observes and errors"
 struct MetaDist
     dist::Dist
@@ -34,50 +33,48 @@ struct MetaDist
     err
 end
 
-# #############################################
-# # dynamo to construct a weighted boolean formula
-# #############################################
+"Assert that the current code must be run within an @dice evaluation"
+assert_dice() = error("This code must be called from within an @dice evaluation.")
 
-# # pirate `IRTools.cond`` but keep default behavior on Bool guards
-# IRTools.cond(guard::Bool, then, elze) = guard ? then() : elze()
-# IRTools.cond(guard, then, elze) = ifelse(guard, then(), elze())
+dice(::typeof(assert_dice)) = nothing
 
-# require_dice_transformation() = error("This must be called from within @dice!")
-# dice_formula(::typeof(require_dice_transformation)) = nothing
+@dynamo function dice(a...)
+    ir = IR(a...)
+    (ir === nothing) && return
+    recurse!(ir, dice)
+    return IRTools.functional(ir)
+end
 
-# @dynamo function dice_formula(a...)
-#     ir = IR(a...)
-#     (ir === nothing) && return
-#     recurse!(ir, dice_formula)
-#     return IRTools.functional(ir)
-# end
-
-# # avoid transformation when it is known to trigger a bug
-# for f in :[getfield, typeof, Core.apply_type, typeassert, (===), ifelse,
-#         Core.sizeof, Core.arrayset, tuple, isdefined, fieldtype, nfields,
-#         isa, Core.arraysize, repr, print, println, Base.vect, Broadcast.broadcasted,
-#         Broadcast.materialize, Core.Compiler.return_type, Base.union!, Base.getindex, Base.haskey,
-#         Base.pop!, Base.setdiff, unsafe_copyto!].args
-#     @eval dice_formula(::typeof($f), args...) = $f(args...)
-# end
+# avoid transformation when it is known to trigger a bug
+for f in :[getfield, typeof, Core.apply_type, typeassert, (===), ifelse,
+        Core.sizeof, Core.arrayset, tuple, isdefined, fieldtype, nfields,
+        isa, Core.arraysize, repr, print, println, Base.vect, Broadcast.broadcasted,
+        Broadcast.materialize, Core.Compiler.return_type, Base.union!, Base.getindex, Base.haskey,
+        Base.pop!, Base.setdiff, unsafe_copyto!].args
+    @eval dice(::typeof($f), args...) = $f(args...)
+end
 
 # __dsl_path__ = Ref{Any}(nothing)
 # __dsl_errors__ = Ref{Any}(nothing)
 # __dsl_observation__ = Ref{Any}(nothing)
 # __dsl_code__ = Ref{Any}(nothing)
-# macro dice(code)
-#     esc(quote
+macro dice(code)
+    esc(quote
 #         __dsl_path__[] = DistBool[DistTrue()]
 #         __dsl_errors__[] = Tuple{DistBool, String}[(DistFalse(), "dummy")]
 #         __dsl_observation__[] = DistTrue()
-#         __dsl_code__[] = () -> $code
-#         dice_formula(__dsl_code__[]), __dsl_errors__[], __dsl_observation__[]
-#     end)
-# end
+        dice() do #, __dsl_errors__[], __dsl_observation__[]
+            $code
+        end
+    end)
+end
 
 # #############################################
 # # add path conditions
 # #############################################
+
+
+IRTools.cond(guard::Dist{Bool}, then, elze) = ifelse(guard, then(), elze())
 
 # function IRTools.cond(guard::DistBool, then, elze)
 #     push!(__dsl_path__[], guard)
