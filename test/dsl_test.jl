@@ -58,7 +58,7 @@ end
         end
     end
 
-    @test f isa Flip
+    @test f.dist isa Flip
     @test pr(f) ≈ 0.5
 
     g(p) = begin
@@ -69,7 +69,7 @@ end
         end
     end
 
-    @test (@dice g(0.42)) isa Flip
+    @test (@dice g(0.42)).dist isa Flip
     @test pr(@dice g(0.42)) ≈ 0.42
 
     h(p) = begin
@@ -105,5 +105,48 @@ end
     end
 
     @test pr(f3) ≈ 1 - 0.6
+
+end
+
+@testset "Error dynamo" begin
+
+    f(p) = if flip(p) 
+        error("BAD $p")
+        true 
+    else 
+        false 
+    end
+    
+    x = dice() do 
+        f(0.1) || f(0.2) 
+    end
+
+    @test length(x.errors) == 2
+
+    @test num_nodes(first(x.errors[1])) == 1
+    @test x.errors[1][2] == "BAD 0.1"
+
+    @test num_nodes(first(x.errors[2])) == 4
+    @test x.errors[2][2] == "BAD 0.2"
+
+end
+
+@testset "Observe dynamo" begin
+
+    f(p) = if flip(p) 
+        observe(flip(0.3))
+        true 
+    else 
+        false 
+    end
+    
+    x = dice() do 
+        f(0.1) || f(0.2) 
+    end
+
+    @test length(x.observations) == 2
+
+    @test num_nodes(x.observations[1]) == 4
+    @test num_nodes(x.observations[2]) == 7
 
 end

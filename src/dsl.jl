@@ -2,7 +2,11 @@ using MacroTools: prewalk, postwalk
 using IRTools
 using IRTools: @dynamo, IR, recurse!, self, xcall, functional
 
-export @dice_ite, @dice, dice
+export @dice_ite, @dice, dice, observe
+
+##################################
+# Control flow macro
+##################################
 
 "Syntactic macro to make if-then-else supported by dice"
 macro dice_ite(code)
@@ -26,12 +30,33 @@ macro dice_ite(code)
     end
 end
 
+##################################
+# Control flow + error + observation dynamo
+##################################
+
 "A distribution computed by a dice program with metadata on observes and errors"
 struct MetaDist
     dist::Dist
-    obs
-    err
+    errors::Vector{Tuple{AnyBool, String}}
+    observations::Vector{AnyBool}
 end
+
+"Interpret dice code with control flow, observations, and errors"
+function dice(f) 
+    dyna = DiceDyna()
+    x = dyna(f)
+    MetaDist(x, dyna.errors, dyna.observations)
+end
+
+"Interpret dice code with control flow, observations, and errors"
+macro dice(code)
+    esc(quote
+        dice() do #, __dsl_errors__[], __dsl_observation__[]
+            $code
+        end
+    end)
+end
+
 
 struct DiceDyna
     path::Vector{AnyBool}
@@ -42,6 +67,8 @@ end
 
 "Assert that the current code must be run within an @dice evaluation"
 assert_dice() = error("This code must be called from within an @dice evaluation.")
+
+observe(x) = assert_dice()
 
 @dynamo function (dyna::DiceDyna)(a...)
     ir = IR(a...)
@@ -70,6 +97,14 @@ function (dyna::DiceDyna)(::typeof(IRTools.cond), guard::Dist{Bool}, then, elze)
     ifelse(guard, t, e)
 end
 
+path_condition(dyna) = reduce(&, dyna.path; init=true)
+
+(dyna::DiceDyna)(::typeof(error), msg) =
+    push!(dyna.errors, (path_condition(dyna), msg))
+
+(dyna::DiceDyna)(::typeof(observe), x) =
+    push!(dyna.observations, !path_condition(dyna) | x)
+
 # avoid transformation when it is known to trigger a bug
 for f in :[getfield, typeof, Core.apply_type, typeassert, (===), ifelse,
         Core.sizeof, Core.arrayset, tuple, isdefined, fieldtype, nfields,
@@ -78,41 +113,3 @@ for f in :[getfield, typeof, Core.apply_type, typeassert, (===), ifelse,
         Base.pop!, Base.setdiff, unsafe_copyto!].args
     @eval (::DiceDyna)(::typeof($f), args...) = $f(args...)
 end
-
-function dice(f) 
-    dyna = DiceDyna()
-    dyna(f)
-end
-
-macro dice(code)
-    esc(quote
-        dice() do #, __dsl_errors__[], __dsl_observation__[]
-            $code
-        end
-    end)
-end
-
-# #############################################
-# # add path conditions
-# #############################################
-
-
-# function IRTools.cond(guard::DistBool, then, elze)
-#     push!(__dsl_path__[], guard)
-#     t = then()
-#     pop!(__dsl_path__[])
-#     push!(__dsl_path__[], !guard)
-#     e = elze()
-#     pop!(__dsl_path__[])
-#     ifelse(guard, t, e)
-# end
-
-# function prob_error(msg)
-#     push!(__dsl_errors__[], (reduce(&, __dsl_path__[]), msg))
-#     nothing
-# end
-
-# function observe(x)
-#     __dsl_observation__[] &= !reduce(&, __dsl_path__[]) | x
-#     nothing
-# end
