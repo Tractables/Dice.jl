@@ -1,6 +1,6 @@
-using MacroTools: postwalk, @capture
+using MacroTools: prewalk, postwalk
 using IRTools
-using IRTools: @dynamo, IR, recurse!, self
+using IRTools: @dynamo, IR, recurse!, self, xcall, functional
 
 export @dice_ite, @dice, dice
 
@@ -34,19 +34,40 @@ struct MetaDist
 end
 
 struct DiceDyna
-
+    path::Vector{AnyBool}
+    errors::Vector{Tuple{AnyBool, String}}
+    observations::Vector{AnyBool}
+    DiceDyna() = new(AnyBool[], Tuple{AnyBool, String}[], AnyBool[])
 end
 
 "Assert that the current code must be run within an @dice evaluation"
 assert_dice() = error("This code must be called from within an @dice evaluation.")
 
-(::DiceDyna)(::typeof(assert_dice)) = nothing
-
 @dynamo function (dyna::DiceDyna)(a...)
     ir = IR(a...)
     (ir === nothing) && return
-    recurse!(ir)
-    return IRTools.functional(ir)
+    ir = functional(ir)
+    ir = prewalk(ir) do x
+        if x isa Expr && x.head == :call
+            return xcall(self, x.args...)
+        end
+        return x
+    end
+    return ir
+end
+
+(::DiceDyna)(::typeof(assert_dice)) = nothing
+
+(::DiceDyna)(::typeof(IRTools.cond), guard, then, elze) = IRTools.cond(guard, then, elze)
+
+function (dyna::DiceDyna)(::typeof(IRTools.cond), guard::Dist{Bool}, then, elze)
+    push!(dyna.path, guard)
+    t = then()
+    pop!(dyna.path)
+    push!(dyna.path, !guard)
+    e = elze()
+    pop!(dyna.path)
+    ifelse(guard, t, e)
 end
 
 # avoid transformation when it is known to trigger a bug
@@ -65,9 +86,6 @@ end
 
 macro dice(code)
     esc(quote
-#         __dsl_path__[] = DistBool[DistTrue()]
-#         __dsl_errors__[] = Tuple{DistBool, String}[(DistFalse(), "dummy")]
-#         __dsl_observation__[] = DistTrue()
         dice() do #, __dsl_errors__[], __dsl_observation__[]
             $code
         end
@@ -78,8 +96,6 @@ end
 # # add path conditions
 # #############################################
 
-
-IRTools.cond(guard::Dist{Bool}, then, elze) = ifelse(guard, then(), elze())
 
 # function IRTools.cond(guard::DistBool, then, elze)
 #     push!(__dsl_path__[], guard)
