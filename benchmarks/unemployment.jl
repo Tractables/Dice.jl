@@ -29,13 +29,13 @@ function unemployment(p::Int, binbits::Int)
         8.28150384919718, 7.6049918634817, 5.4332405702211, 5.35873385947198, 5.18218877464533]
 
         t_op = DistSigned{2*binbits+5, binbits}
-        beta1 = continuous(dicecontext(), p, t_op, Normal(1, 1), 0)
-        beta2 = continuous(dicecontext(), p, t_mp, Normal(1, 1), 0)
+        beta1 = add_bits(continuous(dicecontext(), p, DistSigned{binbits + 4, binbits}, Normal(1, 1), 0), binbits + 1, 0)
+        beta2 = add_bits(continuous(dicecontext(), p, DistSigned{binbits + 6, binbits + 2}, Normal(1, 1), 0), 1, 0)
         sigma = uniform(dicecontext(), binbits + 2, t)
 
         obs = true
         for i=1:1
-            a = continuous(dicecontext(), p, t_mp, Normal(0, 1), 0)
+            a = add_bits(continuous(dicecontext(), p, DistSigned{binbits + 5, binbits + 2}, Normal(0, 1), 0), 2, 0)
             a_bits = add_bits(a, binbits + 5, 0)
 
             term1 = t_op((a_bits.number * sigma.number)[1].bits[3:2*binbits + 7])
@@ -50,12 +50,16 @@ function unemployment(p::Int, binbits::Int)
 
         Cond(beta2, obs)
 
+        # Testing and experiments
+        # beta1
     end
     code
 end
 
-f = unemployment(16, 1)
-compile(f)
+f = unemployment(1, 3)
+b = compile(f)
+num_nodes(b)
+num_flips(b)
 a = infer(f, :bdd)
 expectation(f, :bdd)
 variance(f, :bdd)
