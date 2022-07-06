@@ -149,4 +149,14 @@ end
     @test num_nodes(x.observations[1]) == 4
     @test num_nodes(x.observations[2]) == 7
 
+
+    @test pr(x.observations[1]) ≈ (0.9+0.1*0.3)
+    @test pr(x.observations[2]) ≈ 0.1+0.9*(0.8+0.2*0.3) # note that this program uses the short-circuited || so the second observe is only called when the first function returns false!
+
+    @test pr(x.observations[1] & x.observations[2]) ≈ 0.1*0.3 + 0.9*(0.8+0.2*0.3)
+
+    @test pr(x.dist & x.observations[1] & x.observations[2]) ≈ 0.1*0.3+0.9*0.2*0.3
+
+    @test pr(x) ≈ (0.1*0.3+0.9*0.2*0.3) / (0.1*0.3 + 0.9*(0.8+0.2*0.3))
+
 end

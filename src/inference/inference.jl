@@ -9,8 +9,12 @@ pr(x::Dist) = pr(x, Cudd())
 
 function pr(x::MetaDist)
     @assert isempty(x.errors) "TODO"
-    @assert isempty(x.observations) "TODO"
-    pr(x.dist)
+    
+    evidence = observation(x)
+    numerator = pr(x.dist & evidence)
+    denominator = pr(evidence) 
+
+    numerator/denominator
 end
 
 include("cudd.jl")

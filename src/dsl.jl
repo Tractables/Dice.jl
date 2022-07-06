@@ -2,7 +2,7 @@ using MacroTools: prewalk, postwalk
 using IRTools
 using IRTools: @dynamo, IR, recurse!, self, xcall, functional
 
-export @dice_ite, @dice, dice, observe
+export @dice_ite, @dice, dice, observe, observation
 
 ##################################
 # Control flow macro
@@ -41,6 +41,8 @@ struct MetaDist
     observations::Vector{AnyBool}
 end
 
+observation(x) = reduce(&, x.observations; init=true)
+
 "Interpret dice code with control flow, observations, and errors"
 function dice(f) 
     dyna = DiceDyna()
@@ -68,7 +70,7 @@ end
 "Assert that the current code must be run within an @dice evaluation"
 assert_dice() = error("This code must be called from within an @dice evaluation.")
 
-observe(x) = assert_dice()
+observe(_) = assert_dice()
 
 @dynamo function (dyna::DiceDyna)(a...)
     ir = IR(a...)
