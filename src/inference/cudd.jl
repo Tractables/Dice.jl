@@ -9,6 +9,9 @@ default_infer_algo() = Cudd()
 
 function condprobs(::Cudd, evidence, cond_errors, queries)
     mgr = CuddMgr() 
+
+    # TODO various optimizations
+    # TODO variable order heuristics
     
     # compile BDD for evidence
     evid_bdd, cache = compile(mgr, evidence)
