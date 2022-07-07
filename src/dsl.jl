@@ -2,7 +2,7 @@ using MacroTools: prewalk, postwalk
 using IRTools
 using IRTools: @dynamo, IR, recurse!, self, xcall, functional
 
-export @dice_ite, @dice, dice, observe, observation
+export @dice_ite, @dice, dice, observe, constraint
 
 ##################################
 # Control flow macro
@@ -36,12 +36,16 @@ end
 
 "A distribution computed by a dice program with metadata on observes and errors"
 struct MetaDist
-    dist::Dist
-    errors::Vector{Tuple{AnyBool, String}}
+    returnvalue::Dist
+    errors::Vector{Tuple{AnyBool, ErrorException}}
     observations::Vector{AnyBool}
 end
 
-observation(x) = reduce(&, x.observations; init=true)
+returnvalue(x) = x.returnvalue
+observations(x) = x.observations
+errors(x) = x.errors
+
+constraint(x) = reduce(&, observations(x); init=true)
 
 "Interpret dice code with control flow, observations, and errors"
 function dice(f) 
@@ -62,7 +66,7 @@ end
 
 struct DiceDyna
     path::Vector{AnyBool}
-    errors::Vector{Tuple{AnyBool, String}}
+    errors::Vector{Tuple{AnyBool, ErrorException}}
     observations::Vector{AnyBool}
     DiceDyna() = new(AnyBool[], Tuple{AnyBool, String}[], AnyBool[])
 end
@@ -102,7 +106,7 @@ end
 path_condition(dyna) = reduce(&, dyna.path; init=true)
 
 (dyna::DiceDyna)(::typeof(error), msg) =
-    push!(dyna.errors, (path_condition(dyna), msg))
+    push!(dyna.errors, (path_condition(dyna), ErrorException(msg)))
 
 (dyna::DiceDyna)(::typeof(observe), x) =
     push!(dyna.observations, !path_condition(dyna) | x)

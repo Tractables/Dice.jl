@@ -58,7 +58,7 @@ end
         end
     end
 
-    @test f.dist isa Flip
+    @test f.returnvalue isa Flip
     @test pr(f) ≈ 0.5
 
     g(p) = begin
@@ -69,7 +69,7 @@ end
         end
     end
 
-    @test (@dice g(0.42)).dist isa Flip
+    @test (@dice g(0.42)).returnvalue isa Flip
     @test pr(@dice g(0.42)) ≈ 0.42
 
     h(p) = begin
@@ -124,10 +124,24 @@ end
     @test length(x.errors) == 2
 
     @test num_nodes(first(x.errors[1])) == 1
-    @test x.errors[1][2] == "BAD 0.1"
+    @test x.errors[1][2].msg == "BAD 0.1"
 
     @test num_nodes(first(x.errors[2])) == 4
-    @test x.errors[2][2] == "BAD 0.2"
+    @test x.errors[2][2].msg == "BAD 0.2"
+
+    @test_throws ProbException pr(x) 
+
+    y = dice() do 
+        if flip(0.6)
+            error("bad branch")
+            observe(false)
+            true
+        else
+            false
+        end
+    end
+
+    @test pr(y) ≈ 0 # should not throw exception because of observe
 
 end
 
@@ -154,8 +168,9 @@ end
     @test pr(x.observations[2]) ≈ 0.1+0.9*(0.8+0.2*0.3) # note that this program uses the short-circuited || so the second observe is only called when the first function returns false!
 
     @test pr(x.observations[1] & x.observations[2]) ≈ 0.1*0.3 + 0.9*(0.8+0.2*0.3)
+    @test pr(constraint(x)) ≈ 0.1*0.3 + 0.9*(0.8+0.2*0.3)
 
-    @test pr(x.dist & x.observations[1] & x.observations[2]) ≈ 0.1*0.3+0.9*0.2*0.3
+    @test pr(x.returnvalue & x.observations[1] & x.observations[2]) ≈ 0.1*0.3+0.9*0.2*0.3
 
     @test pr(x) ≈ (0.1*0.3+0.9*0.2*0.3) / (0.1*0.3 + 0.9*(0.8+0.2*0.3))
 
