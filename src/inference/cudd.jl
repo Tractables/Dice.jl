@@ -4,10 +4,33 @@ using CUDD
 # CUDD Inference
 ##################################
 
-function pr(x::Dist{Bool}, ::Cudd)
+struct Cudd <: InferAlgo end
+default_infer_algo() = Cudd()
+
+function condprobs(::Cudd, evidence, cond_errors, queries)
     mgr = CuddMgr() 
-    bdd = compile(mgr, x)
-    pr(mgr, bdd)
+    
+    # compile BDD for evidence
+    evid_bdd, cache = compile(mgr, evidence)
+    evid_logp = logprobability(mgr, evid_bdd)
+
+    # compile BDDs and infer probability of all errors
+    prob_errors = ProbError[]
+    for (cond, err) in cond_errors
+        cond_bdd = compile(mgr, cond, cache)
+        cond_bdd = conjoin(mgr, cond_bdd, evid_bdd)
+        logp = logprobability(mgr, cond_bdd) - evid_logp
+        isinf(logp) || push!(prob_errors, (exp(logp), err))
+    end
+    isempty(prob_errors) || throw(ProbException(prob_errors))
+
+    # compile BDDs and infer probability for all queries
+    map(queries) do q 
+        bdd = compile(mgr, q, cache)
+        bdd = conjoin(mgr, bdd, evid_bdd)
+        logp = logprobability(mgr, bdd)   
+        exp(logp - evid_logp)
+    end
 end
 
 mutable struct CuddMgr
@@ -24,20 +47,30 @@ function CuddMgr()
     end
 end
 
-function compile(mgr::CuddMgr, x::Dist{Bool})
+function compile(mgr::CuddMgr, x)
+    cache = Dict{Dist{Bool},Ptr{Nothing}}()
+    bdd = compile(mgr, x, cache)
+    bdd, cache
+end
+
+compile(mgr::CuddMgr, x::Bool, cache) =
+    constant(mgr, x)
+
+function compile(mgr::CuddMgr, x::Dist{Bool}, cache)
     # TODO implement proper referencing and de-referencing of BDD nodes
+    # TODO implement shortcuts for equivalence, etc.
     fl(x::Flip) = new_var(mgr, x.prob) 
     fi(n::DistAnd, call) = conjoin(mgr, call(n.x), call(n.y))
     fi(n::DistOr, call) = disjoin(mgr, call(n.x), call(n.y))
     fi(n::DistNot, call) = negate(mgr, call(n.x))
-    foldup(x, fl, fi, Ptr{Nothing})
+    foldup(x, fl, fi, Ptr{Nothing}, cache)
 end
 
 ##################################
 # Core CUDD API
 ##################################
 
-function pr(mgr::CuddMgr, x::Ptr{Nothing})
+function logprobability(mgr::CuddMgr, x::Ptr{Nothing})
     
     cache = Dict{Tuple{Ptr{Nothing},Bool},Float64}()
     t = constant(mgr, true)
@@ -62,9 +95,11 @@ function pr(mgr::CuddMgr, x::Ptr{Nothing})
             end
         end
     
-    logprob = rec(x, false)
-    exp(logprob)
+    rec(x, false)
 end
+
+probability(mgr::CuddMgr, x::Ptr{Nothing}) =
+    exp(logprobability(mgr, x))
 
 constant(mgr::CuddMgr, c:: Bool) = 
     c ? Cudd_ReadOne(mgr.cuddmgr) : Cudd_ReadLogicZero(mgr.cuddmgr)

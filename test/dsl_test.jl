@@ -180,7 +180,7 @@ end
     @test pr(x.observations[2]) ≈ 0.1+0.9*(0.8+0.2*0.3) # note that this program uses the short-circuited || so the second observe is only called when the first function returns false!
 
     @test pr(x.observations[1] & x.observations[2]) ≈ 0.1*0.3 + 0.9*(0.8+0.2*0.3)
-    @test pr(constraint(x)) ≈ 0.1*0.3 + 0.9*(0.8+0.2*0.3)
+    @test pr(allobservations(x)) ≈ 0.1*0.3 + 0.9*(0.8+0.2*0.3)
 
     @test pr(x.returnvalue & x.observations[1] & x.observations[2]) ≈ 0.1*0.3+0.9*0.2*0.3
 

@@ -1,37 +1,83 @@
-export pr, condpr, Cudd, ProbException
+export pr, condpr, Cudd, ProbException, allobservations
 
 ##################################
-# Inference with metadata
+# Core inference API implemented by backends
 ##################################
 
-"Compute probability of a Dice.jl program"
-pr(x) = pr(x, default_infer_algo())
+"A choice of probabilistic inference algorithm"
+abstract type InferAlgo end
 
-"Compute a conditional probability"
-condpr(x::Dist; evidence::AnyBool = true) = 
-    # TODO: simplify x based on evidence; propagate values 
-    pr(x & evidence) / pr(evidence) 
+"A query for the joint state of several bits"
+const JointQuery = Vector{AnyBool}
+
+"A query supported by the inference backend"
+const Query = Union{JointQuery, AnyBool}
+
+"An error with a probabilistic condition"
+const CondError = Tuple{AnyBool, ErrorException}
+
+"""
+Compute probabilities of queries, optionally given evidence, 
+conditional errors, and a custom inference algorithm.
+"""
+function condprobs(queries; evidence::AnyBool = true, 
+            errors::Vector{CondError} = CondError[], 
+            algo::InferAlgo = default_infer_algo()) 
+    condprobs(algo, evidence, errors, queries)
+end
+
+"""
+Compute probability of a single query, optionally given evidence, 
+conditional errors, and a custom inference algorithm.
+"""
+function condprob(query; evidence::AnyBool = true, 
+            errors::Vector{CondError} = CondError[], 
+            algo::InferAlgo = default_infer_algo()) 
+    condprobs([query]; evidence, errors, algo)[1]
+end
+
+"""
+Compute probability of a single query, 
+optionally with conditional errors, and a custom inference algorithm.
+"""
+function pr(query;
+            errors::Vector{CondError} = CondError[], 
+            algo::InferAlgo = default_infer_algo()) 
+    condprob(query; errors, algo)
+end
 
 ##################################
-# Inference with metadata
+# Inference with metadata distributions from DSL
 ##################################
-
+       
 "A distribution computed by a dice program with metadata on observes and errors"
 struct MetaDist
     returnvalue::Dist
-    errors::Vector{Tuple{AnyBool, ErrorException}}
+    errors::Vector{CondError}
     observations::Vector{AnyBool}
 end
 
 returnvalue(x) = x.returnvalue
 observations(x) = x.observations
-errors(x) = x.errors
+allobservations(x) = reduce(&, observations(x); init=true)
 
-constraint(x) = reduce(&, observations(x); init=true)
+function pr(x::MetaDist; ignore_errors=false, 
+            algo::InferAlgo = default_infer_algo())
+    evidence = allobservations(x)
+    errors = ignore_errors ? CondError[] : x.errors
+    condprob(returnvalue(x); evidence, errors, algo)
+end
+
+##################################
+# Prbabilistic exception support
+##################################
+
+"An error that is thrown with some non-zero probability"
+const ProbError = Tuple{Float64, ErrorException}
 
 "A collection of errors that is thrown with some non-zero probability"
 struct ProbException <: Exception
-    errors::Vector{Tuple{AbstractFloat, ErrorException}}
+    errors::Vector{ProbError}
 end
 
 function Base.showerror(io::IO, exc::ProbException)
@@ -43,21 +89,8 @@ function Base.showerror(io::IO, exc::ProbException)
     end
 end
 
-function pr(x::MetaDist; ignore_errors=false)
-    evidence = constraint(x)
-    if !ignore_errors
-        prerr = [(condpr(cond; evidence), err) for (cond,err) in errors(x)]
-        filter!(y -> !iszero(y[1]), prerr)
-        isempty(prerr) || throw(ProbException(prerr))
-    end
-    condpr(returnvalue(x); evidence)
-end
-
 ##################################
 # Inference backends
 ##################################
-
-struct Cudd <: InferAlgo end
-default_infer_algo() = Cudd()
 
 include("cudd.jl")
