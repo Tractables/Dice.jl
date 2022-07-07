@@ -131,6 +131,16 @@ end
 
     @test_throws ProbException pr(x) 
 
+    try
+        pr(x) 
+    catch e
+        @test e isa ProbException
+        @test e.errors[1][1] ≈ 0.1
+        @test e.errors[1][2].msg ==  "BAD 0.1"
+        @test e.errors[2][1] ≈ (1-0.1)*0.2
+        @test e.errors[2][2].msg ==  "BAD 0.2"
+    end
+
     y = dice() do 
         if flip(0.6)
             error("bad branch")
