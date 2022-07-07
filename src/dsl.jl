@@ -34,19 +34,6 @@ end
 # Control flow + error + observation dynamo
 ##################################
 
-"A distribution computed by a dice program with metadata on observes and errors"
-struct MetaDist
-    returnvalue::Dist
-    errors::Vector{Tuple{AnyBool, ErrorException}}
-    observations::Vector{AnyBool}
-end
-
-returnvalue(x) = x.returnvalue
-observations(x) = x.observations
-errors(x) = x.errors
-
-constraint(x) = reduce(&, observations(x); init=true)
-
 "Interpret dice code with control flow, observations, and errors"
 function dice(f) 
     dyna = DiceDyna()

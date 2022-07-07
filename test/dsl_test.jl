@@ -130,6 +130,7 @@ end
     @test x.errors[2][2].msg == "BAD 0.2"
 
     @test_throws ProbException pr(x) 
+    @test pr(x; ignore_errors = true) ≈ (1-(1-0.1)*(1-0.2))
 
     try
         pr(x) 
@@ -152,6 +153,7 @@ end
     end
 
     @test pr(y) ≈ 0 # should not throw exception because of observe
+    @test pr(y; ignore_errors = true) ≈ 0 
 
 end
 

@@ -1,11 +1,33 @@
 export pr, condpr, Cudd, ProbException
 
-abstract type InferAlgo end
-struct Cudd <: InferAlgo end
+##################################
+# Inference with metadata
+##################################
 
 "Compute probability of a Dice.jl program"
-pr(x::Bool) = x ? 1.0 : 0.0
-pr(x::Dist) = pr(x, Cudd())
+pr(x) = pr(x, default_infer_algo())
+
+"Compute a conditional probability"
+condpr(x::Dist; evidence::AnyBool = true) = 
+    # TODO: simplify x based on evidence; propagate values 
+    pr(x & evidence) / pr(evidence) 
+
+##################################
+# Inference with metadata
+##################################
+
+"A distribution computed by a dice program with metadata on observes and errors"
+struct MetaDist
+    returnvalue::Dist
+    errors::Vector{Tuple{AnyBool, ErrorException}}
+    observations::Vector{AnyBool}
+end
+
+returnvalue(x) = x.returnvalue
+observations(x) = x.observations
+errors(x) = x.errors
+
+constraint(x) = reduce(&, observations(x); init=true)
 
 "A collection of errors that is thrown with some non-zero probability"
 struct ProbException <: Exception
@@ -31,8 +53,11 @@ function pr(x::MetaDist; ignore_errors=false)
     condpr(returnvalue(x); evidence)
 end
 
-"Compute a conditional probability"
-condpr(x::Dist; evidence::AnyBool = true) = 
-    pr(x & evidence) / pr(evidence) 
+##################################
+# Inference backends
+##################################
+
+struct Cudd <: InferAlgo end
+default_infer_algo() = Cudd()
 
 include("cudd.jl")

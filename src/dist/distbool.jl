@@ -56,7 +56,7 @@ function flip(prob)
 end
 
 ##################################
-# DirectedAcyclicGraphs
+# DirectedAcyclicGraphs.jl
 ##################################
 
 NodeType(::Type{<:DistBoolOp}) = Inner()
@@ -66,6 +66,13 @@ children(z::DistAnd) = [z.x, z.y]
 children(z::DistOr) = [z.x, z.y]
 children(z::DistNot) = [z.x]
 children(::Flip) = []
+
+##################################
+# inference
+##################################
+
+pr(x::Bool, ::InferAlgo) = pr(x)
+pr(x::Bool) = x ? 1.0 : 0.0
 
 ##################################
 # other method overloading
