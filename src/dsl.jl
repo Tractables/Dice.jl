@@ -53,9 +53,9 @@ end
 
 struct DiceDyna
     path::Vector{AnyBool}
-    errors::Vector{Tuple{AnyBool, ErrorException}}
+    errors::Vector{Tuple{AnyBool, String, Vector{Base.StackTraces.StackFrame}}}  # evidence, msg, stacktrace
     observations::Vector{AnyBool}
-    DiceDyna() = new(AnyBool[], Tuple{AnyBool, String}[], AnyBool[])
+    DiceDyna() = new(AnyBool[], Tuple{AnyBool, String, Vector{Base.StackTraces.StackFrame}}[], AnyBool[])
 end
 
 "Assert that the current code must be run within an @dice evaluation"
@@ -93,7 +93,13 @@ end
 path_condition(dyna) = reduce(&, dyna.path; init=true)
 
 (dyna::DiceDyna)(::typeof(error), msg) =
-    push!(dyna.errors, (path_condition(dyna), ErrorException(msg)))
+    push!(dyna.errors,
+        (
+            path_condition(dyna),
+            msg,
+            stacktrace()[2:end]  # Exclude this function from stacktrace
+        )
+    )
 
 (dyna::DiceDyna)(::typeof(observe), x) =
     push!(dyna.observations, !path_condition(dyna) | x)

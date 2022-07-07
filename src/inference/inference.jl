@@ -19,7 +19,7 @@ condpr(x::Dist; evidence::AnyBool = true) =
 "A distribution computed by a dice program with metadata on observes and errors"
 struct MetaDist
     returnvalue::Dist
-    errors::Vector{Tuple{AnyBool, ErrorException}}
+    errors::Vector{Tuple{AnyBool, String, Vector{Base.StackTraces.StackFrame}}}
     observations::Vector{AnyBool}
 end
 
@@ -31,22 +31,23 @@ constraint(x) = reduce(&, observations(x); init=true)
 
 "A collection of errors that is thrown with some non-zero probability"
 struct ProbException <: Exception
-    errors::Vector{Tuple{AbstractFloat, ErrorException}}
+    errors::Vector{Tuple{AbstractFloat, String, Vector{Base.StackTraces.StackFrame}}}
 end
 
 function Base.showerror(io::IO, exc::ProbException)
-    print(io, "ProbException: ")
-    for (p, err) in exc.errors
-        print(io, "  (")
-        print(io, err)
-        print(io, " with probability $p)")        
+    n = length(exc.errors)
+    print(io, "ProbException: $(n) possible probabilistic error")
+    n > 1 && print(io, "s")
+    println(io)
+    for (i, (p, msg, err_stacktrace)) in enumerate(exc.errors)
+        showerror(io, ErrorException("#$(i): $(msg) with probability $(p)"), err_stacktrace)
     end
 end
 
 function pr(x::MetaDist; ignore_errors=false)
     evidence = constraint(x)
     if !ignore_errors
-        prerr = [(condpr(cond; evidence), err) for (cond,err) in errors(x)]
+        prerr = [(condpr(cond; evidence),msg,err_stacktrace) for (cond,msg,err_stacktrace) in errors(x)]
         filter!(y -> !iszero(y[1]), prerr)
         isempty(prerr) || throw(ProbException(prerr))
     end
