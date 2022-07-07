@@ -69,10 +69,6 @@ function compile(mgr::CuddMgr, x::Dist{Bool}, cache)
     foldup(x, fl, fi, Ptr{Nothing}, cache)
 end
 
-##################################
-# Core CUDD API
-##################################
-
 function logprobability(mgr::CuddMgr, x::Ptr{Nothing})
     
     cache = Dict{Tuple{Ptr{Nothing},Bool},Float64}()
@@ -103,6 +99,10 @@ end
 
 probability(mgr::CuddMgr, x::Ptr{Nothing}) =
     exp(logprobability(mgr, x))
+
+##################################
+# Core CUDD API
+##################################
 
 constant(mgr::CuddMgr, c:: Bool) = 
     c ? Cudd_ReadOne(mgr.cuddmgr) : Cudd_ReadLogicZero(mgr.cuddmgr)

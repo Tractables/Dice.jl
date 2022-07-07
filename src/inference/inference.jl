@@ -1,4 +1,4 @@
-export pr, condpr, Cudd, ProbException, allobservations
+export pr, condprobs, condprob, Cudd, ProbException, allobservations
 
 ##################################
 # Core inference API implemented by backends
