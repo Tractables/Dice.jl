@@ -43,9 +43,9 @@ function unemployment(p::Int, binbits::Int)
         # final = t(temp.bits[4:binbits+7])
         
         # DistSigned{7, 2}((uniform(dicecontext(), 3, DistSigned{7, 1}) * DistSigned{7, 1}(dicecontext(), 2.0))[1])
-        # a = uniform(dicecontext(), 2, DistSigned{7, 2})
-        a = continuous(dicecontext(), p, DistSigned{7, 2}, Normal(0, 1), 0)
-        b = DistSigned{6, 1}((DistInt(dicecontext(), 2) * a.number)[1].bits[2:7])
+        a = uniform(dicecontext(), 5, DistSigned{9, 5})
+        # a = continuous(dicecontext(), p, DistSigned{7, 1}, Normal(0, 1), 0)
+        b = DistSigned{6, 1}((DistInt(dicecontext(), 3) * a.number)[1].bits[5:9])
         b
         # DistSigned{7, 0}(((a.number * DistInt(dicecontext(), 2))[1]))
         # (DistInt(dicecontext(), 7) * add_bits(DistInt(dicecontext(), 2), 5))[1]
@@ -57,4 +57,5 @@ end
 f = unemployment(16, 0)
 compile(f)
 a = infer(f, :bdd)
+a[30:40]
 plot(map(a -> a[1], a), map(a -> a[2], a))

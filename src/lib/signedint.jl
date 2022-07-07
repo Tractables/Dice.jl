@@ -1,6 +1,6 @@
 
 #Signed Integers in 2's complement
-export DistSigned
+export DistSigned, isneg
 
 struct DistSigned{T, F} <: Dist{Int}
     mgr
@@ -32,6 +32,10 @@ function DistSigned{T, F}(mgr, i::Float64) where T where F
     end
     # @show length(a.bits)
     DistSigned{T, F}(mgr, add_bits(a, T - length(a.bits)))
+end
+
+function isneg(a::DistSigned{T, F}) where T where F
+    a.number.bits[T]
 end
 
 function ifelse(cond::DistBool, then::DistSigned{T, F}, elze::DistSigned{T, F}) where T where F
