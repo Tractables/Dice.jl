@@ -1,4 +1,4 @@
-export pr, condprobs, condprob, Cudd, ProbException, allobservations
+export pr, condprobs, condprob, Cudd, ProbException, allobservations, Joint
 
 ##################################
 # Core inference API implemented by backends
@@ -7,44 +7,26 @@ export pr, condprobs, condprob, Cudd, ProbException, allobservations
 "A choice of probabilistic inference algorithm"
 abstract type InferAlgo end
 
-"A query for the joint state of several bits"
-const JointQuery = Vector{AnyBool}
-
-"A query supported by the inference backend"
-const Query = Union{JointQuery, AnyBool}
-
 "An error with a probabilistic condition"
 const CondError = Tuple{AnyBool, ErrorException}
+
+const JointQuery = Vector{<:AnyBool}
 
 """
 Compute probabilities of queries, optionally given evidence, 
 conditional errors, and a custom inference algorithm.
 """
-function condprobs(queries; evidence::AnyBool = true, 
+function pr(queries::Vector{<:JointQuery}; evidence::AnyBool = true, 
             errors::Vector{CondError} = CondError[], 
             algo::InferAlgo = default_infer_algo()) 
-    condprobs(algo, evidence, errors, queries)
+    pr(algo, evidence, errors, queries)
 end
 
-"""
-Compute probability of a single query, optionally given evidence, 
-conditional errors, and a custom inference algorithm.
-"""
-function condprob(query; evidence::AnyBool = true, 
-            errors::Vector{CondError} = CondError[], 
-            algo::InferAlgo = default_infer_algo()) 
-    condprobs([query]; evidence, errors, algo)[1]
-end
+pr(joint_query::JointQuery; kwargs...) =
+    pr([joint_query]; kwargs...)[1]
 
-"""
-Compute probability of a single query, 
-optionally with conditional errors, and a custom inference algorithm.
-"""
-function pr(query;
-            errors::Vector{CondError} = CondError[], 
-            algo::InferAlgo = default_infer_algo()) 
-    condprob(query; errors, algo)
-end
+pr(bool_query::AnyBool; kwargs...) =
+    pr([bool_query]; kwargs...)
 
 ##################################
 # Inference with metadata distributions from DSL
@@ -65,7 +47,7 @@ function pr(x::MetaDist; ignore_errors=false,
             algo::InferAlgo = default_infer_algo())
     evidence = allobservations(x)
     errors = ignore_errors ? CondError[] : x.errors
-    condprob(returnvalue(x); evidence, errors, algo)
+    pr(returnvalue(x); evidence, errors, algo)
 end
 
 ##################################

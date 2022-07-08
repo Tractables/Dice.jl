@@ -14,7 +14,7 @@ using DirectedAcyclicGraphs
     end
 
     @test f isa Flip
-    @test pr(f) ≈ 0.5
+    @test pr(f)[true] ≈ 0.5
 
     @dice_ite g(p) = begin
         if flip(p)
@@ -25,7 +25,7 @@ using DirectedAcyclicGraphs
     end
 
     @test g(0.42) isa Flip
-    @test pr(g(0.42)) ≈ 0.42
+    @test pr(g(0.42))[true] ≈ 0.42
 
     @dice_ite h(p) = begin
         if flip(p)
@@ -35,7 +35,7 @@ using DirectedAcyclicGraphs
         end
     end
 
-    @test pr(h(0.42)) ≈ 0.42 * 0.1 + (1-0.42) * 0.2
+    @test pr(h(0.42))[true] ≈ 0.42 * 0.1 + (1-0.42) * 0.2
     
     @test_throws LoadError @eval @dice_ite begin
         x = true
@@ -59,7 +59,7 @@ end
     end
 
     @test f.returnvalue isa Flip
-    @test pr(f) ≈ 0.5
+    @test pr(f)[true] ≈ 0.5
 
     g(p) = begin
         if flip(p)
@@ -70,7 +70,7 @@ end
     end
 
     @test (@dice g(0.42)).returnvalue isa Flip
-    @test pr(@dice g(0.42)) ≈ 0.42
+    @test pr(@dice g(0.42))[true] ≈ 0.42
 
     h(p) = begin
         if flip(p)
@@ -80,7 +80,7 @@ end
         end
     end
 
-    @test pr(@dice h(0.42)) ≈ 0.42 * 0.1 + (1-0.42) * 0.2
+    @test pr(@dice h(0.42))[true] ≈ 0.42 * 0.1 + (1-0.42) * 0.2
     
     f2() = begin
         x = true
@@ -90,11 +90,11 @@ end
         x
     end
 
-    @test pr(dice(f2)) ≈ 1 - 0.6
+    @test pr(dice(f2))[true] ≈ 1 - 0.6
 
     f2b() = f2() & flip(0.8)
-    @test pr(dice(f2b) )≈ (1 - 0.6) * 0.8
-    @test pr(@dice f2b()) ≈ (1 - 0.6) * 0.8
+    @test pr(dice(f2b))[true] ≈ (1 - 0.6) * 0.8
+    @test pr(@dice f2b())[true] ≈ (1 - 0.6) * 0.8
 
     f3 = @dice begin
         x = true
@@ -104,7 +104,7 @@ end
         x
     end
 
-    @test pr(f3) ≈ 1 - 0.6
+    @test pr(f3)[true] ≈ 1 - 0.6
 
 end
 
@@ -130,10 +130,10 @@ end
     @test x.errors[2][2].msg == "BAD 0.2"
 
     @test_throws ProbException pr(x) 
-    @test pr(x; ignore_errors = true) ≈ (1-(1-0.1)*(1-0.2))
+    @test pr(x; ignore_errors = true)[true] ≈ (1-(1-0.1)*(1-0.2))
 
     try
-        pr(x) 
+        pr(x)
     catch e
         @test e isa ProbException
         @test e.errors[1][1] ≈ 0.1
@@ -152,8 +152,8 @@ end
         end
     end
 
-    @test pr(y) ≈ 0 # should not throw exception because of observe
-    @test pr(y; ignore_errors = true) ≈ 0 
+    @test pr(y)[true] ≈ 0 # should not throw exception because of observe
+    @test pr(y; ignore_errors = true)[true] ≈ 0 
 
 end
 
@@ -176,14 +176,14 @@ end
     @test num_nodes(x.observations[2]) == 7
 
 
-    @test pr(x.observations[1]) ≈ (0.9+0.1*0.3)
-    @test pr(x.observations[2]) ≈ 0.1+0.9*(0.8+0.2*0.3) # note that this program uses the short-circuited || so the second observe is only called when the first function returns false!
+    @test pr(x.observations[1])[true] ≈ (0.9+0.1*0.3)
+    @test pr(x.observations[2])[true] ≈ 0.1+0.9*(0.8+0.2*0.3) # note that this program uses the short-circuited || so the second observe is only called when the first function returns false!
 
-    @test pr(x.observations[1] & x.observations[2]) ≈ 0.1*0.3 + 0.9*(0.8+0.2*0.3)
-    @test pr(allobservations(x)) ≈ 0.1*0.3 + 0.9*(0.8+0.2*0.3)
+    @test pr(x.observations[1] & x.observations[2])[true] ≈ 0.1*0.3 + 0.9*(0.8+0.2*0.3)
+    @test pr(allobservations(x))[true] ≈ 0.1*0.3 + 0.9*(0.8+0.2*0.3)
 
-    @test pr(x.returnvalue & x.observations[1] & x.observations[2]) ≈ 0.1*0.3+0.9*0.2*0.3
+    @test pr(x.returnvalue & x.observations[1] & x.observations[2])[true] ≈ 0.1*0.3+0.9*0.2*0.3
 
-    @test pr(x) ≈ (0.1*0.3+0.9*0.2*0.3) / (0.1*0.3 + 0.9*(0.8+0.2*0.3))
+    @test pr(x)[true] ≈ (0.1*0.3+0.9*0.2*0.3) / (0.1*0.3 + 0.9*(0.8+0.2*0.3))
 
 end

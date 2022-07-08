@@ -56,18 +56,18 @@ using DirectedAcyclicGraphs
 end
 
 @testset "DistBool probability" begin
-    @test pr(flip(0.78)) ≈ 0.78
-    @test pr(flip(0.78) & flip(0.41)) ≈ 0.78 * 0.41
-    @test pr(flip(0.78) | flip(0.41)) ≈ 1 - (1-0.78) * (1-0.41)
+    @test pr(flip(0.78))[true] ≈ 0.78
+    @test pr(flip(0.78) & flip(0.41))[true] ≈ 0.78 * 0.41
+    @test pr(flip(0.78) | flip(0.41))[true] ≈ 1 - (1-0.78) * (1-0.41)
 
     f = flip(0.78)
-    @test pr(f & f) ≈ 0.78
-    @test pr(f | f) ≈ 0.78
-    @test pr(f | !f) ≈ 1.00
-    @test pr(f & !f) ≈ 0.00
+    @test pr(f & f)[true] ≈ 0.78
+    @test pr(f | f)[true] ≈ 0.78
+    @test pr(f | !f)[true] ≈ 1.00
+    @test pr(f & !f)[true] ≈ 0.00
 
-    @test pr(false) ≈ 0.00
-    @test pr(true) ≈ 1.00
+    @test pr(false)[true] ≈ 0.00
+    @test pr(true)[true] ≈ 1.00
 end
 
 @testset "DistBool mapreduce" begin
@@ -76,6 +76,6 @@ end
     x = mapreduce(p -> !flip(p), &, probs)  # all tails
 
     @test num_nodes(x) == 19*2+18
-    @test pr(x) ≈ prod(1 .- probs)
+    @test pr(x)[true] ≈ prod(1 .- probs)
 
 end
