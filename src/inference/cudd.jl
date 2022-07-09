@@ -7,7 +7,7 @@ using CUDD
 struct Cudd <: InferAlgo end
 default_infer_algo() = Cudd()
 
-function pr(::Cudd, evidence, cond_errors, queries)
+function pr(::Cudd, evidence, queries::Vector{JointQuery}; errors)
     mgr = CuddMgr() 
 
     # TODO various optimizations
@@ -19,7 +19,7 @@ function pr(::Cudd, evidence, cond_errors, queries)
 
     # compile BDDs and infer probability of all errors
     prob_errors = ProbError[]
-    for (cond, err) in cond_errors
+    for (cond, err) in errors
         cond_bdd = compile(mgr, cond, cache)
         cond_bdd = conjoin(mgr, cond_bdd, evid_bdd)
         logp = logprobability(mgr, cond_bdd) - evid_logp
@@ -28,14 +28,15 @@ function pr(::Cudd, evidence, cond_errors, queries)
     isempty(prob_errors) || throw(ProbException(prob_errors))
 
     # compile BDDs and infer probability for all queries
-    map(queries) do q 
-        @assert length(q) == 1 "TODO implement"
-        q = q[1]
+    map(queries) do query
+        @assert length(query.bits) == 1 "TODO implement"
+        q = query.bits[1]
         bdd = compile(mgr, q, cache)
         bdd = conjoin(mgr, bdd, evid_bdd)
         logp = logprobability(mgr, bdd)   
         p = exp(logp - evid_logp)
-        Dict(true => p, false => 1-p)
+        [(Dict(q => true), p),
+         (Dict(q => false), 1-p)]
     end
 end
 

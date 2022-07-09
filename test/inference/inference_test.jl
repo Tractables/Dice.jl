@@ -15,7 +15,7 @@ end
     denom = 1-prod(1 .- [0.2,0.8,0.1,0.3,0.5])
     @test pr(evidence)[true] ≈ denom
     
-    p1, p2 = pr([[x],[y]]; evidence)
+    p1, p2 = pr(x, y; evidence)
     @test p1[true] ≈ (1-(1-0.2)*(1-0.8)) / denom
     @test p2[true] ≈ (1-(1-0.1)*(1-0.3)) / denom
 
@@ -25,6 +25,8 @@ end
 
     x = flip(0.2)
     y = flip(0.1)
-    @test_broken pr(Dice.JointQuery([x,y, true])) isa Dict
+    jq = Dice.JointQuery(Dice.AnyBool[x,y,true])
+    
+    @test_broken pr(jq)[1] isa Dict
 
 end

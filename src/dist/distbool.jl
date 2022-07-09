@@ -56,6 +56,13 @@ function flip(prob)
 end
 
 ##################################
+# inference
+##################################
+
+tobits(b::AnyBool) = [b]
+frombits(b::AnyBool, world) = world[b]
+
+##################################
 # DirectedAcyclicGraphs.jl
 ##################################
 

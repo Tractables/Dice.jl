@@ -10,23 +10,35 @@ abstract type InferAlgo end
 "An error with a probabilistic condition"
 const CondError = Tuple{AnyBool, ErrorException}
 
-const JointQuery = Vector{<:AnyBool}
+struct JointQuery
+    bits::Vector{<:AnyBool}
+end
 
 """
 Compute probabilities of queries, optionally given evidence, 
 conditional errors, and a custom inference algorithm.
 """
-function pr(queries::Vector{<:JointQuery}; evidence::AnyBool = true, 
+function pr(queries::Vector{JointQuery}; evidence::AnyBool = true, 
             errors::Vector{CondError} = CondError[], 
             algo::InferAlgo = default_infer_algo()) 
-    pr(algo, evidence, errors, queries)
+    pr(algo, evidence, queries; errors)
 end
 
-pr(joint_query::JointQuery; kwargs...) =
-    pr([joint_query]; kwargs...)[1]
+function pr(queries::JointQuery...; kwargs...)
+    ans = pr(collect(queries); kwargs...)
+    length(queries) == 1 ? ans[1] : ans
+end
 
-pr(bool_query::AnyBool; kwargs...) =
-    pr([bool_query]; kwargs...)
+function pr(queries...; kwargs...)
+    joint_queries = map(queries) do query
+        JointQuery(tobits(query))
+    end
+    queryworlds = pr(collect(joint_queries); kwargs...)
+    ans = map(queries, queryworlds) do query, worlds
+        Dict([(frombits(query, world) => p) for (world,p) in worlds])
+    end
+    length(queries) == 1 ? ans[1] : ans
+end
 
 ##################################
 # Inference with metadata distributions from DSL
