@@ -6,7 +6,7 @@ export DistInt, uniform
 ##################################
 
 struct DistInt{W} <: Dist{Int}
-    # first index is least significant bit
+    # first index is most significant bit
     bits::Vector{AnyBool}
     function DistInt{W}(b) where W
         @assert length(b) == W
@@ -15,6 +15,8 @@ struct DistInt{W} <: Dist{Int}
     end
 end
 
+DistInt(b) = DistInt{length(b)}(b)
+
 ##################################
 # inference
 ##################################
@@ -22,11 +24,11 @@ end
 tobits(x::DistInt) = 
     filter(y -> y isa Dist{Bool}, x.bits)
 
-function frombits(x::DistInt, world)
+function frombits(x::DistInt{W}, world) where W
     v = 0
-    for i = 1:bitwidth(x)
+    for i = 1:W
         if frombits(x.bits[i], world)
-            v += 2^(i-1)
+            v += 2^(W-i)
         end
     end
     v
@@ -36,17 +38,42 @@ end
 # methods
 ##################################
 
-function bitwidth(::DistInt{W}) where W 
-    W
-end
+bitwidth(::DistInt{W}) where W = W
 
-function uniform(::Type{DistInt{W}}) where W
-    DistInt{W}([flip(0.5) for i=1:W])
+function uniform(::Type{DistInt{W}}, n = W) where W
+    @assert W >= n >= 0
+    DistInt{W}([i > W-n ? flip(0.5) : false for i=1:W])
 end
 
 ##################################
 # other method overloading
 ##################################
+
+function prob_equals(x::DistInt{W}, y::DistInt{W}) where W
+    mapreduce(prob_equals, &, x.bits, y.bits)
+end
+
+function Base.isless(x::DistInt{W}, y::DistInt{W}) where W
+    foldr(zip(x.bits,y.bits); init=false) do bits, tail_isless
+        xbit, ybit = bits
+        (xbit < ybit) | (xbit == ybit) & tail_isless
+    end
+end
+
+function Base.:(+)(x::DistInt{W}, y::DistInt{W}) where W
+    z = Vector{AnyBool}(undef, W)
+    carry = false
+    for i=W:-1:1
+        z[i] = xor(x.bits[i], y.bits[i], carry)
+        carry = atleast_two(x.bits[i], y.bits[i], carry)
+    end
+    if carry isa DistBool
+        error("probabilistic integer overflow")
+    elseif carry
+        error("deterministic integer overflow")
+    end
+    DistInt(z)
+end
 
 # Base.isless(x::AnyBool, y::AnyBool) = !x & y
 

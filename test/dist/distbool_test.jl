@@ -43,7 +43,18 @@ using DirectedAcyclicGraphs
     @test prob_equals(true, f) == f
     @test prob_equals(false, !f) == f
     @test prob_equals(f, f) 
-    @test num_nodes(prob_equals(flip(0.5),flip(0.5))) == 7
+    @test pr(prob_equals(flip(0.5),flip(0.5)))[true] ≈ 0.5
+    @test num_nodes(prob_equals(flip(0.5),flip(0.5))) == 6
+
+    @test !xor(true,true)
+    @test !xor(false,false)
+    @test xor(true,false)
+    @test !xor(true, f) == f
+    @test !xor(false, !f) == f
+    @test !xor(f, f) 
+    @test xor(f,f,f) == f
+    @test xor(!f,f)
+    @test xor(f,false,f,true)
 
     g = flip(0.5)
     @test ifelse(true, f, g) == f
@@ -75,7 +86,7 @@ end
     probs = [1/i for i=2:20]
     x = mapreduce(p -> !flip(p), &, probs)  # all tails
 
-    @test num_nodes(x) == 19*2+18
+    @test num_nodes(x) == 19+18+1
     @test pr(x)[true] ≈ prod(1 .- probs)
 
 end

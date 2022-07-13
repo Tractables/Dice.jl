@@ -17,7 +17,6 @@ end
 Base.:(&)(x::Dist{Bool}, y::Dist{Bool}) = x == y ? x : DistAnd(x,y)
 Base.:(&)(x::Dist{Bool}, y::Bool) = y ? x : false
 Base.:(&)(x::Bool, y::Dist{Bool}) = y & x
-
 mutable struct DistOr <: DistBoolOp
     x::Dist{Bool}
     y::Dist{Bool}
@@ -32,8 +31,17 @@ struct DistNot <: DistBoolOp
     x::Dist{Bool}
 end
 
+# aim to strip negations whenever possible
 Base.:(!)(x::Dist{Bool}) = DistNot(x)
 Base.:(!)(y::DistNot) = y.x
+
+Base.:(&)(x::Dist{Bool}, y::DistNot) = x == !y ? false : DistAnd(x,y)
+Base.:(&)(y::DistNot, x::Dist{Bool}) = x & y
+Base.:(&)(x::DistNot, y::DistNot) = !((!x) | (!y))
+
+Base.:(|)(x::Dist{Bool}, y::DistNot) = x == !y ? true : DistOr(x,y)
+Base.:(|)(y::DistNot, x::Dist{Bool}) = x | y
+Base.:(|)(x::DistNot, y::DistNot) = !((!x) & (!y))
 
 # TODO should become and atomic int when we care about multithreading
 global_flip_id = one(Int64)
@@ -78,16 +86,21 @@ children(z::DistNot) = [z.x]
 children(::Flip) = []
 
 ##################################
-# other method overloading
+# methods
 ##################################
-
-Base.isless(x::AnyBool, y::AnyBool) = !x & y
 
 prob_equals(x::Bool, y::Bool) = x == y
 prob_equals(x::Bool, y::Dist{Bool}) = x ? y : !y
 prob_equals(x::Dist{Bool}, y::Bool) = prob_equals(y,x)
 prob_equals(x::Dist{Bool}, y::Dist{Bool}) = 
     x == y ? true : (x & y) | (!x & !y)
+
+Base.xor(x::Bool, y::Dist{Bool}) = x ? !y : y
+Base.xor(x::Dist{Bool}, y::Bool) = xor(y,x)
+Base.xor(x::Dist{Bool}, y::Dist{Bool}) = 
+    x == y ? false : (!x | !y) & (x | y)
+
+Base.isless(x::AnyBool, y::AnyBool) = !x & y
 
 function ifelse(cond::Dist{Bool}, then::AnyBool, elze::AnyBool)
     (then == elze) && return then
@@ -97,3 +110,4 @@ function ifelse(cond::Dist{Bool}, then::AnyBool, elze::AnyBool)
     (cond & then) | (!cond & elze)
 end
   
+atleast_two(x,y,z) = (x & y) | (x & z) | (y & z)
