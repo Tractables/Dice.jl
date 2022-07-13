@@ -56,7 +56,7 @@ function pr(::Cudd, evidence, queries::Vector{JointQuery}; errors)
             end
         end
 
-        if isempty(query.bits) 
+        if issat(mgr, evid_bdd) && isempty(query.bits) 
             push!(states, nil() => 1.0)
         else
             rec(evid_bdd, nil(), query.bits)
@@ -69,20 +69,6 @@ end
 mutable struct CuddMgr
     cuddmgr::Ptr{Nothing}
     probs::Dict{Int,Float64}
-end
-
-function split(mgr::CuddMgr, context, test::AnyBool, cache)
-    testbdd = compile(mgr, test, cache)
-    ifbdd = conjoin(mgr, context, testbdd)
-    if ifbdd === context
-        return (context, constant(mgr, false))
-    elseif !issat(mgr, ifbdd)
-        return (constant(mgr, false), context)
-    else
-        nottestbdd = negate(mgr, testbdd)
-        elsebdd = conjoin(mgr, context, nottestbdd)
-        return (ifbdd, elsebdd)
-    end
 end
 
 function CuddMgr() 
@@ -100,8 +86,22 @@ function compile(mgr::CuddMgr, x)
     bdd, cache
 end
 
-compile(mgr::CuddMgr, x::Bool, cache) =
+compile(mgr::CuddMgr, x::Bool, _) =
     constant(mgr, x)
+
+function split(mgr::CuddMgr, context, test::AnyBool, cache)
+    testbdd = compile(mgr, test, cache)
+    ifbdd = conjoin(mgr, context, testbdd)
+    if ifbdd === context
+        return (context, constant(mgr, false))
+    elseif !issat(mgr, ifbdd)
+        return (constant(mgr, false), context)
+    else
+        nottestbdd = negate(mgr, testbdd)
+        elsebdd = conjoin(mgr, context, nottestbdd)
+        return (ifbdd, elsebdd)
+    end
+end
 
 function compile(mgr::CuddMgr, x::Dist{Bool}, cache)
     # TODO implement proper referencing and de-referencing of BDD nodes

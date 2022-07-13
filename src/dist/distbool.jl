@@ -43,6 +43,7 @@ struct Flip <: Dist{Bool}
     prob
     Flip(p) = begin
         @assert !iszero(p) && !isone(p) "Use `true` and `false` for deterministic flips"
+        @assert 0 < p < 1 "Probabilities are between 0 and 1"
         global global_flip_id
         new(global_flip_id += 1, p)
     end

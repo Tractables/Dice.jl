@@ -92,6 +92,7 @@ end
 
 path_condition(dyna) = reduce(&, dyna.path; init=true)
 
+# TODO catch Base exceptions in ifelse instead
 (dyna::DiceDyna)(::typeof(error), msg) =
     push!(dyna.errors, (path_condition(dyna), ErrorException(msg)))
 
