@@ -30,12 +30,30 @@ end
     @test sum(x -> x[2], prs) ≈ 1
     @test length(prs) == 4
 
-    x = flip(0.2)
-    y = flip(0.1)
     prs = pr(JointQuery([x,y,!x]))
-    
     @test sum(x -> x[2], prs) ≈ 1
     @test length(prs) == 4
 
+    prs = pr(JointQuery([x,!x]))
+    @test sum(x -> x[2], prs) ≈ 1
+    @test length(prs) == 2
+
+    prs = pr(JointQuery([x,y,flip(0.5)]))
+    @test sum(x -> x[2], prs) ≈ 1
+    @test length(prs) == 8
+
+    prs1, prs2 = pr(JointQuery([x,y]), JointQuery([x,flip(0.5)]))
+    @test sum(x -> x[2], prs1) ≈ 1
+    @test sum(x -> x[2], prs2) ≈ 1
+    @test length(prs1) == 4
+    @test length(prs2) == 4
+
+    prs = pr(JointQuery([x,y]); evidence = (x | y))
+    @test sum(x -> x[2], prs) ≈ 1
+    @test length(prs) == 3
+
+    prs = pr(JointQuery([x,y]); evidence = (x & y))
+    @test sum(x -> x[2], prs) ≈ 1
+    @test length(prs) == 1
 
 end
