@@ -71,19 +71,11 @@ function Base.:(+)(x::DistInt{W}, y::DistInt{W}) where W
     DistInt{W}(z)
 end
 
-# Base.isless(x::AnyBool, y::AnyBool) = !x & y
-
-# prob_equals(x::Bool, y::Bool) = x == y
-# prob_equals(x::Bool, y::Dist{Bool}) = x ? y : !y
-# prob_equals(x::Dist{Bool}, y::Bool) = prob_equals(y,x)
-# prob_equals(x::Dist{Bool}, y::Dist{Bool}) = 
-#     x == y ? true : (x & y) | (!x & !y)
-
-# function ifelse(cond::Dist{Bool}, then::AnyBool, elze::AnyBool)
-#     (then == elze) && return then
-#     (cond == then) && return cond | elze
-#     (cond == elze) && return cond & then
-#     # TODO special case some DistNot branches
-#     (cond & then) | (!cond & elze)
-# end
+function ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where W
+    (then == elze) && return then
+    bits = map(then.bits, elze.bits) do tb, eb
+        ifelse(cond, tb, eb)
+    end
+    DistInt{W}(bits)
+end
   
