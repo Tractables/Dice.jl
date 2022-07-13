@@ -59,8 +59,10 @@ end
 # inference
 ##################################
 
-tobits(b::AnyBool) = [b]
-frombits(b::AnyBool, world) = world[b]
+tobits(::Bool) = []
+tobits(b::Dist{Bool}) = [b]
+frombits(b::Bool, _) = b
+frombits(b::Dist{Bool}, world) = world[b]
 
 ##################################
 # DirectedAcyclicGraphs.jl

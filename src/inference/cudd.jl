@@ -31,6 +31,7 @@ function pr(::Cudd, evidence, queries::Vector{JointQuery}; errors)
     # compile BDDs and infer probability for all queries
     map(queries) do query
         states = Pair{LinkedList, Float64}[]
+
         rec(context, state, rembits) = begin
             issat(mgr, context) || return
             head = rembits[1]
@@ -54,7 +55,13 @@ function pr(::Cudd, evidence, queries::Vector{JointQuery}; errors)
                 end
             end
         end
-        rec(evid_bdd, nil(), query.bits)
+
+        if isempty(query.bits) 
+            push!(states, nil() => 1.0)
+        else
+            rec(evid_bdd, nil(), query.bits)
+        end
+        @assert !isempty(states) "Cannot find possible worlds"
         [(Dict(state), p) for (state, p) in states]
     end
 end

@@ -25,8 +25,17 @@ end
 
     x = flip(0.2)
     y = flip(0.1)
-    jq = Dice.JointQuery(Dice.AnyBool[x,y,true])
+    prs = pr(JointQuery([x,y]))
     
-    @test_broken pr(jq)[1] isa Dict
+    @test sum(x -> x[2], prs) ≈ 1
+    @test length(prs) == 4
+
+    x = flip(0.2)
+    y = flip(0.1)
+    prs = pr(JointQuery([x,y,!x]))
+    
+    @test sum(x -> x[2], prs) ≈ 1
+    @test length(prs) == 4
+
 
 end

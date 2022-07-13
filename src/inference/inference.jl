@@ -1,4 +1,4 @@
-export pr, condprobs, condprob, Cudd, ProbException, allobservations, Joint
+export pr, condprobs, condprob, Cudd, ProbException, allobservations, JointQuery
 
 using DataStructures: DefaultDict
 
@@ -14,7 +14,7 @@ const CondError = Tuple{AnyBool, ErrorException}
 
 struct JointQuery
     # use a vector so that order is maintained, might be important for some inference heuristics
-    bits::Vector{<:AnyBool}
+    bits::Vector{Dist{Bool}}
     JointQuery(bits) = new(unique!(bits))
 end
 
