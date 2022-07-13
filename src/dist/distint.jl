@@ -17,6 +17,17 @@ end
 
 DistInt(b) = DistInt{length(b)}(b)
 
+function DistInt{W}(i::Int) where W
+    @assert i >= 0
+    num_b = ndigits(i, base = 2)
+    bits = Vector{AnyBool}(undef, W)
+    for bit_idx = W:-1:1
+        bits[bit_idx] = (bit_idx > W - num_b) ? Bool(i & 1) : false
+        i = i >> 1
+    end
+    DistInt{W}(bits)
+end
+
 ##################################
 # inference
 ##################################

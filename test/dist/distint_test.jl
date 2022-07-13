@@ -39,6 +39,9 @@ using Dice
     p = pr(@dice if flip(0.1) x else y end)
     @test p[10] ≈ 0.1
     @test p[3] ≈ 0.9
+
+    @test prob_equals(x, DistInt{4}(10))
+    @test prob_equals(y, DistInt{4}(3))
 end
 
 @testset "DistInt arithmetic" begin
@@ -64,4 +67,5 @@ end
 
     @test_throws Exception pr(uniform(DistInt{3}, 3)+uniform(DistInt{3}, 3))
     @test_throws Exception pr(@dice uniform(DistInt{3}, 3) + uniform(DistInt{3}, 3))
+
 end

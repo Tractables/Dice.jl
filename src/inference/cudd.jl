@@ -13,9 +13,10 @@ function pr(::Cudd, evidence, queries::Vector{JointQuery}; errors)
 
     # TODO various optimizations
     # TODO variable order heuristics
+    ccache = order_variables(mgr, evidence, queries, errors)
     
     # compile BDD for evidence
-    evid_bdd, ccache = compile(mgr, evidence)
+    evid_bdd = compile(mgr, evidence, ccache)
     evid_logp, pcache = logprobability(mgr, evid_bdd)
 
     # compile BDDs and infer probability of all errors
@@ -89,6 +90,37 @@ end
 compile(mgr::CuddMgr, x::Bool, _) =
     constant(mgr, x)
 
+
+function compile(mgr::CuddMgr, x::Dist{Bool}, cache)
+    # TODO implement proper referencing and de-referencing of BDD nodes
+    # TODO implement shortcuts for equivalence, etc.
+    fl(x::Flip) = new_var(mgr, x.prob) 
+    fi(n::DistAnd, call) = conjoin(mgr, call(n.x), call(n.y))
+    fi(n::DistOr, call) = disjoin(mgr, call(n.x), call(n.y))
+    fi(n::DistNot, call) = negate(mgr, call(n.x))
+    foldup(x, fl, fi, Ptr{Nothing}, cache)
+end
+
+function order_variables(mgr, evidence, queries, errors)
+    cache = Dict{Dist{Bool},Ptr{Nothing}}()
+    flips = Vector{Flip}()
+    seen = Dict{DAG,Nothing}()
+    see_flip(f) = push!(flips, f)
+    noop = Returns(nothing)
+    evidence isa Bool || foreach(evidence, see_flip, noop, seen)
+    for query in queries, bit in query.bits
+        foreach(bit, see_flip, Returns(nothing), seen)
+    end
+    for (cond, _) in errors
+        cond isa Bool || foreach(cond, see_flip, noop, seen)
+    end
+    sort!(flips; by= f -> f.global_id)
+    for flip in flips
+        compile(mgr, flip, cache)
+    end
+    cache
+end
+    
 function split(mgr::CuddMgr, context, test::AnyBool, cache)
     testbdd = compile(mgr, test, cache)
     ifbdd = conjoin(mgr, context, testbdd)
@@ -101,16 +133,6 @@ function split(mgr::CuddMgr, context, test::AnyBool, cache)
         elsebdd = conjoin(mgr, context, nottestbdd)
         return (ifbdd, elsebdd)
     end
-end
-
-function compile(mgr::CuddMgr, x::Dist{Bool}, cache)
-    # TODO implement proper referencing and de-referencing of BDD nodes
-    # TODO implement shortcuts for equivalence, etc.
-    fl(x::Flip) = new_var(mgr, x.prob) 
-    fi(n::DistAnd, call) = conjoin(mgr, call(n.x), call(n.y))
-    fi(n::DistOr, call) = disjoin(mgr, call(n.x), call(n.y))
-    fi(n::DistNot, call) = negate(mgr, call(n.x))
-    foldup(x, fl, fi, Ptr{Nothing}, cache)
 end
 
 function logprobability(mgr::CuddMgr, x::Ptr{Nothing})
