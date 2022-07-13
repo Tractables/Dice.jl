@@ -1,4 +1,5 @@
 using CUDD
+using DataStructures: LinkedList, cons, nil
 
 ##################################
 # CUDD Inference
@@ -14,35 +15,67 @@ function pr(::Cudd, evidence, queries::Vector{JointQuery}; errors)
     # TODO variable order heuristics
     
     # compile BDD for evidence
-    evid_bdd, cache = compile(mgr, evidence)
-    evid_logp = logprobability(mgr, evid_bdd)
+    evid_bdd, ccache = compile(mgr, evidence)
+    evid_logp, pcache = logprobability(mgr, evid_bdd)
 
     # compile BDDs and infer probability of all errors
     prob_errors = ProbError[]
     for (cond, err) in errors
-        cond_bdd = compile(mgr, cond, cache)
+        cond_bdd = compile(mgr, cond, ccache)
         cond_bdd = conjoin(mgr, cond_bdd, evid_bdd)
-        logp = logprobability(mgr, cond_bdd) - evid_logp
+        logp = logprobability(mgr, cond_bdd, pcache) - evid_logp
         isinf(logp) || push!(prob_errors, (exp(logp), err))
     end
     isempty(prob_errors) || throw(ProbException(prob_errors))
 
     # compile BDDs and infer probability for all queries
     map(queries) do query
-        @assert length(query.bits) == 1 "TODO implement"
-        q = query.bits[1]
-        bdd = compile(mgr, q, cache)
-        bdd = conjoin(mgr, bdd, evid_bdd)
-        logp = logprobability(mgr, bdd)   
-        p = exp(logp - evid_logp)
-        [(Dict(q => true), p),
-         (Dict(q => false), 1-p)]
+        states = Pair{LinkedList, Float64}[]
+        rec(context, state, rembits) = begin
+            issat(mgr, context) || return
+            head = rembits[1]
+            tail = @view rembits[2:end]
+            if !isempty(tail)
+                ifbdd, elsebdd = split(mgr, context, head, ccache)
+                rec(ifbdd, cons(head => true, state), tail)
+                rec(elsebdd, cons(head => false, state), tail)
+            else
+                testbdd = compile(mgr, head, ccache)
+                ifbdd = conjoin(mgr, context, testbdd)
+                logpif = logprobability(mgr, ifbdd, pcache)
+                p = exp(logpif - evid_logp)
+                if issat(mgr, ifbdd) 
+                    push!(states, cons(head => true, state) => p)
+                end
+                if ifbdd !== context
+                    logpcontext = logprobability(mgr, context, pcache)
+                    pcontext = exp(logpcontext - evid_logp)
+                    push!(states, cons(head => false, state) => pcontext-p)
+                end
+            end
+        end
+        rec(evid_bdd, nil(), query.bits)
+        [(Dict(state), p) for (state, p) in states]
     end
 end
 
 mutable struct CuddMgr
     cuddmgr::Ptr{Nothing}
     probs::Dict{Int,Float64}
+end
+
+function split(mgr::CuddMgr, context, test::AnyBool, cache)
+    testbdd = compile(mgr, test, cache)
+    ifbdd = conjoin(mgr, context, testbdd)
+    if ifbdd === context
+        return (context, constant(mgr, false))
+    elseif !issat(mgr, ifbdd)
+        return (constant(mgr, false), context)
+    else
+        nottestbdd = negate(mgr, testbdd)
+        elsebdd = conjoin(mgr, context, nottestbdd)
+        return (ifbdd, elsebdd)
+    end
 end
 
 function CuddMgr() 
@@ -74,12 +107,16 @@ function compile(mgr::CuddMgr, x::Dist{Bool}, cache)
 end
 
 function logprobability(mgr::CuddMgr, x::Ptr{Nothing})
-    
     cache = Dict{Tuple{Ptr{Nothing},Bool},Float64}()
     t = constant(mgr, true)
     cache[(t,false)] = log(one(Float64))
     cache[(t,true)] = log(zero(Float64))
-    
+
+    logp = logprobability(mgr, x, cache)
+    logp, cache
+end
+
+function logprobability(mgr::CuddMgr, x::Ptr{Nothing}, cache)
     rec(y, c) = 
         if Cudd_IsComplement(y)
             rec(Cudd_Regular(y), !c)   

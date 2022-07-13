@@ -1,5 +1,7 @@
 export pr, condprobs, condprob, Cudd, ProbException, allobservations, Joint
 
+using DataStructures: DefaultDict
+
 ##################################
 # Core inference API implemented by backends
 ##################################
@@ -11,7 +13,9 @@ abstract type InferAlgo end
 const CondError = Tuple{AnyBool, ErrorException}
 
 struct JointQuery
+    # use a vector so that order is maintained, might be important for some inference heuristics
     bits::Vector{<:AnyBool}
+    JointQuery(bits) = new(unique!(bits))
 end
 
 """
@@ -35,7 +39,8 @@ function pr(queries...; kwargs...)
     end
     queryworlds = pr(collect(joint_queries); kwargs...)
     ans = map(queries, queryworlds) do query, worlds
-        Dict([(frombits(query, world) => p) for (world,p) in worlds])
+        kvs = [(frombits(query, world), p) for (world,p) in worlds]
+        DefaultDict(0.0, kvs)
     end
     length(queries) == 1 ? ans[1] : ans
 end
