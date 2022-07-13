@@ -67,12 +67,8 @@ function Base.:(+)(x::DistInt{W}, y::DistInt{W}) where W
         z[i] = xor(x.bits[i], y.bits[i], carry)
         carry = atleast_two(x.bits[i], y.bits[i], carry)
     end
-    if carry isa DistBool
-        error("probabilistic integer overflow")
-    elseif carry
-        error("deterministic integer overflow")
-    end
-    DistInt(z)
+    carry && error("integer overflow")
+    DistInt{W}(z)
 end
 
 # Base.isless(x::AnyBool, y::AnyBool) = !x & y
