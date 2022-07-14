@@ -244,6 +244,7 @@ Base.:-(p1::Int, p2::DistInt) =
 function Base.:*(p1::DistInt, p2::DistInt)
     mbp1 = max_bits(p1)
     mbp2 = max_bits(p2)
+    # @show mbp1, mbp2
     if (mbp1 > mbp2) 
         t1, t2 = p1, p2
         mb1, mb2 = mbp1, mbp2
@@ -251,9 +252,10 @@ function Base.:*(p1::DistInt, p2::DistInt)
         t1, t2 = p2, p1
         mb1, mb2 = mbp2, mbp1
     end
-
+    # @show mb1, mb2
     P = DistInt(p1.mgr, 0)
     P = add_bits(P, mb1 - 1)
+    # @show max_bits(P)
     shifted_bits = t1.bits
     carry = false
     for i=1:mb2
@@ -266,6 +268,7 @@ function Base.:*(p1::DistInt, p2::DistInt)
         added = ifelse(t2.bits[i], DistInt(p1.mgr, shifted_bits), DistInt(p1.mgr, 0))
         res = (P + added)
         P = res[1]
+        # @show max_bits(P)
         carry |= res[2]
     end
     P, carry
