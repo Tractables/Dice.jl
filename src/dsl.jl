@@ -44,7 +44,7 @@ end
 "Interpret dice code with control flow, observations, and errors"
 macro dice(code)
     esc(quote
-        dice() do #, __dsl_errors__[], __dsl_observation__[]
+        dice() do
             $code
         end
     end)
@@ -63,34 +63,36 @@ assert_dice() = error("This code must be called from within an @dice evaluation.
 
 observe(_) = assert_dice()
 
-global t1 = 0.0
-global t2 = 0.0
+global dynamoed = Vector()
 
 @dynamo function (dyna::DiceDyna)(a...)
-    ir = IR(a...)
-    (ir === nothing) && return
-    ir, t, _ = @timed functional(ir)
-    global t1
-    t1 += t
-    ir, t, _ = @timed prewalk(ir) do x
-        if x isa Expr && x.head == :call
-            return xcall(self, x.args...)
+    ir, time, _ = @timed begin
+        ir = IR(a...)
+        # TODO add dynasafe() to avoid doing recursive work for error-free methods
+        (ir === nothing) && return
+        ir = functional(ir)
+        ir = prewalk(ir) do x
+            if x isa Expr && x.head == :call
+                return xcall(self, x.args...)
+            end
+            return x
         end
-        return x
+        ir
     end
-    global t2 
-    t2 += t
+    global dynamoed
+    push!(dynamoed, (time, a[1]))
     return ir
 end
 
 # TODO figure out why second @dice calls still have significant compilation times
 times() = [t1,t2]
 
-reset_times() = begin
-    global t1, t2
-    t1 = 0.0
-    t2 = 0.0
+reset_dynamoed() = begin
+    global dynamoed
+    empty!(dynamoed)
 end
+
+top_dynamoed() = sort(dynamoed; by = x -> x[1], rev = true)
 
 (::DiceDyna)(::typeof(assert_dice)) = nothing
 
@@ -124,7 +126,9 @@ for f in :[getfield, typeof, Core.apply_type, typeassert, (===),
     @eval (::DiceDyna)(::typeof($f), args...) = $f(args...)
 end
 
-# avoid transformation when no error can be thrown
-for f in :[xor, atleast_two, prob_equals, (&), (|), (!), isless, ifelse].args
+# avoid transformation for performance (may cause probabilistic errors to become deterministic)
+for f in :[xor, atleast_two, prob_equals, (&), (|), (!), isless, ifelse, 
+    Base.collect_to!, Base.collect, Base.steprange_last, oneunit, 
+    Base.pairwise_blocksize, eltype, firstindex, iterate].args
     @eval (::DiceDyna)(::typeof($f), args...) = $f(args...)
 end

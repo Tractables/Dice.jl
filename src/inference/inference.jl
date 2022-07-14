@@ -51,7 +51,7 @@ end
        
 "A distribution computed by a dice program with metadata on observes and errors"
 struct MetaDist
-    returnvalue::Dist
+    returnvalue
     errors::Vector{CondError}
     observations::Vector{AnyBool}
 end

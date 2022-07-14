@@ -106,6 +106,7 @@ end
 
     @test pr(f3)[true] ≈ 1 - 0.6
 
+    @test (@dice true).returnvalue == true
 end
 
 @testset "Error dynamo" begin
