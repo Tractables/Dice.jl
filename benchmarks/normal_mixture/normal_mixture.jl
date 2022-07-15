@@ -5,7 +5,7 @@ using Distributions
 using StatsBase
 using Distances
 
-function normal_mixture(p::Int, binbits::Int)
+function normal_mixture(p::Int, binbits::Int, flag::Int)
     code = @dice begin
         f = DistFixParam{binbits+4, binbits+4}
         t = DistSigned{binbits + 5, binbits}
@@ -29,15 +29,23 @@ function normal_mixture(p::Int, binbits::Int)
             obs &= prob_equals(temp, t(dicecontext(), y[i]))
         end
 
-        Cond(mu2, obs)
+        if flag == 0
+            Cond(theta, obs)
+        elseif flag == 1
+            Cond(mu1, obs)
+        else
+            Cond(mu2, obs)
+        end
     end
     code
 end
 
-f = normal_mixture(16, 1)
+f = normal_mixture(16, 0, 1)
 b = compile(f)
 num_nodes(b)
 num_flips(b)
 a = infer(b)
 expectation(f, :bdd)
 variance(f, :bdd)
+
+localARGS = ARGS

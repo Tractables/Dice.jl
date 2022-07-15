@@ -36,6 +36,7 @@ function altermu(p::Int, binbits::Int, b::Bool, b2::Bool)
             # obs &= y2
         end
         obs
+        Cond(mu1, obs)
         # # (
         #     add_bits(continuous(dicecontext(), p, t, Normal(0, 1), b, b2), 1, 0) 
             # + 
