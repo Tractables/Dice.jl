@@ -31,3 +31,36 @@ function canonicalize(root::Dist{Bool}, cache)
     end
     foldup(root, fl, fi, Dist{Bool})
 end
+
+#########################
+# optimize necessary and sufficient literal conditions
+#########################
+
+function optimize_unsat(root, conditions)
+    fl(n::Flip) = n # flips are by definition sat
+    fi(n, call) = begin
+        n_cond = conditions[n]
+        if unsat_conditions(n_cond)
+            println("optimizing UNSAT node away: $n_cond")
+            return false
+        elseif tautological_conditions(n_cond)
+            println("optimizing tautological node away: $n_cond")
+            return true
+        else
+            newx = call(n.x)
+            if n isa DistNot
+                return newx === n.x ? n : !newx
+            else
+                newy = call(n.y)
+                newx === n.x && newy === n.y && return n
+                if n isa DistAnd
+                    return newx & newy
+                else
+                    @assert n isa DistOr
+                    return newx | newy
+                end
+            end
+        end
+    end
+    foldup(root, fl, fi, AnyBool)
+end

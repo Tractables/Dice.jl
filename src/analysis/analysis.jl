@@ -3,8 +3,15 @@
 #########################
 
 "Compute the set of reused computation graph nodes"
-reused_nodes(root::Dist{Bool}) =
-    keys(filter!(kv -> kv[2] > 1, num_parents(root)))
+function reused_nodes(root::Dist{Bool})
+    np = num_parents(root)
+    mp = filter!(kv -> kv[2] > 1, np)
+    # let negation nodes be represented by their non-negated node
+    nonneg = map(collect(keys(mp))) do n 
+        n isa DistNot ? n.x : n
+    end
+    Set(nonneg)
+end
 
 const Scope = Set{Dist{Bool}}
 
