@@ -117,6 +117,12 @@ path_condition(dyna) = reduce(&, dyna.path; init=true)
 (dyna::DiceDyna)(::typeof(observe), x) =
     push!(dyna.observations, !path_condition(dyna) | x)
 
+(::DiceDyna)(::typeof(==), x::Dist, y::Union{Dist, Bool}) = 
+    prob_equals(x,y)
+
+(::DiceDyna)(::typeof(==), x::Bool, y::Dist) = 
+    prob_equals(x,y)
+
 # avoid transformation when it is known to trigger a bug
 for f in :[getfield, typeof, Core.apply_type, typeassert, (===),
         Core.sizeof, Core.arrayset, tuple, isdefined, fieldtype, nfields,
