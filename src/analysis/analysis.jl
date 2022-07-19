@@ -1,3 +1,8 @@
+
+num_ir_nodes(x::Bool) = 0
+num_ir_nodes(x::Dist{Bool}) = 
+    DirectedAcyclicGraphs.num_nodes(x)
+
 #########################
 # compute scope of computation graph
 #########################
@@ -39,53 +44,50 @@ end
 # analyze necessary and sufficient literal conditions (implied literals)
 #########################
 
+const Literal = Tuple{Dist{Bool}, Bool}
+
 "necessary and sufficient literal conditions (implied literals)"
 struct UnitConditions
-    # set of positive implied literals
-    truepos::Scope
-    # set of negative implied literals
-    trueneg::Scope
-    # set of positive implied literals of the formula's negation
-    falsepos::Scope
-    # set of negative implied literals of the formula's negation
-    falseneg::Scope
+    # set of implied literals
+    necessary::Set{Literal}
+    # set of implied literals of the formula's negation
+    sufficientnot::Set{Literal}
 end
 
 UnitConditions() = 
-    UnitConditions(Scope(),Scope(),Scope(),Scope())
+    UnitConditions(Set{Literal}(), Set{Literal}())
 
 UnitConditions(n::Dist{Bool}) = 
-    UnitConditions(Scope([n]),Scope(),Scope(),Scope([n]))
+    UnitConditions(Set{Literal}([(n, true)]), 
+                   Set{Literal}([(n, false)]))
 
 function Base.push!(x::UnitConditions, n::Dist{Bool}) 
-    push!(x.truepos, n)
-    push!(x.falseneg, n)
+    push!(x.necessary, (n,true))
+    push!(x.sufficientnot, (n,false))
     x
 end
 
 conjoin_conditions(x, y) = UnitConditions(
-    x.truepos ∪ y.truepos,
-    x.trueneg ∪ y.trueneg,
-    x.falsepos ∩ y.falsepos,
-    x.falseneg ∩ y.falseneg)
+    x.necessary ∪ y.necessary,
+    x.sufficientnot ∩ y.sufficientnot)
 
 disjoin_conditions(x, y) = UnitConditions(
-    x.truepos ∩ y.truepos,
-    x.trueneg ∩ y.trueneg,
-    x.falsepos ∪ y.falsepos,
-    x.falseneg ∪ y.falseneg)
+    x.necessary ∩ y.necessary,
+    x.sufficientnot ∪ y.sufficientnot)
 
 negate_conditions(x) = UnitConditions(
-    x.falsepos, x.falseneg, x.truepos, x.trueneg)
+    x.sufficientnot, x.necessary)
+
+negate(l::Literal)::Literal = (l[1], !l[2])
 
 unsat_conditions(x) = 
-    isempty(x.falsepos) && isempty(x.falseneg) && any(l -> l ∈ x.trueneg, x.truepos)
+    isempty(x.sufficientnot) && any(l -> negate(l) ∈ x.necessary, x.necessary)
 
 tautological_conditions(x) = 
-    isempty(x.truepos) && isempty(x.trueneg) && any(l -> l ∈ x.falseneg, x.falsepos)
+    isempty(x.necessary) && any(l -> negate(l) ∈ x.sufficientnot, x.sufficientnot)
 
 Base.show(io::IO, x::UnitConditions) = 
-    print(io, "UnitConditions: $(length(x.truepos))/$(length(x.trueneg))/$(length(x.falsepos))/$(length(x.falseneg))")
+    print(io, "UnitConditions: $(x.necessary...) vs. $(x.sufficientnot...)")
 
 "Compute the necessary and sufficient literal conditions (implied literals)"
 function unitconditions(root::Dist{Bool}, universe)
@@ -93,6 +95,8 @@ function unitconditions(root::Dist{Bool}, universe)
     cond_root = unitconditions(root, universe, cache)
     cond_root, cache
 end
+
+unitconditions(root::Bool, universe, cache) = nothing
 
 function unitconditions(root::Dist{Bool}, universe, cache)
     fl(n::Flip) = 
