@@ -30,8 +30,9 @@ function flip(prob)
 end
 
 abstract type DistBoolOp <: Dist{Bool} end
+abstract type DistBoolBinOp <: DistBoolOp end
 
-mutable struct DistAnd <: DistBoolOp
+mutable struct DistAnd <: DistBoolBinOp
     x::Dist{Bool}
     y::Dist{Bool}
 end
@@ -39,7 +40,7 @@ end
 Base.:(&)(x::Dist{Bool}, y::Dist{Bool}) = x == y ? x : DistAnd(x,y)
 Base.:(&)(x::Dist{Bool}, y::Bool) = y ? x : false
 Base.:(&)(x::Bool, y::Dist{Bool}) = y & x
-mutable struct DistOr <: DistBoolOp
+mutable struct DistOr <: DistBoolBinOp
     x::Dist{Bool}
     y::Dist{Bool}
 end

@@ -81,13 +81,13 @@ negate_conditions(x) = UnitConditions(
 negate(l::Literal)::Literal = (l[1], !l[2])
 
 unsat_conditions(x) = 
-    isempty(x.sufficientnot) && any(l -> negate(l) ∈ x.necessary, x.necessary)
+    any(l -> negate(l) ∈ x.necessary, x.necessary)
 
 tautological_conditions(x) = 
-    isempty(x.necessary) && any(l -> negate(l) ∈ x.sufficientnot, x.sufficientnot)
+    any(l -> negate(l) ∈ x.sufficientnot, x.sufficientnot)
 
 Base.show(io::IO, x::UnitConditions) = 
-    print(io, "UnitConditions: $(x.necessary...) vs. $(x.sufficientnot...)")
+    print(io, "UnitConditions: $(length(x.necessary))/$(length(x.sufficientnot))")
 
 "Compute the necessary and sufficient literal conditions (implied literals)"
 function unitconditions(root::Dist{Bool}, universe)
@@ -114,6 +114,30 @@ function unitconditions(root::Dist{Bool}, universe, cache)
         (n ∈ universe) ? push!(c, n) : c
     end
     foldup(root, fl, fi, UnitConditions, cache)
+end
+
+function propagated_literals(n::DistAnd, conditions, scope)
+    x_conds = conditions[n.x]
+    y_conds = conditions[n.y]
+    x_scope = scope[n.x]
+    y_scope = scope[n.y]
+    # x in (n = x AND y) can be simplified if y |= l and x |/= l but has l in scope
+    x_prop = filter(l -> l[1] ∈ x_scope && l ∉ x_conds.necessary, y_conds.necessary)
+    # y in (n = x AND y) can be simplified if x |= l and y |/= l but has l in scope
+    y_prop = filter(l -> l[1] ∈ y_scope && l ∉ y_conds.necessary, x_conds.necessary)
+    return x_prop, y_prop
+end
+
+function propagated_literals(n::DistOr, conditions, scope)
+    x_conds = conditions[n.x]
+    y_conds = conditions[n.y]
+    x_scope = scope[n.x]
+    y_scope = scope[n.y]
+    # x in (n = x OR y) can be simplified if -y |= l and -x |/= l but has l in scope
+    x_prop = filter(l -> l[1] ∈ x_scope && l ∉ x_conds.sufficientnot, y_conds.sufficientnot)
+    # y in (n = x OR y) can be simplified if x |= l and y |/= l but has l in scope
+    y_prop = filter(l -> l[1] ∈ y_scope && l ∉ y_conds.sufficientnot, x_conds.sufficientnot)
+    return x_prop, y_prop
 end
 
 include("optimization.jl")
