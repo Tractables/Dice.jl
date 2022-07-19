@@ -238,7 +238,7 @@ issat(mgr::CuddMgr, x) =
 isvalid(mgr::CuddMgr, x) =
     x === constant(mgr, true)
 
-num_nodes(mgr::CuddMgr, xs::Vector{<:Ptr}; as_add=true) = begin
+num_bdd_nodes(mgr::CuddMgr, xs::Vector{<:Ptr}; as_add=true) = begin
     as_add && (xs = map(x -> rref(Cudd_BddToAdd(mgr.cuddmgr, x)), xs))
     Cudd_SharingSize(xs, length(xs))
 end

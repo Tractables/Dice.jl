@@ -1,3 +1,5 @@
+using DirectedAcyclicGraphs
+
 #########################
 # make canonical computation graph
 #########################
@@ -36,15 +38,30 @@ end
 # optimize necessary and sufficient literal conditions
 #########################
 
-function optimize_unsat(root, conditions)
+function optimize_unsat(root, universe, conditions, canonicalnodes)
+    root = canonicalize(root, canonicalnodes)
+    while true
+        root_prev = root
+        unitconditions(root, universe, conditions)
+        root = optimize_unsat_once(root, conditions)
+        root = canonicalize(root, canonicalnodes)
+        if root_prev !== root
+            @info "One iteration of `optimize_unsat` reduced IR size from $(DirectedAcyclicGraphs.num_nodes(root_prev)) to $(DirectedAcyclicGraphs.num_nodes(root))"
+        end
+        root_prev === root && break
+    end
+    root
+end
+
+function optimize_unsat_once(root, conditions)
     fl(n::Flip) = n # flips are by definition sat
     fi(n, call) = begin
         n_cond = conditions[n]
         if unsat_conditions(n_cond)
-            println("optimizing UNSAT node away: $n_cond")
+            @info  "Optimizing UNSAT node away: $n_cond"
             return false
         elseif tautological_conditions(n_cond)
-            println("optimizing tautological node away: $n_cond")
+            @info  "Optimizing tautological node away: $n_cond"
             return true
         else
             newx = call(n.x)
@@ -64,3 +81,4 @@ function optimize_unsat(root, conditions)
     end
     foldup(root, fl, fi, AnyBool)
 end
+
