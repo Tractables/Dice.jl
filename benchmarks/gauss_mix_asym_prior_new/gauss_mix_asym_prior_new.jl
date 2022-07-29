@@ -5,10 +5,12 @@ using Distributions
 using StatsBase
 using Distances
 
-function gauss_mix_asym_prior(p::Int, binbits::Int)
+function gauss_mix_asym_prior(p::Int, binbits::Int, flag::Int)
     code = @dice begin
+        precision = 2
+
         t = DistSigned{binbits + 4, binbits}
-        t_2 = DistSigned{binbits + 6, binbits + 2}
+        t_2 = DistSigned{binbits + 4 + precision, binbits + precision}
         t_res = DistSigned{binbits + 8, binbits}
 
         # y [-4.4 4.8]
@@ -24,8 +26,8 @@ function gauss_mix_asym_prior(p::Int, binbits::Int)
 
         mu1 = continuous(dicecontext(), p, t, Normal(2.75, 0.5), 0)
         mu2 = continuous(dicecontext(), p, t, Normal(-2.75, 0.5), 0)
-        sigma1 = uniform(dicecontext(), binbits + 2, t)
-        sigma2 = uniform(dicecontext(), binbits + 2, t)
+        sigma1 = uniform(dicecontext(), binbits + 2 + precision, t_2)
+        sigma2 = uniform(dicecontext(), binbits + 2 + precision, t_2)
 
         obs = true
         for i = 1:length(y)
@@ -33,18 +35,26 @@ function gauss_mix_asym_prior(p::Int, binbits::Int)
 
             #adding precision 2, adding bits (binbits + 4, 0)
             g1 = continuous(dicecontext(), p, t_2, Normal(0, 1), 0)
-            temp1 = (Dice.trunc(g1 * sigma1, 2 + binbits) + add_bits(mu1, 4, 0))[1]
+            temp1 = (Dice.trunc(g1 * sigma1, 2*precision + binbits) + add_bits(mu1, 4, 0))[1]
             # temp1 = (t_res((g1.number * sigma1.number)[1].bits[3:2*binbits + 10]) + mu1)[1]
 
             #adding precision 2, adding bits (binbits + 4, 0)
             g2 = continuous(dicecontext(), p, t_2, Normal(0, 1), 0)
-            temp2 = (Dice.trunc(g2 * sigma2, 2 + binbits) + add_bits(mu2, 4, 0))[1]
+            temp2 = (Dice.trunc(g2 * sigma2, 2*precision + binbits) + add_bits(mu2, 4, 0))[1]
             # temp2 = (t_res((g2.number * sigma2.number)[1].bits[3:2*binbits + 10]) + mu2)[1]
 
             obs &= prob_equals(if a temp1 else temp2 end, t_res(dicecontext(), y[i]))
         end
 
-        Cond(mu1, obs)
+        if flag == 0
+            Cond(mu1, obs)
+        elseif flag == 1
+            Cond(mu2, obs)
+        elseif flag == 2
+            Cond(sigma1, obs)
+        else
+            Cond(sigma2, obs)
+        end
     end
     code
 end

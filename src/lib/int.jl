@@ -90,7 +90,7 @@ function ifelse(cond::DistBool, then::DistInt, elze::DistInt)
     elseif !issat(cond)
         elze
     else
-        last_sat_bit = 0
+        last_sat_bit = 1
         mbthen, mbelze = max_bits(then), max_bits(elze)
         mb = max(mbthen, mbelze)
         z = Vector{DistBool}(undef, mb)
@@ -106,7 +106,8 @@ function ifelse(cond::DistBool, then::DistInt, elze::DistInt)
                 last_sat_bit = i
             end
         end
-        DistInt(cond.mgr, z[1:last_sat_bit])
+        # DistInt(cond.mgr, z[1:last_sat_bit])
+        DistInt(cond.mgr, z)
     end
 end
 

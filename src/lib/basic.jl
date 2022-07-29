@@ -146,13 +146,13 @@ function shifted_continuous(mgr, pieces::Int, t::Type{DistFixParam{T, F}}, d::Co
     return ans
 end
 
-function continuous(mgr, pieces::Int, t::Type{DistSigned{T, F}}, d::ContinuousUnivariateDistribution, flag::Int) where {T, F}
+function continuous(mgr, pieces::Int, t::Type{DistSigned{T, F}}, d::ContinuousUnivariateDistribution, flag::Int, shift::Int) where {T, F}
     # println("Signed continuous")
-    d = Truncated(d, -(2^(T-1-F)), (2^(T-1-F)))
+    d = Truncated(d, -(2^(T-1-F)) - shift*1/2^(F+1), (2^(T-1-F)) - shift*1/2^(F+1))
     whole_bits = T
     point = F
 
-    start = -(2^(T-1-F))
+    start = -(2^(T-1-F)) - shift*1/2^(F+1)
     interval_sz = (2^whole_bits/pieces)
 
     # while (cdf.(d, start + interval_sz*pieces/2^F) - cdf.(d, start + interval_sz*pieces/2^(F+1)) ≈ 0) & (interval_sz > 2)
@@ -334,6 +334,8 @@ function continuous(mgr, pieces::Int, t::Type{DistFixParam{T, F}}, d::Continuous
     end
     return ans
 end
+
+
 
 
 

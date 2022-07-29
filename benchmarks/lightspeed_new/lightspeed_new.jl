@@ -8,14 +8,16 @@ using Distances
 function lightspeed(p::Int, binbits::Int)
     
     code = @dice begin
-        t = DistSigned{binbits + 6, binbits}
+        precision = 5
+
+        t = DistSigned{binbits + 6 + precision, binbits + precision}
         t_2_m = DistSigned{binbits + 4, binbits}
-        t_5 = DistSigned{binbits + 9, binbits + 5}
+        t_5 = DistSigned{binbits + 4 + precision, binbits + precision}
         t_res = DistSigned{binbits + 10, binbits}
 
         
         beta1 = uniform(dicecontext(), binbits + 6, t_res)
-        sigma = uniform(dicecontext(), binbits + 5, t)
+        sigma = uniform(dicecontext(), binbits + 5 + precision, t)
         
         data = [12.1374259163952, 26.6903103048018, 38.5878897957254, 30.4930667829189, 39.2801876119107,
         20.4174324499166, 25.7777563431966, 11.5919826316299, 37.3521894576722, 42.3729512347165,
@@ -27,11 +29,11 @@ function lightspeed(p::Int, binbits::Int)
         14.6787881367532, 24.770796317115, 34.6698348225234, 30.3842636610215, 24.5081046666978]
         
         obs = true
-        for i = 1:1
+        for i = 1:length(data)
             #adding precision 5, adding bits (binbits + 6, 0)
             g1 = continuous(dicecontext(), p, t_5, Normal(0, 1), 0)
 
-            term1 = Dice.trunc(g1 * sigma, binbits + 5)
+            term1 = Dice.trunc(g1 * sigma, binbits + 2*precision)
             term2 = beta1
 
             temp = (term1 + term2)[1]

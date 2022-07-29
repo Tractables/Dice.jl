@@ -23,12 +23,28 @@ end
 function DistSigned{T, F}(mgr, i::Float64) where T where F
     @assert i*2^F < 2^(T-1)
     @assert i*2^F >= - (2^(T-1))
+    # @show Int(floor(i*2^F))
     if (i >= 0)
-        # @show i, Int(floor(i*2^F))
+        # @show i, Int(floor(i*2^F))/2^F
         a = DistInt(mgr, Int(floor(i*2^F)))
     else
         # @show i, Int(floor(2^T + i*2^F))
         a = DistInt(mgr, Int(floor(2^T + i*2^F)))
+    end
+    # @show length(a.bits)
+    DistSigned{T, F}(mgr, add_bits(a, T - length(a.bits)))
+end
+
+function DistSigned{T, F}(mgr, i::Float64, a::Int) where T where F
+    @assert i*2^F < 2^(T-1)
+    @assert i*2^F >= - (2^(T-1))
+    # @show Int(floor(i*2^F))
+    if (i >= 0)
+        # @show i, Int(floor(i*2^F))/2^F
+        a = DistInt(mgr, Int(round(i*2^F)))
+    else
+        # @show i, Int(floor(2^T + i*2^F))
+        a = DistInt(mgr, Int(round(2^T + i*2^F)))
     end
     # @show length(a.bits)
     DistSigned{T, F}(mgr, add_bits(a, T - length(a.bits)))
@@ -169,6 +185,7 @@ bools(i::DistSigned) = bools(i.number)
 
 function expectation(b1::DistSigned{T, F}) where T where F
     mb = T
+    @show mb
     ans = 0
     exponent = 1
     for i = 1:mb-1

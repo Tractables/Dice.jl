@@ -17,6 +17,7 @@ end
 
 function DistFixParam{T, F}(mgr, i::Float64) where T where F
     @assert i >= 0
+    @show Int(round(i*2^F))
     a =  DistInt(mgr, Int(round(i*2^F)))
     @assert length(a.bits) <= T
     ext = Vector(undef, T - length(a.bits))

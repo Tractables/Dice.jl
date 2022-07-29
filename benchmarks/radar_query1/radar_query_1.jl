@@ -19,8 +19,8 @@ function radar_query(p::Int, binbits::Int, shift::Bool)
             b1 = flip(0.2)
             b2 = if b1 flip(1) else flip(0.2) end
 
-            # x1 = uniform(dicecontext(), 3+binbits, t)
-            x1 = shifted_continuous(dicecontext(), p, t, Uniform(0, 8))
+            x1 = uniform(dicecontext(), 3+binbits, t)
+            # x1 = shifted_continuous(dicecontext(), p, t, Uniform(0, 8))
             if shift
                 x2 = (shifted_continuous(dicecontext(), p, t, Normal(10, 1.414)) + x1)[1]
             else 

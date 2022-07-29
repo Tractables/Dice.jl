@@ -15,6 +15,11 @@ using Dice: CuddMgr, DistBool
                     a
                     end), :bdd) ≈ 1.5/4
 
+    @test variance((@dice begin
+                    a = uniform(dicecontext(), 3, DistFixParam{3, 0})
+                    a
+                    end), :bdd) ≈ 63/12
+
     # @test infer((@dice begin 
     #                     a = flip(0.5)
     #                     Cond(a, !a)

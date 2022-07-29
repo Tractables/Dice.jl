@@ -5,7 +5,7 @@ using Distributions
 using StatsBase
 using Distances
 
-function timeseries(p::Int, binbits::Int)
+function timeseries(p::Int, binbits::Int, flag::Int)
     code = @dice begin
         t = DistSigned{binbits + 4, binbits}
         t_1 = DistSigned{binbits + 5, binbits + 1}
@@ -36,17 +36,23 @@ function timeseries(p::Int, binbits::Int)
             # print(length((beta.number *  t(dicecontext(), x[i]).number)[1].bits[2:9]))
             # @show 2*binbits + 9
             # term3 = t_res((beta.number *  t(dicecontext(), x[i]).number)[1].bits[2:2*binbits + 9])
-            term3 = Dice.trunc(beta * t(dicecontext(), x[i]), binbits + 1)
-            @show typeof(term3)
+            term3 = Dice.trunc(beta * t_1(dicecontext(), x[i]), binbits + 2*1)
+            # @show typeof(term3)
             # term4 = t_res((lambda.number * t(dicecontext(), y[i-1]).number)[1].bits[4:2*binbits + 11])
-            term4 = Dice.trunc(lambda * t(dicecontext(), y[i-1]), binbits + 3)
-            @show typeof(term4)
+            term4 = Dice.trunc(lambda * t_3(dicecontext(), y[i-1]), binbits + 2*3)
+            # @show typeof(term4)
             temp = (((term3 + term4)[1] + term2)[1] + term1)[1]
 
             obs &= prob_equals(temp, t_res(dicecontext(), y[i]))
         end
 
-        Cond(alpha, obs)
+        if flag == 0
+            Cond(alpha, obs)
+        elseif flag == 1
+            Cond(beta, obs)
+        else
+            Cond(lambda, obs)
+        end
     end
     code
 end
