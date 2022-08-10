@@ -46,7 +46,7 @@ end
 
 const Literal = Tuple{Dist{Bool}, Bool}
 
-"necessary and sufficient literal conditions (implied literals)"
+"Necessary and sufficient literal conditions (implied literals)"
 struct UnitConditions
     # set of implied literals
     necessary::Set{Literal}
@@ -80,17 +80,26 @@ negate_conditions(x) = UnitConditions(
 
 negate(l::Literal)::Literal = (l[1], !l[2])
 
+"are there two literal conditions that imply the formula is UNSAT"
 unsat_conditions(x) = 
     any(l -> negate(l) ∈ x.necessary, x.necessary)
 
+"are there two literal conditions that imply the formula is tautological"
 tautological_conditions(x) = 
     any(l -> negate(l) ∈ x.sufficientnot, x.sufficientnot)
+
+""
+equiv_conditions(x, n) = 
+    [l for l in x.necessary if l[1]!=n && negate(l) ∈ x.sufficientnot]
+
+tautcond_conditions(x) = 
+    x.necessary ∩ x.sufficientnot
 
 Base.show(io::IO, x::UnitConditions) = 
     print(io, "UnitConditions: $(length(x.necessary))/$(length(x.sufficientnot))")
 
 "Compute the necessary and sufficient literal conditions (implied literals)"
-function unitconditions(root::Dist{Bool}, universe)
+function unitconditions(root::Dist{Bool}, universe = reused_nodes(root))
     cache = Dict{Dist{Bool},UnitConditions}()
     cond_root = unitconditions(root, universe, cache)
     cond_root, cache
@@ -115,6 +124,10 @@ function unitconditions(root::Dist{Bool}, universe, cache)
     end
     foldup(root, fl, fi, UnitConditions, cache)
 end
+
+#########################
+# analyze unit propagation
+#########################
 
 function propagated_literals(n::DistAnd, conditions, scope)
     x_conds = conditions[n.x]

@@ -1,5 +1,7 @@
 using DirectedAcyclicGraphs
 
+include("computationgraphs.jl")
+
 #########################
 # make canonical computation graph
 #########################
@@ -17,10 +19,13 @@ function canonicalize(root::Dist{Bool}, cache)
     fl(n::Flip) = n # flips are by definition canonical
     fi(n::Union{DistOr,DistAnd}, call) = begin
         uniquex, uniquey = call(n.x), call(n.y)
+        if hash(uniquex) > hash(uniquey)
+            uniquex, uniquey = uniquey, uniquex
+        end
         get!(cache, (typeof(n), uniquex, uniquey)) do 
             uniquex === n.x && uniquey === n.y && return n
             uniquen = typeof(n)(uniquex, uniquey)
-            @assert  uniquex === uniquen.x && uniquey === uniquen.y 
+            @assert uniquex === uniquen.x && uniquey === uniquen.y
             uniquen
         end
     end
@@ -33,11 +38,15 @@ function canonicalize(root::Dist{Bool}, cache)
             uniquen
         end
     end
-    foldup(root, fl, fi, Dist{Bool})
+    canonical_root = foldup(root, fl, fi, Dist{Bool})
+    if canonical_root !== root
+        @info "One iteration of `canonicalize` changed IR size from $(num_ir_nodes(root)) to $(num_ir_nodes(canonical_root))"
+    end
+    canonical_root
 end
 
 #########################
-# optimize UNSAT by literal propagation
+# optimize UNSAT/validity by literal propagation
 #########################
 
 "Eliminate IR nodes that are provably false or true using unit propagation"
@@ -48,17 +57,19 @@ function optimize_unsat(root)
     optimize_unsat(y, universe, conditions, canonical);
 end
 
-function optimize_unsat(root, universe, conditions, canonicalnodes)
+function optimize_unsat(root, universe, allconditions, canonicalnodes)
     cache = Dict{Dist{Bool},AnyBool}()
+    root = canonicalize(root, canonicalnodes)
     while true
-        root = canonicalize(root, canonicalnodes)
         root_prev = root
-        unitconditions(root, universe, conditions)
-        root = optimize_unsat_once(root, conditions, cache)
+        unitconditions(root, universe, allconditions)
+        root = optimize_unsat_once(root, allconditions, cache)
+        root = canonicalize(root, canonicalnodes)
         if root_prev !== root
             @info "One iteration of `optimize_unsat` changed IR size from $(num_ir_nodes(root_prev)) to $(num_ir_nodes(root))"
+        else
+            break
         end
-        root_prev === root && break
     end
     root
 end
@@ -70,39 +81,69 @@ function optimize_unsat_once(root::Dist{Bool}, conditions, cache)
     fi(n, call) = begin
         n_cond = conditions[n]
         if unsat_conditions(n_cond)
-            @info  "Optimizing UNSAT IR node away: $n_cond"
+            # @info  "Optimizing UNSAT IR node away: $n_cond"
             return false
         elseif tautological_conditions(n_cond)
-            @info  "Optimizing tautological IR node away: $n_cond"
+            # @info  "Optimizing tautological IR node away: $n_cond"
             return true
-        else
+        else 
+            @assert (n isa DistNot) || isempty(equiv_conditions(n_cond, n)) "This should never be possible? 99% sure"
+            @assert isempty(tautcond_conditions(n_cond)) "This should never be possible? 99% sure"
             return reconstitute(n, call)
         end
     end
     foldup(root, fl, fi, AnyBool, cache)
 end
 
-function reconstitute(n, call::Function)
-    newx = call(n.x)
-    if n isa DistNot
-        reconstitute(n, newx)
-    else
-        newy = call(n.y)
-        reconstitute(n, newx, newy)
+#########################
+# optimize global sufficient and necessary literal conditions
+#########################
+
+function optimize_condition_global(root)
+    y, canonical = canonicalize(root);
+    universe = reused_nodes(y);
+    _, conditions = unitconditions(y, universe);
+    optimize_condition_global(y, universe, conditions, canonical);
+end
+
+function optimize_condition_global(root, universe, allconditions, canonicalnodes)
+    root = optimize_unsat(root, universe, allconditions, canonicalnodes)
+    done = Set{Literal}()
+    while true
+        root_prev = root
+        conditions = unitconditions(root, universe, allconditions)
+        nec = setdiff(conditions.necessary, done)
+        sufn = setdiff(conditions.sufficientnot, done)
+        if !isempty(nec) || !isempty(sufn)
+            state = nec ∪ sufn
+
+            # @info "Globally conditioning on $state"
+
+            # TODO share conditioning cache
+            done = done ∪ state
+            condcache = Dict{AnyBool,AnyBool}()
+            literalnode(literal) = begin
+                litnode_cond = condition_children(literal[1], state; cache = condcache)
+                # @info "Subcircuit $(literal[1]) changed IR size from $(num_ir_nodes(literal[1])) to $(num_ir_nodes(litnode_cond))"
+                literal[2] ? litnode_cond : !litnode_cond
+            end
+            necnode = mapreduce(literalnode, &, nec; init = true)
+            sufnnode = mapreduce(literalnode, &, sufn; init = true)
+
+            core = condition(root, state; cache = condcache)
+            # @info "Core circuit changed IR size from $(num_ir_nodes(root)) to $(num_ir_nodes(core))"
+            # @info "Gadget circuit requires size $(num_ir_nodes(necnode) | !sufnnode)"
+            root = (core & necnode) | !sufnnode
+
+            @info "One iteration of `optimize_condition_global` on $(length(nec))+$(length(sufn)) literals changed IR size from $(num_ir_nodes(root_prev)) to $(num_ir_nodes(root))"
+
+            root = optimize_unsat(root, universe, allconditions, canonicalnodes)
+            
+        else
+            break
+        end
     end
-end
-
-reconstitute(n::DistNot, newx::AnyBool) = 
-    return newx === n.x ? n : !newx
-
-reconstitute(n::DistAnd, newx::AnyBool, newy::AnyBool) = begin
-    newx === n.x && newy === n.y && return n
-    return newx & newy
-end
-
-reconstitute(n::DistOr, newx::AnyBool, newy::AnyBool) = begin
-    newx === n.x && newy === n.y && return n
-    return newx | newy
+    root
 end
 
 #########################
@@ -148,34 +189,40 @@ function optimize_condition_once(root, conditions, scope, cache)
         if n isa DistBoolBinOp
             x_prop, y_prop = propagated_literals(n, conditions, scope)
             if !isempty(x_prop) || !isempty(y_prop)
-                @info "Can propagate $(length(x_prop))/$(length(y_prop)) literals between inputs of $n"
+                # @info "Can propagate $(length(x_prop))/$(length(y_prop)) literals between inputs of $n"
                 newx = condition(n.x, x_prop, scope)
                 newy = condition(n.y, y_prop, scope)
                 @assert newx !== n.x || newy !== n.y
-                return reconstitute(n, newx, newy)
+                newn = reconstitute(n, newx, newy)
+                # @info "Size changed from $(num_ir_nodes(n)) to $(num_ir_nodes(newn))"
+                # if num_ir_nodes(newn) < 0.50*num_ir_nodes(n) 
+                    return newn
+                # else
+                #     return n
+                # end
+            else
+                # experiment
+                x_conds = conditions[n.x]
+                y_conds = conditions[n.y]
+                decisions = filter(l -> negate(l) ∈ y_conds.necessary, x_conds.necessary)
+                dualdecisions = filter(l -> negate(l) ∈ y_conds.sufficientnot, x_conds.sufficientnot)
+                if n isa DistAnd && !isempty(dualdecisions)
+                    @info "at least one AND node"
+                    # newx = condition(n.x, Set([decisions[1]]), scope)
+                    # newy = condition(n.y, negate(decisions[2]), scope)
+                    # @assert newx !== n.x || newy !== n.y
+                    # newn = reconstitute(n, newx, newy)
+                elseif n isa DistOr && !isempty(decisions)
+                    @info "deterministic OR node"
+                    # newx = condition(n.x, Set([decisions[1]]), scope)
+                    # newy = condition(n.y, negate(decisions[2]), scope)
+                    # @assert newx !== n.x || newy !== n.y
+                    # newn = reconstitute(n, newx, newy)
+                end
+                # is it ever useful to simplify these?
             end
         end
         return reconstitute(n, call)
     end
     foldup(root, fl, fi, AnyBool, cache)
 end
-
-function condition(root, literals, scope)
-    fl(n) = begin
-        (n,true) ∈ literals && return true
-        (n,false) ∈ literals && return false
-        return n
-    end 
-    fi(n, call) = begin
-        n_scope = scope[n]
-        if any(l -> l[1] ∈ n_scope, literals)
-            (n, true) ∈ literals && return true
-            (n, false) ∈ literals && return false
-            return reconstitute(n, call)
-        else
-            return n
-        end
-    end
-    foldup(root, fl, fi, AnyBool)
-end
-

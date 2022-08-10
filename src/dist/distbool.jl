@@ -35,6 +35,7 @@ abstract type DistBoolBinOp <: DistBoolOp end
 mutable struct DistAnd <: DistBoolBinOp
     x::Dist{Bool}
     y::Dist{Bool}
+    DistAnd(x,y) = (hash(x) > hash(y)) ? new(y,x) : new(x,y)
 end
 
 Base.:(&)(x::Dist{Bool}, y::Dist{Bool}) = x == y ? x : DistAnd(x,y)
@@ -43,6 +44,7 @@ Base.:(&)(x::Bool, y::Dist{Bool}) = y & x
 mutable struct DistOr <: DistBoolBinOp
     x::Dist{Bool}
     y::Dist{Bool}
+    DistOr(x,y) = (hash(x) > hash(y)) ? new(y,x) : new(x,y)
 end
 
 Base.:(|)(x::Dist{Bool}, y::Dist{Bool}) = x == y ? x : DistOr(x,y)
@@ -112,4 +114,4 @@ function ifelse(cond::Dist{Bool}, then::AnyBool, elze::AnyBool)
     (cond & then) | (!cond & elze)
 end
   
-atleast_two(x,y,z) = (x & y) | (x & z) | (y & z)
+atleast_two(x,y,z) = (x & y) | ((x | y) & z)
