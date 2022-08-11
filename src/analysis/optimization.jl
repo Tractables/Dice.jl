@@ -201,12 +201,12 @@ function optimize_condition_once(root, conditions, scope, cache)
         if n isa DistBoolBinOp
             x_prop, y_prop = propagated_literals(n, conditions, scope)
             if !isempty(x_prop) || !isempty(y_prop)
-                # @info "Can propagate $(length(x_prop))/$(length(y_prop)) literals between inputs of $n"
+                @info "Can propagate $(length(x_prop))/$(length(y_prop)) literals between inputs of $n"
                 newx = condition(n.x, x_prop, scope)
                 newy = condition(n.y, y_prop, scope)
                 @assert newx !== n.x || newy !== n.y
                 newn = reconstitute(n, newx, newy)
-                # @info "Size changed from $(num_ir_nodes(n)) to $(num_ir_nodes(newn))"
+                @info "Size changed from $(num_ir_nodes(n)) to $(num_ir_nodes(newn))"
                 # if num_ir_nodes(newn) < 0.50*num_ir_nodes(n) 
                     return newn
                 # else
@@ -214,27 +214,52 @@ function optimize_condition_once(root, conditions, scope, cache)
                 # end
             else
                 # experiment
-                x_conds = conditions[n.x]
-                y_conds = conditions[n.y]
-                decisions = filter(l -> negate(l) ∈ y_conds.necessary, x_conds.necessary)
-                dualdecisions = filter(l -> negate(l) ∈ y_conds.sufficientnot, x_conds.sufficientnot)
-                if n isa DistAnd && !isempty(dualdecisions)
-                    @info "at least one AND node"
-                    # newx = condition(n.x, Set([decisions[1]]), scope)
-                    # newy = condition(n.y, negate(decisions[2]), scope)
-                    # @assert newx !== n.x || newy !== n.y
-                    # newn = reconstitute(n, newx, newy)
-                elseif n isa DistOr && !isempty(decisions)
-                    @info "deterministic OR node"
-                    # newx = condition(n.x, Set([decisions[1]]), scope)
-                    # newy = condition(n.y, negate(decisions[2]), scope)
-                    # @assert newx !== n.x || newy !== n.y
-                    # newn = reconstitute(n, newx, newy)
-                end
+                # x_conds = conditions[n.x]
+                # y_conds = conditions[n.y]
+                # decisions = filter(l -> negate(l) ∈ y_conds.necessary, x_conds.necessary)
+                # dualdecisions = filter(l -> negate(l) ∈ y_conds.sufficientnot, x_conds.sufficientnot)
+                # if n isa DistAnd && !isempty(dualdecisions)
+                #     @info "at least one AND node"
+                #     # newx = condition(n.x, Set([decisions[1]]), scope)
+                #     # newy = condition(n.y, negate(decisions[2]), scope)
+                #     # @assert newx !== n.x || newy !== n.y
+                #     # newn = reconstitute(n, newx, newy)
+                # elseif n isa DistOr && !isempty(decisions)
+                #     @info "deterministic OR node"
+                #     # newx = condition(n.x, Set([decisions[1]]), scope)
+                #     # newy = condition(n.y, negate(decisions[2]), scope)
+                #     # @assert newx !== n.x || newy !== n.y
+                #     # newn = reconstitute(n, newx, newy)
+                # end
                 # is it ever useful to simplify these?
             end
         end
         return reconstitute(n, call)
     end
     foldup(root, fl, fi, AnyBool, cache)
+end
+
+function split_and_bound(root)
+    best = root
+    bestsize = num_ir_nodes(best)
+    rootsize = bestsize
+    while true
+        np = num_parents(root)
+        decision, count = sort!(collect(np); by=kv->kv[2], rev=true)[1]
+        count <= 2 && break
+        @show decision, count
+        root_prev = root
+        size_prev = rootsize
+        t = condition(root, Set([(decision, true)]))
+        f = condition(root, Set([(decision, false)]))
+        root = (t & decision) | (f & !decision)
+        @info "One iteration of `split_and_bound` changed IR size from $(size_prev) to $(num_ir_nodes(root))"
+        root = optimize_condition_global(root)
+        rootsize = num_ir_nodes(root)
+        if rootsize < bestsize
+            best, bestsize = root, rootsize
+        end
+        rootsize > size_prev && break
+    end
+    best
 end

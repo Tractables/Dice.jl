@@ -28,7 +28,7 @@ reconstitute(n::DistOr, newx::AnyBool, newy::AnyBool) = begin
     return newx | newy
 end
 
-function condition(root, literals, scope=nothing; cache = Dict{AnyBool,AnyBool}())
+function condition(root, literals::Set, scope=nothing; cache = Dict{AnyBool,AnyBool}())
     isempty(literals) && return root
     fl(n) = begin
         (n,true) ∈ literals && return true
