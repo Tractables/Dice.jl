@@ -128,29 +128,21 @@ function optimize_condition_global(root, universe, allconditions, canonicalnodes
         sufn = setdiff(conditions.sufficientnot, done)
         if !isempty(nec) || !isempty(sufn)
             state = nec ∪ sufn
-
-            # @info "Globally conditioning on $state"
-
-            # TODO share conditioning cache
             done = done ∪ state
             condcache = Dict{AnyBool,AnyBool}()
             literalnode(literal) = begin
                 litnode_cond = condition_children(literal[1], state; cache = condcache)
-                # @info "Subcircuit $(literal[1]) changed IR size from $(num_ir_nodes(literal[1])) to $(num_ir_nodes(litnode_cond))"
                 literal[2] ? litnode_cond : !litnode_cond
             end
             necnode = mapreduce(literalnode, &, nec; init = true)
             sufnnode = mapreduce(literalnode, &, sufn; init = true)
 
             core = condition(root, state; cache = condcache)
-            # @info "Core circuit changed IR size from $(num_ir_nodes(root)) to $(num_ir_nodes(core))"
-            # @info "Gadget circuit requires size $(num_ir_nodes(necnode) | !sufnnode)"
             root = (core & necnode) | !sufnnode
 
             @info "One iteration of `optimize_condition_global` on $(length(nec))+$(length(sufn)) literals changed IR size from $(num_ir_nodes(root_prev)) to $(num_ir_nodes(root))"
 
             root = optimize_unsat(root, universe, allconditions, canonicalnodes)
-            
         else
             break
         end
@@ -159,7 +151,7 @@ function optimize_condition_global(root, universe, allconditions, canonicalnodes
 end
 
 #########################
-# optimize condition by literal propagation
+# EXPERIMENTAL
 #########################
 
 function optimize_condition(root)
