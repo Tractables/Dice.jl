@@ -8,6 +8,8 @@ using Dice
     x = !f5 & (f5 | (f4 & !((f1 | f2) | (!f2 | f3))))
     @test Dice.optimize_unsat(x) == false
 
+    x = (f1 | f2) & f1
+    @test Dice.optimize_unsat(x) == f1
 end
 
 

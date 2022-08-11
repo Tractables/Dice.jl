@@ -87,7 +87,14 @@ function optimize_unsat_once(root::Dist{Bool}, conditions, cache)
             # @info  "Optimizing tautological IR node away: $n_cond"
             return true
         else 
-            @assert (n isa DistNot) || isempty(equiv_conditions(n_cond, n)) "This should never be possible? 99% sure"
+            if !(n isa DistNot)
+                eqcond = equiv_conditions(n_cond, n)
+                if !isempty(eqcond)
+                    @assert length(eqcond) == 1
+                    lit = first(eqcond)
+                    return lit[2] ? lit[1] : !lit[1]
+                end
+            end
             @assert isempty(tautcond_conditions(n_cond)) "This should never be possible? 99% sure"
             return reconstitute(n, call)
         end
@@ -100,10 +107,15 @@ end
 #########################
 
 function optimize_condition_global(root)
-    y, canonical = canonicalize(root);
-    universe = reused_nodes(y);
-    _, conditions = unitconditions(y, universe);
-    optimize_condition_global(y, universe, conditions, canonical);
+    root, canonical = canonicalize(root);
+    while true
+        prev_root = root
+        universe = reused_nodes(root)
+        _, conditions = unitconditions(root, universe)
+        root = optimize_condition_global(root, universe, conditions, canonical)
+        (root == prev_root) && break
+    end
+    root
 end
 
 function optimize_condition_global(root, universe, allconditions, canonicalnodes)
