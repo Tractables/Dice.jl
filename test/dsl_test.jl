@@ -1,7 +1,6 @@
 using Test
 using Dice
-using Dice: Flip, ifelse
-using DirectedAcyclicGraphs
+using Dice: Flip, ifelse, num_ir_nodes
 
 @testset "Control flow macro" begin
     
@@ -124,10 +123,10 @@ end
 
     @test length(x.errors) == 2
 
-    @test num_nodes(first(x.errors[1])) == 1
+    @test num_ir_nodes(first(x.errors[1])) == 1
     @test x.errors[1][2].msg == "BAD 0.1"
 
-    @test num_nodes(first(x.errors[2])) == 4
+    @test num_ir_nodes(first(x.errors[2])) == 4
     @test x.errors[2][2].msg == "BAD 0.2"
 
     @test_throws ProbException pr(x) 
@@ -173,8 +172,8 @@ end
 
     @test length(x.observations) == 2
 
-    @test num_nodes(x.observations[1]) == 4
-    @test num_nodes(x.observations[2]) == 7
+    @test num_ir_nodes(x.observations[1]) == 4
+    @test num_ir_nodes(x.observations[2]) == 7
 
 
     @test pr(x.observations[1])[true] ≈ (0.9+0.1*0.3)
