@@ -6,4 +6,4 @@ A Julia prototype implementation of the Dice probabilistic programming language.
 See [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice)
 
 > **Warning**
-> Requires installing the master version of [IRTools](https://github.com/FluxML/IRTools.jl)
+> Requires installing the unreleased master version of [IRTools](https://github.com/FluxML/IRTools.jl): `julia --project -e 'using Pkg; Pkg.add(PackageSpec(name="IRTools", rev="master"));'`
