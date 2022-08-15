@@ -1,9 +1,73 @@
-# compilation backend that uses CUDD
-export CuddMgr, constant, biconditional, conjoin, disjoin, negate, ite, new_var, infer_bool, num_nodes, dump_dot
-
 using CUDD
+using DataStructures: LinkedList, cons, nil
 
-mutable struct CuddMgr <: DiceManager
+##################################
+# CUDD Inference
+##################################
+
+struct Cudd <: InferAlgo end
+default_infer_algo() = Cudd()
+
+function pr(::Cudd, evidence, queries::Vector{JointQuery}; errors)
+    mgr = CuddMgr() 
+
+    # TODO various optimizations
+    # TODO variable order heuristics
+    ccache = order_variables(mgr, evidence, queries, errors)
+    
+    # compile BDD for evidence
+    evid_bdd = compile(mgr, evidence, ccache)
+    evid_logp, pcache = logprobability(mgr, evid_bdd)
+
+    # compile BDDs and infer probability of all errors
+    prob_errors = ProbError[]
+    for (cond, err) in errors
+        cond_bdd = compile(mgr, cond, ccache)
+        cond_bdd = conjoin(mgr, cond_bdd, evid_bdd)
+        logp = logprobability(mgr, cond_bdd, pcache) - evid_logp
+        isinf(logp) || push!(prob_errors, (exp(logp), err))
+    end
+    isempty(prob_errors) || throw(ProbException(prob_errors))
+
+    # compile BDDs and infer probability for all queries
+    map(queries) do query
+        states = Pair{LinkedList, Float64}[]
+
+        rec(context, state, rembits) = begin
+            issat(mgr, context) || return
+            head = rembits[1]
+            tail = @view rembits[2:end]
+            if !isempty(tail)
+                ifbdd, elsebdd = split(mgr, context, head, ccache)
+                rec(ifbdd, cons(head => true, state), tail)
+                rec(elsebdd, cons(head => false, state), tail)
+            else
+                testbdd = compile(mgr, head, ccache)
+                ifbdd = conjoin(mgr, context, testbdd)
+                logpif = logprobability(mgr, ifbdd, pcache)
+                p = exp(logpif - evid_logp)
+                if issat(mgr, ifbdd) 
+                    push!(states, cons(head => true, state) => p)
+                end
+                if ifbdd !== context
+                    logpcontext = logprobability(mgr, context, pcache)
+                    pcontext = exp(logpcontext - evid_logp)
+                    push!(states, cons(head => false, state) => pcontext-p)
+                end
+            end
+        end
+
+        if issat(mgr, evid_bdd) && isempty(query.bits) 
+            push!(states, nil() => 1.0)
+        else
+            rec(evid_bdd, nil(), query.bits)
+        end
+        @assert !isempty(states) "Cannot find possible worlds"
+        [(Dict(state), p) for (state, p) in states]
+    end
+end
+
+mutable struct CuddMgr
     cuddmgr::Ptr{Nothing}
     probs::Dict{Int,Float64}
 end
@@ -17,8 +81,97 @@ function CuddMgr()
     end
 end
 
+function compile(mgr::CuddMgr, x)
+    cache = Dict{Dist{Bool},Ptr{Nothing}}()
+    bdd = compile(mgr, x, cache)
+    bdd, cache
+end
+
+compile(mgr::CuddMgr, x::Bool, _) =
+    constant(mgr, x)
+
+
+function compile(mgr::CuddMgr, x::Dist{Bool}, cache)
+    # TODO implement proper referencing and de-referencing of BDD nodes
+    # TODO implement shortcuts for equivalence, etc.
+    fl(x::Flip) = new_var(mgr, x.prob) 
+    fi(n::DistAnd, call) = conjoin(mgr, call(n.x), call(n.y))
+    fi(n::DistOr, call) = disjoin(mgr, call(n.x), call(n.y))
+    fi(n::DistNot, call) = negate(mgr, call(n.x))
+    foldup(x, fl, fi, Ptr{Nothing}, cache)
+end
+
+function order_variables(mgr, evidence, queries, errors)
+    cache = Dict{Dist{Bool},Ptr{Nothing}}()
+    flips = Vector{Flip}()
+    seen = Dict{DAG,Nothing}()
+    see_flip(f) = push!(flips, f)
+    noop = Returns(nothing)
+    evidence isa Bool || foreach(evidence, see_flip, noop, seen)
+    for query in queries, bit in query.bits
+        foreach(bit, see_flip, Returns(nothing), seen)
+    end
+    for (cond, _) in errors
+        cond isa Bool || foreach(cond, see_flip, noop, seen)
+    end
+    sort!(flips; by= f -> f.global_id)
+    for flip in flips
+        compile(mgr, flip, cache)
+    end
+    cache
+end
+    
+function split(mgr::CuddMgr, context, test::AnyBool, cache)
+    testbdd = compile(mgr, test, cache)
+    ifbdd = conjoin(mgr, context, testbdd)
+    if ifbdd === context
+        return (context, constant(mgr, false))
+    elseif !issat(mgr, ifbdd)
+        return (constant(mgr, false), context)
+    else
+        nottestbdd = negate(mgr, testbdd)
+        elsebdd = conjoin(mgr, context, nottestbdd)
+        return (ifbdd, elsebdd)
+    end
+end
+
+function logprobability(mgr::CuddMgr, x::Ptr{Nothing})
+    cache = Dict{Tuple{Ptr{Nothing},Bool},Float64}()
+    t = constant(mgr, true)
+    cache[(t,false)] = log(one(Float64))
+    cache[(t,true)] = log(zero(Float64))
+
+    logp = logprobability(mgr, x, cache)
+    logp, cache
+end
+
+function logprobability(mgr::CuddMgr, x::Ptr{Nothing}, cache)
+    rec(y, c) = 
+        if Cudd_IsComplement(y)
+            rec(Cudd_Regular(y), !c)   
+        else get!(cache, (y,c)) do 
+                v = decisionvar(mgr,y)
+                prob = mgr.probs[v]
+                a = log(prob) + rec(Cudd_T(y), c)
+                b = log(1.0-prob) + rec(Cudd_E(y), c)
+                if (!isfinite(a))
+                    b
+                elseif (!isfinite(b))
+                    a
+                else
+                    max(a,b) + log1p(exp(-abs(a-b)))
+                end
+            end
+        end
+    
+    rec(x, false)
+end
+
+probability(mgr::CuddMgr, x::Ptr{Nothing}) =
+    exp(logprobability(mgr, x))
+
 ##################################
-# core functionality
+# Core CUDD API
 ##################################
 
 constant(mgr::CuddMgr, c:: Bool) = 
@@ -45,39 +198,6 @@ new_var(mgr::CuddMgr, prob) = begin
     x
 end
 
-function infer_bool(mgr::CuddMgr, x::Ptr{Nothing})
-    
-    cache = Dict{Tuple{Ptr{Nothing},Bool},Float64}()
-    t = constant(mgr, true)
-    cache[(t,false)] = log(one(Float64))
-    cache[(t,true)] = log(zero(Float64))
-    
-    rec(y, c) = 
-        if Cudd_IsComplement(y)
-            rec(Cudd_Regular(y), !c)   
-        else get!(cache, (y,c)) do 
-                v = decisionvar(mgr,y)
-                prob = mgr.probs[v]
-                a = log(prob) + rec(Cudd_T(y), c)
-                b = log(1.0-prob) + rec(Cudd_E(y), c)
-                if (!isfinite(a))
-                    b
-                elseif (!isfinite(b))
-                    a
-                else
-                    max(a,b) + log1p(exp(-abs(a-b)))
-                end
-            end
-        end
-    
-    logprob = rec(x, false)
-    exp(logprob)
-end
-
-##################################
-# additional CUDD-based functionality
-##################################
-
 function Base.show(io::IO, mgr::CuddMgr, x) 
     if !issat(mgr, x)
         print(io, "(false)") 
@@ -96,30 +216,17 @@ function Base.show(io::IO, x::CuddMgr)
     print(io, "$(typeof(x))@$(hash(x)÷ 10000000000000)")
 end
 
-
 isconstant(x) =
     isone(Cudd_IsConstant(x))
-
-
-isliteral(x::DistBool) =
-    isliteral(x.mgr, x.bit)
 
 isliteral(::CuddMgr, x) =
     (!isconstant(x) &&
      isconstant(Cudd_T(x)) &&
      isconstant(Cudd_E(x)))
 
-
-isposliteral(x::DistBool) =
-    isposliteral(x.mgr, x.bit)
-
 isposliteral(mgr::CuddMgr, x) =
     isliteral(mgr,x) && 
     (x === Cudd_bddIthVar(mgr.cuddmgr, decisionvar(mgr,x)))
-
-
-isnegliteral(x::DistBool) =
-    isnegliteral(x.mgr, x.bit)
 
 isnegliteral(mgr::CuddMgr, x) =
     isliteral(mgr,x) && 
@@ -128,65 +235,22 @@ isnegliteral(mgr::CuddMgr, x) =
 issat(mgr::CuddMgr, x) =
     x !== constant(mgr, false)
 
-
-isvalid(x::DistBool) =
-    x isa DistTrue
-
-issat(x::DistBool) =
-    !(x isa DistFalse)
-
 isvalid(mgr::CuddMgr, x) =
     x === constant(mgr, true)
 
-
-# num_nodes(bits::Vector{DistBool}; as_add=true) =  
-#     num_nodes(bits[1].mgr, map(b -> b.bit, bits); as_add)
-
-# num_nodes(x; as_add=true) =  
-#     num_nodes(bools(x); as_add)
-
-function num_nodes(d; suppress_warning=false)
-    if !suppress_warning
-        println("Warning: this version of num_nodes compiles the computation graph an ")
-        println("extra time, and always uses the default flip order. To suppress this ")
-        println("message, use suppress_warning=true.")
-    end
-    mgr, to_bdd = dist_to_mgr_and_compiler(d)
-    num_nodes(mgr, map(to_bdd, bools(d)))
-end
-
-num_nodes(mgr::CuddMgr, xs::Vector{<:Ptr}; as_add=true) = begin
+num_bdd_nodes(mgr::CuddMgr, xs::Vector{<:Ptr}; as_add=true) = begin
     as_add && (xs = map(x -> rref(Cudd_BddToAdd(mgr.cuddmgr, x)), xs))
     Cudd_SharingSize(xs, length(xs))
 end
 
-
-# num_flips(bits::Vector{DistBool}) =  
-#     num_vars(bits[1].mgr, map(b -> b.bit, bits))
-
-# num_flips(x) =  
-#     num_flips(bools(x))
-
-num_vars(mgr::CuddMgr, xs::Vector{<:Ptr}) = begin
+num_vars(mgr::CuddMgr, xs::Vector{<:Ptr}) =
     Cudd_VectorSupportSize(mgr.cuddmgr, xs, length(xs))
-end
         
 num_vars(mgr::CuddMgr) =
     Cudd_ReadSize(mgr.cuddmgr)
 
-
 decisionvar(_::CuddMgr, x) =
     Cudd_NodeReadIndex(x)
-
-
-function dump_dot(bits::Vector{DistBool}, filename; as_add=true)
-    mgr, compiler = dist_to_mgr_and_compiler(bits)
-    dump_dot(mgr, map(compiler, bits), filename; as_add)
-end
-
-dump_dot(x, filename; as_add=true) =  
-    dump_dot(bools(x), filename; as_add)
-
 mutable struct FILE end
 
 dump_dot(mgr::CuddMgr, xs::Vector{<:Ptr}, filename; as_add=true) = begin
@@ -199,10 +263,6 @@ dump_dot(mgr::CuddMgr, xs::Vector{<:Ptr}, filename; as_add=true) = begin
     @assert ccall(:fclose, Cint, (Ptr{FILE},), outfile) == 0
     nothing
 end
-
-##################################
-# CUDD Utilities
-##################################
 
 rref(x) = begin 
     ref(x)
