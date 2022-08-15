@@ -146,7 +146,7 @@ function shifted_continuous(mgr, pieces::Int, t::Type{DistFixParam{T, F}}, d::Co
     return ans
 end
 
-function continuous(mgr, pieces::Int, t::Type{DistSigned{T, F}}, d::ContinuousUnivariateDistribution, flag::Int, shift::Int) where {T, F}
+function continuous(mgr, pieces::Int, t::Type{DistSigned{T, F}}, d::ContinuousUnivariateDistribution, flag::Int, shift::Int, f) where {T, F}
     # println("Signed continuous")
     d = Truncated(d, -(2^(T-1-F)) - shift*1/2^(F+1), (2^(T-1-F)) - shift*1/2^(F+1))
     whole_bits = T
@@ -172,7 +172,15 @@ function continuous(mgr, pieces::Int, t::Type{DistSigned{T, F}}, d::ContinuousUn
         p3 = start + (i)*interval_sz/2^point 
         p4 = p3 - 1/2^point 
 
+        @show p1, p2, p3, p4
+
+        p1 = f(p1)
+        p2 = f(p2)
+        p3 = f(p3)
+        p4 = f(p4)
+
         if flag == 0
+            @show p1, p2, p3, p4
             # probability mass at end points
             pts = [cdf.(d, p2) - cdf.(d, p1), cdf.(d, p3) - cdf.(d, p4)]
         elseif flag == 1
@@ -190,12 +198,15 @@ function continuous(mgr, pieces::Int, t::Type{DistSigned{T, F}}, d::ContinuousUn
         #TODO: figure out the correct expression for trap_areas for different end points
         trap_areas[i] = (pts[1] + pts[2])*2^(bits - 1)
         areas[i] = (cdf.(d, p3) - cdf.(d, p1))
-        # @show p1, p3
+        @show p1, p2, p3, p4, areas[i]
 
         total_area += areas[i]
     end
 
     rel_prob = areas/total_area
+
+    @show rel_prob
+    @show areas
 
 
     # @show areas
@@ -212,8 +223,10 @@ function continuous(mgr, pieces::Int, t::Type{DistSigned{T, F}}, d::ContinuousUn
         end
         l_vector[i] = a > 1/2^bits
         if l_vector[i]
+            @show 2 - a*2^bits, i, areas[i]
             piece_flips[i] = DistBool(mgr, 2 - a*2^bits)
         else
+            @show a*2^bits
             piece_flips[i] = DistBool(mgr, a*2^bits)
         end  
     end
@@ -238,7 +251,7 @@ function continuous(mgr, pieces::Int, t::Type{DistSigned{T, F}}, d::ContinuousUn
     return ans
 end
 
-function continuous(mgr, pieces::Int, t::Type{DistFixParam{T, F}}, d::ContinuousUnivariateDistribution, flag::Bool, flag2::Bool) where {T, F}
+function continuous(mgr, pieces::Int, t::Type{DistFixParam{T, F}}, d::ContinuousUnivariateDistribution, flag::Bool, flag2::Bool, f) where {T, F}
     #initializing basics
     d = Truncated(d, 0, 2^(T-F))
     whole_bits = T
@@ -266,7 +279,13 @@ function continuous(mgr, pieces::Int, t::Type{DistFixParam{T, F}}, d::Continuous
         p3 = start + (i)*interval_sz/2^point
         p4 = p3 - 1/2^point 
 
-        # @show p1, p2, p3, p4
+        @show p1, p2, p3, p4
+        p1 = f(p1)
+        p2 = f(p2)
+        p3 = f(p3)
+        p4 = f(p4)
+        @show p1, p2, p3, p4
+
 
         pts = [cdf.(d, p2) - cdf.(d, p1), cdf.(d, p3) - cdf.(d, p4)]
         end_pts[i] = pts
@@ -277,7 +296,11 @@ function continuous(mgr, pieces::Int, t::Type{DistFixParam{T, F}}, d::Continuous
         total_area += areas[i]
     end
 
+    
     rel_prob = areas/total_area
+    @show rel_prob
+    @show end_pts
+    @show trap_areas
 
 
     # @show rel_prob

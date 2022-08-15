@@ -31,9 +31,9 @@ function anova_radon_nopred(p::Int, binbits::Int, flag::Int)
         sigmay = uniform(dicecontext(), binbits + 3 + precision, t_s) # 0 to 8
 
         obs = true
-        for i=1:length(data)
-        # i = 1
-            y = continuous(dicecontext(), p, t_g, Normal(0, 1), 0)
+        # for i=1:length(data)
+        i = 1
+            y = continuous(dicecontext(), p, t_g, Normal(0, 1), 0, 0)
             y = Dice.trunc(y * sigmay, 2*precision + binbits)
             y, _ = y + a1
             obs &= prob_equals(y, t_a1(dicecontext(), data[i]))

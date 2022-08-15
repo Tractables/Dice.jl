@@ -85,6 +85,7 @@ function infer(d::DistFixParam{T, F}) where T where F
     ans = Vector(undef, 2^mb)
     non_zero_index = 0
     for i=0:2^mb - 1
+        @show i
         a = infer(prob_equals(d.number, i))
         if !(a ≈ 0)
             non_zero_index = i+1
