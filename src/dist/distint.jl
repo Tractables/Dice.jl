@@ -1,5 +1,5 @@
 
-export DistInt, uniform
+export DistInt, uniform, uniform_arith, uniform_ite
 
 ##################################
 # types, structs, and constructors
@@ -57,7 +57,8 @@ function uniform(::Type{DistInt{W}}, n = W) where W
 end
 
 function uniform_arith(i::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} where W
-    # TODO: this doesn't work for some reason? overflow?
+    # WARNING: will cause an error in certain cases where overflow is falsely detected
+    # instead use with the @dice macro or increase bit-width
     @assert start >= 0
     @assert stop <= 2^W
     @assert stop > start
@@ -75,26 +76,31 @@ function uniform_arith(i::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} w
     end
 end
 
-
-
 function uniform_ite(i::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} where W
     @assert start >= 0
     @assert stop <= 2^W
     @assert stop > start
-    # get our initial powers of two 
-    upper_pow = floor(Int, log2(stop))
-    lower_pow = ceil(Int, log2(start))
-    # TODO: start = 0 not added
 
-    pivots = [2^p for p=lower_pow:1:upper_pow]
+    if start == 0
+        upper_pow = floor(Int, log2(stop))
+        pivots = [0, 2^upper_pow]
+        low_pivot = 0
+        high_pivot = 2^upper_pow
+    else 
+        # get our initial powers of two 
+        upper_pow = floor(Int, log2(stop))
+        lower_pow = ceil(Int, log2(start))
+        pivots = [2^p for p=lower_pow:1:upper_pow]
+        low_pivot = 2^lower_pow
+        high_pivot = 2^upper_pow
+    end
 
-    low_pivot = 2^lower_pow
+    # find remaining pivots
     while low_pivot > start
         new_pivot = low_pivot - 2^floor(Int, log2(low_pivot-start))
         prepend!(pivots, [new_pivot])
         low_pivot = new_pivot
     end
-    high_pivot = 2^upper_pow
     while high_pivot < stop
         new_pivot = high_pivot + 2^floor(Int, log2(stop-high_pivot))
         append!(pivots, [new_pivot])
@@ -102,6 +108,7 @@ function uniform_ite(i::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} whe
     end
     @show pivots
     
+    # better way to do this with map?
     segments = []
     total_length = stop-start
     for j=1:1:length(pivots)-1
