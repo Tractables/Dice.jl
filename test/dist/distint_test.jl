@@ -109,3 +109,14 @@ end
     @test p[2] ≈ 0.5
     @test p[3] ≈ 0.5
 end
+
+@testset "DistInt expectation" begin
+    y = DistInt{4}([true, false, true, false])
+    @test expectation(y) == 10.0
+
+    y = DistInt{2}([flip(0.1), flip(0.1)])
+    p = pr(y)
+    mean = reduce(+, [(key*value) for (key, value) in p])
+    @test expectation(y) ≈ mean
+
+end
