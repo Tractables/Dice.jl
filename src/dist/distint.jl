@@ -63,7 +63,6 @@ function uniform_arith(i::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} w
     @assert stop <= 2^W
     @assert stop > start
     if start > 0
-        @show start, stop, W
         DistInt{W}(start) + uniform_arith(i, 0, stop-start)
     else
         is_power_of_two = (stop) & (stop-1) == 0
@@ -106,8 +105,7 @@ function uniform_ite(i::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} whe
         append!(pivots, [new_pivot])
         high_pivot = new_pivot
     end
-    @show pivots
-    
+     
     # better way to do this with map?
     segments = []
     total_length = stop-start
@@ -119,7 +117,6 @@ function uniform_ite(i::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} whe
         total_length -= segment_length
         append!(segments, [(prob, segment)])
     end
-    @show segments
 
     len = length(segments)
     foldr(((x, y), z)->ifelse(x, y, z), segments[1:len-1],init=segments[len][2])        
