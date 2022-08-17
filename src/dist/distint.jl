@@ -82,6 +82,17 @@ function Base.:(+)(x::DistInt{W}, y::DistInt{W}) where W
     DistInt{W}(z)
 end
 
+function Base.:(-)(x::DistInt{W}, y::DistInt{W}) where W
+    z = Vector{AnyBool}(undef, W)
+    borrow = false
+    for i=W:-1:1
+        z[i] = xor(x.bits[i], y.bits[i], borrow)
+        borrow = ifelse(borrow, !x.bits[i] | y.bits[i], !x.bits[i] & y.bits[i])
+    end
+    borrow && error("integer overflow")
+    DistInt{W}(z)
+end
+
 function ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where W
     (then == elze) && return then
     bits = map(then.bits, elze.bits) do tb, eb

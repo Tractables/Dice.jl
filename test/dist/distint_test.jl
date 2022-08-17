@@ -52,10 +52,19 @@ end
     @test p[12] ≈ 0
     @test p[13] ≈ 1
     @test p[14] ≈ 0
+    p = pr(x - y)
+    @test p[6] ≈ 0
+    @test p[7] ≈ 1
+    @test p[8] ≈ 0
 
     z = uniform(DistInt{4}, 3)
-    p = pr(z + y)
+    y2 = DistInt{4}([false, false, true, false])
+    t = z + y
+    p = pr(t)
     @test issetequal(keys(p), 3 .+ (0:(2^3-1)))
+    @test all(values(p) .≈ 1/2^3)
+    p = pr((@dice t - y2), ignore_errors=true)
+    @test issetequal(keys(p), 1 .+ (0:(2^3-1)))
     @test all(values(p) .≈ 1/2^3)
 
     w = uniform(DistInt{4}, 3)
@@ -65,7 +74,18 @@ end
         @test p[i] ≈ (n - abs(i-(n-1)))/n^2
     end
 
+    w = uniform(DistInt{4}, 2)
+    z = uniform(DistInt{4}, 2)
+    p = pr((@dice w + y - z), ignore_errors=true)
+    n = 2^2
+    for i=0:6
+        @test p[i] ≈ (n - abs(i-(n-1)))/n^2
+    end
+
     @test_throws Exception pr(uniform(DistInt{3}, 3)+uniform(DistInt{3}, 3))
     @test_throws Exception pr(@dice uniform(DistInt{3}, 3) + uniform(DistInt{3}, 3))
+
+    @test_throws Exception pr(uniform(DistInt{3}, 3)-uniform(DistInt{3}, 3))
+    @test_throws Exception pr(@dice uniform(DistInt{3}, 3) - uniform(DistInt{3}, 3))
 
 end
