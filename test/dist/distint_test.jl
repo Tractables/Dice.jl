@@ -85,3 +85,23 @@ end
     @test_throws Exception pr(@dice uniform(DistInt{3}, 3) + uniform(DistInt{3}, 3))
 
 end
+
+@testset "DistInt casting" begin
+    y = DistInt{4}([false, false, true, true]) # 3
+    z = convert(y, DistInt{3})
+    p = pr(z)
+    @test p[2] ≈ 0
+    @test p[3] ≈ 1
+    @test p[4] ≈ 0
+
+    y = DistInt{4}([flip(0.5), false, true, true]) # 3
+    code = @dice convert(y, DistInt{3})
+    @test_throws Exception pr(code)
+
+    y = DistInt{4}([false, false, true, flip(0.5)]) # 3
+    z = convert(y, DistInt{5})
+    @test typeof(z) == DistInt{5}
+    p = pr(y)
+    @test p[2] ≈ 0.5
+    @test p[3] ≈ 0.5
+end

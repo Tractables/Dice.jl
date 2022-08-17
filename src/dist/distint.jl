@@ -137,6 +137,24 @@ function uniform_part(::Type{DistInt{W}}, lower, bit_length) where W
     DistInt{W}(bits)
 end
 ##################################
+# casting
+##################################
+
+function Base.convert(x::DistInt{W1}, t::Type{DistInt{W2}}) where W1 where W2
+    if W1 <= W2
+        @show W2
+        DistInt{W2}(vcat(fill(false, W2 - W1), x.bits))
+    else
+        @show W2
+        
+        err = reduce(&, x.bits[1:W1 - W2])
+        err && error("throwing away bits")
+        DistInt{W2}(x.bits[W1 - W2 + 1:W1])
+    end
+end
+
+
+##################################
 # other method overloading
 ##################################
 
