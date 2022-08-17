@@ -56,26 +56,26 @@ function uniform(::Type{DistInt{W}}, n = W) where W
     DistInt{W}([i > W-n ? flip(0.5) : false for i=1:W])
 end
 
-function uniform_arith(i::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} where W
+function uniform_arith(::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} where W
     # WARNING: will cause an error in certain cases where overflow is falsely detected
     # instead use with the @dice macro or increase bit-width
     @assert start >= 0
     @assert stop <= 2^W
     @assert stop > start
     if start > 0
-        DistInt{W}(start) + uniform_arith(i, 0, stop-start)
+        DistInt{W}(start) + uniform_arith(DistInt{W}, 0, stop-start)
     else
         is_power_of_two = (stop) & (stop-1) == 0
         if is_power_of_two
-            uniform(i, ndigits(stop, base=2)-1)
+            uniform(DistInt{W}, ndigits(stop, base=2)-1)
         else 
             power_lt = 2^(ndigits(stop, base=2)-1)
-            ifelse(flip(power_lt/stop), uniform_arith(i, 0, power_lt), uniform_arith(i, power_lt, stop))
+            ifelse(flip(power_lt/stop), uniform_arith(DistInt{W}, 0, power_lt), uniform_arith(DistInt{W}, power_lt, stop))
         end
     end
 end
 
-function uniform_ite(i::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} where W
+function uniform_ite(::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} where W
     @assert start >= 0
     @assert stop <= 2^W
     @assert stop > start
@@ -112,7 +112,7 @@ function uniform_ite(i::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} whe
     for j=1:1:length(pivots)-1
         a, b = pivots[j], pivots[j+1]
         segment_length = b-a
-        segment = uniform_part(i, a, floor(Int, log2(segment_length)))
+        segment = uniform_part(DistInt{W}, a, floor(Int, log2(segment_length)))
         prob = flip(segment_length/total_length)
         total_length -= segment_length
         append!(segments, [(prob, segment)])
