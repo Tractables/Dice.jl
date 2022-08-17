@@ -2,7 +2,6 @@ using Test
 using Dice
 
 @testset "DistInt inference" begin
-    
     x = DistInt{4}([true, false, true, false]) # 10
     @test Dice.bitwidth(x) == 4
 
@@ -44,7 +43,7 @@ using Dice
     @test prob_equals(y, DistInt{4}(3))
 end
 
-@testset "DistInt arithmetic" begin
+@testset "DistInt operations" begin
     
     x = DistInt{4}([true, false, true, false]) # 10
     y = DistInt{4}([false, false, true, true]) # 3
@@ -68,4 +67,51 @@ end
     @test_throws Exception pr(uniform(DistInt{3}, 3)+uniform(DistInt{3}, 3))
     @test_throws Exception pr(@dice uniform(DistInt{3}, 3) + uniform(DistInt{3}, 3))
 
+
+    x = DistInt{3}([false, flip(0.5), flip(0.5)]) # uniform(0, 4)
+    y = DistInt{3}([false, flip(0.5), flip(0.5)])
+    p = pr(prob_equals(x, y))
+    @test p[1] ≈ 4/16
+
+    x = DistInt{3}([false, flip(0.5), flip(0.5)]) # uniform(0, 4)
+    y = DistInt{3}([false, flip(0.5), flip(0.5)])
+    p = pr(x < y)
+    @test p[1] ≈ 6/16
+     
+end
+
+@testset "DistInt uniform" begin
+    uniform_funcs = [uniform_arith, uniform_ite]
+
+    map(uniform_funcs) do uniform 
+        x = uniform(DistInt{3}, 0, 7)
+        p = pr(x)
+        for i=0:6
+            @test p[i] ≈ 1/7
+        end
+        @test p[7] ≈ 0
+        
+        @test_throws Exception uniform(DistInt{3}, 0, 10)
+        @test_throws Exception uniform(DistInt{3}, -1, 7)
+        @test_throws Exception uniform(DistInt{3}, 4, 3)
+        @test_throws Exception uniform(DistInt{3}, 3, 3)
+
+        x = uniform(DistInt{3}, 3, 4)
+        p = pr(x)
+        @test p[3] ≈ 1
+
+        x = uniform(DistInt{5}, 3, 17)
+        p = pr(x)
+        for i=3:16
+            @test p[i] ≈ 1/14
+        end
+        y = DistInt{5}(10)
+        p = pr(x < y)
+        @test p[1] ≈ 7/14
+
+        z = DistInt{5}(0)
+        p = pr(prob_equals(x, z))
+        @test p[1] ≈ 0
+
+    end
 end
