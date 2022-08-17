@@ -1,5 +1,5 @@
 
-export DistInt, uniform, expectation
+export DistInt, uniform, uniform_arith, uniform_ite, expectation
 
 ##################################
 # types, structs, and constructors
@@ -72,6 +72,86 @@ function uniform(::Type{DistInt{W}}, n = W) where W
     DistInt{W}([i > W-n ? flip(0.5) : false for i=1:W])
 end
 
+function uniform_arith(::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} where W
+    # WARNING: will cause an error in certain cases where overflow is falsely detected
+    # instead use with the @dice macro or increase bit-width
+    @assert start >= 0
+    @assert stop <= 2^W
+    @assert stop > start
+    if start > 0
+        DistInt{W}(start) + uniform_arith(DistInt{W}, 0, stop-start)
+    else
+        is_power_of_two = (stop) & (stop-1) == 0
+        if is_power_of_two
+            uniform(DistInt{W}, ndigits(stop, base=2)-1)
+        else 
+            power_lt = 2^(ndigits(stop, base=2)-1)
+            ifelse(flip(power_lt/stop), uniform_arith(DistInt{W}, 0, power_lt), uniform_arith(DistInt{W}, power_lt, stop))
+        end
+    end
+end
+
+function uniform_ite(::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} where W
+    @assert start >= 0
+    @assert stop <= 2^W
+    @assert stop > start
+
+    if start == 0
+        upper_pow = floor(Int, log2(stop))
+        pivots = [0, 2^upper_pow]
+        low_pivot = 0
+        high_pivot = 2^upper_pow
+    else 
+        # get our initial powers of two 
+        upper_pow = floor(Int, log2(stop))
+        lower_pow = ceil(Int, log2(start))
+        pivots = [2^p for p=lower_pow:1:upper_pow]
+        low_pivot = 2^lower_pow
+        high_pivot = 2^upper_pow
+    end
+
+    # find remaining pivots
+    while low_pivot > start
+        new_pivot = low_pivot - 2^floor(Int, log2(low_pivot-start))
+        prepend!(pivots, [new_pivot])
+        low_pivot = new_pivot
+    end
+    while high_pivot < stop
+        new_pivot = high_pivot + 2^floor(Int, log2(stop-high_pivot))
+        append!(pivots, [new_pivot])
+        high_pivot = new_pivot
+    end
+     
+    # better way to do this with map?
+    segments = []
+    total_length = stop-start
+    for j=1:1:length(pivots)-1
+        a, b = pivots[j], pivots[j+1]
+        segment_length = b-a
+        segment = uniform_part(DistInt{W}, a, floor(Int, log2(segment_length)))
+        prob = flip(segment_length/total_length)
+        total_length -= segment_length
+        append!(segments, [(prob, segment)])
+    end
+
+    len = length(segments)
+    foldr(((x, y), z)->ifelse(x, y, z), segments[1:len-1],init=segments[len][2])        
+end
+
+
+function uniform_part(::Type{DistInt{W}}, lower, bit_length) where W 
+    bits = Vector{AnyBool}(undef, W)
+    num_b = ndigits(lower, base=2)
+    for bit_idx = W:-1:1
+        bits[bit_idx] = (bit_idx > W - num_b) ? Bool(lower & 1) : false
+        lower = lower >> 1
+    end
+
+    for bit_idx = W:-1:W-bit_length+1
+        bits[bit_idx] = flip(0.5)
+    end
+    DistInt{W}(bits)
+end
 ##################################
 # casting
 ##################################
@@ -101,7 +181,7 @@ end
 function Base.isless(x::DistInt{W}, y::DistInt{W}) where W
     foldr(zip(x.bits,y.bits); init=false) do bits, tail_isless
         xbit, ybit = bits
-        (xbit < ybit) | (xbit == ybit) & tail_isless
+        (xbit < ybit) | prob_equals(xbit,ybit) & tail_isless
     end
 end
 
