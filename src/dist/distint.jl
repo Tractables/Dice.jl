@@ -57,6 +57,7 @@ function uniform(::Type{DistInt{W}}, n = W) where W
 end
 
 function uniform_arith(i::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} where W
+    # TODO: this doesn't work for some reason? overflow?
     @assert start >= 0
     @assert stop <= 2^W
     @assert stop > start
@@ -83,7 +84,7 @@ function uniform_ite(i::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} whe
     # get our initial powers of two 
     upper_pow = floor(Int, log2(stop))
     lower_pow = ceil(Int, log2(start))
-    # special case: start = 0 not added
+    # TODO: start = 0 not added
 
     pivots = [2^p for p=lower_pow:1:upper_pow]
 
