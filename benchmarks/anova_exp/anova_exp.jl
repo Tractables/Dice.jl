@@ -93,6 +93,43 @@ function anova_radon_nopred(p::Int, binbits::Int, flag::Int)
     code
 end
 
+function arnp2()
+    code = @dice begin
+        binbits = 0
+        t_s = DistSigned{binbits + 5, binbits}
+        t_a1 = DistSigned{binbits + 8, binbits}
+
+        data = 0.617007250574049
+
+        a1 = if flip(0.5) t_a1(dicecontext(), -4.0) else t_a1(dicecontext(), 4.0) end
+        sigma_a = if flip(0.5) t_s(dicecontext(), 0.0) else t_s(dicecontext(), 8.0) end
+
+        expression = false
+
+        l1 = prob_equals(a1, t_a1(dicecontext(), -4.0))
+        l2 = prob_equals(a1, t_a1(dicecontext(), 4.0))
+        l3 = prob_equals(sigma_a, t_s(dicecontext(), 0.0))
+        l4 = prob_equals(sigma_a, t_s(dicecontext(), 8.0))
+
+        expression |= l1 & l3 & flip(pdf(Normal(-4, 10^(-11)), data)*10^(-5))
+        expression |= l2 & l3 & flip(pdf(Normal(4, 10^(-11)), data)*10^(-5))
+        expression |= l1 & l4 & flip(pdf(Normal(-4, 8), data)*10^(-5))
+        expression |= l2 & l4 & flip(pdf(Normal(4, 8), data)*10^(-5))
+
+        Cond(sigma_a, expression)
+    end
+    code
+end
+
+f = arnp2()
+a = compile(f)
+b = infer(a)
+
+for i in b
+    if i[2] != 0.0
+        @show i
+    end
+end
 
 f = anova_radon_nopred(1, 5, 0)
 a = compile(f)
