@@ -22,8 +22,7 @@ end
 # inference
 ##################################
 
-tobits(x::DistSignedInt) = 
-    filter(y -> y isa Dist{Bool}, x.number.bits)
+tobits(x::DistSignedInt) = tobits(x.number)
 
 function frombits(x::DistSignedInt{W}, world) where W
     v = 0
