@@ -42,16 +42,18 @@ end
 # expectation
 ##################################
 
-# function expectation(x::DistInt{W}) where W
-#     ans = 0
-#     a = pr(x.bits...)
-#     start = 2^(W-1)
-#     for i=1:W
-#         ans += start*a[i][1]
-#         start /= 2
-#     end
-#     ans
-# end
+function expectation(x::DistSignedInt{W}) where W
+    ans = 0
+    a = pr(x.number.bits...)
+    start = 2^(W-1)
+    ans -= start*a[1][1]
+    start /= 2
+    for i=2:W
+        ans += start*a[i][1]
+        start /= 2
+    end
+    ans
+end
     
 
 ##################################
