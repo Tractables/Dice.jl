@@ -95,7 +95,7 @@ end
 
 # end
 
-@testset "DistInt casting" begin
+@testset "DistSignedInt casting" begin
     y = DistSignedInt{4}([flip(0.5), false, true, true])
     z = convert(y, DistSignedInt{5})
     p1 = pr(z)
@@ -107,16 +107,16 @@ end
     @test p[3] ≈ 1.0
 end
 
-# @testset "DistInt expectation" begin
-#     y = DistInt{4}([true, false, true, false])
-#     @test expectation(y) == 10.0
+@testset "DistSignedInt expectation" begin
+    y = DistSignedInt{4}([true, false, true, false])
+    @test expectation(y) == -6.0
 
-#     y = DistInt{2}([flip(0.1), flip(0.1)])
-#     p = pr(y)
-#     mean = reduce(+, [(key*value) for (key, value) in p])
-#     @test expectation(y) ≈ mean
+    y = DistSignedInt{2}([flip(0.1), flip(0.1)])
+    p = pr(y)
+    mean = reduce(+, [(key*value) for (key, value) in p])
+    @test expectation(y) ≈ mean
 
-# end
+end
 
 # @testset "DistInt uniform" begin
 #     uniform_funcs = [uniform_arith, uniform_ite]
