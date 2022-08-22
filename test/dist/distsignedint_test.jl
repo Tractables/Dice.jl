@@ -95,25 +95,17 @@ end
 
 # end
 
-# @testset "DistInt casting" begin
-#     y = DistInt{4}([false, false, true, true]) # 3
-#     z = convert(y, DistInt{3})
-#     p = pr(z)
-#     @test p[2] ≈ 0
-#     @test p[3] ≈ 1
-#     @test p[4] ≈ 0
+@testset "DistInt casting" begin
+    y = DistSignedInt{4}([flip(0.5), false, true, true])
+    z = convert(y, DistSignedInt{5})
+    p1 = pr(z)
+    p2 = pr(y)
+    @test p1 == p2
 
-#     y = DistInt{4}([flip(0.5), false, true, true]) # 3
-#     code = @dice convert(y, DistInt{3})
-#     @test_throws Exception pr(code)
-
-#     y = DistInt{4}([false, false, true, flip(0.5)]) # 3
-#     z = convert(y, DistInt{5})
-#     @test typeof(z) == DistInt{5}
-#     p = pr(y)
-#     @test p[2] ≈ 0.5
-#     @test p[3] ≈ 0.5
-# end
+    z = convert(y, DistSignedInt{3})
+    p = pr(z)
+    @test p[3] ≈ 1.0
+end
 
 # @testset "DistInt expectation" begin
 #     y = DistInt{4}([true, false, true, false])
