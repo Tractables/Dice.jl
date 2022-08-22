@@ -18,6 +18,7 @@ TikzPictures = "37f6aa50-8035-52d0-81c2-5a1d08754b2d"
 [compat]
 CUDD = "0.2.2"
 DirectedAcyclicGraphs = "0.1.1"
+Graphs = "1"
 IRTools = "0.4"
 IfElse = "0.1"
 Jive = "0.2"
