@@ -8,6 +8,13 @@ See [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice)
 
 ### Installation
 
+Install julia 1.7 or higher using the [link](https://julialang.org/downloads/platform/).
+
+Clone the git repository using the following command:
+```bash
+git clone -b grammar_global_mgr https://github.com/Juice-jl/Dice.jl.git
+```
+
 Start julia in project mode for current folder, i.e.:
 ```bash
 julia --project
@@ -17,6 +24,18 @@ Then can install Dice and update dependencies by doing (also can do `precompile`
 
 ```julia
 ] up
+```
+
+Press CTRL-C to exit from the pkg terminal and return to julia command line
+Examples for having distributions on parse trees, probabilistic grammars and finite state machines can be found in the folder examples/linguistics which can be run as follows:
+
+```julia
+	include(“examples/lingustics/grammar.jl”)
+```
+
+Other examples can be run as follows
+```julia
+  include("examples/pfa.jl")
 ```
 
 Now can do `] status` to see what versions of dependencies we have (or for more details can look into the `Manifest.toml` file).
