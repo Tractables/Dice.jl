@@ -1,6 +1,7 @@
 using Revise
 using Dice
 using Dice: Flip, ifelse, num_ir_nodes
+using Distributions
 
 binbits = 2
 t = DistFixedPoint{binbits + 5, binbits}
@@ -13,9 +14,9 @@ data = [-2.57251482,  0.33806206,  2.71757796,  1.09861336,  2.85603752,
         -0.67970862,  0.93461681,  1.18187607, -1.49501051,  2.44755622,
         -2.06424237, -0.04584074,  1.93396696,  1.07685273, -0.09837907]
 
-        gaussians = Vector(undef, length(data))
-        for i=1:length(data)
-            gaussians[i] = add_bits(continuous(dicecontext(), p, t, Normal(0, 1), b, b2), 2, 0)
-        end
-        mu1 = add_bits((uniform(dicecontext(), binbits + 4, t) + t(dicecontext(), -8.0))[1], 2, 0)
-        mu2 = add_bits((uniform(dicecontext(), binbits + 4, t) + t(dicecontext(), -8.0))[1], 2, 0)
+gaussians = Vector(undef, length(data))
+for i=1:length(data)
+    gaussians[i] = add_bits(continuous(p, t, Normal(0, 1), b, b2), 2, 0)
+end
+mu1 = add_bits((uniform(dicecontext(), binbits + 4, t) + t(dicecontext(), -8.0))[1], 2, 0)
+mu2 = add_bits((uniform(dicecontext(), binbits + 4, t) + t(dicecontext(), -8.0))[1], 2, 0)

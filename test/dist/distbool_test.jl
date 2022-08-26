@@ -1,7 +1,6 @@
 using Test
 using Dice
-using Dice: Flip, ifelse
-using DirectedAcyclicGraphs
+using Dice: Flip, ifelse, num_ir_nodes
 
 @testset "DistBool core" begin
     
@@ -20,12 +19,12 @@ using DirectedAcyclicGraphs
     @test flip(0.5) | true == true
     @test flip(0.5) | false isa Flip
     
-    @test num_nodes(flip(0.5) & flip(0.5)) == 3
-    @test num_nodes(flip(0.5) | flip(0.5)) == 3
+    @test num_ir_nodes(flip(0.5) & flip(0.5)) == 3
+    @test num_ir_nodes(flip(0.5) | flip(0.5)) == 3
 
     f = flip(0.5)
     @test !f != f
-    @test num_nodes(!f) == 2
+    @test num_ir_nodes(!f) == 2
     @test !!f == f
 
     @test flip(0.0) == false
@@ -35,7 +34,7 @@ using DirectedAcyclicGraphs
 
     @test flip(0.5).global_id > f.global_id
 
-    @test num_nodes(flip(0.5) < flip(0.5)) == 4
+    @test num_ir_nodes(flip(0.5) < flip(0.5)) == 4
 
     @test prob_equals(true,true)
     @test prob_equals(false,false)
@@ -44,7 +43,7 @@ using DirectedAcyclicGraphs
     @test prob_equals(false, !f) == f
     @test prob_equals(f, f) 
     @test pr(prob_equals(flip(0.5),flip(0.5)))[true] ≈ 0.5
-    @test num_nodes(prob_equals(flip(0.5),flip(0.5))) == 6
+    @test num_ir_nodes(prob_equals(flip(0.5),flip(0.5))) == 6
 
     @test !xor(true,true)
     @test !xor(false,false)
@@ -59,9 +58,9 @@ using DirectedAcyclicGraphs
     g = flip(0.5)
     @test ifelse(true, f, g) == f
     @test ifelse(false, f, g) == g
-    @test num_nodes(ifelse(f, f, g)) == 3
-    @test num_nodes(ifelse(g, f, g)) == 3
-    @test num_nodes(ifelse(flip(0.5), f, g)) == 7
+    @test num_ir_nodes(ifelse(f, f, g)) == 3
+    @test num_ir_nodes(ifelse(g, f, g)) == 3
+    @test num_ir_nodes(ifelse(flip(0.5), f, g)) == 7
     @test ifelse(flip(0.5), f, f) == f
     
 end
@@ -86,7 +85,7 @@ end
     probs = [1/i for i=2:20]
     x = mapreduce(p -> !flip(p), &, probs)  # all tails
 
-    @test num_nodes(x) == 19+18+1
+    @test num_ir_nodes(x) == 19+18+1
     @test pr(x)[true] ≈ prod(1 .- probs)
 
 end

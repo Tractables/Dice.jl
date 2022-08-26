@@ -2,6 +2,10 @@ using Distributions
 
 export uniform, triangle, discrete2, anyline, continuous, shifted_continuous
 
+function uniform(t::Type, start::Float64, stop::Float)
+
+
+
 function uniform(mgr, b::Int, t::Type)
     x = Vector(undef, b)
     for i = b:-1:1
