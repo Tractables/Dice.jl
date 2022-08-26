@@ -33,18 +33,19 @@ function anova_radon_nopred(p::Int, binbits::Int, flag::Int)
         obs = true
         # for i=1:length(data)
         i = 1
-            y = continuous(dicecontext(), p, t_g, Normal(0, 1), 0, 0)
+        f(x) = x
+            y = continuous(dicecontext(), p, t_g, Normal(0, 1), 0, 0, f)
             y = Dice.trunc(y * sigmay, 2*precision + binbits)
-            y, _ = y + a1
-            obs &= prob_equals(y, t_a1(dicecontext(), data[i]))
-        # end
+        #     y, _ = y + a1
+        #     obs &= prob_equals(y, t_a1(dicecontext(), data[i]))
+        # # end
 
-        if flag == 0
-            Cond(a1, obs)
-        else
-            Cond(sigmay, obs)
-        end
-        
+        # if flag == 0
+        #     Cond(a1, obs)
+        # else
+        #     Cond(sigmay, obs)
+        # end
+        a1
         
 
 
