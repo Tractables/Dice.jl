@@ -30,7 +30,7 @@ Press CTRL-C to exit from the pkg terminal and return to julia command line
 Examples for having distributions on parse trees, probabilistic grammars and finite state machines can be found in the folder examples/linguistics which can be run as follows:
 
 ```julia
-	include(“examples/lingustics/grammar.jl”)
+  include("examples/lingustics/grammar.jl")
 ```
 
 Other examples can be run as follows
