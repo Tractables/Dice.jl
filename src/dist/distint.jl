@@ -1,5 +1,5 @@
 
-export DistInt, uniform, expectation, uniform_arith, uniform_ite
+export DistInt, uniform, expectation, uniform_arith, uniform_ite, triangle, discrete
 
 ##################################
 # types, structs, and constructors
@@ -152,6 +152,54 @@ function uniform_part(::Type{DistInt{W}}, lower, bit_length) where W
     end
     DistInt{W}(bits)
 end
+
+# Generates triangle distribution of type t and bits b
+function triangle(t::Type{DistInt{W}}, b::Int) where W
+    @assert b <= W
+    s = false
+    n = 2^b
+    x = Vector(undef, W)
+    y = Vector(undef, W)
+    for i = 1:W-b
+        x[i] = false
+    end
+    for i = W - b + 1:W
+        x[i] = Dice.ifelse(s, flip(1/2), flip((3n - 2)/ (4n-4)))
+        y[i] = flip((n-2)/(3n-2))
+        s = s | (x[i] & !y[i])
+        n = n/2
+    end
+    return DistInt{W}(x)
+end
+
+# bitwise Holtzen to generate a categorical distribution
+function discrete(t::Type{DistInt{W}}, p::Vector{Float64}) where W
+    @assert sum(p) ≈ 1
+
+    function recurse(p::Vector, i, s, e, prob::Vector)
+        if (i == 0)
+            a = sum(prob[s:e])
+            if a == 0
+                flip(0)
+            else
+                flip(sum(prob[Int((s+e+1)/2):e])/sum(prob[s:e]))
+            end
+        else
+            (Dice.ifelse(p[length(p) - i + 1], recurse(p, i-1, Int((s+e+1)/2), e, prob), recurse(p, i-1, s, Int((s+e-1)/2), prob)))
+        end
+    end
+
+    mb = length(p)
+    add = W
+    p_proxy = vcat(p, zeros(2^add - mb))
+    int_vector = []
+    for i=1:add
+        a = recurse(int_vector, i-1, 1, 2^add, p_proxy)
+        push!(int_vector, a)
+    end
+    if add == 0 DistInt{W}(0) else DistInt{W}(int_vector) end
+end
+
 ##################################
 # casting
 ##################################

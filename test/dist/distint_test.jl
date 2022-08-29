@@ -1,5 +1,7 @@
+using Revise
 using Test
 using Dice
+using Dice: Flip, ifelse, num_ir_nodes
 
 @testset "DistInt inference" begin
     x = DistInt{4}([true, false, true, false]) # 10
@@ -163,4 +165,19 @@ end
         @test p[1] ≈ 0
 
     end
+end
+
+@testset "DistInt triangle and discrete" begin
+    x = triangle(DistInt{4}, 3)
+    p = pr(x)
+    n = 2^3
+    for i=0:7
+        @test p[i] ≈ 2*i/(n*(n-1))
+    end
+
+    a = discrete(DistInt{3}, [0.1, 0.2, 0.3, 0.4])
+    p = pr(a)
+    for i=0:3
+        @test p[i] ≈ (i+1)/10
+    end 
 end

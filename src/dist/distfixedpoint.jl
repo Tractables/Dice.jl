@@ -52,6 +52,11 @@ function uniform(::Type{DistFixedPoint{W, F}}, n = W) where W where F
     DistFixedPoint{W, F}(DistSignedInt{W}(uniform(DistInt{W}, n).bits))
 end
 
+function triangle(t::Type{DistFixedPoint{W, F}}, b::Int) where W where F
+    @assert b < W
+    DistFixedPoint{W, F}(triangle(DistSignedInt{W}, b))
+end
+
 ##################################
 # other method overloading
 ##################################

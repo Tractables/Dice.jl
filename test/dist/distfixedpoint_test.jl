@@ -46,3 +46,13 @@ end
     @test expectation(y) ≈ mean
 
 end
+
+@testset "DistFixedPoint triangle" begin
+    @test_throws Exception y = triangle(DistFixedPoint{4, 3}, 4)
+    y = triangle(DistFixedPoint{4, 3}, 3)
+    p = pr(y)
+    n = 2^3
+    for i=0:7
+        @test p[i/n] ≈ 2*i/(n*(n-1))
+    end
+end
