@@ -21,7 +21,7 @@ acceptors = [4]
 num_steps = 5
 top_n = 20  # Only the top_n most likely strings are printed
 
-code = @dice_ite begin
+str, err = @dice_ite begin
     function state_to_string(state, num_steps)
         if state in acceptors
             DistString(""), flip(false)
@@ -53,19 +53,17 @@ code = @dice_ite begin
             cand_string, cand_error
         end
     end
-    s, e = state_to_string(start, num_steps)
-    [s, e]
+    state_to_string(start, num_steps)
 end
 
-bdd = compile(code)
 error_p = 0
 dist = Dict()
-group_infer(bdd[2], true, 1.0) do error, prior, p
+group_infer(err, true, 1.0) do error, prior, p
     if error
         # We don't care about rhs if there is error; normally we would call group_infer again
         global error_p = p 
     else
-        group_infer(bdd[1], prior, p) do assignment, _, p
+        group_infer(str, prior, p) do assignment, _, p
             dist[join(assignment)] = p
         end
     end
@@ -73,7 +71,7 @@ end
 println("Probability of error: $(error_p)")
 dist = sort([(x, val) for (x, val) in dist], by= xv -> -xv[2])  # by decreasing probability
 print_dict(dist[1:min(length(dist),top_n)])
-println("$(num_nodes(bdd)) nodes, $(num_flips(bdd)) flips")
+println("$(num_nodes([str, err])) nodes, $(num_flips([str, err])) flips")
 
 #==
 Probability of error: 0.3769599999999999
