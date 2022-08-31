@@ -1,3 +1,4 @@
+using Revise
 using Test
 using Dice
 using Dice: Flip, ifelse, num_ir_nodes
@@ -70,4 +71,51 @@ end
     for i=0:7
         @test p[i] ≈ 2*i/(n*(n-1))
     end
+end
+
+@testset "DistSignedInt arithmetic" begin
+    a = DistSignedInt{3}(3)
+    b = DistSignedInt{3}(3)
+    @test_throws Exception pr(a + b)
+
+    a = DistSignedInt{3}(-3)
+    b = DistSignedInt{3}(-3)
+    @test_throws Exception pr(a + b)
+
+    a = DistSignedInt{3}(-3)
+    b = DistSignedInt{3}(3)
+    p = pr(a + b)
+    @test p[0] == 1
+
+    a = uniform(DistSignedInt{3}, 3)
+    b = DistSignedInt{3}(-1)
+    @test_throws Exception p = pr(@dice a + b)
+
+    a = DistSignedInt{3}(3)
+    b = DistSignedInt{3}(-2)
+    @test_throws Exception pr(a - b)
+
+    a = DistSignedInt{3}(-3)
+    b = DistSignedInt{3}(2)
+    @test_throws Exception pr(a - b)
+
+    a = DistSignedInt{3}(3)
+    b = DistSignedInt{3}(2)
+    p = pr(a - b)
+    @test p[1] == 1
+
+    a = DistSignedInt{3}(-3)
+    b = DistSignedInt{3}(-2)
+    p = pr(a - b)
+    @test p[-1] == 1
+
+    a = uniform(DistSignedInt{3}, 3)
+    b = DistSignedInt{3}(-1)
+    @test_throws Exception p = pr(@dice a + b)
+
+    a = uniform(DistSignedInt{3}, 2)
+    b = DistSignedInt{3}(1)
+    p = pr(a - b)
+    @test issetequal(keys(p), -1:2)
+    @test all(values(p) .≈ 1/2^2)
 end

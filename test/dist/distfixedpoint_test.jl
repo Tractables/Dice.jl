@@ -1,6 +1,7 @@
 using Test
 using Dice
 using Dice: Flip, ifelse, num_ir_nodes
+using Distributions
 
 @testset "DistFixedPoint inference" begin
     x = DistFixedPoint{4, 2}([true, false, true, false]) # -1.5
@@ -47,7 +48,7 @@ end
 
 end
 
-@testset "DistFixedPoint triangle" begin
+@testset "DistFixedPoint triangle and continuous" begin
     @test_throws Exception y = triangle(DistFixedPoint{4, 3}, 4)
     y = triangle(DistFixedPoint{4, 3}, 3)
     p = pr(y)
@@ -55,4 +56,25 @@ end
     for i=0:7
         @test p[i/n] ≈ 2*i/(n*(n-1))
     end
+
+    y = continuous(DistFixedPoint{4, 2}, Normal(0, 1), 2, -2.0, 2.0)
+end
+
+@testset "DistFixedPoint arithmetic" begin
+    a = DistFixedPoint{3, 1}(1.5)
+    b = DistFixedPoint{3, 1}(1.5)
+    @test_throws Exception pr(a + b)
+
+    a = DistFixedPoint{3, 1}(-1.5)
+    b = DistFixedPoint{3, 1}(-1.5)
+    @test_throws Exception pr(a + b)
+
+    a = DistFixedPoint{3, 1}(-1.5)
+    b = DistFixedPoint{3, 1}(1.5)
+    p = pr(a + b)
+    @test p[0] == 1
+
+    a = uniform(DistFixedPoint{3, 1}, 3)
+    b = DistFixedPoint{3, 1}(-0.5)
+    @test_throws ProbException p = pr(@dice a + b)
 end
