@@ -1,3 +1,4 @@
+using Revise
 using Test
 using Dice
 using Dice: Flip, ifelse, num_ir_nodes
@@ -48,7 +49,7 @@ end
 
 end
 
-@testset "DistFixedPoint triangle and continuous" begin
+@testset "DistFixedPoint triangle" begin
     @test_throws Exception y = triangle(DistFixedPoint{4, 3}, 4)
     y = triangle(DistFixedPoint{4, 3}, 3)
     p = pr(y)
@@ -56,8 +57,6 @@ end
     for i=0:7
         @test p[i/n] ≈ 2*i/(n*(n-1))
     end
-
-    y = continuous(DistFixedPoint{4, 2}, Normal(0, 1), 2, -2.0, 2.0)
 end
 
 @testset "DistFixedPoint arithmetic" begin
@@ -77,4 +76,79 @@ end
     a = uniform(DistFixedPoint{3, 1}, 3)
     b = DistFixedPoint{3, 1}(-0.5)
     @test_throws ProbException p = pr(@dice a + b)
+
+    a = DistFixedPoint{3, 1}(1.5)
+    b = DistFixedPoint{3, 1}(-1.0)
+    @test_throws Exception pr(a - b)
+
+    a = DistFixedPoint{3, 1}(-1.5)
+    b = DistFixedPoint{3, 1}(1.0)
+    @test_throws Exception pr(a - b)
+
+    a = DistFixedPoint{3, 1}(1.5)
+    b = DistFixedPoint{3, 1}(1.0)
+    p = pr(a - b)
+    @test p[0.5] == 1
+
+    a = DistFixedPoint{3, 1}(-1.5)
+    b = DistFixedPoint{3, 1}(-1.0)
+    p = pr(a - b)
+    @test p[-0.5] == 1
+
+    a = uniform(DistFixedPoint{3, 1}, 2)
+    b = DistFixedPoint{3, 1}(0.5)
+    p = pr(a - b)
+    @test issetequal(keys(p), -0.5:0.5:1.0)
+    @test all(values(p) .≈ 1/2^2)
+end
+
+@testset "DistFixedPoint continuous" begin
+    pieces = [1, 2, 4, 8]
+    function kl_divergence(p, q)
+        @assert sum(p) ≈ 1.0
+        @assert sum(q) ≈ 1.0
+        ans = 0
+        for i=1:length(p)
+            if p[i] > 0
+                ans += p[i] *(log(p[i]) - log(q[i]))
+            end
+        end
+        @show ans
+        ans
+    end
+    d = Truncated(Normal(1, 1), -1.0, 3.0)
+    lower = -1.0
+    q = Vector{Float64}(undef, 2^4)
+    for i=1:2^4
+        q[i] = cdf(d, lower + 0.25) - cdf(d, lower)
+        lower += 0.25
+    end 
+
+    kl_vector = [0.0, 0.0, 0.0, 0.0]
+    map(pieces) do piece
+        y = continuous(DistFixedPoint{5, 2}, Normal(1, 1), piece, -1.0, 3.0)
+        p = pr(y)
+
+        # Symmetric gaussian around mean
+        for i=1:0.25:2.75
+            @test p[i] ≈ p[-i+1.75]
+        end
+
+        # probability below mean
+        @test sum(values(filter(p -> first(p) < 1, p))) ≈ 0.5
+
+        # decreasing kl divergence with pieces
+        p = map(a -> a[2], sort([(k, v) for (k, v) in p]))
+        kl_vector[Int(log2(piece))+1] = kl_divergence(p, q)
+
+    end
+    @test issorted(kl_vector, rev=true)
+    
+    # Exactness for maximum number of pieces
+    y = continuous(DistFixedPoint{5, 2}, Normal(1, 1), 8, -1.0, 3.0)
+    p = pr(y)
+    p2 = map(a -> a[2], sort([(k, v) for (k, v) in p]))
+    @test p2 ≈ q
+
+    #TODO: write tests for continuous distribution other than gaussian
 end

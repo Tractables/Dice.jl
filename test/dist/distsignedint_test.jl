@@ -109,10 +109,6 @@ end
     p = pr(a - b)
     @test p[-1] == 1
 
-    a = uniform(DistSignedInt{3}, 3)
-    b = DistSignedInt{3}(-1)
-    @test_throws Exception p = pr(@dice a + b)
-
     a = uniform(DistSignedInt{3}, 2)
     b = DistSignedInt{3}(1)
     p = pr(a - b)

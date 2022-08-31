@@ -69,7 +69,7 @@ end
 
 # Generates a triangle on positive part of the support
 function triangle(t::Type{DistSignedInt{W}}, b::Int) where W
-    @assert b < W
+    @assert b <= W
     DistSignedInt(triangle(DistInt{W}, b))
 end
 

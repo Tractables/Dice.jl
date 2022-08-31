@@ -54,7 +54,7 @@ function uniform(::Type{DistFixedPoint{W, F}}, n = W) where W where F
 end
 
 function triangle(t::Type{DistFixedPoint{W, F}}, b::Int) where W where F
-    @assert b < W
+    @assert b <= W
     DistFixedPoint{W, F}(triangle(DistSignedInt{W}, b))
 end
 
@@ -74,6 +74,10 @@ function Base.:(+)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F
     DistFixedPoint{W, F}(x.number + y.number)
 end
 
+function Base.:(-)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F}
+    DistFixedPoint{W, F}(x.number - y.number)
+end
+
 #################################
 # continuous distributions
 #################################
@@ -87,6 +91,9 @@ function continuous(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistri
     a = Int(log2((stop - start)*2^F))
     @assert typeof(a) == Int 
     piece_bits = Int(log2(pieces))
+    if piece_bits == 0
+        piece_bits = 1
+    end
     @assert typeof(piece_bits) == Int
 
     # preliminaries
@@ -152,11 +159,11 @@ function continuous(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistri
     for i=pieces:-1:1
         ans = Dice.ifelse( prob_equals(b, DistInt{piece_bits}(i-1)), 
                 (if l_vector[i]
-                    Dice.ifelse(piece_flips[i], 
-                    (DistFixedPoint{W, F}((i - 1)*2^bits/2^F - 2^(W - 1 - F)) + unif), 
-                    (DistFixedPoint{W, F}((i*2^bits - 1)/2^F - 2^(W-1 - F)) - tria))
+                    (Dice.ifelse(piece_flips[i], 
+                        (DistFixedPoint{W, F}((i - 1)*2^bits/2^F + start) + unif), 
+                        (DistFixedPoint{W, F}((i*2^bits - 1)/2^F + start) - tria)))
                 else
-                    (DistFixedPoint{W, F}((i - 1)*2^bits/2^F - 2^(W - 1 - F)) + 
+                    (DistFixedPoint{W, F}((i - 1)*2^bits/2^F + start) + 
                         Dice.ifelse(piece_flips[i], unif, tria))
                     
                 end),
