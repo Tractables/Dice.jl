@@ -49,7 +49,6 @@ end
 end
 
 @testset "DistFixedPoint triangle" begin
-    @test_throws Exception y = triangle(DistFixedPoint{4, 3}, 4)
     y = triangle(DistFixedPoint{4, 3}, 3)
     p = pr(y)
     n = 2^3
@@ -112,7 +111,6 @@ end
                 ans += p[i] *(log(p[i]) - log(q[i]))
             end
         end
-        @show ans
         ans
     end
     d = Truncated(Normal(1, 1), -1.0, 3.0)

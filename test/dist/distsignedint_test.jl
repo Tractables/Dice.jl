@@ -63,9 +63,8 @@ end
 end
 
 @testset "DistSignedInt triangle" begin
-    @test_throws Exception y = triangle(DistSignedInt{4}, 4)
     y = triangle(DistSignedInt{4}, 3)
-    p = pr(x)
+    p = pr(y)
     n = 2^3
     for i=0:7
         @test p[i] ≈ 2*i/(n*(n-1))
