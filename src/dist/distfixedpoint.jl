@@ -128,8 +128,8 @@ function continuous(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistri
 
     rel_prob = areas/total_area
 
-    @show rel_prob
-    @show areas
+    # @show rel_prob
+    # @show areas
 
     b = discrete(DistInt{piece_bits}, rel_prob)
     
@@ -144,10 +144,10 @@ function continuous(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistri
         end
         l_vector[i] = a > 1/2^bits
         if l_vector[i]
-            @show 2 - a*2^bits, i, areas[i]
+            # @show 2 - a*2^bits, i, areas[i]
             piece_flips[i] = flip(2 - a*2^bits)
         else
-            @show a*2^bits
+            # @show a*2^bits
             piece_flips[i] = flip(a*2^bits)
         end  
     end

@@ -165,7 +165,7 @@ end
     else 
         false 
     end
-    
+
     x = dice() do 
         f(0.1) || f(0.2) 
     end

@@ -1,10 +1,13 @@
-using Revise
 using Dice
 using Dice: Flip, ifelse, num_ir_nodes
 using Distributions
 
 binbits = 2
-t = DistFixedPoint{binbits + 5, binbits}
+pieces = 4
+
+t6 = DistFixedPoint{binbits + 7, binbits}
+t4 = DistFixedPoint{binbits + 4, binbits}
+
 data = [-2.57251482,  0.33806206,  2.71757796,  1.09861336,  2.85603752,
         -0.91651351,  0.15555127, -2.68160347,  2.47043789,  3.47459025,
         1.63949862, -1.32148757,  2.64187513,  0.30357848, -4.09546231,
@@ -16,7 +19,14 @@ data = [-2.57251482,  0.33806206,  2.71757796,  1.09861336,  2.85603752,
 
 gaussians = Vector(undef, length(data))
 for i=1:length(data)
-    gaussians[i] = add_bits(continuous(p, t, Normal(0, 1), b, b2), 2, 0)
+    gaussians[i] = continuous(t6, Normal(0, 1), pieces, -8.0, 8.0)
 end
-mu1 = add_bits((uniform(dicecontext(), binbits + 4, t) + t(dicecontext(), -8.0))[1], 2, 0)
-mu2 = add_bits((uniform(dicecontext(), binbits + 4, t) + t(dicecontext(), -8.0))[1], 2, 0)
+
+mu1 = uniform(t6, binbits + 4) + t6(-8.0)
+mu2 = uniform(t6, binbits + 4) + t6(-8.0)
+
+p = pr(@dice begin
+    for i=1:length(data)
+        observe(prob_equals(gaussians[i] + mu1 + mu2, t6(data[i])))
+    end
+    mu1 end; ignore_errors=true)
