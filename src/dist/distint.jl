@@ -207,7 +207,7 @@ function Base.:(-)(x::DistInt{W}, y::DistInt{W}) where W
     DistInt{W}(z)
 end
 
-function ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where W
+function Base.ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where W
     (then == elze) && return then
     bits = map(then.bits, elze.bits) do tb, eb
         ifelse(cond, tb, eb)

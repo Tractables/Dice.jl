@@ -81,7 +81,7 @@ end
         @test p[i] ≈ (n - abs(i-(n-1)))/n^2
     end
 
-    @test_throws Exception pr(uniform(DistInt{3}, 3)+uniform(DistInt{3}, 3))
+    @test_throws Exception pr(uniform(DistInt{3}, 3) + uniform(DistInt{3}, 3))
     @test_throws Exception pr(@dice uniform(DistInt{3}, 3) + uniform(DistInt{3}, 3))
 
     @test_throws Exception pr(uniform(DistInt{3}, 3)-uniform(DistInt{3}, 3))
