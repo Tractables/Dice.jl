@@ -51,10 +51,19 @@ end
     @test p[12] ≈ 0
     @test p[13] ≈ 1
     @test p[14] ≈ 0
+    p = pr(x - y)
+    @test p[6] ≈ 0
+    @test p[7] ≈ 1
+    @test p[8] ≈ 0
 
     z = uniform(DistInt{4}, 3)
-    p = pr(z + y)
+    y2 = DistInt{4}([false, false, true, false])
+    t = z + y
+    p = pr(t)
     @test issetequal(keys(p), 3 .+ (0:(2^3-1)))
+    @test all(values(p) .≈ 1/2^3)
+    p = pr((@dice t - y2), ignore_errors=true)
+    @test issetequal(keys(p), 1 .+ (0:(2^3-1)))
     @test all(values(p) .≈ 1/2^3)
 
     w = uniform(DistInt{4}, 3)
@@ -64,10 +73,20 @@ end
         @test p[i] ≈ (n - abs(i-(n-1)))/n^2
     end
 
-    @test_throws Exception pr(uniform(DistInt{3}, 3)+uniform(DistInt{3}, 3))
+    w = uniform(DistInt{4}, 2)
+    z = uniform(DistInt{4}, 2)
+    p = pr((@dice w + y - z), ignore_errors=true)
+    n = 2^2
+    for i=0:6
+        @test p[i] ≈ (n - abs(i-(n-1)))/n^2
+    end
+
+    @test_throws Exception pr(uniform(DistInt{3}, 3) + uniform(DistInt{3}, 3))
     @test_throws Exception pr(@dice uniform(DistInt{3}, 3) + uniform(DistInt{3}, 3))
 
-
+    @test_throws Exception pr(uniform(DistInt{3}, 3)-uniform(DistInt{3}, 3))
+    @test_throws Exception pr(@dice uniform(DistInt{3}, 3) - uniform(DistInt{3}, 3))
+    
     x = DistInt{3}([false, flip(0.5), flip(0.5)]) # uniform(0, 4)
     y = DistInt{3}([false, flip(0.5), flip(0.5)])
     p = pr(prob_equals(x, y))
@@ -77,41 +96,46 @@ end
     y = DistInt{3}([false, flip(0.5), flip(0.5)])
     p = pr(x < y)
     @test p[1] ≈ 6/16
-     
+
 end
 
-@testset "DistInt uniform" begin
-    uniform_funcs = [uniform_arith, uniform_ite]
+@testset "DistInt casting" begin
+    y = DistInt{4}([false, false, true, true]) # 3
+    z = convert(y, DistInt{3})
+    p = pr(z)
+    @test p[2] ≈ 0
+    @test p[3] ≈ 1
+    @test p[4] ≈ 0
 
-    map(uniform_funcs) do uniform 
-        x = uniform(DistInt{3}, 0, 7)
-        p = pr(x)
-        for i=0:6
-            @test p[i] ≈ 1/7
-        end
-        @test p[7] ≈ 0
-        
-        @test_throws Exception uniform(DistInt{3}, 0, 10)
-        @test_throws Exception uniform(DistInt{3}, -1, 7)
-        @test_throws Exception uniform(DistInt{3}, 4, 3)
-        @test_throws Exception uniform(DistInt{3}, 3, 3)
+    y = DistInt{4}([flip(0.5), false, true, true]) # 3
+    code = @dice convert(y, DistInt{3})
+    @test_throws Exception pr(code)
 
-        x = uniform(DistInt{3}, 3, 4)
-        p = pr(x)
-        @test p[3] ≈ 1
+    y = DistInt{4}([false, false, true, flip(0.5)]) # 3
+    z = convert(y, DistInt{5})
+    @test typeof(z) == DistInt{5}
+    p = pr(y)
+    @test p[2] ≈ 0.5
+    @test p[3] ≈ 0.5
+end
 
-        x = uniform(DistInt{5}, 3, 17)
-        p = pr(x)
-        for i=3:16
-            @test p[i] ≈ 1/14
-        end
-        y = DistInt{5}(10)
-        p = pr(x < y)
-        @test p[1] ≈ 7/14
+@testset "DistInt expectation" begin
+    y = DistInt{4}([true, false, true, false])
+    @test expectation(y) == 10.0
 
-        z = DistInt{5}(0)
-        p = pr(prob_equals(x, z))
-        @test p[1] ≈ 0
+    y = DistInt{2}([flip(0.1), flip(0.1)])
+    p = pr(y)
+    mean = reduce(+, [(key*value) for (key, value) in p])
+    @test expectation(y) ≈ mean
+end
 
-    end
+@testset "DistInt expectation" begin
+    y = DistInt{4}([true, false, true, false])
+    @test expectation(y) == 10.0
+
+    y = DistInt{2}([flip(0.1), flip(0.1)])
+    p = pr(y)
+    mean = reduce(+, [(key*value) for (key, value) in p])
+    @test expectation(y) ≈ mean
+
 end
