@@ -1,5 +1,6 @@
 using Test
 using Dice
+using Dice: Flip, ifelse, num_ir_nodes
 
 @testset "DistInt inference" begin
     x = DistInt{4}([true, false, true, false]) # 10
@@ -84,7 +85,7 @@ end
     @test_throws Exception pr(uniform(DistInt{3}, 3) + uniform(DistInt{3}, 3))
     @test_throws Exception pr(@dice uniform(DistInt{3}, 3) + uniform(DistInt{3}, 3))
 
-    @test_throws Exception pr(uniform(DistInt{3}, 3)-uniform(DistInt{3}, 3))
+    @test_throws Exception pr(uniform(DistInt{3}, 3) - uniform(DistInt{3}, 3))
     @test_throws Exception pr(@dice uniform(DistInt{3}, 3) - uniform(DistInt{3}, 3))
     
     x = DistInt{3}([false, flip(0.5), flip(0.5)]) # uniform(0, 4)
@@ -129,6 +130,36 @@ end
     @test expectation(y) ≈ mean
 end
 
+@testset "DistInt casting" begin
+    y = DistInt{4}([false, false, true, true]) # 3
+    z = convert(y, DistInt{3})
+    p = pr(z)
+    @test p[2] ≈ 0
+    @test p[3] ≈ 1
+    @test p[4] ≈ 0
+
+    y = DistInt{4}([flip(0.5), false, true, true]) # 3
+    code = @dice convert(y, DistInt{3})
+    @test_throws Exception pr(code)
+
+    y = DistInt{4}([false, false, true, flip(0.5)]) # 3
+    z = convert(y, DistInt{5})
+    @test typeof(z) == DistInt{5}
+    p = pr(y)
+    @test p[2] ≈ 0.5
+    @test p[3] ≈ 0.5
+end
+
+@testset "DistInt expectation" begin
+    y = DistInt{4}([true, false, true, false])
+    @test expectation(y) == 10.0
+
+    y = DistInt{2}([flip(0.1), flip(0.1)])
+    p = pr(y)
+    mean = reduce(+, [(key*value) for (key, value) in p])
+    @test expectation(y) ≈ mean
+end
+
 @testset "DistInt expectation" begin
     y = DistInt{4}([true, false, true, false])
     @test expectation(y) == 10.0
@@ -138,4 +169,19 @@ end
     mean = reduce(+, [(key*value) for (key, value) in p])
     @test expectation(y) ≈ mean
 
+end
+
+@testset "DistInt triangle and discrete" begin
+    x = triangle(DistInt{4}, 3)
+    p = pr(x)
+    n = 2^3
+    for i=0:7
+        @test p[i] ≈ 2*i/(n*(n-1))
+    end
+
+    a = discrete(DistInt{3}, [0.1, 0.2, 0.3, 0.4])
+    p = pr(a)
+    for i=0:3
+        @test p[i] ≈ (i+1)/10
+    end 
 end
