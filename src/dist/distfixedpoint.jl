@@ -66,7 +66,7 @@ function prob_equals(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where W w
     prob_equals(x.number, y.number)
 end
 
-function ifelse(cond::Dist{Bool}, then::DistFixedPoint{W, F}, elze::DistFixedPoint{W, F}) where W where F
+function Base.ifelse(cond::Dist{Bool}, then::DistFixedPoint{W, F}, elze::DistFixedPoint{W, F}) where W where F
     DistFixedPoint{W, F}(ifelse(cond, then.number, elze.number))
 end
 
@@ -157,14 +157,14 @@ function continuous(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistri
     ans = DistFixedPoint{W, F}((2^(W-1)-1)/2^F)
 
     for i=pieces:-1:1
-        ans = Dice.ifelse( prob_equals(b, DistInt{piece_bits}(i-1)), 
+        ans = ifelse( prob_equals(b, DistInt{piece_bits}(i-1)), 
                 (if l_vector[i]
-                    (Dice.ifelse(piece_flips[i], 
+                    (ifelse(piece_flips[i], 
                         (DistFixedPoint{W, F}((i - 1)*2^bits/2^F + start) + unif), 
                         (DistFixedPoint{W, F}((i*2^bits - 1)/2^F + start) - tria)))
                 else
                     (DistFixedPoint{W, F}((i - 1)*2^bits/2^F + start) + 
-                        Dice.ifelse(piece_flips[i], unif, tria))
+                        ifelse(piece_flips[i], unif, tria))
                     
                 end),
                 ans)  
