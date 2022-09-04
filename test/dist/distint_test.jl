@@ -84,6 +84,19 @@ end
     @test_throws Exception pr(uniform(DistInt{3}, 3) + uniform(DistInt{3}, 3))
     @test_throws Exception pr(@dice uniform(DistInt{3}, 3) + uniform(DistInt{3}, 3))
 
+    @test_throws Exception pr(uniform(DistInt{3}, 3)-uniform(DistInt{3}, 3))
+    @test_throws Exception pr(@dice uniform(DistInt{3}, 3) - uniform(DistInt{3}, 3))
+    
+    x = DistInt{3}([false, flip(0.5), flip(0.5)]) # uniform(0, 4)
+    y = DistInt{3}([false, flip(0.5), flip(0.5)])
+    p = pr(prob_equals(x, y))
+    @test p[1] ≈ 4/16
+
+    x = DistInt{3}([false, flip(0.5), flip(0.5)]) # uniform(0, 4)
+    y = DistInt{3}([false, flip(0.5), flip(0.5)])
+    p = pr(x < y)
+    @test p[1] ≈ 6/16
+
 end
 
 @testset "DistInt casting" begin
@@ -104,6 +117,16 @@ end
     p = pr(y)
     @test p[2] ≈ 0.5
     @test p[3] ≈ 0.5
+end
+
+@testset "DistInt expectation" begin
+    y = DistInt{4}([true, false, true, false])
+    @test expectation(y) == 10.0
+
+    y = DistInt{2}([flip(0.1), flip(0.1)])
+    p = pr(y)
+    mean = reduce(+, [(key*value) for (key, value) in p])
+    @test expectation(y) ≈ mean
 end
 
 @testset "DistInt expectation" begin

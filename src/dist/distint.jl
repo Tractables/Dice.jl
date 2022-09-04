@@ -1,5 +1,4 @@
-
-export DistInt, uniform, expectation, uniform_arith, uniform_ite
+export DistInt, uniform, uniform_arith, uniform_ite, expectation
 
 ##################################
 # types, structs, and constructors
