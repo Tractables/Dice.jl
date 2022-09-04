@@ -1,5 +1,4 @@
-
-export DistInt, uniform, uniform_arith, uniform_ite
+export DistInt, uniform, uniform_arith, uniform_ite, expectation
 
 ##################################
 # types, structs, and constructors
@@ -44,6 +43,22 @@ function frombits(x::DistInt{W}, world) where W
     end
     v
 end
+
+##################################
+# expectation
+##################################
+
+function expectation(x::DistInt{W}) where W
+    ans = 0
+    a = pr(x.bits...)
+    start = 2^(W-1)
+    for i=1:W
+        ans += start*a[i][1]
+        start /= 2
+    end
+    ans
+end
+    
 
 ##################################
 # methods
@@ -137,6 +152,24 @@ function uniform_part(::Type{DistInt{W}}, lower, bit_length) where W
     DistInt{W}(bits)
 end
 ##################################
+# casting
+##################################
+
+function Base.convert(x::DistInt{W1}, t::Type{DistInt{W2}}) where W1 where W2
+    if W1 <= W2
+        @show W2
+        DistInt{W2}(vcat(fill(false, W2 - W1), x.bits))
+    else
+        @show W2
+        
+        err = reduce(&, x.bits[1:W1 - W2])
+        err && error("throwing away bits")
+        DistInt{W2}(x.bits[W1 - W2 + 1:W1])
+    end
+end
+
+
+##################################
 # other method overloading
 ##################################
 
@@ -162,7 +195,18 @@ function Base.:(+)(x::DistInt{W}, y::DistInt{W}) where W
     DistInt{W}(z)
 end
 
-function ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where W
+function Base.:(-)(x::DistInt{W}, y::DistInt{W}) where W
+    z = Vector{AnyBool}(undef, W)
+    borrow = false
+    for i=W:-1:1
+        z[i] = xor(x.bits[i], y.bits[i], borrow)
+        borrow = ifelse(borrow, !x.bits[i] | y.bits[i], !x.bits[i] & y.bits[i])
+    end
+    borrow && error("integer overflow")
+    DistInt{W}(z)
+end
+
+function Base.ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where W
     (then == elze) && return then
     bits = map(then.bits, elze.bits) do tb, eb
         ifelse(cond, tb, eb)
