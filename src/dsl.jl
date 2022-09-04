@@ -16,7 +16,7 @@ macro dice_ite(code)
             ite_guard = gensym(:ite)
             return :(begin $ite_guard = $(x.args[1])
                     if ($(ite_guard) isa Dist{Bool})
-                        Dice.ifelse($(ite_guard), $(x.args[2:3]...))
+                        ifelse($(ite_guard), $(x.args[2:3]...))
                     else
                         (if $(ite_guard)
                             $(x.args[2])

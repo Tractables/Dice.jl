@@ -1,6 +1,6 @@
 using Test
 using Dice
-using Dice: Flip, ifelse, num_ir_nodes
+using Dice: Flip, num_ir_nodes
 
 @testset "DistBool core" begin
     
