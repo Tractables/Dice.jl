@@ -1,5 +1,4 @@
-
-export DistInt, uniform, expectation, uniform_arith, uniform_ite, triangle, discrete
+export DistInt, uniform, uniform_arith, uniform_ite, expectation, triangle, discrete
 
 ##################################
 # types, structs, and constructors
@@ -216,6 +215,24 @@ end
 
 
 ##################################
+# casting
+##################################
+
+function Base.convert(x::DistInt{W1}, t::Type{DistInt{W2}}) where W1 where W2
+    if W1 <= W2
+        @show W2
+        DistInt{W2}(vcat(fill(false, W2 - W1), x.bits))
+    else
+        @show W2
+        
+        err = reduce(&, x.bits[1:W1 - W2])
+        err && error("throwing away bits")
+        DistInt{W2}(x.bits[W1 - W2 + 1:W1])
+    end
+end
+
+
+##################################
 # other method overloading
 ##################################
 
@@ -252,7 +269,7 @@ function Base.:(-)(x::DistInt{W}, y::DistInt{W}) where W
     DistInt{W}(z)
 end
 
-function ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where W
+function Base.ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where W
     (then == elze) && return then
     bits = map(then.bits, elze.bits) do tb, eb
         ifelse(cond, tb, eb)

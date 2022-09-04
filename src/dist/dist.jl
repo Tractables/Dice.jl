@@ -1,6 +1,4 @@
 
-import IfElse: ifelse
-
 using DirectedAcyclicGraphs
 import DirectedAcyclicGraphs: children, NodeType, DAG, Inner, Leaf
 

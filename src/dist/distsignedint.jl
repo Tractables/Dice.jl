@@ -95,7 +95,7 @@ function prob_equals(x::DistSignedInt{W}, y::DistSignedInt{W}) where W
     prob_equals(x.number, y.number)
 end
 
-function ifelse(cond::Dist{Bool}, then::DistSignedInt{W}, elze::DistSignedInt{W}) where W
+function Base.ifelse(cond::Dist{Bool}, then::DistSignedInt{W}, elze::DistSignedInt{W}) where W
     DistSignedInt{W}(ifelse(cond, then.number, elze.number))
 end
 
