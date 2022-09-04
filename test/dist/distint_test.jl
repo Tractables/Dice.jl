@@ -127,41 +127,15 @@ end
     p = pr(y)
     mean = reduce(+, [(key*value) for (key, value) in p])
     @test expectation(y) ≈ mean
-
 end
 
-@testset "DistInt uniform" begin
-    uniform_funcs = [uniform_arith, uniform_ite]
+@testset "DistInt expectation" begin
+    y = DistInt{4}([true, false, true, false])
+    @test expectation(y) == 10.0
 
-    map(uniform_funcs) do uniform 
-        x = uniform(DistInt{3}, 0, 7)
-        p = pr(x)
-        for i=0:6
-            @test p[i] ≈ 1/7
-        end
-        @test p[7] ≈ 0
-        
-        @test_throws Exception uniform(DistInt{3}, 0, 10)
-        @test_throws Exception uniform(DistInt{3}, -1, 7)
-        @test_throws Exception uniform(DistInt{3}, 4, 3)
-        @test_throws Exception uniform(DistInt{3}, 3, 3)
+    y = DistInt{2}([flip(0.1), flip(0.1)])
+    p = pr(y)
+    mean = reduce(+, [(key*value) for (key, value) in p])
+    @test expectation(y) ≈ mean
 
-        x = uniform(DistInt{3}, 3, 4)
-        p = pr(x)
-        @test p[3] ≈ 1
-
-        x = uniform(DistInt{5}, 3, 17)
-        p = pr(x)
-        for i=3:16
-            @test p[i] ≈ 1/14
-        end
-        y = DistInt{5}(10)
-        p = pr(x < y)
-        @test p[1] ≈ 7/14
-
-        z = DistInt{5}(0)
-        p = pr(prob_equals(x, z))
-        @test p[1] ≈ 0
-
-    end
 end
