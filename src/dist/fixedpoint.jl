@@ -7,7 +7,7 @@ export DistFixedPoint, continuous
 ##################################
 
 struct DistFixedPoint{W, F} <: Dist{Int}
-    number::DistSignedInt{W}
+    number::DistInt{W}
     function DistFixedPoint{W, F}(b) where W where F
         @assert W >= F
         new{W, F}(b)
@@ -16,12 +16,12 @@ struct DistFixedPoint{W, F} <: Dist{Int}
 end
 
 function DistFixedPoint{W, F}(b::Vector) where W where F
-    DistFixedPoint{W, F}(DistSignedInt{W}(b))
+    DistFixedPoint{W, F}(DistInt{W}(b))
 end
 
 function DistFixedPoint{W, F}(i::Float64) where W where F
     new_i = Int(round(if i >= 0 i*2^F else i*2^F + 2^W end))
-    DistFixedPoint{W, F}(DistSignedInt{W}(DistInt{W}(new_i)))
+    DistFixedPoint{W, F}(DistInt{W}(DistUInt{W}(new_i)))
 end
 
 # ##################################
@@ -50,12 +50,12 @@ end
 bitwidth(::DistFixedPoint{W, F}) where W where F = W
 
 function uniform(::Type{DistFixedPoint{W, F}}, n = W) where W where F
-    DistFixedPoint{W, F}(DistSignedInt{W}(uniform(DistInt{W}, n).bits))
+    DistFixedPoint{W, F}(DistInt{W}(uniform(DistUInt{W}, n).bits))
 end
 
 function triangle(t::Type{DistFixedPoint{W, F}}, b::Int) where W where F
     @assert b <= W
-    DistFixedPoint{W, F}(triangle(DistSignedInt{W}, b))
+    DistFixedPoint{W, F}(triangle(DistInt{W}, b))
 end
 
 ##################################
@@ -131,7 +131,7 @@ function continuous(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistri
     # @show rel_prob
     # @show areas
 
-    b = discrete(DistInt{piece_bits}, rel_prob)
+    b = discrete(DistUInt{piece_bits}, rel_prob)
     
     #Move flips here
     piece_flips = Vector(undef, pieces)
@@ -157,7 +157,7 @@ function continuous(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistri
     ans = DistFixedPoint{W, F}((2^(W-1)-1)/2^F)
 
     for i=pieces:-1:1
-        ans = ifelse( prob_equals(b, DistInt{piece_bits}(i-1)), 
+        ans = ifelse( prob_equals(b, DistUInt{piece_bits}(i-1)), 
                 (if l_vector[i]
                     (ifelse(piece_flips[i], 
                         (DistFixedPoint{W, F}((i - 1)*2^bits/2^F + start) + unif), 

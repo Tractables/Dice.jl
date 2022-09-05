@@ -56,7 +56,7 @@ function shifted_continuous(mgr, pieces::Int, t::Type{DistFixParam{T, F}}, d::Co
     tria = triangle(mgr, bits, t)
     unif = uniform(mgr, bits, t)
     # @show rel_prob
-    b = discrete2(mgr, rel_prob, DistInt)
+    b = discrete2(mgr, rel_prob, DistUInt)
 
     ans = t(mgr, (2^whole_bits-1)/2^F)
 
@@ -155,7 +155,7 @@ function continuous(mgr, pieces::Int, t::Type{DistSigned{T, F}}, d::ContinuousUn
 
 
     # @show areas
-    b = discrete2(mgr, rel_prob, DistInt)
+    b = discrete2(mgr, rel_prob, DistUInt)
     
     #Move flips here
     piece_flips = Vector(undef, pieces)
@@ -249,7 +249,7 @@ function continuous(mgr, pieces::Int, t::Type{DistFixParam{T, F}}, d::Continuous
 
 
     # @show rel_prob
-    b = discrete2(mgr, rel_prob, DistInt)
+    b = discrete2(mgr, rel_prob, DistUInt)
 
     piece_flips = Vector(undef, pieces)
     for i=pieces:-1:1

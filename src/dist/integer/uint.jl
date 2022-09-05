@@ -1,40 +1,50 @@
-export DistInt, uniform, uniform_arith, uniform_ite, expectation, triangle, discrete
+export DistUInt, DistUInt8, DistUInt16, DistUInt32, DistUInt64, DistUInt128, 
+    uniform, uniform_arith, uniform_ite, expectation, triangle, discrete
 
 ##################################
 # types, structs, and constructors
 ##################################
 
-struct DistInt{W} <: Dist{Int}
+"An unsigned random W-bit integer"
+struct DistUInt{W} <: Dist{Int}
     # first index is most significant bit
     bits::Vector{AnyBool}
-    function DistInt{W}(b) where W
+    function DistUInt{W}(b) where W
         @assert length(b) == W
         @assert W <= 63
         new{W}(b)
     end
 end
 
-DistInt(b) = DistInt{length(b)}(b)
+DistUInt(bits::AbstractVector) = 
+    DistUInt{length(bits)}(bits)
 
-function DistInt{W}(i::Int) where W
+function DistUInt{W}(i::Int) where W
     @assert i >= 0
     num_b = ndigits(i, base = 2)
+    @assert num_b <= W
     bits = Vector{AnyBool}(undef, W)
     for bit_idx = W:-1:1
         bits[bit_idx] = (bit_idx > W - num_b) ? Bool(i & 1) : false
         i = i >> 1
     end
-    DistInt{W}(bits)
+    DistUInt{W}(bits)
 end
+
+const DistUInt8 = DistUInt{8}
+const DistUInt16 = DistUInt{16}
+const DistUInt32= DistUInt{32}
+const DistUInt64 = DistUInt{64}
+const DistUInt128 = DistUInt{128}
 
 ##################################
 # inference
 ##################################
 
-tobits(x::DistInt) = 
+tobits(x::DistUInt) = 
     filter(y -> y isa Dist{Bool}, x.bits)
 
-function frombits(x::DistInt{W}, world) where W
+function frombits(x::DistUInt{W}, world) where W
     v = 0
     for i = 1:W
         if frombits(x.bits[i], world)
@@ -44,53 +54,49 @@ function frombits(x::DistInt{W}, world) where W
     v
 end
 
-##################################
-# expectation
-##################################
-
-function expectation(x::DistInt{W}) where W
+"Compute the expected value of a random variable"
+function expectation(x::DistUInt{W}; kwargs...) where W
     ans = 0
-    a = pr(x.bits...)
+    a = pr(x.bits...; kwargs...)
     start = 2^(W-1)
     for i=1:W
-        ans += start*a[i][1]
+        ans += start*a[i][true]
         start /= 2
     end
     ans
 end
-    
 
 ##################################
 # methods
 ##################################
 
-bitwidth(::DistInt{W}) where W = W
+bitwidth(::DistUInt{W}) where W = W
 
-function uniform(::Type{DistInt{W}}, n = W) where W
+function uniform(::Type{DistUInt{W}}, n = W) where W
     @assert W >= n >= 0
-    DistInt{W}([i > W-n ? flip(0.5) : false for i=1:W])
+    DistUInt{W}([i > W-n ? flip(0.5) : false for i=1:W])
 end
 
-function uniform_arith(::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} where W
+function uniform_arith(::Type{DistUInt{W}}, start::Int, stop::Int)::DistUInt{W} where W
     # WARNING: will cause an error in certain cases where overflow is falsely detected
     # instead use with the @dice macro or increase bit-width
     @assert start >= 0
     @assert stop <= 2^W
     @assert stop > start
     if start > 0
-        DistInt{W}(start) + uniform_arith(DistInt{W}, 0, stop-start)
+        DistUInt{W}(start) + uniform_arith(DistUInt{W}, 0, stop-start)
     else
         is_power_of_two = (stop) & (stop-1) == 0
         if is_power_of_two
-            uniform(DistInt{W}, ndigits(stop, base=2)-1)
+            uniform(DistUInt{W}, ndigits(stop, base=2)-1)
         else 
             power_lt = 2^(ndigits(stop, base=2)-1)
-            ifelse(flip(power_lt/stop), uniform_arith(DistInt{W}, 0, power_lt), uniform_arith(DistInt{W}, power_lt, stop))
+            ifelse(flip(power_lt/stop), uniform_arith(DistUInt{W}, 0, power_lt), uniform_arith(DistUInt{W}, power_lt, stop))
         end
     end
 end
 
-function uniform_ite(::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} where W
+function uniform_ite(::Type{DistUInt{W}}, start::Int, stop::Int)::DistUInt{W} where W
     @assert start >= 0
     @assert stop <= 2^W
     @assert stop > start
@@ -127,7 +133,7 @@ function uniform_ite(::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} wher
     for j=1:1:length(pivots)-1
         a, b = pivots[j], pivots[j+1]
         segment_length = b-a
-        segment = uniform_part(DistInt{W}, a, floor(Int, log2(segment_length)))
+        segment = uniform_part(DistUInt{W}, a, floor(Int, log2(segment_length)))
         prob = flip(segment_length/total_length)
         total_length -= segment_length
         append!(segments, [(prob, segment)])
@@ -138,7 +144,7 @@ function uniform_ite(::Type{DistInt{W}}, start::Int, stop::Int)::DistInt{W} wher
 end
 
 
-function uniform_part(::Type{DistInt{W}}, lower, bit_length) where W 
+function uniform_part(::Type{DistUInt{W}}, lower, bit_length) where W 
     bits = Vector{AnyBool}(undef, W)
     num_b = ndigits(lower, base=2)
     for bit_idx = W:-1:1
@@ -149,11 +155,11 @@ function uniform_part(::Type{DistInt{W}}, lower, bit_length) where W
     for bit_idx = W:-1:W-bit_length+1
         bits[bit_idx] = flip(0.5)
     end
-    DistInt{W}(bits)
+    DistUInt{W}(bits)
 end
 
 # Generates triangle distribution of type t and bits b
-function triangle(t::Type{DistInt{W}}, b::Int) where W
+function triangle(t::Type{DistUInt{W}}, b::Int) where W
     @assert b <= W
     s = false
     n = 2^b
@@ -168,11 +174,11 @@ function triangle(t::Type{DistInt{W}}, b::Int) where W
         s = s | (x[i] & !y[i])
         n = n/2
     end
-    return DistInt{W}(x)
+    return DistUInt{W}(x)
 end
 
 # bitwise Holtzen to generate a categorical distribution
-function discrete(t::Type{DistInt{W}}, p::Vector{Float64}) where W
+function discrete(t::Type{DistUInt{W}}, p::Vector{Float64}) where W
     @assert sum(p) ≈ 1
 
     function recurse(p::Vector, i, s, e, prob::Vector)
@@ -196,20 +202,20 @@ function discrete(t::Type{DistInt{W}}, p::Vector{Float64}) where W
         a = recurse(int_vector, i-1, 1, 2^add, p_proxy)
         push!(int_vector, a)
     end
-    if add == 0 DistInt{W}(0) else DistInt{W}(int_vector) end
+    if add == 0 DistUInt{W}(0) else DistUInt{W}(int_vector) end
 end
 
 ##################################
 # casting
 ##################################
 
-function Base.convert(x::DistInt{W1}, t::Type{DistInt{W2}}) where W1 where W2
+function Base.convert(x::DistUInt{W1}, t::Type{DistUInt{W2}}) where W1 where W2
     if W1 <= W2
-        DistInt{W2}(vcat(fill(false, W2 - W1), x.bits))
+        DistUInt{W2}(vcat(fill(false, W2 - W1), x.bits))
     else
         err = reduce(&, x.bits[1:W1 - W2])
         err && error("throwing away bits")
-        DistInt{W2}(x.bits[W1 - W2 + 1:W1])
+        DistUInt{W2}(x.bits[W1 - W2 + 1:W1])
     end
 end
 
@@ -217,18 +223,18 @@ end
 # other method overloading
 ##################################
 
-function prob_equals(x::DistInt{W}, y::DistInt{W}) where W
+function prob_equals(x::DistUInt{W}, y::DistUInt{W}) where W
     mapreduce(prob_equals, &, x.bits, y.bits)
 end
 
-function Base.isless(x::DistInt{W}, y::DistInt{W}) where W
+function Base.isless(x::DistUInt{W}, y::DistUInt{W}) where W
     foldr(zip(x.bits,y.bits); init=false) do bits, tail_isless
         xbit, ybit = bits
         (xbit < ybit) | prob_equals(xbit,ybit) & tail_isless
     end
 end
 
-function Base.:(+)(x::DistInt{W}, y::DistInt{W}) where W
+function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
     z = Vector{AnyBool}(undef, W)
     carry = false
     for i=W:-1:1
@@ -236,10 +242,10 @@ function Base.:(+)(x::DistInt{W}, y::DistInt{W}) where W
         carry = atleast_two(x.bits[i], y.bits[i], carry)
     end
     carry && error("integer overflow")
-    DistInt{W}(z)
+    DistUInt{W}(z)
 end
 
-function Base.:(-)(x::DistInt{W}, y::DistInt{W}) where W
+function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W
     z = Vector{AnyBool}(undef, W)
     borrow = false
     for i=W:-1:1
@@ -247,14 +253,14 @@ function Base.:(-)(x::DistInt{W}, y::DistInt{W}) where W
         borrow = ifelse(borrow, !x.bits[i] | y.bits[i], !x.bits[i] & y.bits[i])
     end
     borrow && error("integer overflow")
-    DistInt{W}(z)
+    DistUInt{W}(z)
 end
 
-function Base.ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where W
+function Base.ifelse(cond::Dist{Bool}, then::DistUInt{W}, elze::DistUInt{W}) where W
     (then == elze) && return then
     bits = map(then.bits, elze.bits) do tb, eb
         ifelse(cond, tb, eb)
     end
-    DistInt{W}(bits)
+    DistUInt{W}(bits)
 end
   
