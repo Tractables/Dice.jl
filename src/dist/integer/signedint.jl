@@ -1,32 +1,32 @@
 
-export DistSignedInt
+export DistInt
 
 ##################################
 # types, structs, and constructors
 ##################################
 
-struct DistSignedInt{W} <: Dist{Int}
+struct DistInt{W} <: Dist{Int}
     number::DistUInt{W}
 end
 
-function DistSignedInt{W}(b::Vector) where W
-    DistSignedInt{W}(DistUInt{W}(b))
+function DistInt{W}(b::Vector) where W
+    DistInt{W}(DistUInt{W}(b))
 end
 
-function DistSignedInt{W}(i::Int) where W
+function DistInt{W}(i::Int) where W
     @assert i < 2^(W-1)
     @assert i >= -(2^(W-1))
     new_i = if i >= 0 i else i + 2^W end
-    DistSignedInt{W}(DistUInt{W}(new_i))
+    DistInt{W}(DistUInt{W}(new_i))
 end
 
 ##################################
 # inference
 ##################################
 
-tobits(x::DistSignedInt) = tobits(x.number)
+tobits(x::DistInt) = tobits(x.number)
 
-function frombits(x::DistSignedInt{W}, world) where W
+function frombits(x::DistInt{W}, world) where W
     v = 0
     if frombits(x.number.bits[1], world)
         v += -2^(W-1)
@@ -43,7 +43,7 @@ end
 # expectation
 ##################################
 
-function expectation(x::DistSignedInt{W}) where W
+function expectation(x::DistInt{W}) where W
     ans = 0
     a = pr(x.number.bits...)
     start = 2^(W-1)
@@ -61,28 +61,28 @@ end
 # methods
 ##################################
 
-bitwidth(::DistSignedInt{W}) where W = W
+bitwidth(::DistInt{W}) where W = W
 
-function uniform(::Type{DistSignedInt{W}}, n = W) where W
-    DistSignedInt{W}(uniform(DistUInt{W}, n).bits)
+function uniform(::Type{DistInt{W}}, n = W) where W
+    DistInt{W}(uniform(DistUInt{W}, n).bits)
 end
 
 # Generates a triangle on positive part of the support
-function triangle(t::Type{DistSignedInt{W}}, b::Int) where W
+function triangle(t::Type{DistInt{W}}, b::Int) where W
     @assert b <= W
-    DistSignedInt(triangle(DistUInt{W}, b))
+    DistInt(triangle(DistUInt{W}, b))
 end
 
 ##################################
 # casting
 ##################################
 
-function Base.convert(x::DistSignedInt{W1}, t::Type{DistSignedInt{W2}}) where W1 where W2
+function Base.convert(x::DistInt{W1}, t::Type{DistInt{W2}}) where W1 where W2
     if W1 <= W2
-        DistSignedInt{W2}(vcat(fill(x.number.bits[1], W2 - W1), x.number.bits))
+        DistInt{W2}(vcat(fill(x.number.bits[1], W2 - W1), x.number.bits))
     else
         #TODO: throw error if msb is not irrelevant
-        DistSignedInt{W2}(x.number.bits[W1 - W2 + 1:W1])
+        DistInt{W2}(x.number.bits[W1 - W2 + 1:W1])
     end
 end
 
@@ -91,25 +91,25 @@ end
 # # other method overloading
 # ##################################
 
-function prob_equals(x::DistSignedInt{W}, y::DistSignedInt{W}) where W
+function prob_equals(x::DistInt{W}, y::DistInt{W}) where W
     prob_equals(x.number, y.number)
 end
 
-function Base.ifelse(cond::Dist{Bool}, then::DistSignedInt{W}, elze::DistSignedInt{W}) where W
-    DistSignedInt{W}(ifelse(cond, then.number, elze.number))
+function Base.ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where W
+    DistInt{W}(ifelse(cond, then.number, elze.number))
 end
 
-function Base.:(+)(x::DistSignedInt{W}, y::DistSignedInt{W}) where W
+function Base.:(+)(x::DistInt{W}, y::DistInt{W}) where W
     ans = convert(x.number, DistUInt{W+1}) + convert(y.number, DistUInt{W+1})
     carry = (!x.number.bits[1] & !y.number.bits[1] & ans.bits[2]) | (x.number.bits[1] & y.number.bits[1] & !ans.bits[2])
     carry && error("integer overflow or underflow")
-    DistSignedInt{W}(ans.bits[2:W+1])
+    DistInt{W}(ans.bits[2:W+1])
 end
 
-function Base.:(-)(x::DistSignedInt{W}, y::DistSignedInt{W}) where W
+function Base.:(-)(x::DistInt{W}, y::DistInt{W}) where W
     ans = DistUInt{W+1}(vcat([true], x.number.bits)) - DistUInt{W+1}(vcat([false], y.number.bits))
     borrow = (!x.number.bits[1] & y.number.bits[1] & ans.bits[2]) | (x.number.bits[1] & !y.number.bits[1] & !ans.bits[2])
     borrow && error("integer overflow or underflow")
-    DistSignedInt{W}(ans.bits[2:W+1])
+    DistInt{W}(ans.bits[2:W+1])
 end
   
