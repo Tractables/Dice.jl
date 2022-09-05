@@ -1,9 +1,11 @@
-export DistUInt, uniform, uniform_arith, uniform_ite, expectation, triangle, discrete
+export DistUInt, DistUInt8, DistUInt16, DistUInt32, DistUInt64, DistUInt128, 
+    uniform, uniform_arith, uniform_ite, expectation, triangle, discrete
 
 ##################################
 # types, structs, and constructors
 ##################################
 
+"An unsigned random W-bit integer"
 struct DistUInt{W} <: Dist{Int}
     # first index is most significant bit
     bits::Vector{AnyBool}
@@ -14,11 +16,13 @@ struct DistUInt{W} <: Dist{Int}
     end
 end
 
-DistUInt(b) = DistUInt{length(b)}(b)
+DistUInt(bits::Vector) = 
+    DistUInt{length(bits)}(bits)
 
 function DistUInt{W}(i::Int) where W
     @assert i >= 0
     num_b = ndigits(i, base = 2)
+    @assert num_b <= W
     bits = Vector{AnyBool}(undef, W)
     for bit_idx = W:-1:1
         bits[bit_idx] = (bit_idx > W - num_b) ? Bool(i & 1) : false
@@ -50,21 +54,17 @@ function frombits(x::DistUInt{W}, world) where W
     v
 end
 
-##################################
-# expectation
-##################################
-
-function expectation(x::DistUInt{W}) where W
+"Compute the expected value of a random variable"
+function expectation(x::DistUInt{W}; kwargs...) where W
     ans = 0
-    a = pr(x.bits...)
+    a = pr(x.bits...; kwargs...)
     start = 2^(W-1)
     for i=1:W
-        ans += start*a[i][1]
+        ans += start*a[i][true]
         start /= 2
     end
     ans
 end
-    
 
 ##################################
 # methods

@@ -128,6 +128,11 @@ end
     p = pr(y)
     mean = reduce(+, [(key*value) for (key, value) in p])
     @test expectation(y) ≈ mean
+
+    x = uniform(DistUInt8)
+    @test expectation(x) ≈ (2^8-1)/2
+    y = prob_equals(x, DistUInt8(42))
+    @test expectation(x; evidence=y) ≈ 42
 end
 
 @testset "DistUInt casting" begin

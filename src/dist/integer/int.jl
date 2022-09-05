@@ -1,5 +1,5 @@
 
-export DistInt
+export DistInt, DistInt8, DistInt16, DistInt32, DistInt64, DistInt128
 
 ##################################
 # types, structs, and constructors
@@ -53,10 +53,10 @@ function expectation(x::DistInt{W}) where W
     ans = 0
     a = pr(x.number.bits...)
     start = 2^(W-1)
-    ans -= start*a[1][1]
+    ans -= start*a[1][true]
     start /= 2
     for i=2:W
-        ans += start*a[i][1]
+        ans += start*a[i][true]
         start /= 2
     end
     ans
