@@ -8,7 +8,7 @@ export flip, prob_equals
 const AnyBool = Union{Dist{Bool}, Bool}
 
 # TODO should become and atomic int when we care about multithreading
-global_flip_id = one(Int64)
+global_flip_id::Int64 = one(Int64)
 
 struct Flip <: Dist{Bool}
     global_id::Int
@@ -33,17 +33,18 @@ abstract type DistBoolOp <: Dist{Bool} end
 abstract type DistBoolBinOp <: DistBoolOp end
 
 mutable struct DistAnd <: DistBoolBinOp
-    x::Dist{Bool}
-    y::Dist{Bool}
+    const x::Dist{Bool}
+    const y::Dist{Bool}
     DistAnd(x,y) = (hash(x) > hash(y)) ? new(y,x) : new(x,y)
 end
 
 Base.:(&)(x::Dist{Bool}, y::Dist{Bool}) = x == y ? x : DistAnd(x,y)
 Base.:(&)(x::Dist{Bool}, y::Bool) = y ? x : false
 Base.:(&)(x::Bool, y::Dist{Bool}) = y & x
+
 mutable struct DistOr <: DistBoolBinOp
-    x::Dist{Bool}
-    y::Dist{Bool}
+    const x::Dist{Bool}
+    const y::Dist{Bool}
     DistOr(x,y) = (hash(x) > hash(y)) ? new(y,x) : new(x,y)
 end
 
