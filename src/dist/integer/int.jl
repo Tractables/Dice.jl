@@ -20,6 +20,12 @@ function DistInt{W}(i::Int) where W
     DistInt{W}(DistUInt{W}(new_i))
 end
 
+const DistInt8 = DistInt{8}
+const DistInt16 = DistInt{16}
+const DistInt32= DistInt{32}
+const DistInt64 = DistInt{64}
+const DistInt128 = DistInt{128}
+
 ##################################
 # inference
 ##################################

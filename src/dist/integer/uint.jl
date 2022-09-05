@@ -27,6 +27,12 @@ function DistUInt{W}(i::Int) where W
     DistUInt{W}(bits)
 end
 
+const DistUInt8 = DistUInt{8}
+const DistUInt16 = DistUInt{16}
+const DistUInt32= DistUInt{32}
+const DistUInt64 = DistUInt{64}
+const DistUInt128 = DistUInt{128}
+
 ##################################
 # inference
 ##################################
