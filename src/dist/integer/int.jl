@@ -9,7 +9,7 @@ struct DistInt{W} <: Dist{Int}
     number::DistUInt{W}
 end
 
-function DistInt{W}(b::Vector) where W
+function DistInt{W}(b::AbstractVector) where W
     DistInt{W}(DistUInt{W}(b))
 end
 
@@ -33,10 +33,7 @@ const DistInt128 = DistInt{128}
 tobits(x::DistInt) = tobits(x.number)
 
 function frombits(x::DistInt{W}, world) where W
-    v = 0
-    if frombits(x.number.bits[1], world)
-        v += -2^(W-1)
-    end
+    v = frombits(x.number.bits[1], world) ? -2^(W-1) : 0
     for i = 2:W
         if frombits(x.number.bits[i], world)
             v += 2^(W-i)
@@ -45,23 +42,16 @@ function frombits(x::DistInt{W}, world) where W
     v
 end
 
-##################################
-# expectation
-##################################
-
-function expectation(x::DistInt{W}) where W
-    ans = 0
-    a = pr(x.number.bits...)
-    start = 2^(W-1)
-    ans -= start*a[1][true]
-    start /= 2
+function expectation(x::DistInt{W}; kwargs...) where W
+    prs = pr(x.number.bits...; kwargs...)
+    ans = -(2^(W-1)) * prs[1][true]
+    start = 2^(W-2)
     for i=2:W
-        ans += start*a[i][true]
+        ans += start * prs[i][true]
         start /= 2
     end
     ans
 end
-    
 
 ##################################
 # methods
@@ -75,7 +65,7 @@ end
 
 # Generates a triangle on positive part of the support
 function triangle(t::Type{DistInt{W}}, b::Int) where W
-    @assert b <= W
+    @assert b < W
     DistInt(triangle(DistUInt{W}, b))
 end
 

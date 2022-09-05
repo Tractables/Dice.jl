@@ -16,7 +16,7 @@ struct DistUInt{W} <: Dist{Int}
     end
 end
 
-DistUInt(bits::Vector) = 
+DistUInt(bits::AbstractVector) = 
     DistUInt{length(bits)}(bits)
 
 function DistUInt{W}(i::Int) where W

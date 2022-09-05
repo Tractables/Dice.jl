@@ -60,6 +60,14 @@ end
     mean = reduce(+, [(key*value) for (key, value) in p])
     @test expectation(y) ≈ mean
 
+    x = uniform(DistInt8)
+    @test expectation(x) ≈ -0.5
+    
+    y = prob_equals(x, DistInt8(42))
+    @test expectation(x; evidence=y) ≈ 42
+
+    y = prob_equals(x, DistInt8(-42))
+    @test expectation(x; evidence=y) ≈ -42
 end
 
 @testset "DistInt triangle" begin
