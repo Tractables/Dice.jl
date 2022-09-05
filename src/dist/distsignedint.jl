@@ -6,18 +6,18 @@ export DistSignedInt
 ##################################
 
 struct DistSignedInt{W} <: Dist{Int}
-    number::DistInt{W}
+    number::DistUInt{W}
 end
 
 function DistSignedInt{W}(b::Vector) where W
-    DistSignedInt{W}(DistInt{W}(b))
+    DistSignedInt{W}(DistUInt{W}(b))
 end
 
 function DistSignedInt{W}(i::Int) where W
     @assert i < 2^(W-1)
     @assert i >= -(2^(W-1))
     new_i = if i >= 0 i else i + 2^W end
-    DistSignedInt{W}(DistInt{W}(new_i))
+    DistSignedInt{W}(DistUInt{W}(new_i))
 end
 
 ##################################
@@ -64,13 +64,13 @@ end
 bitwidth(::DistSignedInt{W}) where W = W
 
 function uniform(::Type{DistSignedInt{W}}, n = W) where W
-    DistSignedInt{W}(uniform(DistInt{W}, n).bits)
+    DistSignedInt{W}(uniform(DistUInt{W}, n).bits)
 end
 
 # Generates a triangle on positive part of the support
 function triangle(t::Type{DistSignedInt{W}}, b::Int) where W
     @assert b <= W
-    DistSignedInt(triangle(DistInt{W}, b))
+    DistSignedInt(triangle(DistUInt{W}, b))
 end
 
 ##################################
@@ -100,14 +100,14 @@ function Base.ifelse(cond::Dist{Bool}, then::DistSignedInt{W}, elze::DistSignedI
 end
 
 function Base.:(+)(x::DistSignedInt{W}, y::DistSignedInt{W}) where W
-    ans = convert(x.number, DistInt{W+1}) + convert(y.number, DistInt{W+1})
+    ans = convert(x.number, DistUInt{W+1}) + convert(y.number, DistUInt{W+1})
     carry = (!x.number.bits[1] & !y.number.bits[1] & ans.bits[2]) | (x.number.bits[1] & y.number.bits[1] & !ans.bits[2])
     carry && error("integer overflow or underflow")
     DistSignedInt{W}(ans.bits[2:W+1])
 end
 
 function Base.:(-)(x::DistSignedInt{W}, y::DistSignedInt{W}) where W
-    ans = DistInt{W+1}(vcat([true], x.number.bits)) - DistInt{W+1}(vcat([false], y.number.bits))
+    ans = DistUInt{W+1}(vcat([true], x.number.bits)) - DistUInt{W+1}(vcat([false], y.number.bits))
     borrow = (!x.number.bits[1] & y.number.bits[1] & ans.bits[2]) | (x.number.bits[1] & !y.number.bits[1] & !ans.bits[2])
     borrow && error("integer overflow or underflow")
     DistSignedInt{W}(ans.bits[2:W+1])

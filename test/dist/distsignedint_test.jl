@@ -25,7 +25,7 @@ using Dice: Flip, num_ir_nodes
     @test_throws Exception DistSignedInt{3}([true, false, true, false])
     @test_throws Exception DistSignedInt{5}([true, false, true, false])
 
-    ps1, ps2 = pr(uniform(DistSignedInt{3}), uniform(DistInt{2}))
+    ps1, ps2 = pr(uniform(DistSignedInt{3}), uniform(DistUInt{2}))
     @test issetequal(keys(ps1), -(2^2):(2^2-1))
     @test all(values(ps1) .≈ 1/2^3)
 
