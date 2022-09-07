@@ -22,5 +22,5 @@ shortlabel(::DistAnd) = "⋀"
 shortlabel(::DistOr) = "⋁"
 shortlabel(::DistNot) = "¬"
 
-TikzPictures.save(f, x::Dist) =
-    TikzPictures.save(f, TikzGraphs.plot(x))
+TikzPictures.save(file, x::Dist) =
+    TikzPictures.save(file, TikzGraphs.plot(x))
