@@ -22,7 +22,7 @@ jobs:
           version: 1.8
           
       - name: Unit Tests
-        run: 
+        run: |
           sudo apt install -y pdf2svg texlive-latex-base texlive-binaries texlive-latex-extra texlive-luatex
           julia --project -e 'using Pkg; Pkg.instantiate(); Pkg.build();'
           julia --project -e 'using Pkg; Pkg.add(PackageSpec(name="IRTools", rev="master"));'
