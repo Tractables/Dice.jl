@@ -21,9 +21,12 @@ jobs:
         with:
           version: 1.8
 
-      # Runs a single command using the runners shell
       - name: Unit Tests
         run: |
+          sudo apt-get -qq update
+          sudo apt install -y pdf2svg texlive-latex-base texlive-binaries
+          luatex -v
+          pdflatex -v
           julia --project -e 'using Pkg; Pkg.instantiate(); Pkg.build();'
           julia --project -e 'using Pkg; Pkg.add(PackageSpec(name="IRTools", rev="master"));'
           julia --project --check-bounds=yes --depwarn=yes -e 'import Pkg; Pkg.test(; coverage=true)'
