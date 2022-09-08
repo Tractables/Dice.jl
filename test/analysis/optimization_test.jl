@@ -45,3 +45,22 @@ end
 
 
 end
+
+@testset "optimize_condition_global" begin
+    
+    n = 3
+    grid = Matrix{Dist{Bool}}(undef, n, n);
+    for i=1:n, j=1:n
+        pa1 = i==1 ? false : grid[i-1,j  ]
+        pa2 = j==1 ? false : grid[i,  j-1]
+        grid[i,j] = ifelse(pa1, 
+                        ifelse(pa2, flip(0.1), flip(0.2)), 
+                        ifelse(pa2, flip(0.3), flip(0.4)))
+    end
+    evidence = reduce(&, grid)
+    evidence_opt = Dice.optimize_condition_global(evidence)
+
+    @test pr(evidence)[true] ≈ pr(evidence_opt)[true]
+    @test num_ir_nodes(evidence) > num_ir_nodes(evidence_opt)
+
+end
