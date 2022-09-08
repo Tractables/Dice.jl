@@ -1,5 +1,18 @@
 using Test
 using Dice
+using Dice: canonicalize, optimize_unsat, optimize_condition, num_ir_nodes
+
+@testset "canonicalize" begin
+    
+    f1, f2, f3, f4, f5 = [flip(0.5) for _ = 1:5]
+
+    x = (f1 & f2) | !(f3 & (f2 & f1))
+
+    @test num_ir_nodes(x) == 8
+    xc, _ = canonicalize(x)
+    @test num_ir_nodes(xc) == 7
+end
+
 
 @testset "optimize_unsat" begin
     
