@@ -77,6 +77,8 @@ function uniform(::Type{DistUInt{W}}, n = W) where W
     DistUInt{W}([i > W-n ? flip(0.5) : false for i=1:W])
 end
 
+
+# TODO: update uniform to take keyword argument for uniform type
 function uniform_arith(::Type{DistUInt{W}}, start::Int, stop::Int)::DistUInt{W} where W
     # WARNING: will cause an error in certain cases where overflow is falsely detected
     # instead use with the @dice macro or increase bit-width

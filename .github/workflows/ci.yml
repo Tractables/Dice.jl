@@ -20,14 +20,20 @@ jobs:
       - uses: julia-actions/setup-julia@latest
         with:
           version: 1.8
+          
+      - name: Install Latex Dependencies
+        run:
+          sudo apt install -y pdf2svg texlive-latex-base texlive-binaries texlive-latex-extra texlive-luatex
 
-      # Runs a single command using the runners shell
-      - name: Unit Tests
+      - name: Install IRTools master
         run: |
           julia --project -e 'using Pkg; Pkg.instantiate(); Pkg.build();'
           julia --project -e 'using Pkg; Pkg.add(PackageSpec(name="IRTools", rev="master"));'
+
+      - name: Unit Tests
+        run:
           julia --project --check-bounds=yes --depwarn=yes -e 'import Pkg; Pkg.test(; coverage=true)'
       
       - name: Codecov Upload
-        run: |
+        run:
           julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder());'

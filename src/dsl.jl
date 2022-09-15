@@ -2,7 +2,7 @@ using MacroTools: prewalk, postwalk
 using IRTools
 using IRTools: @dynamo, IR, recurse!, self, xcall, functional
 
-export @dice_ite, @dice, dice, observe, constraint
+export @dice_ite, @dice, dice, observe, constraint, assert_dice
 
 ##################################
 # Control flow macro
@@ -84,9 +84,6 @@ global dynamoed = Vector()
     return ir
 end
 
-# TODO figure out why second @dice calls still have significant compilation times
-times() = [t1,t2]
-
 reset_dynamoed() = begin
     global dynamoed
     empty!(dynamoed)
@@ -117,10 +114,13 @@ path_condition(dyna) = reduce(&, dyna.path; init=true)
 (dyna::DiceDyna)(::typeof(observe), x) =
     push!(dyna.observations, !path_condition(dyna) | x)
 
-(::DiceDyna)(::typeof(==), x::Dist, y::Union{Dist, Bool}) = 
+(::DiceDyna)(::typeof(==), x::Dist, y) = 
     prob_equals(x,y)
 
-(::DiceDyna)(::typeof(==), x::Bool, y::Dist) = 
+(::DiceDyna)(::typeof(==), x, y::Dist) = 
+    prob_equals(x,y)
+
+(::DiceDyna)(::typeof(==), x::Dist, y::Dist) = 
     prob_equals(x,y)
 
 # avoid transformation when it is known to trigger a bug

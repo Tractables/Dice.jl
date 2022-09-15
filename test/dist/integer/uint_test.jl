@@ -176,6 +176,42 @@ end
 
 end
 
+@testset "DistUInt uniform" begin
+    uniform_funcs = [uniform_arith, uniform_ite]
+
+    map(uniform_funcs) do uniform 
+        x = uniform(DistUInt{3}, 0, 7)
+        p = pr(x)
+        for i=0:6
+            @test p[i] ≈ 1/7
+        end
+        @test p[7] ≈ 0
+        
+        @test_throws Exception uniform(DistUInt{3}, 0, 10)
+        @test_throws Exception uniform(DistUInt{3}, -1, 7)
+        @test_throws Exception uniform(DistUInt{3}, 4, 3)
+        @test_throws Exception uniform(DistUInt{3}, 3, 3)
+
+        x = uniform(DistUInt{3}, 3, 4)
+        p = pr(x)
+        @test p[3] ≈ 1
+
+        x = uniform(DistUInt{5}, 3, 17)
+        p = pr(x)
+        for i=3:16
+            @test p[i] ≈ 1/14
+        end
+        y = DistUInt{5}(10)
+        p = pr(x < y)
+        @test p[1] ≈ 7/14
+
+        z = DistUInt{5}(0)
+        p = pr(prob_equals(x, z))
+        @test p[1] ≈ 0
+
+    end
+end
+
 @testset "DistUInt triangle and discrete" begin
     x = triangle(DistUInt{4}, 3)
     p = pr(x)

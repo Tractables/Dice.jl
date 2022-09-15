@@ -44,6 +44,9 @@ using Dice: Flip, num_ir_nodes
         x
     end
 
+    @test_throws ErrorException assert_dice()
+    @test_throws ErrorException observe(true)
+
 end
 
 
@@ -106,6 +109,10 @@ end
     @test pr(f3)[true] ≈ 1 - 0.6
 
     @test (@dice true).returnvalue == true
+    
+    @test_nowarn dice() do 
+        assert_dice()
+    end
 end
 
 @testset "Error dynamo" begin
@@ -185,5 +192,37 @@ end
     @test pr(x.returnvalue & x.observations[1] & x.observations[2])[true] ≈ 0.1*0.3+0.9*0.2*0.3
 
     @test pr(x)[true] ≈ (0.1*0.3+0.9*0.2*0.3) / (0.1*0.3 + 0.9*(0.8+0.2*0.3))
+
+end
+
+@testset "Dynamo profiling" begin
+
+    
+    dice() do 
+        f(x) = flip(x)
+        f(0.1) || f(0.2) 
+    end
+
+    @test !isempty(Dice.top_dynamoed())
+    @test_nowarn Dice.reset_dynamoed()
+
+end
+
+
+@testset "Equality Dynamo" begin
+
+    f = flip(0.5)
+    
+    @test returnvalue(dice() do 
+        true == f
+    end) == f
+
+    @test returnvalue(dice() do 
+        f == true
+    end) == f
+
+    @test returnvalue(dice() do 
+        f == f
+    end)
 
 end
