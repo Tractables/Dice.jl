@@ -1,0 +1,51 @@
+Benchmark name Start 
+altermu2
+1
+621
+The overall mean is  0.15421207504025766
+The overall variance is  20.4977843191265
+gauss_mix_asym_prior
+1
+218
+The overall mean is  2.588920855963303
+The overall variance is  0.2223603575895714
+gauss_mix_asym_prior
+2
+218
+The overall mean is  -2.347668819266055
+The overall variance is  0.1609677874589579
+gauss_mix_asym_prior
+3
+219
+The overall mean is  2.884747205936073
+The overall variance is  0.4682377768465109
+gauss_mix_asym_prior
+4
+217
+The overall mean is  2.4213665092165897
+The overall variance is  0.2312594932170171
+lightspeed
+1
+519
+The overall mean is  26.55356668921002
+The overall variance is  2.6013983083020094
+lightspeed
+2
+516
+The overall mean is  10.166213113565892
+The overall variance is  1.4466154102161113
+timeseries
+1
+190
+The overall mean is  -1.5770893689473684
+The overall variance is  0.08864396693388077
+timeseries
+2
+190
+The overall mean is  0.6840927152631578
+The overall variance is  0.007939165661414893
+timeseries
+3
+190
+The overall mean is  0.4762246057894737
+The overall variance is  0.009193489812812206
