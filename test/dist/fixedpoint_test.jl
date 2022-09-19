@@ -149,3 +149,20 @@ end
 
     #TODO: write tests for continuous distribution other than gaussian
 end
+
+@testset "DistFixedPoint multiply" begin
+    a = [0.5, 0.5, -0.5, -0.5]
+    b = [0.75, -0.75, 0.75, -0.75]
+    map(a, b) do i, j
+        fi = DistFixedPoint{4, 2}(i)
+        fj = DistFixedPoint{4, 2}(j)
+        p = pr(@dice fi*fj; ignore_errors=true)
+        @test p[i*j] ≈ 1
+    end
+
+    a = uniform(DistFixedPoint{4, 2}, 2) - DistFixedPoint{4, 2}(0.5)
+    b = uniform(DistFixedPoint{4, 2}, 2) - DistFixedPoint{4, 2}(0.5)
+    p = pr(@dice a*b; ignore_errors=true)
+    @test p[0.25] ≈ 1/16
+    @test p[0] ≈ 7/16
+end

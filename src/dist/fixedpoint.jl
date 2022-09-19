@@ -78,6 +78,10 @@ function Base.:(-)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F
     DistFixedPoint{W, F}(x.number - y.number)
 end
 
+function Base.:(*)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F}
+    DistFixedPoint{W, 2*F}(x.number * y.number)
+end
+
 #################################
 # continuous distributions
 #################################
