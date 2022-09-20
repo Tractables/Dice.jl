@@ -180,7 +180,7 @@ end
 
     z = convert(y, DistFixedPoint{5, 3})
     p2 = pr(z)
-    @test p == p2
+    @test p1 == p2
 
     z = convert(y, DistFixedPoint{3, 1})
     p2 = pr(z)
