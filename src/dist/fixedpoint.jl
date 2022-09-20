@@ -66,7 +66,7 @@ end
 ##################################
 
 function Base.convert(x::DistFixedPoint{W1, F1}, t::Type{DistFixedPoint{W2, F2}}) where W1 where W2 where F1 where F2
-    #check if cases are exhaustive
+    #TODO: check if cases are exhaustive
     if (F1 == F2)
         DistFixedPoint{W2, F2}(convert(x.number, DistInt{W2}))
     elseif (W1 - F1 == W2 - F2)

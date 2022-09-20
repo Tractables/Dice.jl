@@ -35,6 +35,9 @@ using Distributions
 
     @test prob_equals(x, DistFixedPoint{4, 1}(-3.0))
     @test prob_equals(y, DistFixedPoint{4, 1}(1.5))
+
+    y = DistFixedPoint{11, 2}(-0.045840)
+    @test pr(y)[-0.25] ≈ (1.0)
 end
 
 @testset "DistFixedPoint expectation" begin
