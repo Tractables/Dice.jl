@@ -113,7 +113,8 @@ function continuous(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistri
     @assert stop <= (2^(W - F - 1))
     @assert start < stop
     a = Int(log2((stop - start)*2^F))
-    @assert typeof(a) == Int 
+    @assert a isa Int 
+    @assert ispow2(pieces) "Number of pieces must be a power of two"
     piece_bits = Int(log2(pieces))
     if piece_bits == 0
         piece_bits = 1
