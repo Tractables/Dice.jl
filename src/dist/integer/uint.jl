@@ -258,6 +258,20 @@ function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W
     DistUInt{W}(z)
 end
 
+
+function Base.:(*)(p1::DistUInt{W}, p2::DistUInt{W}) where W
+    P = DistUInt{W}(0)
+    shifted_bits = p1.bits
+    for i = W:-1:1
+        if (i != W)
+            shifted_bits = vcat(shifted_bits[2:W], false)
+        end
+        added = ifelse(p2.bits[i], DistUInt{W}(shifted_bits), DistUInt{W}(0))
+        P = P + added
+    end
+    P
+end 
+
 function Base.ifelse(cond::Dist{Bool}, then::DistUInt{W}, elze::DistUInt{W}) where W
     (then == elze) && return then
     bits = map(then.bits, elze.bits) do tb, eb

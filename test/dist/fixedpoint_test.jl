@@ -35,6 +35,9 @@ using Distributions
 
     @test prob_equals(x, DistFixedPoint{4, 1}(-3.0))
     @test prob_equals(y, DistFixedPoint{4, 1}(1.5))
+
+    y = DistFixedPoint{11, 2}(-0.045840)
+    @test pr(y)[-0.25] ≈ (1.0)
 end
 
 @testset "DistFixedPoint expectation" begin
@@ -148,4 +151,42 @@ end
     @test p2 ≈ q
 
     #TODO: write tests for continuous distribution other than gaussian
+end
+
+@testset "DistFixedPoint multiply" begin
+    a = [0.5, 0.5, -0.5, -0.5]
+    b = [0.75, -0.75, 0.75, -0.75]
+    map(a, b) do i, j
+        fi = DistFixedPoint{4, 2}(i)
+        fj = DistFixedPoint{4, 2}(j)
+        p = pr(@dice fi*fj; ignore_errors=true)
+        @test p[i*j] ≈ 1
+    end
+
+    a = uniform(DistFixedPoint{4, 2}, 2) - DistFixedPoint{4, 2}(0.5)
+    b = uniform(DistFixedPoint{4, 2}, 2) - DistFixedPoint{4, 2}(0.5)
+    p = pr(@dice a*b; ignore_errors=true)
+    @test p[0.25] ≈ 1/16
+    @test p[0] ≈ 7/16
+end
+
+@testset "DistFixedPoint casting" begin
+    y = DistFixedPoint{4, 2}([true, false, true, false])
+    p1 = pr(y)
+
+    z = convert(y, DistFixedPoint{5, 2})
+    p2 = pr(z)
+    @test p1 == p2
+
+    z = convert(y, DistFixedPoint{5, 3})
+    p2 = pr(z)
+    @test p1 == p2
+
+    z = convert(y, DistFixedPoint{3, 1})
+    p2 = pr(z)
+    @test p1 == p2
+
+    z = convert(y, DistFixedPoint{3, 2})
+    p2 = pr(z)
+    @test p2[0.5] ≈ 1.0
 end

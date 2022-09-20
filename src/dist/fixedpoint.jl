@@ -7,6 +7,7 @@ export DistFixedPoint, continuous
 ##################################
 
 struct DistFixedPoint{W, F} <: Dist{Int}
+    # W: total number of bits, F: number of bits after the binary point
     number::DistInt{W}
     function DistFixedPoint{W, F}(b) where W where F
         @assert W >= F
@@ -20,7 +21,9 @@ function DistFixedPoint{W, F}(b::Vector) where W where F
 end
 
 function DistFixedPoint{W, F}(i::Float64) where W where F
-    new_i = Int(round(if i >= 0 i*2^F else i*2^F + 2^W end))
+    # new_i = Int(round(if i >= -(2.0)^(-F-1) i*2^F else i*2^F + 2^W end)) # for a centered notation of probabilities
+    new_i = Int(floor(if i >= 0 i*2^F else i*2^F + 2^W end))
+    # @show new_i
     DistFixedPoint{W, F}(DistInt{W}(DistUInt{W}(new_i)))
 end
 
@@ -59,6 +62,23 @@ function triangle(t::Type{DistFixedPoint{W, F}}, b::Int) where W where F
 end
 
 ##################################
+# casting
+##################################
+
+function Base.convert(x::DistFixedPoint{W1, F1}, t::Type{DistFixedPoint{W2, F2}}) where W1 where W2 where F1 where F2
+    #TODO: check if cases are exhaustive
+    if (F1 == F2)
+        DistFixedPoint{W2, F2}(convert(x.number, DistInt{W2}))
+    elseif (W1 - F1 == W2 - F2)
+        if (F2 > F1)
+            DistFixedPoint{W2, F2}(vcat(x.number.number.bits, fill(false, F2 - F1)))
+        else
+            DistFixedPoint{W2, F2}(x.number.number.bits[1:W2])
+        end
+    end
+end
+
+##################################
 # other method overloading
 ##################################
 
@@ -76,6 +96,10 @@ end
 
 function Base.:(-)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F}
     DistFixedPoint{W, F}(x.number - y.number)
+end
+
+function Base.:(*)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F}
+    DistFixedPoint{W, 2*F}(x.number * y.number)
 end
 
 #################################

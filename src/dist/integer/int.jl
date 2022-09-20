@@ -108,4 +108,13 @@ function Base.:(-)(x::DistInt{W}, y::DistInt{W}) where W
     borrow && error("integer overflow or underflow")
     DistInt{W}(ans.bits[2:W+1])
 end
+
+function Base.:(*)(x::DistInt{W}, y::DistInt{W}) where W
+    # ans = DistUInt{W+1}(vcat([true], x.number.bits)) - DistUInt{W+1}(vcat([false], y.number.bits))
+    # borrow = (!x.number.bits[1] & y.number.bits[1] & ans.bits[2]) | (x.number.bits[1] & !y.number.bits[1] & !ans.bits[2])
+    # borrow && error("integer overflow or underflow")
+    # DistInt{W}(ans.bits[2:W+1])
+
+    DistInt{W}(x.number * y.number)
+end
   
