@@ -121,3 +121,36 @@ end
     @test issetequal(keys(p), -1:2)
     @test all(values(p) .≈ 1/2^2)
 end
+
+@testset "DistInt multiply" begin
+    a = DistInt{4}(2)
+    b = DistInt{4}(-3)
+    p = pr(a*b)
+    @test p[-6] ≈ 1
+
+    a = DistInt{4}(-2)
+    b = DistInt{4}(-3)
+    p = pr(@dice a*b; ignore_errors=true)
+    @test p[6] ≈ 1
+
+    a = DistInt{4}(2)
+    b = DistInt{4}(-3)
+    p = pr(a*b)
+    @test p[-6] ≈ 1
+
+    a = DistInt{4}(2)
+    b = DistInt{4}(3)
+    p = pr(a*b)
+    @test p[6] ≈ 1
+
+    a = DistInt{4}(2)
+    b = DistInt{4}(-3)
+    p = pr(a*b)
+    @test p[-6] ≈ 1
+
+    a = uniform(DistInt{4}, 2) - DistInt{4}(2)
+    b = uniform(DistInt{4}, 2) - DistInt{4}(2)
+    p = pr(@dice a*b; ignore_errors=true)
+    @test p[4] ≈ 1/16
+    @test p[0] ≈ 7/16
+end

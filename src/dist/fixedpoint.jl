@@ -20,7 +20,9 @@ function DistFixedPoint{W, F}(b::Vector) where W where F
 end
 
 function DistFixedPoint{W, F}(i::Float64) where W where F
-    new_i = Int(round(if i >= 0 i*2^F else i*2^F + 2^W end))
+    # new_i = Int(round(if i >= -(2.0)^(-F-1) i*2^F else i*2^F + 2^W end)) # for a centered notation of probabilities
+    new_i = Int(floor(if i >= 0 i*2^F else i*2^F + 2^W end))
+    @show new_i
     DistFixedPoint{W, F}(DistInt{W}(DistUInt{W}(new_i)))
 end
 
@@ -76,6 +78,10 @@ end
 
 function Base.:(-)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F}
     DistFixedPoint{W, F}(x.number - y.number)
+end
+
+function Base.:(*)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F}
+    DistFixedPoint{W, 2*F}(x.number * y.number)
 end
 
 #################################

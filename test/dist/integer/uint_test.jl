@@ -190,3 +190,26 @@ end
         @test p[i] ≈ (i+1)/10
     end 
 end
+
+#TODO: better unit tests for multiplication maybe
+@testset "DistUInt multiplication" begin
+    x = DistUInt{4}(3)
+    y = DistUInt{4}(5)
+    p = pr(x*y)
+    @test p[15] ≈ 1.0
+
+    x = DistUInt{4}(3)
+    y = DistUInt{4}(2)
+    p = pr(x*y)
+    @test p[6] ≈ 1.0
+
+    x = DistUInt{4}(3)
+    y = DistUInt{4}(6)
+    @test_throws Exception p = pr(x*y)
+
+    x = uniform(DistUInt{4}, 2)
+    y = uniform(DistUInt{4}, 2)
+    p = pr(@dice y*x; ignore_errors = true)
+    @test p[0] ≈ 7/16
+    @test p[9] ≈ 1/16
+end
