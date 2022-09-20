@@ -7,6 +7,7 @@ export DistFixedPoint, continuous
 ##################################
 
 struct DistFixedPoint{W, F} <: Dist{Int}
+    # W: total number of bits, F: number of bits after the binary point
     number::DistInt{W}
     function DistFixedPoint{W, F}(b) where W where F
         @assert W >= F
@@ -58,6 +59,19 @@ end
 function triangle(t::Type{DistFixedPoint{W, F}}, b::Int) where W where F
     @assert b <= W
     DistFixedPoint{W, F}(triangle(DistInt{W}, b))
+end
+
+##################################
+# casting
+##################################
+
+function Base.convert(x::DistFixedPoint{W1, F1}, t::Type{DistFixedPoint{W2, F2}}) where W1 where W2 where F1 where F2
+    if (F1 == F2) & (W1 <= W2)
+        DistFixedPoint{W2, F2}(convert(x.number, DistInt{W2}))
+    else
+        # TODO: implement other case
+        @assert true == false
+    end
 end
 
 ##################################

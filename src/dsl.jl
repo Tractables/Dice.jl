@@ -128,7 +128,7 @@ for f in :[getfield, typeof, Core.apply_type, typeassert, (===),
         Core.sizeof, Core.arrayset, tuple, isdefined, fieldtype, nfields,
         isa, Core.arraysize, repr, print, println, Base.vect, Broadcast.broadcasted,
         Broadcast.materialize, Core.Compiler.return_type, Base.union!, Base.getindex, Base.haskey,
-        Base.pop!, Base.setdiff, unsafe_copyto!].args
+        Base.pop!, Base.setdiff, unsafe_copyto!, continuous].args
     @eval (::DiceDyna)(::typeof($f), args...) = $f(args...)
 end
 

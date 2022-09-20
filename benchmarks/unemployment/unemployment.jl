@@ -22,12 +22,13 @@ model {
 binbits = 2
 pieces = 4
 
-t_beta = DistFixedPoint{binbits + 7, binbits}
-t_sigma = DistFixedPoint{binbits + 7, binbits}
-t_obs = DistFixedPoint{binbits + 7, binbits}
+t_beta2 = DistFixedPoint{binbits + 9, binbits}
+t_beta1 = DistFixedPoint{2*binbits + 9, 2*binbits}
+t_sigma = DistFixedPoint{binbits + 9, binbits}
+t_obs = DistFixedPoint{binbits + 9, binbits}
 
-beta1 = continuous(t_beta, Normal(1, 1), pieces, -7.0, 9.0)
-beta2 = continuous(t_beta, Normal(1, 1), pieces, -7.0, 9.0)
+beta1 = continuous(t_beta1, Normal(1, 1), pieces, -7.0, 9.0)
+beta2 = continuous(t_beta2, Normal(1, 1), pieces, -7.0, 9.0)
 sigma = uniform(t_sigma, binbits + 7)
 
 y = [3.33008960302557, 5.19543854472405, 5.88929762709886, 5.52449264517973, 5.31172037906861,
@@ -48,16 +49,13 @@ y_lag = [4.3838241041638, 3.93442675489932, 7.57050890065729, 4.53683034032583, 
         6.9590606178157, 3.89350344482809, 5.34843717515469, 8.38955592149869, 5.99861560808495,
         8.28150384919718, 7.6049918634817, 5.4332405702211, 5.35873385947198, 5.18218877464533]
 
-obs = true
-# for i=1:length(y)
-term1 = pr(@dice continuous(t_obs, Normal(0, 1), pieces, -8.0, 8.0); ignore_errors=true)
-p = pr( @dice begin
-    term1 = continuous(t_obs, Normal(0, 1), pieces, -8.0, 8.0) * sigma
-    # term2 = beta1
-    # term3 = beta2 * t_beta(y_lag[i])
+p = pr(@dice begin
+    for i = 1:length(y)
+      term1 = convert(continuous(t_obs, Normal(0, 1), pieces, -8.0, 8.0) * sigma, t_beta1)
+      term2 = beta1
+      term3 = convert(beta2 * t_beta2(y_lag[i]), t_beta1)
 
-    # obs &= prob_equals(term1 + term2 + term3, t_obs(y[i]))
-    # beta1
-    term1
+      observe(prob_equals(term1 + term2 + term3, t_beta1(y[i])))
+    end
+    beta1
 end; ignore_errors=true)
-# end
