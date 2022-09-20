@@ -166,3 +166,24 @@ end
     @test p[0.25] ≈ 1/16
     @test p[0] ≈ 7/16
 end
+
+@testset "DistFixedPoint casting" begin
+    y = DistFixedPoint{4, 2}([true, false, true, false])
+    p = pr(y)
+
+    z = convert(y, DistFixedPoint{5, 2})
+    p2 = pr(z)
+    @test p1 == p2
+
+    z = convert(y, DistFixedPoint{5, 3})
+    p2 = pr(z)
+    @test p == p2
+
+    z = convert(y, DistFixedPoint{3, 1})
+    p2 = pr(z)
+    @test p1 == p2
+
+    z = convert(y, DistFixedPoint{3, 2})
+    p2 = pr(z)
+    @test p2[0.5] ≈ 1.0
+end

@@ -1,4 +1,3 @@
-using Revise
 using Dice
 using Dice: Flip, ifelse, num_ir_nodes
 using Distributions

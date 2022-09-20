@@ -66,11 +66,15 @@ end
 ##################################
 
 function Base.convert(x::DistFixedPoint{W1, F1}, t::Type{DistFixedPoint{W2, F2}}) where W1 where W2 where F1 where F2
-    if (F1 == F2) & (W1 <= W2)
+    #check if cases are exhaustive
+    if (F1 == F2)
         DistFixedPoint{W2, F2}(convert(x.number, DistInt{W2}))
-    else
-        # TODO: implement other case
-        @assert true == false
+    elseif (W1 - F1 == W2 - F2)
+        if (F2 > F1)
+            DistFixedPoint{W2, F2}(vcat(x.number.number.bits, fill(false, F2 - F1)))
+        else
+            DistFixedPoint{W2, F2}(x.number.number.bits[1:W2])
+        end
     end
 end
 
