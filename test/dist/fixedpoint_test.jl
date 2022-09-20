@@ -172,7 +172,7 @@ end
 
 @testset "DistFixedPoint casting" begin
     y = DistFixedPoint{4, 2}([true, false, true, false])
-    p = pr(y)
+    p1 = pr(y)
 
     z = convert(y, DistFixedPoint{5, 2})
     p2 = pr(z)
