@@ -1,13 +1,14 @@
 using Pkg; Pkg.activate("$(@__DIR__)/../")
 
-using Dice
-using Distributions
+using Dice, Distributions
 
-num_pieces = 8
-precision = 3
-DFP = DistFixedPoint{5+precision, precision}
+precision = 4
+DFiP = DistFixedPoint{5+precision, precision}
 
-data = DFP.([-2.57251482,  0.33806206,  2.71757796,  1.09861336,  2.85603752,
+num_pieces = 16
+truncation = (-8.0, 8.0)
+
+data = DFiP.([-2.57251482,  0.33806206,  2.71757796,  1.09861336,  2.85603752,
         -0.91651351,  0.15555127, -2.68160347,  2.47043789,  3.47459025,
         1.63949862, -1.32148757,  2.64187513,  0.30357848, -4.09546231,
         -1.50709863, -0.99517866, -2.0648892 , -2.40317949,  3.46383544,
@@ -16,27 +17,17 @@ data = DFP.([-2.57251482,  0.33806206,  2.71757796,  1.09861336,  2.85603752,
         -0.67970862,  0.93461681,  1.18187607, -1.49501051,  2.44755622,
         -2.06424237, -0.04584074,  1.93396696,  1.07685273, -0.09837907]);
 
-gaussians = 
-    [continuous(DFP, Normal(0, 1), num_pieces, -8.0, 8.0) for _ in eachindex(data)];
-   
-continuous(DistFixedPoint{5, 1}, Normal(0, 1), 6, -8.0, 8.0)
-
-# TODO use more general `uniform`
-mu1 = uniform(DFP, 4+precision) + DFP(-8.0)
-mu2 = uniform(DFP, 4+precision) + DFP(-8.0)
-
 code = @dice begin
+    # TODO use more general `uniform`
+    mu1 = uniform(DFiP, 4+precision) + DFiP(-8.0)
+    mu2 = uniform(DFiP, 4+precision) + DFiP(-8.0)
     mu = mu1 + mu2
-    for i ∈ eachindex(data)
-        observe(prob_equals(gaussians[i] + mu, data[i]))
+    for datapoint in data
+        unitgaussian = continuous(DFiP, Normal(0, 1), num_pieces, truncation[1], truncation[2])
+        gaussian = mu + unitgaussian
+        observe(gaussian == datapoint)
     end
-    mu1 
+    mu1
 end;
 
-@time expectation(code);
-
-using Plots
-plot_posterior() = begin
-    post = pr(code; ignore_errors=true)
-    bar([keys(post)...], [values(post)...])
-end
+@time expectation(code)
