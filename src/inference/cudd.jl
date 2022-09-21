@@ -35,33 +35,20 @@ function pr(::Cudd, evidence, queries::Vector{JointQuery}; errors)
 
         rec(context, state, rembits) = begin
             issat(mgr, context) || return
-            head = rembits[1]
-            tail = @view rembits[2:end]
-            if !isempty(tail)
+            if isempty(rembits)
+                logpcontext = logprobability(mgr, context, pcache)
+                p = exp(logpcontext - evid_logp)
+                push!(states, state => p)
+            else
+                head = rembits[1]
+                tail = @view rembits[2:end]
                 ifbdd, elsebdd = split(mgr, context, head, ccache)
                 rec(ifbdd, cons(head => true, state), tail)
                 rec(elsebdd, cons(head => false, state), tail)
-            else
-                testbdd = compile(mgr, head, ccache)
-                ifbdd = conjoin(mgr, context, testbdd)
-                logpif = logprobability(mgr, ifbdd, pcache)
-                p = exp(logpif - evid_logp)
-                if issat(mgr, ifbdd) 
-                    push!(states, cons(head => true, state) => p)
-                end
-                if ifbdd !== context
-                    logpcontext = logprobability(mgr, context, pcache)
-                    pcontext = exp(logpcontext - evid_logp)
-                    push!(states, cons(head => false, state) => pcontext-p)
-                end
             end
         end
 
-        if issat(mgr, evid_bdd) && isempty(query.bits) 
-            push!(states, nil() => 1.0)
-        else
-            rec(evid_bdd, nil(), query.bits)
-        end
+        rec(evid_bdd, nil(), query.bits)
         @assert !isempty(states) "Cannot find possible worlds"
         [(Dict(state), p) for (state, p) in states]
     end
