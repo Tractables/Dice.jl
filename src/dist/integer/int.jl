@@ -97,8 +97,11 @@ end
 
 function Base.:(+)(x::DistInt{W}, y::DistInt{W}) where W
     ans = convert(x.number, DistUInt{W+1}) + convert(y.number, DistUInt{W+1})
-    carry = (!x.number.bits[1] & !y.number.bits[1] & ans.bits[2]) | (x.number.bits[1] & y.number.bits[1] & !ans.bits[2])
-    carry && error("integer overflow or underflow")
+    # a sufficient condition for avoiding overflow is that the first two bits are all the same in both operands
+    cannot_overflow = prob_equals(y.number.bits[1], y.number.bits[2]) & prob_equals(x.number.bits[1], x.number.bits[2])
+    # this sufficient condition is more easily proven true than the exact one, test it first
+    overflow = !cannot_overflow & ((!x.number.bits[1] & !y.number.bits[1] & ans.bits[2]) | (x.number.bits[1] & y.number.bits[1] & !ans.bits[2]))
+    overflow && error("integer overflow or underflow")
     DistInt{W}(ans.bits[2:W+1])
 end
 

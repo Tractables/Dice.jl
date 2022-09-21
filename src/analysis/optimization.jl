@@ -108,7 +108,7 @@ end
 
 function optimize_condition_global(root)
     root, canonical = canonicalize(root);
-    while true
+    while root isa Dist
         prev_root = root
         universe = reused_nodes(root)
         _, conditions = unitconditions(root, universe)
@@ -121,7 +121,7 @@ end
 function optimize_condition_global(root, universe, allconditions, canonicalnodes)
     root = optimize_unsat(root, universe, allconditions, canonicalnodes)
     done = Set{Literal}()
-    while true
+    while root isa Dist
         root_prev = root
         conditions = unitconditions(root, universe, allconditions)
         nec = setdiff(conditions.necessary, done)
