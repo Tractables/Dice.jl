@@ -127,6 +127,15 @@ end
     y = uniform(T,1) - T(1)
     @test pr(@dice x + y)[-1] ≈ 0.5
     @test pr(x + y)[-1] ≈ 0.5
+
+    # we want overallocation of bits to not affect the computation graph size
+    B = 30
+    T = DistInt{B}
+    x = uniform(T,1) - T(1)
+    y = uniform(T,1) - T(1)
+    s = convert(x.number, DistUInt{B+1}) + convert(y.number, DistUInt{B+1})
+    @test Dice.num_ir_nodes(s.bits[2]) < 15 
+    
 end
 
 @testset "DistInt multiply" begin

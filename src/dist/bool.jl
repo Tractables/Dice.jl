@@ -38,9 +38,18 @@ mutable struct DistAnd <: DistBoolBinOp
     DistAnd(x,y) = (hash(x) > hash(y)) ? new(y,x) : new(x,y)
 end
 
-Base.:(&)(x::Dist{Bool}, y::Dist{Bool}) = x == y ? x : DistAnd(x,y)
 Base.:(&)(x::Dist{Bool}, y::Bool) = y ? x : false
 Base.:(&)(x::Bool, y::Dist{Bool}) = y & x
+function Base.:(&)(x::Dist{Bool}, y::Dist{Bool}) 
+    # TODO figure out if we want `===` or `==` for these optimizations
+    x == y && return x
+    if (x isa DistBoolBinOp) && (y isa DistBoolBinOp) && 
+            (x.x == y.x) && (x.y == y.y) # operand order is mostly fixed by hashcode
+        (x isa DistAnd) && return x
+        return y
+    end
+    DistAnd(x,y)
+end
 
 mutable struct DistOr <: DistBoolBinOp
     const x::Dist{Bool}
@@ -48,9 +57,18 @@ mutable struct DistOr <: DistBoolBinOp
     DistOr(x,y) = (hash(x) > hash(y)) ? new(y,x) : new(x,y)
 end
 
-Base.:(|)(x::Dist{Bool}, y::Dist{Bool}) = x == y ? x : DistOr(x,y)
 Base.:(|)(x::Dist{Bool}, y::Bool) = y ? true : x
 Base.:(|)(x::Bool, y::Dist{Bool}) = y | x
+function Base.:(|)(x::Dist{Bool}, y::Dist{Bool}) 
+    # TODO figure out if we want `===` or `==` for these optimizations
+    x == y && return x
+    if (x isa DistBoolBinOp) && (y isa DistBoolBinOp) && 
+            (x.x == y.x) && (x.y == y.y) # operand order is mostly fixed by hashcode
+        (x isa DistOr) && return x
+        return y
+    end
+    DistOr(x,y)
+end
 
 # TODO could be mutable or immutable? see how performance is impacted
 struct DistNot <: DistBoolOp
