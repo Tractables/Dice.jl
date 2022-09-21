@@ -116,7 +116,7 @@ end
         end
         ans
     end
-    d = Truncated(Normal(1, 1), -1.0, 3.0)
+    d = truncated(Normal(1, 1), -1.0, 3.0)
     lower = -1.0
     q = Vector{Float64}(undef, 2^4)
     for i=1:2^4
