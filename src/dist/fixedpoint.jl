@@ -38,8 +38,8 @@ end
 # # expectation
 # ##################################
 
-function expectation(x::DistFixedPoint{W, F}) where W where F
-    expectation(x.number)/2^F
+function expectation(x::DistFixedPoint{W, F}; kwargs...) where W where F
+    expectation(x.number; kwargs...)/2^F
 end
     
 

@@ -1,4 +1,4 @@
-export pr, condprobs, condprob, Cudd, ProbException, allobservations, JointQuery, returnvalue
+export pr, condprobs, condprob, Cudd, ProbException, allobservations, JointQuery, returnvalue, expectation
 
 using DataStructures: DefaultDict
 
@@ -65,6 +65,13 @@ function pr(x::MetaDist; ignore_errors=false,
     evidence = allobservations(x)
     errors = ignore_errors ? CondError[] : x.errors
     pr(returnvalue(x); evidence, errors, algo)
+end
+
+function expectation(x::MetaDist; ignore_errors=false, 
+    algo::InferAlgo = default_infer_algo())
+evidence = allobservations(x)
+errors = ignore_errors ? CondError[] : x.errors
+expectation(returnvalue(x); evidence, errors, algo)
 end
 
 ##################################

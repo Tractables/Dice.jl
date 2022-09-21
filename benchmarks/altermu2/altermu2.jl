@@ -25,8 +25,8 @@ end
 mu1 = uniform(t6, binbits + 4) + t6(-8.0)
 mu2 = uniform(t6, binbits + 4) + t6(-8.0)
 
-p = pr(@dice begin
-    for i=1:length(data)
+p = expectation(@dice begin
+    for i=1:1
         observe(prob_equals(gaussians[i] + mu1 + mu2, t6(data[i])))
     end
     mu1 end; ignore_errors=true)

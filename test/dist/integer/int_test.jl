@@ -54,6 +54,7 @@ end
 @testset "DistInt expectation" begin
     y = DistInt{4}([true, false, true, false])
     @test expectation(y) == -6.0
+    @test expectation(@dice y) == -6.0
 
     y = DistInt{2}([flip(0.1), flip(0.1)])
     p = pr(y)

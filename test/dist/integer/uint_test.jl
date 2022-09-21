@@ -158,6 +158,7 @@ end
 @testset "DistUInt expectation" begin
     y = DistUInt{4}([true, false, true, false])
     @test expectation(y) == 10.0
+    @test expectation(@dice y) == 10.0
 
     y = DistUInt{2}([flip(0.1), flip(0.1)])
     p = pr(y)
