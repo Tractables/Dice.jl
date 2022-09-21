@@ -2,10 +2,10 @@ using Pkg; Pkg.activate("$(@__DIR__)/../")
 
 using Dice, Distributions
 
-precision = 4
+precision = 5
 DFiP = DistFixedPoint{5+precision, precision}
 
-num_pieces = 16
+num_pieces = 64
 truncation = (-8.0, 8.0)
 
 data = DFiP.([-2.57251482,  0.33806206,  2.71757796,  1.09861336,  2.85603752,
@@ -30,4 +30,5 @@ code = @dice begin
     mu1
 end;
 
+# IS-estimated ground truth: 0.15421207504025766
 @time expectation(code)
