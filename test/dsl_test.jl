@@ -1,6 +1,7 @@
 using Test
 using Dice
 using Dice: Flip, num_ir_nodes
+using Distributions
 
 @testset "Control flow macro" begin
     
@@ -224,5 +225,11 @@ end
     @test returnvalue(dice() do 
         f == f
     end)
+
+end
+
+@testset begin "Dynamo exclusion of supported functions"
+
+    @test_nowarn @dice continuous(DistFixedPoint{7, 2}, Normal(0, 1), 4, -8.0, 8.0)
 
 end

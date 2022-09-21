@@ -122,7 +122,7 @@ function continuous(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistri
     @assert typeof(piece_bits) == Int
 
     # preliminaries
-    d = Truncated(d, start, stop)
+    d = truncated(d, start, stop)
     whole_bits = a
     point = F
     interval_sz = (2^whole_bits/pieces)
