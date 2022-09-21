@@ -11,7 +11,7 @@ struct DistUInt{W} <: Dist{Int}
     bits::Vector{AnyBool}
     function DistUInt{W}(b) where W
         @assert length(b) == W
-        @assert W <= 63
+        @assert W <= 63 #julia int overflow messes this up?
         new{W}(b)
     end
 end
@@ -22,7 +22,7 @@ DistUInt(bits::AbstractVector) =
 function DistUInt{W}(i::Int) where W
     @assert i >= 0
     num_b = ndigits(i, base = 2)
-    @assert num_b <= W
+    @assert num_b <= W "Int $i cannot be represented as a DistUInt{$W}"
     bits = Vector{AnyBool}(undef, W)
     for bit_idx = W:-1:1
         bits[bit_idx] = (bit_idx > W - num_b) ? Bool(i & 1) : false
@@ -257,6 +257,20 @@ function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W
     borrow && error("integer overflow")
     DistUInt{W}(z)
 end
+
+
+function Base.:(*)(p1::DistUInt{W}, p2::DistUInt{W}) where W
+    P = DistUInt{W}(0)
+    shifted_bits = p1.bits
+    for i = W:-1:1
+        if (i != W)
+            shifted_bits = vcat(shifted_bits[2:W], false)
+        end
+        added = ifelse(p2.bits[i], DistUInt{W}(shifted_bits), DistUInt{W}(0))
+        P = P + added
+    end
+    P
+end 
 
 function Base.ifelse(cond::Dist{Bool}, then::DistUInt{W}, elze::DistUInt{W}) where W
     (then == elze) && return then
