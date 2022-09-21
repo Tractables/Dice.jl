@@ -121,6 +121,12 @@ end
     p = pr(a - b)
     @test issetequal(keys(p), -1:2)
     @test all(values(p) .≈ 1/2^2)
+
+    T = DistInt{2}
+    x = uniform(T,1) - T(1)
+    y = uniform(T,1) - T(1)
+    @test pr(@dice x + y)[-1] ≈ 0.5
+    @test pr(x + y)[-1] ≈ 0.5
 end
 
 @testset "DistInt multiply" begin
