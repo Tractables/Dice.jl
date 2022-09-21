@@ -43,11 +43,13 @@ end
 @testset "DistFixedPoint expectation" begin
     y = DistFixedPoint{4, 3}([true, false, true, false])
     @test expectation(y) == -0.75
+    @test expectation(@dice y) == -0.75
 
     y = DistFixedPoint{2, 0}([flip(0.1), flip(0.1)])
     p = pr(y)
     mean = reduce(+, [(key*value) for (key, value) in p])
     @test expectation(y) ≈ mean
+    @test expectation(@dice y) ≈ mean
 
 end
 
