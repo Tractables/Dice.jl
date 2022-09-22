@@ -163,7 +163,6 @@ end
         fi = DistFixedPoint{4, 2}(i)
         fj = DistFixedPoint{4, 2}(j)
         p = pr(@dice fi*fj; ignore_errors=true)
-        @show p
         @test p[floor(i*j * 2^2)/4] ≈ 1
     end
 

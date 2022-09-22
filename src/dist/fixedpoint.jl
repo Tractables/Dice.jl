@@ -101,8 +101,9 @@ end
 function Base.:(*)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F}
     x1 = convert(x, DistFixedPoint{W+F, F})
     y1 = convert(y, DistFixedPoint{W+F, F})
-    ans = convert(DistFixedPoint{W+F, 2*F}(x1.number * y1.number), DistFixedPoint{W, F})
-    ans
+    prodint = x1.number * y1.number
+    prodfip = DistFixedPoint{W+F, 2F}(prodint)
+    convert(prodfip, DistFixedPoint{W, F})
 end
 
 #################################
