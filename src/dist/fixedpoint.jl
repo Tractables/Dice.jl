@@ -99,7 +99,10 @@ function Base.:(-)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F
 end
 
 function Base.:(*)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F}
-    DistFixedPoint{W, 2*F}(x.number * y.number)
+    x1 = convert(x, DistFixedPoint{W+F, F})
+    y1 = convert(y, DistFixedPoint{W+F, F})
+    ans = convert(DistFixedPoint{W+F, 2*F}(x1.number * y1.number), DistFixedPoint{W, F})
+    ans
 end
 
 #################################

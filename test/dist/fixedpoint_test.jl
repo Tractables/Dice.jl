@@ -156,20 +156,22 @@ end
 end
 
 @testset "DistFixedPoint multiply" begin
+    #TODO: make sure if the tests convey the intended meaning of multiply
     a = [0.5, 0.5, -0.5, -0.5]
     b = [0.75, -0.75, 0.75, -0.75]
     map(a, b) do i, j
         fi = DistFixedPoint{4, 2}(i)
         fj = DistFixedPoint{4, 2}(j)
         p = pr(@dice fi*fj; ignore_errors=true)
-        @test p[i*j] ≈ 1
+        @show p
+        @test p[floor(i*j * 2^2)/4] ≈ 1
     end
 
     a = uniform(DistFixedPoint{4, 2}, 2) - DistFixedPoint{4, 2}(0.5)
     b = uniform(DistFixedPoint{4, 2}, 2) - DistFixedPoint{4, 2}(0.5)
     p = pr(@dice a*b; ignore_errors=true)
     @test p[0.25] ≈ 1/16
-    @test p[0] ≈ 7/16
+    @test p[0] ≈ 11/16
 end
 
 @testset "DistFixedPoint casting" begin
