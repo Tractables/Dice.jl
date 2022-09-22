@@ -20,7 +20,7 @@ model {
 precision = 1
 num_pieces = 4
 
-DFiP = DistFixedPoint{30+precision, precision}
+DFiP = DistFixedPoint{20+precision, precision}
 
 ys = DFiP.([3.33008960302557, 5.19543854472405, 5.88929762709886, 5.52449264517973, 5.31172037906861,
         7.1453284527505, 7.11693949967702, 10.2790569556659, 8.70290237657601, 4.91879758555161,
@@ -44,7 +44,7 @@ code = @dice begin
   
   beta1 = continuous(DFiP, Normal(1, 1), num_pieces, -7.0, 9.0)
   beta2 = continuous(DFiP, Normal(1, 1), num_pieces, -7.0, 9.0)
-  sigma = uniform(DFiP, 2+precision)
+  sigma = uniform(DFiP, 4+precision)
 
   for (y, y_lag) in zip(ys, y_lags)
     unitgaussian = continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
@@ -57,4 +57,5 @@ end;
 
 Dice.num_ir_nodes(allobservations(code))
 
+# HMC-estimated ground truth: 1.363409828
 @time expectation(code)
