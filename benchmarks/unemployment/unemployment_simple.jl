@@ -44,7 +44,7 @@ code = @dice begin
   
   beta1 = continuous(DFiP, Normal(1, 1), num_pieces, -7.0, 9.0)
   beta2 = continuous(DFiP, Normal(1, 1), num_pieces, -7.0, 9.0)
-  sigma = uniform(DFiP, 4+precision)
+  sigma = uniform(DFiP, 0.0, 15.99999)
 
   for (y, y_lag) in zip(ys, y_lags)
     unitgaussian = continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)

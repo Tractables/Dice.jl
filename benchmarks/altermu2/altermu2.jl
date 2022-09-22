@@ -19,8 +19,8 @@ data = DFiP.([-2.57251482,  0.33806206,  2.71757796,  1.09861336,  2.85603752,
 
 code = @dice begin
     # TODO use more general `uniform`
-    mu1 = uniform(DFiP, 4+precision) + DFiP(-8.0)
-    mu2 = uniform(DFiP, 4+precision) + DFiP(-8.0)
+    mu1 = uniform(DFiP, -8.0, 8.0)
+    mu2 = uniform(DFiP, -8.0, 8.0)
     mu = mu1 + mu2
     for datapoint in data
         unitgaussian = continuous(DFiP, Normal(0, 1), num_pieces, truncation[1], truncation[2])
