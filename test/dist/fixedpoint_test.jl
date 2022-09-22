@@ -200,6 +200,12 @@ end
   
     @test issetequal(keys(p), -3.0:1/8:1.0 - 1/8)
     @test all(values(p) .≈ 1/2^5)
+
+    y = uniform(DistFixedPoint{7, 3}, -3.0, 0.125)
+    p = pr(y)
+  
+    @test issetequal(keys(p), -3.0:1/8:0.125 - 1/8)
+    @test all(values(p) .≈ 1/25)
    
- end
+end
  

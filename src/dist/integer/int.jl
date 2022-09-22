@@ -63,6 +63,14 @@ function uniform(::Type{DistInt{W}}, n = W) where W
     DistInt{W}(uniform(DistUInt{W}, n).bits)
 end
 
+function uniform(::Type{DistInt{W}}, start::Int, stop::Int) where W
+    @assert start >= -(2^(W - 1))
+    @assert stop <= (2^(W - 1))
+    @assert start < stop
+    ans = DistInt{W+1}(uniform_arith(DistUInt{W+1}, 0, stop - start)) + DistInt{W+1}(start)
+    return convert(ans, DistInt{W})
+end
+
 # Generates a triangle on positive part of the support
 function triangle(t::Type{DistInt{W}}, b::Int) where W
     @assert b < W
