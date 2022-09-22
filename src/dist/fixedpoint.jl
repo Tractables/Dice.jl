@@ -60,10 +60,8 @@ function uniform(t::Type{DistFixedPoint{W, F}}, start::Float64, stop::Float64) w
     @assert start >= -(2^(W - F - 1))
     @assert stop <= (2^(W - F - 1))
     @assert start < stop
-    a = Int(log2((stop - start)*2^F))
-    @assert a isa Int
-  
-    return uniform(DistFixedPoint{W, F}, a) + DistFixedPoint{W, F}(start)
+
+    return DistFixedPoint{W, F}(uniform(DistInt{W}, 0, Int((stop - start)*2^F))) + DistFixedPoint{W, F}(start)
  end
  
 

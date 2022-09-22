@@ -170,3 +170,20 @@ end
     @test p[4] ≈ 1/16
     @test p[0] ≈ 7/16
 end
+
+@testset "DistInt uniform" begin
+    y = @dice uniform(DistInt{4}, -7, 1)
+    p = pr(y)
+  
+    @test issetequal(keys(p), -7:1:1-1)
+    @test all(values(p) .≈ 1/8)
+
+    y = @dice uniform(DistInt{4}, -7, 3)
+    p = pr(y)
+  
+    @test issetequal(keys(p), -7:1:3-1)
+    @test all(values(p) .≈ 1/10)
+
+    @test_throws Exception y = uniform(DistInt{4}, -7, 9)
+
+end
