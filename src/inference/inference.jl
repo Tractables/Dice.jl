@@ -64,7 +64,7 @@ function pr(x::MetaDist; ignore_errors=false,
             algo::InferAlgo = default_infer_algo())
     evidence = allobservations(x)
     errors = ignore_errors ? CondError[] : x.errors
-    uniform(DFiP, 5+precision)    pr(returnvalue(x); evidence, errors, algo)
+    pr(returnvalue(x); evidence, errors, algo)
 end
 
 function expectation(x::MetaDist; ignore_errors=false, 
