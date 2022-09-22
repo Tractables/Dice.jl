@@ -56,6 +56,17 @@ function uniform(::Type{DistFixedPoint{W, F}}, n = W) where W where F
     DistFixedPoint{W, F}(DistInt{W}(uniform(DistUInt{W}, n).bits))
 end
 
+function uniform(t::Type{DistFixedPoint{W, F}}, start::Float64, stop::Float64) where W where F
+    @assert start >= -(2^(W - F - 1))
+    @assert stop <= (2^(W - F - 1))
+    @assert start < stop
+    a = Int(log2((stop - start)*2^F))
+    @assert a isa Int
+  
+    return uniform(DistFixedPoint{W, F}, a) + DistFixedPoint{W, F}(start)
+ end
+ 
+
 function triangle(t::Type{DistFixedPoint{W, F}}, b::Int) where W where F
     @assert b <= W
     DistFixedPoint{W, F}(triangle(DistInt{W}, b))
