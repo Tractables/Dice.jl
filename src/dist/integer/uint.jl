@@ -267,8 +267,7 @@ function Base.:(*)(p1::DistUInt{W}, p2::DistUInt{W}) where W
             shifted_bits = vcat(shifted_bits[2:W], false)
         end
         added = ifelse(p2.bits[i], DistUInt{W}(shifted_bits), DistUInt{W}(0))
-        P = convert(P, DistUInt{W+2}) + convert(added, DistUInt{W+2})
-        P = convert(P, DistUInt{W})
+        P = P + added
     end
     P
 end 
