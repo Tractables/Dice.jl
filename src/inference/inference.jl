@@ -1,4 +1,4 @@
-export pr, condprobs, condprob, Cudd, ProbException, allobservations, JointQuery, returnvalue, expectation
+export pr, condprobs, condprob, Cudd, CuddDebugInfo, ProbException, allobservations, JointQuery, returnvalue, expectation
 
 using DataStructures: DefaultDict
 

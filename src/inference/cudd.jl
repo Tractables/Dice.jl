@@ -5,11 +5,23 @@ using DataStructures: LinkedList, cons, nil
 # CUDD Inference
 ##################################
 
-struct Cudd <: InferAlgo end
+struct CuddDebugInfo
+    num_nodes::Integer
+end
+
+struct Cudd <: InferAlgo
+    reordering_type::CUDD.Cudd_ReorderingType
+    debug_info_ref::Union{Ref{CuddDebugInfo}, Nothing}
+end
+
+function Cudd(;reordering_type=CUDD.CUDD_REORDER_NONE, debug_info_ref=nothing)
+    Cudd(reordering_type, debug_info_ref)
+end
+
 default_infer_algo() = Cudd()
 
-function pr(::Cudd, evidence, queries::Vector{JointQuery}; errors)
-    mgr = CuddMgr() 
+function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}; errors)
+    mgr = CuddMgr(cudd.reordering_type)
 
     # TODO various optimizations
     # TODO variable order heuristics
@@ -30,7 +42,7 @@ function pr(::Cudd, evidence, queries::Vector{JointQuery}; errors)
     isempty(prob_errors) || throw(ProbException(prob_errors))
 
     # compile BDDs and infer probability for all queries
-    map(queries) do query
+    results = map(queries) do query
         states = Pair{LinkedList, Float64}[]
 
         rec(context, state, rembits) = begin
@@ -52,6 +64,13 @@ function pr(::Cudd, evidence, queries::Vector{JointQuery}; errors)
         @assert !isempty(states) "Cannot find possible worlds"
         [(Dict(state), p) for (state, p) in states]
     end
+
+    if !isnothing(cudd.debug_info_ref)
+        node_count = num_bdd_nodes(mgr, [ccache[bit] for query in queries for bit in query.bits])
+        cudd.debug_info_ref[] = CuddDebugInfo(node_count)
+    end
+
+    results
 end
 
 mutable struct CuddMgr
@@ -59,9 +78,10 @@ mutable struct CuddMgr
     probs::Dict{Int,Float64}
 end
 
-function CuddMgr() 
+function CuddMgr(reordering_type::CUDD.Cudd_ReorderingType)
     cudd_mgr = initialize_cudd()
     Cudd_DisableGarbageCollection(cudd_mgr) # note: still need to ref because CUDD can delete nodes without doing a GC pass
+    reordering_type == CUDD.CUDD_REORDER_NONE || Cudd_AutodynEnable(cudd_mgr, reordering_type)
     mgr = CuddMgr(cudd_mgr, Dict{Int,Float64}())
     finalizer(mgr) do x
         Cudd_Quit(x.cuddmgr)
