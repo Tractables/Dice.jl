@@ -162,15 +162,19 @@ end
     map(a, b) do i, j
         fi = DistFixedPoint{4, 2}(i)
         fj = DistFixedPoint{4, 2}(j)
-        p = pr(@dice fi*fj; ignore_errors=true)
+        p = pr(@dice fi*fj)
         @test p[floor(i*j * 2^2)/4] ≈ 1
     end
 
     a = uniform(DistFixedPoint{4, 2}, 2) - DistFixedPoint{4, 2}(0.5)
     b = uniform(DistFixedPoint{4, 2}, 2) - DistFixedPoint{4, 2}(0.5)
-    p = pr(@dice a*b; ignore_errors=true)
+    p = pr(@dice a*b)
     @test p[0.25] ≈ 1/16
     @test p[0] ≈ 11/16
+
+    a = DistFixedPoint{20, 0}(14.0) * DistFixedPoint{20, 0}(-7.0)
+    p = pr(@dice a)
+    @test p[-98.0] ≈ 1.0
 end
 
 @testset "DistFixedPoint casting" begin

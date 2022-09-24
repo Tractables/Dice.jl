@@ -126,6 +126,19 @@ function Base.:(*)(x::DistInt{W}, y::DistInt{W}) where W
     # borrow && error("integer overflow or underflow")
     # DistInt{W}(ans.bits[2:W+1])
 
-    DistInt{W}(x.number * y.number)
+    p1 = x.number
+    p2 = y.number
+    P = DistUInt{W}(0)
+    shifted_bits = p1.bits
+    
+    for i = W:-1:1
+        if (i != W)
+            shifted_bits = vcat(shifted_bits[2:W], false)
+        end
+        added = ifelse(p2.bits[i], DistUInt{W}(shifted_bits), DistUInt{W}(0))
+        P = convert(P, DistUInt{W+2}) + convert(added, DistUInt{W+2})
+        P = convert(P, DistUInt{W})
+    end
+    DistInt{W}(P)
 end
   
