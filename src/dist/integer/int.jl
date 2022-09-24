@@ -63,6 +63,14 @@ function uniform(::Type{DistInt{W}}, n = W) where W
     DistInt{W}(uniform(DistUInt{W}, n).bits)
 end
 
+function uniform(::Type{DistInt{W}}, start::Int, stop::Int) where W
+    @assert start >= -(2^(W - 1))
+    @assert stop <= (2^(W - 1))
+    @assert start < stop
+    ans = DistInt{W+1}(uniform_arith(DistUInt{W+1}, 0, stop - start)) + DistInt{W+1}(start)
+    return convert(ans, DistInt{W})
+end
+
 # Generates a triangle on positive part of the support
 function triangle(t::Type{DistInt{W}}, b::Int) where W
     @assert b < W
@@ -118,6 +126,19 @@ function Base.:(*)(x::DistInt{W}, y::DistInt{W}) where W
     # borrow && error("integer overflow or underflow")
     # DistInt{W}(ans.bits[2:W+1])
 
-    DistInt{W}(x.number * y.number)
+    p1 = x.number
+    p2 = y.number
+    P = DistUInt{W}(0)
+    shifted_bits = p1.bits
+    
+    for i = W:-1:1
+        if (i != W)
+            shifted_bits = vcat(shifted_bits[2:W], false)
+        end
+        added = ifelse(p2.bits[i], DistUInt{W}(shifted_bits), DistUInt{W}(0))
+        P = convert(P, DistUInt{W+2}) + convert(added, DistUInt{W+2})
+        P = convert(P, DistUInt{W})
+    end
+    DistInt{W}(P)
 end
   
