@@ -167,23 +167,14 @@ end
     @test p[4] ≈ 1/16
     @test p[0] ≈ 7/16
 
-    a = DistInt{4}(-8)
-    b = DistInt{4}(1)
-    c = @dice a*b
-    p = pr(c)
-    @test p[10] ≈ 1
-
     for i = -8:7
         for j = -8:7
             a = DistInt{4}(i)
             b = DistInt{4}(j)
             c = @dice a*b
-            # @show (i*j > 7) | (i*j < -8)
             if (i*j > 7) | (i*j < -8)
-                # @show i j
                 @test_throws ProbException pr(c)
             else
-                # @show i j
                 @test pr(c)[i*j] ≈ 1.0
             end
         end
