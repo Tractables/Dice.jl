@@ -56,12 +56,12 @@ function uniform(::Type{DistFixedPoint{W, F}}, n = W) where W where F
     DistFixedPoint{W, F}(DistInt{W}(uniform(DistUInt{W}, n).bits))
 end
 
-function uniform(t::Type{DistFixedPoint{W, F}}, start::Float64, stop::Float64) where W where F
+function uniform(t::Type{DistFixedPoint{W, F}}, start::Float64, stop::Float64; ite::Bool=false) where W where F
     @assert start >= -(2^(W - F - 1))
     @assert stop <= (2^(W - F - 1))
     @assert start < stop
     a = Int(round((stop - start)*2^F))
-    return DistFixedPoint{W, F}(uniform(DistInt{W}, 0, a)) + DistFixedPoint{W, F}(start)
+    return DistFixedPoint{W, F}(uniform(DistInt{W}, 0, a; ite=ite)) + DistFixedPoint{W, F}(start)
  end
  
 
