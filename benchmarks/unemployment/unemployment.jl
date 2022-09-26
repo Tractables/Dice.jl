@@ -1,4 +1,5 @@
 using Pkg; Pkg.activate("$(@__DIR__)/../")
+using Revise
 using Dice, Distributions
 
 #=
@@ -40,20 +41,36 @@ y_lags = DFiP.([4.3838241041638, 3.93442675489932, 7.57050890065729, 4.536830340
         6.9590606178157, 3.89350344482809, 5.34843717515469, 8.38955592149869, 5.99861560808495,
         8.28150384919718, 7.6049918634817, 5.4332405702211, 5.35873385947198, 5.18218877464533]);
 
-code = @dice begin
+code1 = @dice begin
   
   beta1 = continuous(DFiP, Normal(1, 1), num_pieces, -7.0, 9.0)
   beta2 = continuous(DFiP, Normal(1, 1), num_pieces, -7.0, 9.0)
   sigma = uniform(DFiP, 0.0, 15.99999)
 
-  for (y, y_lag) in zip(ys, y_lags)
+  for (y, y_lag) in zip(ys[1:10], y_lags[1:10])
     unitgaussian = continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
     mean = beta1 + beta2 * y_lag
     gaussian = sigma * unitgaussian + mean
     observe(gaussian == y)
   end
   beta1
-end;
+end
+
+code2 = @dice begin
+  
+  beta1 = continuous(DFiP, Normal(1, 1), num_pieces, -7.0, 9.0)
+  beta2 = continuous(DFiP, Normal(1, 1), num_pieces, -7.0, 9.0)
+  sigma = uniform(DFiP, 0.0, 15.99999)
+
+  for (y, y_lag) in zip(ys[1:10], y_lags[1:10])
+    unitgaussian = continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
+    mean = beta1 + beta2 * y_lag
+    gaussian = sigma * unitgaussian + mean
+    # observe(gaussian == y)
+  end
+  beta1
+end
 
 # HMC-estimated ground truth: 1.363409828
-@time expectation(code)
+@time pr(code1) #doesn't throw an error
+@time pr(code2) #throws an error
