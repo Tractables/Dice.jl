@@ -212,15 +212,15 @@ end
 
     end
 
-    # a = uniform(DistUInt{3}, 0, 7)
-    # b = uniform(DistUInt{3}, 0, 7; ite=true)
-    # map([a, b]) do dist
-    #     p = pr(dist)
-    #     for i=0:6
-    #         @test p[i] ≈ 1/7
-    #     end
-    #     @test p[7] ≈ 0
-    # end
+    a = uniform(DistUInt{3}, 0, 7)
+    b = uniform(DistUInt{3}, 0, 7; ite=true)
+    map([a, b]) do dist
+        p = pr(dist)
+        for i=0:6
+            @test p[i] ≈ 1/7
+        end
+        @test p[7] ≈ 0
+    end
 end
 
 @testset "DistUInt triangle and discrete" begin
