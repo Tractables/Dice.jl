@@ -160,7 +160,7 @@ end
         end
     end
 
-    @test pr(y)[true] ≈ 0 # should not throw exception because of observe
+    @test_throws ProbException pr(y)[true] ≈ 0 # should not throw exception because of observe
     @test pr(y; ignore_errors = true)[true] ≈ 0 
 
 end

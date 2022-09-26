@@ -23,8 +23,9 @@ function pr(::Cudd, evidence, queries::Vector{JointQuery}; errors)
     prob_errors = ProbError[]
     for (cond, err) in errors
         cond_bdd = compile(mgr, cond, ccache)
-        cond_bdd = conjoin(mgr, cond_bdd, evid_bdd)
-        logp = logprobability(mgr, cond_bdd, pcache) - evid_logp
+        # cond_bdd = conjoin(mgr, cond_bdd, evid_bdd)
+        # logp = logprobability(mgr, cond_bdd, pcache) - evid_logp
+        logp = logprobability(mgr, cond_bdd, pcache)
         isinf(logp) || push!(prob_errors, (exp(logp), err))
     end
     isempty(prob_errors) || throw(ProbException(prob_errors))
