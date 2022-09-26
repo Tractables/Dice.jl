@@ -166,17 +166,6 @@ end
     @test expectation(y) ≈ mean
 end
 
-@testset "DistUInt expectation" begin
-    y = DistUInt{4}([true, false, true, false])
-    @test expectation(y) == 10.0
-
-    y = DistUInt{2}([flip(0.1), flip(0.1)])
-    p = pr(y)
-    mean = reduce(+, [(key*value) for (key, value) in p])
-    @test expectation(y) ≈ mean
-
-end
-
 @testset "DistUInt uniform" begin
     uniform_funcs = [uniform_arith, uniform_ite]
 
@@ -246,7 +235,7 @@ end
 
     x = uniform(DistUInt{4}, 2)
     y = uniform(DistUInt{4}, 2)
-    p = pr(@dice y*x; ignore_errors = true)
+    p = pr(@dice y*x)
     @test p[0] ≈ 7/16
     @test p[9] ≈ 1/16
 end
