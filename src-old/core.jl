@@ -56,7 +56,7 @@ DistBools(x::Dist) = DistBools(bools(x))
 
 flip_next_id = 1
 flip_probs = Dict{Int, AbstractFloat}()
-# for debugging purposes... GC is ideal
+# for debugging purposes.. GC is ideal
 function clear_flips() 
     global flip_next_id = 1
     global flip_probs = Dict{Int, AbstractFloat}()

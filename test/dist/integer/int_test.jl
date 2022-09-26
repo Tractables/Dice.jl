@@ -1,5 +1,6 @@
-using Test
+
 using Dice
+using Test
 using Dice: Flip, num_ir_nodes
 
 @testset "DistInt inference" begin
@@ -139,6 +140,7 @@ end
 end
 
 @testset "DistInt multiply" begin
+
     a = DistInt{4}(2)
     b = DistInt{4}(-3)
     p = pr(a*b)
@@ -146,29 +148,37 @@ end
 
     a = DistInt{4}(-2)
     b = DistInt{4}(-3)
-    p = pr(@dice a*b; ignore_errors=true)
+    p = pr(@dice a*b)
     @test p[6] ≈ 1
-
-    a = DistInt{4}(2)
-    b = DistInt{4}(-3)
-    p = pr(a*b)
-    @test p[-6] ≈ 1
 
     a = DistInt{4}(2)
     b = DistInt{4}(3)
     p = pr(a*b)
     @test p[6] ≈ 1
 
-    a = DistInt{4}(2)
-    b = DistInt{4}(-3)
+    a = DistInt{4}(-2)
+    b = DistInt{4}(3)
     p = pr(a*b)
     @test p[-6] ≈ 1
 
-    a = uniform(DistInt{4}, 2) - DistInt{4}(2)
-    b = uniform(DistInt{4}, 2) - DistInt{4}(2)
-    p = pr(@dice a*b; ignore_errors=true)
+    a = uniform(DistInt{4}, -2, 2)
+    b = uniform(DistInt{4}, -2, 2)
+    p = pr(@dice a*b)
     @test p[4] ≈ 1/16
     @test p[0] ≈ 7/16
+
+    for i = -8:7
+        for j = -8:7
+            a = DistInt{4}(i)
+            b = DistInt{4}(j)
+            c = @dice a*b
+            if (i*j > 7) | (i*j < -8)
+                @test_throws ProbException pr(c)
+            else
+                @test pr(c)[i*j] ≈ 1.0
+            end
+        end
+    end
 end
 
 @testset "DistInt uniform" begin
