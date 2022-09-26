@@ -211,11 +211,11 @@ end
         @test p[1] ≈ 0
 
     end
-
-    a = uniform(DistUInt{3}, 0, 7)
-    b = uniform(DistUInt{3}, 0, 7; ite=true)
-    map([a, b]) do dist
-        p = pr(dist)
+    
+    flags = [true, false]
+    map(flags) do flag
+        x = uniform(DistUInt{3}, 0, 7; ite=flag)
+        p = pr(x)
         for i=0:6
             @test p[i] ≈ 1/7
         end
