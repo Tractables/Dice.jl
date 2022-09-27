@@ -17,8 +17,8 @@ model {
 }
 =#
 
-precision = 2
-num_pieces = 4
+precision = 1
+num_pieces = 16
 
 DFiP = DistFixedPoint{20+precision, precision}
 
@@ -29,12 +29,12 @@ ys = DFiP.([12.1374259163952, 26.6903103048018, 38.5878897957254, 30.49306678291
             29.558684814201, 30.911111042245, 25.211786124301, 22.3592414735694, 30.7775798797013,
             16.8625137818992, 28.5736618568681, 19.5770593955495, 48.3010147870319, 31.2281915401234,
             21.601456892799, 29.6730840465467, 30.9093803330748, 17.5249474584363, 37.2377810832606,
-            14.6787881367532, 24.770796317115, 34.6698348225234, 30.3842636610215, 24.5081046666978])
+            14.6787881367532, 24.770796317115, 34.6698348225234, 30.3842636610215, 24.5081046666978]);
 
 code = @dice begin
   
   beta = uniform(DFiP, -32.0, 32.0)
-  sigma = uniform(DFiP, 0.0, 32.0)
+  sigma = uniform(DFiP, 0.0, 64.0)
 
   for y in ys
     unitgaussian = continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
@@ -44,5 +44,5 @@ code = @dice begin
   beta
 end
 
-# HMC-estimated ground truth: 1.363409828
-@time pr(code)
+# HMC-estimated ground truth: ?
+@time expectation(code)
