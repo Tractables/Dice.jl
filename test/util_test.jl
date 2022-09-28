@@ -21,6 +21,17 @@ using Distributions
         end
         @test expectation(code) ≈ 0.5
     end
+
+    # no warning test for different gaussian observes
+    map([true, false]) do mult_arg
+        # mult_arg = true
+        code = @dice begin
+                    a = continuous(DistFixedPoint{10, 2}, Normal(4, 1), 16, 0.25, 8.25)
+                    gaussian_observe(DistFixedPoint{10, 2}, 16, -8.0, 8.0, 0.0, a, 1.0, mult=mult_arg)
+                    a
+        end
+        @test_nowarn pr(code)
+    end
     
     
 end
