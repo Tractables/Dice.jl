@@ -24,7 +24,6 @@ using Distributions
 
     # no warning test for different gaussian observes
     map([true, false]) do mult_arg
-        # mult_arg = true
         code = @dice begin
                     a = continuous(DistFixedPoint{10, 2}, Normal(4, 1), 16, 0.25, 8.25)
                     gaussian_observe(DistFixedPoint{10, 2}, 16, -8.0, 8.0, 0.0, a, 1.0, mult=mult_arg)
@@ -32,6 +31,14 @@ using Distributions
         end
         @test_nowarn pr(code)
     end
-    
-    
+
+    map([true, false]) do mult_arg
+        code = @dice begin
+                    m = uniform(DistFixedPoint{10, 2}, -4.0, 4.0)
+                    s = continuous(DistFixedPoint{10, 2}, Normal(4, 1), 16, 0.25, 8.25)
+                    gaussian_observe(DistFixedPoint{10, 2}, 16, -8.0, 8.0, m, s, 1.0, mult=mult_arg)
+                    m
+        end
+        @test_nowarn pr(code)
+    end
 end
