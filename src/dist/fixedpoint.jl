@@ -22,6 +22,8 @@ end
 
 function DistFixedPoint{W, F}(i::Float64) where W where F
     # new_i = Int(round(if i >= -(2.0)^(-F-1) i*2^F else i*2^F + 2^W end)) # for a centered notation of probabilities
+    @assert i >= -2^(W-F-1)
+    @assert i < 2^(W-F-1)
     new_i = Int(floor(if i >= 0 i*2^F else i*2^F + 2^W end))
     DistFixedPoint{W, F}(DistInt{W}(DistUInt{W}(new_i)))
 end
@@ -112,6 +114,18 @@ function Base.:(*)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F
     prodint = x1.number * y1.number
     prodfip = DistFixedPoint{W+F, 2F}(prodint)
     convert(prodfip, DistFixedPoint{W, F})
+end
+
+function Base.:(/)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F}
+    xp = convert(x, DistFixedPoint{W+F, 2*F})
+    yp = convert(y, DistFixedPoint{W+F, F})
+    ans = xp.number / yp.number
+
+    n_overflow = DistInt{F+1}(ans.number.bits[1:F+1])
+    overflow = !prob_equals(n_overflow, DistInt{F+1}(-1)) & !prob_equals(n_overflow, DistInt{F+1}(0))
+    overflow && error("integer overflow")
+
+    DistFixedPoint{W, F}(ans.number.bits[F+1:W+F])
 end
 
 #################################

@@ -230,4 +230,29 @@ end
     @test all(values(p) .≈ 1/25)
    
 end
+
+@testset "DistFixedPoint division" begin
+    x = DistFixedPoint{5, 2}(0.5)
+    y = DistFixedPoint{5, 2}(2.0)
+    c = @dice x/y
+    q = pr(c)
+
+    for i = -4.0:0.25:4 - 0.25
+        for j= -4.0:0.25:4 - 0.25
+            x = DistFixedPoint{5, 2}(i)
+            y = DistFixedPoint{5, 2}(j)
+            c = @dice x/y
+            ans = sign(i/j) * floor(abs(i/j) * 4)/4
+            if (j == 0.0) | (ans >= 4.0) | (ans < -4.0)
+                @test_throws ProbException pr(c)
+            else
+                if ans == -0.0
+                    @test pr(c)[0.0] ≈ 1.0
+                else
+                    @test pr(c)[ans] ≈ 1.0
+                end
+            end
+        end
+    end
+end
  
