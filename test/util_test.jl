@@ -1,6 +1,7 @@
 using Test
 using Dice
 using Dice: Flip, ifelse, num_ir_nodes
+using Distributions
 
 @testset "Gaussian observations" begin
     code = @dice begin
@@ -10,6 +11,14 @@ using Dice: Flip, ifelse, num_ir_nodes
     end
 
     @test pr(code)[false] ≈ 0.5
+
+    code = @dice begin
+                a = continuous(DistFixedPoint{8, 3}, Normal(0, 1), 16, -8.0, 8.0)
+                gaussian_observe(DistFixedPoint{8, 3}, 16, -8.0, 8.0, a, 1.0, 1.0)
+                a
+    end
+    @test expectation(code) ≈ 0.5
+
     
     
 end
