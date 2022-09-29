@@ -270,3 +270,34 @@ end
         end
     end
 end
+
+@testset "DistUInt division" begin
+    x = DistUInt{4}(15)
+    y = DistUInt{4}(3)
+    p = pr(@dice x % y)
+    @test p[0] ≈ 1.0
+
+    a = uniform_arith(DistUInt{3}, 0, 8)
+    b = uniform_arith(DistUInt{3}, 0, 8)
+    c = @dice a%b
+    @test_throws ProbException pr(c)
+
+    code = @dice begin
+            a = uniform_arith(DistUInt{3}, 1, 8)
+            b = uniform_arith(DistUInt{3}, 1, 8)
+            c = a%b
+            c
+    end
+    p = pr(code)
+    @test p[0.0] ≈ 16/49
+    @test p[5.0] ≈ 2/49
+
+    for i = 1:7
+        for j = 1:7
+            a = DistUInt{3}(i)
+            b = DistUInt{3}(j)
+            c = pr(@dice a%b)
+            @test c[floor(i%j)] ≈ 1.0
+        end
+    end
+end
