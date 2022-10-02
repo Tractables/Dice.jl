@@ -18,9 +18,9 @@ model {
 =#
 
 precision = 2
-num_pieces = 4
+num_pieces = 8
 
-DFiP = DistFixedPoint{6+precision, precision}
+DFiP = DistFixedPoint{9+precision, precision}
 
 ys = DFiP.([3.33008960302557, 5.19543854472405, 5.88929762709886, 5.52449264517973, 5.31172037906861,
         7.1453284527505, 7.11693949967702, 10.2790569556659, 8.70290237657601, 4.91879758555161,
@@ -53,7 +53,7 @@ code = @dice begin
     observe(gaussian == y)
   end
   beta1
-end;
+end
 
 # HMC-estimated ground truth: 1.363409828
 @time expectation(code)

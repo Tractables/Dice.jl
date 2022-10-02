@@ -14,20 +14,21 @@ function pr(::Cudd, evidence, queries::Vector{JointQuery}; errors)
     # TODO various optimizations
     # TODO variable order heuristics
     ccache = order_variables(mgr, evidence, queries, errors)
-    
-    # compile BDD for evidence
-    evid_bdd = compile(mgr, evidence, ccache)
-    evid_logp, pcache = logprobability(mgr, evid_bdd)
+    pcache = logprobability_cache(mgr)
 
     # compile BDDs and infer probability of all errors
     prob_errors = ProbError[]
     for (cond, err) in errors
         cond_bdd = compile(mgr, cond, ccache)
-        cond_bdd = conjoin(mgr, cond_bdd, evid_bdd)
-        logp = logprobability(mgr, cond_bdd, pcache) - evid_logp
+        logp = logprobability(mgr, cond_bdd, pcache)
         isinf(logp) || push!(prob_errors, (exp(logp), err))
     end
     isempty(prob_errors) || throw(ProbException(prob_errors))
+
+    # compile BDD for evidence
+    evid_bdd = compile(mgr, evidence, ccache)
+    evid_logp = logprobability(mgr, evid_bdd, pcache)
+
 
     # compile BDDs and infer probability for all queries
     map(queries) do query
@@ -62,7 +63,7 @@ function pr(::Cudd, evidence, queries::Vector{JointQuery}; errors)
         else
             rec(evid_bdd, nil(), query.bits)
         end
-        @assert !isempty(states) "Cannot find possible worlds"
+        @assert !isempty(states) "Cannot find any possible worlds"
         [(Dict(state), p) for (state, p) in states]
     end
 end
@@ -135,12 +136,16 @@ function split(mgr::CuddMgr, context, test::AnyBool, cache)
     end
 end
 
-function logprobability(mgr::CuddMgr, x::Ptr{Nothing})
+function logprobability_cache(mgr::CuddMgr)
     cache = Dict{Tuple{Ptr{Nothing},Bool},Float64}()
     t = constant(mgr, true)
     cache[(t,false)] = log(one(Float64))
     cache[(t,true)] = log(zero(Float64))
+    cache
+end
 
+function logprobability(mgr::CuddMgr, x::Ptr{Nothing})
+    cache = logprobability_cache(mgr)
     logp = logprobability(mgr, x, cache)
     logp, cache
 end

@@ -142,4 +142,23 @@ function Base.:(*)(x::DistInt{W}, y::DistInt{W}) where W
     overflow && error("integer overflow")
     return P_ans
 end
-  
+
+function Base.:(/)(x::DistInt{W}, y::DistInt{W}) where W
+    overflow = prob_equals(x, DistInt{W}(-2^(W-1))) & prob_equals(y, DistInt{W}(-1))
+    overflow && error("integer overflow")
+
+    is_zero = prob_equals(y, DistInt{W}(0))
+    is_zero && error("division by zero")
+
+    xp = if x.number.bits[1] DistUInt{W}(1) + DistUInt{W}([!xb for xb in x.number.bits]) else x.number end
+    xp = convert(xp, DistUInt{W+1})
+    yp = if y.number.bits[1] DistUInt{W}(1) + DistUInt{W}([!yb for yb in y.number.bits]) else y.number end
+    yp = convert(yp, DistUInt{W+1})
+    ans = xp / yp
+
+    isneg = xor(x.number.bits[1], y.number.bits[1]) & !prob_equals(ans, DistUInt{W+1}(0))
+
+    ans = if isneg DistUInt{W+1}(1) + DistUInt{W+1}([!ansb for ansb in ans.bits]) else ans end
+    ans = DistInt{W}(ans.bits[2:W+1])
+    return ans
+end

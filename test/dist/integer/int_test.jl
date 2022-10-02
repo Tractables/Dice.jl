@@ -1,4 +1,3 @@
-
 using Dice
 using Test
 using Dice: Flip, num_ir_nodes
@@ -203,5 +202,33 @@ end
       
         @test issetequal(keys(p), -7:1:1-1)
         @test all(values(p) .≈ 1/8)
+    end
+end
+
+@testset "DistInt division" begin
+    x = DistInt{4}(7)
+    y = DistInt{4}(-3)
+    p = pr(@dice x / y)
+    @test p[-2] ≈ 1.0
+
+    a = uniform(DistInt{3}, -4, 4)
+    b = uniform(DistInt{3}, -4, 4)
+    @test_throws ProbException pr(@dice a/b)
+
+    x = DistInt{3}(-4)
+    y = DistInt{3}(-4)
+    p = pr(@dice x / y)
+    @test p[1] ≈ 1.0
+
+    for i = -4:3
+        for j = -4:3
+            a = DistInt{3}(i)
+            b = DistInt{3}(j)
+            if (j == 0) | ((i == -4) & (j == -1))
+                @test_throws ProbException pr(@dice a/b)
+            else
+                @test pr(@dice a/b)[i ÷ j] ≈ 1.0
+            end
+        end
     end
 end
