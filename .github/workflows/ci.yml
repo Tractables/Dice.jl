@@ -23,7 +23,7 @@ jobs:
           
       - name: Install Latex Dependencies
         run:
-          sudo apt install -y pdf2svg texlive-latex-base texlive-binaries texlive-latex-extra texlive-luatex
+          sudo apt update && sudo apt install -y pdf2svg texlive-latex-base texlive-binaries texlive-latex-extra texlive-luatex
 
       - name: Install IRTools master
         run: |
