@@ -128,13 +128,14 @@ for f in :[getfield, typeof, Core.apply_type, typeassert, (===),
         Core.sizeof, Core.arrayset, tuple, isdefined, fieldtype, nfields,
         isa, Core.arraysize, repr, print, println, Base.vect, Broadcast.broadcasted,
         Broadcast.materialize, Core.Compiler.return_type, Base.union!, Base.getindex, Base.haskey,
-        Base.pop!, Base.setdiff, unsafe_copyto!, continuous].args
+        Base.pop!, Base.setdiff, unsafe_copyto!].args
     @eval (::DiceDyna)(::typeof($f), args...) = $f(args...)
 end
 
 # avoid transformation for performance (may cause probabilistic errors to become deterministic)
 for f in :[xor, atleast_two, prob_equals, (&), (|), (!), isless, ifelse, 
     Base.collect_to!, Base.collect, Base.steprange_last, oneunit, 
-    Base.pairwise_blocksize, eltype, firstindex, iterate].args
+    Base.pairwise_blocksize, eltype, firstindex, iterate, 
+    continuous, uniform].args
     @eval (::DiceDyna)(::typeof($f), args...) = $f(args...)
 end

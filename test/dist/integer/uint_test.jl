@@ -1,6 +1,6 @@
 using Test
 using Dice
-using Dice: Flip, ifelse, num_ir_nodes
+using Dice: Flip, num_ir_nodes
 
 @testset "DistUInt inference" begin
     x = DistUInt{4}([true, false, true, false]) # 10
@@ -166,17 +166,6 @@ end
     @test expectation(y) ≈ mean
 end
 
-@testset "DistUInt expectation" begin
-    y = DistUInt{4}([true, false, true, false])
-    @test expectation(y) == 10.0
-
-    y = DistUInt{2}([flip(0.1), flip(0.1)])
-    p = pr(y)
-    mean = reduce(+, [(key*value) for (key, value) in p])
-    @test expectation(y) ≈ mean
-
-end
-
 @testset "DistUInt uniform" begin
     uniform_funcs = [uniform_arith, uniform_ite]
 
@@ -210,6 +199,16 @@ end
         p = pr(prob_equals(x, z))
         @test p[1] ≈ 0
 
+    end
+    
+    flags = [true, false]
+    map(flags) do flag
+        x = uniform(DistUInt{3}, 0, 7; ite=flag)
+        p = pr(x)
+        for i=0:6
+            @test p[i] ≈ 1/7
+        end
+        @test p[7] ≈ 0
     end
 end
 
@@ -246,7 +245,38 @@ end
 
     x = uniform(DistUInt{4}, 2)
     y = uniform(DistUInt{4}, 2)
-    p = pr(@dice y*x; ignore_errors = true)
+    p = pr(@dice y*x)
     @test p[0] ≈ 7/16
     @test p[9] ≈ 1/16
+end
+
+@testset "DistUInt division" begin
+    x = DistUInt{4}(15)
+    y = DistUInt{4}(3)
+    p = pr(@dice x / y)
+    @test p[5] ≈ 1.0
+
+    a = uniform_arith(DistUInt{3}, 0, 8)
+    b = uniform_arith(DistUInt{3}, 0, 8)
+    c = @dice a/b
+    @test_throws ProbException pr(c)
+
+    code = @dice begin
+            a = uniform_arith(DistUInt{3}, 1, 8)
+            b = uniform_arith(DistUInt{3}, 1, 8)
+            c = a/b
+            c
+    end
+    p = pr(code)
+    @test p[0.0] ≈ 21/49
+    @test p[5.0] ≈ 1/49
+
+    for i = 1:7
+        for j = 1:7
+            a = DistUInt{3}(i)
+            b = DistUInt{3}(j)
+            c = pr(@dice a/b)
+            @test c[floor(i/j)] ≈ 1.0
+        end
+    end
 end

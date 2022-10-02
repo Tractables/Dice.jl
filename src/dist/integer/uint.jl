@@ -77,8 +77,15 @@ function uniform(::Type{DistUInt{W}}, n = W) where W
     DistUInt{W}([i > W-n ? flip(0.5) : false for i=1:W])
 end
 
+# question: is this a good way of passing the argument? 
+function uniform(::Type{DistUInt{W}}, start::Int, stop::Int; ite::Bool = false)::DistUInt{W} where W
+    if ite 
+        uniform_ite(DistUInt{W}, start, stop)
+    else
+        uniform_arith(DistUInt{W}, start, stop)
+    end
+end
 
-# TODO: update uniform to take keyword argument for uniform type
 function uniform_arith(::Type{DistUInt{W}}, start::Int, stop::Int)::DistUInt{W} where W
     # WARNING: will cause an error in certain cases where overflow is falsely detected
     # instead use with the @dice macro or increase bit-width
@@ -270,6 +277,21 @@ function Base.:(*)(p1::DistUInt{W}, p2::DistUInt{W}) where W
         P = P + added
     end
     P
+end 
+
+function Base.:/(p1::DistUInt{W}, p2::DistUInt{W}) where W #p1/p2
+    is_zero = prob_equals(p2, DistUInt{W}(0))
+    is_zero && error("division by zero")
+
+    ans = Vector(undef, W)
+    p1_proxy = DistUInt{W}(0)
+
+    for i = 1:W
+        p1_proxy = DistUInt{W}(vcat(p1_proxy.bits[2:W], p1.bits[i]))
+        ans[i] = ifelse(p2 > p1_proxy, false, true)
+        p1_proxy = if p2 > p1_proxy p1_proxy else p1_proxy - p2 end
+    end
+    DistUInt{W}(ans)
 end 
 
 function Base.ifelse(cond::Dist{Bool}, then::DistUInt{W}, elze::DistUInt{W}) where W

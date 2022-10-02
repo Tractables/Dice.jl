@@ -22,8 +22,9 @@ end
 
 function DistFixedPoint{W, F}(i::Float64) where W where F
     # new_i = Int(round(if i >= -(2.0)^(-F-1) i*2^F else i*2^F + 2^W end)) # for a centered notation of probabilities
+    @assert i >= -2^(W-F-1)
+    @assert i < 2^(W-F-1)
     new_i = Int(floor(if i >= 0 i*2^F else i*2^F + 2^W end))
-    # @show new_i
     DistFixedPoint{W, F}(DistInt{W}(DistUInt{W}(new_i)))
 end
 
@@ -55,6 +56,15 @@ bitwidth(::DistFixedPoint{W, F}) where W where F = W
 function uniform(::Type{DistFixedPoint{W, F}}, n = W) where W where F
     DistFixedPoint{W, F}(DistInt{W}(uniform(DistUInt{W}, n).bits))
 end
+
+function uniform(t::Type{DistFixedPoint{W, F}}, start::Float64, stop::Float64; ite::Bool=false) where W where F
+    @assert start >= -(2^(W - F - 1))
+    @assert stop <= (2^(W - F - 1))
+    @assert start < stop
+    a = Int(round((stop - start)*2^F))
+    return DistFixedPoint{W, F}(uniform(DistInt{W}, 0, a; ite=ite)) + DistFixedPoint{W, F}(start)
+ end
+ 
 
 function triangle(t::Type{DistFixedPoint{W, F}}, b::Int) where W where F
     @assert b <= W
@@ -104,6 +114,18 @@ function Base.:(*)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F
     prodint = x1.number * y1.number
     prodfip = DistFixedPoint{W+F, 2F}(prodint)
     convert(prodfip, DistFixedPoint{W, F})
+end
+
+function Base.:(/)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F}
+    xp = convert(x, DistFixedPoint{W+F, 2*F})
+    yp = convert(y, DistFixedPoint{W+F, F})
+    ans = xp.number / yp.number
+
+    n_overflow = DistInt{F+1}(ans.number.bits[1:F+1])
+    overflow = !prob_equals(n_overflow, DistInt{F+1}(-1)) & !prob_equals(n_overflow, DistInt{F+1}(0))
+    overflow && error("integer overflow")
+
+    DistFixedPoint{W, F}(ans.number.bits[F+1:W+F])
 end
 
 #################################
