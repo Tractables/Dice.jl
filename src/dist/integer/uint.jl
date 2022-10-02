@@ -77,8 +77,15 @@ function uniform(::Type{DistUInt{W}}, n = W) where W
     DistUInt{W}([i > W-n ? flip(0.5) : false for i=1:W])
 end
 
+# question: is this a good way of passing the argument? 
+function uniform(::Type{DistUInt{W}}, start::Int, stop::Int; ite::Bool = false)::DistUInt{W} where W
+    if ite 
+        uniform_ite(DistUInt{W}, start, stop)
+    else
+        uniform_arith(DistUInt{W}, start, stop)
+    end
+end
 
-# TODO: update uniform to take keyword argument for uniform type
 function uniform_arith(::Type{DistUInt{W}}, start::Int, stop::Int)::DistUInt{W} where W
     # WARNING: will cause an error in certain cases where overflow is falsely detected
     # instead use with the @dice macro or increase bit-width
