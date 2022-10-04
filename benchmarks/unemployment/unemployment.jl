@@ -18,9 +18,10 @@ model {
 =#
 
 precision = 2
-num_pieces = 8
-
 DFiP = DistFixedPoint{9+precision, precision}
+num_pieces = 8
+truncation = (-8.0, 8.0)
+mult_arg = false
 
 ys = DFiP.([3.33008960302557, 5.19543854472405, 5.88929762709886, 5.52449264517973, 5.31172037906861,
         7.1453284527505, 7.11693949967702, 10.2790569556659, 8.70290237657601, 4.91879758555161,
@@ -47,10 +48,8 @@ code = @dice begin
   sigma = uniform(DFiP, 0.0, 15.99999)
 
   for (y, y_lag) in zip(ys, y_lags)
-    unitgaussian = continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
     mean = beta1 + beta2 * y_lag
-    gaussian = sigma * unitgaussian + mean
-    observe(gaussian == y)
+    gaussian_observe(DFiP, num_pieces, truncation[1], truncation[2], mean, sigma, y, mult=mult_arg)
   end
   beta1
 end
