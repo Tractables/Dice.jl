@@ -27,5 +27,4 @@ code = @dice begin
     mu1
 end;
 
-# IS-estimated ground truth: 0.15421207504025766
 @time expectation(code)
