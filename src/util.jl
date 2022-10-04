@@ -49,3 +49,14 @@ function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Floa
     end
 end
 
+# function gaussian_observe_enumerate(::Type{DistFixedPoint{W, F}}, mean, sigma, data; mean_min=-2^(W-F-1), mean_max=2^(W-F)-1/2^F, sigma_min=1/2^F, sigma_max=2^(W-F)-1/2^F) where W where F
+#     @assert sigma_min > 0
+#     @assert mean_max > mean_min
+#     @assert sigma_max > sigma_min
+#     for i = mean_min: 1/2^F: mean_max
+#         for j = sigma_min: 1/2^F: sigma_max
+#             flip_prob = reduce(*, [pdf(Normal(i, j), datapt)*10^(-3) for datapt in data])
+#             observe(flip(flip_prob))
+#         end
+#     end
+# end

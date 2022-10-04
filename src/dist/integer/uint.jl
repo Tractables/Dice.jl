@@ -294,6 +294,21 @@ function Base.:/(p1::DistUInt{W}, p2::DistUInt{W}) where W #p1/p2
     DistUInt{W}(ans)
 end 
 
+function Base.:%(p1::DistUInt{W}, p2::DistUInt{W}) where W #p1/p2
+    is_zero = prob_equals(p2, DistUInt{W}(0))
+    is_zero && error("division by zero")
+
+    # ans = Vector(undef, W)
+    p1_proxy = DistUInt{W}(0)
+
+    for i = 1:W
+        p1_proxy = DistUInt{W}(vcat(p1_proxy.bits[2:W], p1.bits[i]))
+        # ans[i] = ifelse(p2 > p1_proxy, false, true)
+        p1_proxy = if p2 > p1_proxy p1_proxy else p1_proxy - p2 end
+    end
+    p1_proxy
+end 
+
 function Base.ifelse(cond::Dist{Bool}, then::DistUInt{W}, elze::DistUInt{W}) where W
     (then == elze) && return then
     bits = map(then.bits, elze.bits) do tb, eb
