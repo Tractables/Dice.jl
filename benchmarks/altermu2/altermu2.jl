@@ -3,10 +3,10 @@ using Pkg; Pkg.activate("$(@__DIR__)/../")
 using Dice, Distributions
 
 precision = 5
-DFiP = DistFixedPoint{5+precision, precision}
-
+DFiP = DistFixedPoint{6+precision, precision}
 num_pieces = 64
 truncation = (-8.0, 8.0)
+add_arg = false
 
 data = DFiP.([-2.57251482,  0.33806206,  2.71757796,  1.09861336,  2.85603752,
         -0.91651351,  0.15555127, -2.68160347,  2.47043789,  3.47459025,
@@ -23,9 +23,7 @@ code = @dice begin
     mu2 = uniform(DFiP, -8.0, 8.0)
     mu = mu1 + mu2
     for datapoint in data
-        unitgaussian = continuous(DFiP, Normal(0, 1), num_pieces, truncation[1], truncation[2])
-        gaussian = mu + unitgaussian
-        observe(gaussian == datapoint)
+        gaussian_observe(DFiP, num_pieces, truncation[1], truncation[2], mu, 1.0, datapoint, add=add_arg)
     end
     mu1
 end;
