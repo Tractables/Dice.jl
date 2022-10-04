@@ -229,6 +229,14 @@ end
     @test issetequal(keys(p), -3.0:1/8:0.125 - 1/8)
     @test all(values(p) .≈ 1/25)
    
+    flags = [true, false]
+    map(flags) do flag
+        y = uniform(DistFixedPoint{7, 3}, -3.0, 1.0; ite=flag)
+        p = pr(y)
+    
+        @test issetequal(keys(p), -3.0:1/8:1.0 - 1/8)
+        @test all(values(p) .≈ 1/2^5)
+    end
 end
 
 @testset "DistFixedPoint division" begin
