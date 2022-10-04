@@ -271,7 +271,7 @@ end
     end
 end
 
-@testset "DistUInt division" begin
+@testset "DistUInt mod" begin
     x = DistUInt{4}(15)
     y = DistUInt{4}(3)
     p = pr(@dice x % y)
