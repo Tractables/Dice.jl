@@ -1,6 +1,6 @@
 using Distributions
 
-export gaussian_observe
+export gaussian_observe, parametrised_flip
 
 ##################################
 # Gaussian observation methods
@@ -49,14 +49,29 @@ function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Floa
     end
 end
 
-# function gaussian_observe_enumerate(::Type{DistFixedPoint{W, F}}, mean, sigma, data; mean_min=-2^(W-F-1), mean_max=2^(W-F)-1/2^F, sigma_min=1/2^F, sigma_max=2^(W-F)-1/2^F) where W where F
-#     @assert sigma_min > 0
-#     @assert mean_max > mean_min
-#     @assert sigma_max > sigma_min
-#     for i = mean_min: 1/2^F: mean_max
-#         for j = sigma_min: 1/2^F: sigma_max
-#             flip_prob = reduce(*, [pdf(Normal(i, j), datapt)*10^(-3) for datapt in data])
-#             observe(flip(flip_prob))
+# TODO: think about this API a bit more to get uniform usage
+# function gaussian_observe_enumerate(::Type{DistFixedPoint{W, F}}, data, fmean, fstd, bounds) where W where F
+#     # TODO: Is there a way to check if standard deviation is positive?
+#     DFiP = DistFixedPoint{W, F}
+#     a = Vector(undef, length(bounds))
+#     s_list = Vector(undef, length(bounds))
+#     for i=1:length(bounds)
+#         t = bounds[i]
+#         a[i] = t[2]:1/2^F:t[3] - 1/2^F
+#         s_list[i] = t[1]
+#     end
+#     for k in Iterators.product(a...)
+#         l = reduce(&, [prob_equals(s, DFiP(k_element)) for (s, k_element) in zip(s_list, k)])
+#         if l
+#             observe(reduce(*, [pdf(Normal(fmean(k...), fstd(k...)), datapt)*10^(-3) for datapt in data]))
 #         end
 #     end
 # end
+
+#We might want to inline this to interleave bits of p and new uniform
+function parametrised_flip(p::DistFixedPoint{W, F}) where W where F
+    invalid = (p < DistFixedPoint{W, F}(0.0)) | (DistFixedPoint{W, F}(1.0) < p)
+    invalid && error("flip probability outside interval [0, 1]")
+
+    uniform(DistFixedPoint{W, F}, 0.0, 1.0) < p
+end
