@@ -96,6 +96,10 @@ function prob_equals(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where W w
     prob_equals(x.number, y.number)
 end
 
+function Base.isless(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where W where F
+    isless(x.number, y.number)
+end
+
 function Base.ifelse(cond::Dist{Bool}, then::DistFixedPoint{W, F}, elze::DistFixedPoint{W, F}) where W where F
     DistFixedPoint{W, F}(ifelse(cond, then.number, elze.number))
 end
