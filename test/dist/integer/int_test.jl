@@ -255,9 +255,29 @@ end
             if (j == 0)
                 @test_throws ProbException pr(@dice a%b)
             else
-                @show i, j, i%j
                 @test pr(@dice a%b)[i % j] ≈ 1.0
             end
         end
     end
+end
+
+@testset "DistInt isless" begin
+    x = DistInt{4}(3)
+    y = DistInt{4}(-7)
+    p = pr(x < y)
+    @test p[0.0] ≈ 1.0
+
+    x = uniform(DistInt{3}, 0, 2)
+    y = uniform(DistInt{3}, 0, 2)
+    p = pr(x < y)
+    @test p[1.0] ≈ 0.25
+
+    for i = -4:3
+        for j = -4:3
+            a = DistInt{3}(i)
+            b = DistInt{3}(j)
+            @test pr(@dice a < b)[i < j] ≈ 1.0
+        end
+    end
+
 end

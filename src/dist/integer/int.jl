@@ -99,6 +99,18 @@ function prob_equals(x::DistInt{W}, y::DistInt{W}) where W
     prob_equals(x.number, y.number)
 end
 
+function Base.isless(x::DistInt{W}, y::DistInt{W}) where W
+    if x.number.bits[1] & !y.number.bits[1]
+        true
+    else
+        if !x.number.bits[1] & y.number.bits[1]
+            false
+        else
+            isless(DistUInt{W-1}(x.number.bits[2:W]), DistUInt{W-1}(y.number.bits[2:W]))
+        end
+    end
+end
+
 function Base.ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where W
     DistInt{W}(ifelse(cond, then.number, elze.number))
 end
