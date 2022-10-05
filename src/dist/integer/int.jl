@@ -54,7 +54,7 @@ function expectation(x::DistInt{W}; kwargs...) where W
 end
 
 function variance(x::DistInt{W}; kwargs...) where W
-    queries = Vector(undef, (W * (W-1))/2)
+    queries = Vector(undef, Int((W * (W-1))/2))
     counter = 1
     for i = 1:W-1
         for j = i+1:W
@@ -73,25 +73,26 @@ function variance(x::DistInt{W}; kwargs...) where W
     counter = 1
     for i = 1:W-1
         for j = i+1:W
-            probs[i, j] = prs[counter + W]
+            probs[i, j] = prs[counter + W][1.0]
+            probs[j, i] = prs[counter + W][1.0]
             counter += 1
         end
-        probs[i, i] = prs[i]
+        probs[i, i] = prs[i][1.0]
     end
-    probs[W, W] = prs[W]
+    probs[W, W] = prs[W][1.0]
     ans = 0
     
     exponent1 = 1
     for i = 1:W
         ans += exponent1*(probs[W+1 - i, W+1 - i] - probs[W + 1 - i, W + 1 - i]^2)
         exponent2 = exponent1*2
-        for j = i+1:mb
+        for j = i+1:W
             exponent2 = 2*exponent2
             bi = probs[W+1-i, W+1-i]
             bj = probs[W+1-j, W+1-j]
             bibj = probs[W+1-i, W+1-j]
             
-            if j == mb
+            if j == W
                 ans -= exponent2 * (bibj - bi * bj)
             else
                 ans += exponent2 * (bibj - bi * bj)

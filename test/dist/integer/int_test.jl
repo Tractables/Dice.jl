@@ -55,20 +55,29 @@ end
     y = DistInt{4}([true, false, true, false])
     @test expectation(y) == -6.0
     @test expectation(@dice y) == -6.0
+    @test variance(y) == 0.0
+    @test variance(@dice y) == 0.0
 
     y = DistInt{2}([flip(0.1), flip(0.1)])
     p = pr(y)
     mean = reduce(+, [(key*value) for (key, value) in p])
     @test expectation(y) ≈ mean
+    std_sq = reduce(+, [(key*key*value) for (key, value) in p]) - mean^2
+    @test variance(y) ≈ std_sq
 
     x = uniform(DistInt8)
+    p = pr(x)
     @test expectation(x) ≈ -0.5
+    std_sq = reduce(+, [(key*key*value) for (key, value) in p]) - (-0.5)^2
+    @test variance(x) ≈ std_sq
     
     y = prob_equals(x, DistInt8(42))
     @test expectation(x; evidence=y) ≈ 42
+    @test variance(x; evidence = y) ≈ 0.0
 
     y = prob_equals(x, DistInt8(-42))
     @test expectation(x; evidence=y) ≈ -42
+    @test variance(x; evidence = y) ≈ 0.0
 end
 
 @testset "DistInt triangle" begin
