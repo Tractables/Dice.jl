@@ -53,6 +53,58 @@ function expectation(x::DistInt{W}; kwargs...) where W
     ans
 end
 
+function variance(x::DistInt{W}; kwargs...) where W
+    queries = Vector(undef, (W * (W-1))/2)
+    counter = 1
+    for i = 1:W-1
+        for j = i+1:W
+            queries[counter] = x.number.bits[i] & x.number.bits[j]
+            counter += 1
+        end
+    end
+
+    prs = pr(x.number.bits..., queries... ; kwargs...)
+
+
+    # ans = 0
+    # mb = T
+    # b1 = t1.number
+    probs = Matrix(undef, W, W)
+    counter = 1
+    for i = 1:W-1
+        for j = i+1:W
+            probs[i, j] = prs[counter + W]
+            counter += 1
+        end
+        probs[i, i] = prs[i]
+    end
+    probs[W, W] = prs[W]
+    ans = 0
+    
+    exponent1 = 1
+    for i = 1:W
+        ans += exponent1*(probs[W+1 - i, W+1 - i] - probs[W + 1 - i, W + 1 - i]^2)
+        exponent2 = exponent1*2
+        for j = i+1:mb
+            exponent2 = 2*exponent2
+            bi = probs[W+1-i, W+1-i]
+            bj = probs[W+1-j, W+1-j]
+            bibj = probs[W+1-i, W+1-j]
+            
+            if j == mb
+                ans -= exponent2 * (bibj - bi * bj)
+            else
+                ans += exponent2 * (bibj - bi * bj)
+                # ans -= 2*exponent2 * (probs[i, mb] - probs[i, i] * probs[mb, mb])
+            end
+        end
+        # @show exponent2 exponent1
+        
+        exponent1 = exponent1*4
+    end
+    return ans
+end
+
 ##################################
 # methods
 ##################################

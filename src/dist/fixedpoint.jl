@@ -39,11 +39,15 @@ function frombits(x::DistFixedPoint{W, F}, world) where W where F
 end
 
 # ##################################
-# # expectation
+# # moments
 # ##################################
 
 function expectation(x::DistFixedPoint{W, F}; kwargs...) where W where F
     expectation(x.number; kwargs...)/2^F
+end
+
+function variance(x::DistFixedPoint{W, F}; kwargs...) where W where F
+    variance(x.number; kwargs...)/2^(2*F)
 end
     
 
