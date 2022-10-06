@@ -1,3 +1,4 @@
+using Revise
 using Test
 using Dice
 using Dice: Flip, ifelse, num_ir_nodes
@@ -44,6 +45,15 @@ using Distributions
         end
         @test_nowarn pr(code)
     end
+
+    datapt = 0.0
+    code = @dice begin
+                m = uniform(DistFixedPoint{4, 2}, -1.0, 1.0)
+                s = uniform(DistFixedPoint{4, 2}, -1.0, 1.0)
+                gaussian_observe_enumerate(DistFixedPoint{4, 2}, [datapt], m, s)
+                m
+            end
+    @test_nowarn pr(code)
 end
 
 @testset "Parametrised Flip" begin

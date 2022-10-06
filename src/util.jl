@@ -1,6 +1,6 @@
 using Distributions
 
-export gaussian_observe, parametrised_flip
+export gaussian_observe, gaussian_observe_enumerate, parametrised_flip
 
 ##################################
 # Gaussian observation methods
@@ -49,24 +49,17 @@ function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Floa
     end
 end
 
-# TODO: think about this API a bit more to get uniform usage
-# function gaussian_observe_enumerate(::Type{DistFixedPoint{W, F}}, data, fmean, fstd, bounds) where W where F
-#     # TODO: Is there a way to check if standard deviation is positive?
-#     DFiP = DistFixedPoint{W, F}
-#     a = Vector(undef, length(bounds))
-#     s_list = Vector(undef, length(bounds))
-#     for i=1:length(bounds)
-#         t = bounds[i]
-#         a[i] = t[2]:1/2^F:t[3] - 1/2^F
-#         s_list[i] = t[1]
-#     end
-#     for k in Iterators.product(a...)
-#         l = reduce(&, [prob_equals(s, DFiP(k_element)) for (s, k_element) in zip(s_list, k)])
-#         if l
-#             observe(reduce(*, [pdf(Normal(fmean(k...), fstd(k...)), datapt)*10^(-3) for datapt in data]))
-#         end
-#     end
-# end
+# This API is for combining all the observations
+function gaussian_observe_enumerate(::Type{DistFixedPoint{W, F}}, data, mu, sigma) where W where F
+    for i = -2^(W-F-1):1/2^F:2^(W-F-1) - 1/2^F
+        for j =  1/2^F:1/2^F:2^(W-F-1) - 1/2^F
+            flip_prob = reduce(*, [pdf(Normal(i, j), datapt)/(10^5) for datapt in data])
+            a = prob_equals(mu, DistFixedPoint{W, F}(i)) & prob_equals(sigma, DistFixedPoint{W, F}(j))
+            # TODO: Verify the observed expression
+            observe(!a | (a & flip(flip_prob)))
+        end
+    end
+end
 
 #We might want to inline this to interleave bits of p and new uniform
 function parametrised_flip(p::DistFixedPoint{W, F}) where W where F
