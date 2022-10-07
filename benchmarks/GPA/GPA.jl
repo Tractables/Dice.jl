@@ -27,6 +27,6 @@ n
 end; ignore_errors=true)
 
 io = open(string("./benchmarks/GPA/results.txt"), "a")
-@show b, p[1.0]
-writedlm(io, [b p[1.0]], ",")  
+@show bits, pieces, p[1.0]
+writedlm(io, [bits, pieces, p[1.0]], ",")  
 close(io)

@@ -1,6 +1,5 @@
-using Pkg; Pkg.activate("$(@__DIR__)/../")
-
 using Dice, Distributions
+using DelimitedFiles
 
 precision = 2
 DFiP = DistFixedPoint{9+precision, precision}

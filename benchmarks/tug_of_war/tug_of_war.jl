@@ -28,8 +28,8 @@ p = pr(@dice begin
             match[5]
         end)
 
-io = open(string("./benchmarks/pi/results.txt"), "a")
-@show b, p[1.0]
-writedlm(io, [b p[1.0]], ",")  
+io = open(string("./benchmarks/tug_of_war/results.txt"), "a")
+@show bits, pieces, p[1.0]
+writedlm(io, [bits pieces p[1.0]], ",")  
 close(io)
         
