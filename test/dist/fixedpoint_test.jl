@@ -288,4 +288,31 @@ end
     end
 
 end
+
+@testset "DistFixedPoint round" begin
+    x = DistFixedPoint{4, 2}(0.5)
+    @test pr(round(x))[1.0] ≈ 1.0
+    
+    y = DistFixedPoint{6, 3}(1.75)
+    @test pr(round(y))[2.0] ≈ 1.0
+
+    for i = -2.0:0.25:2.0-0.25
+        @show i, round(i)
+        a = DistFixedPoint{5, 2}(i)
+        y = round(a)
+        if i%0.5 == 0
+            if ceil(i) == -0.0
+                @test pr(y)[0.0] ≈ 1.0
+            else
+                @test pr(y)[ceil(i)] ≈ 1.0
+            end
+        else
+            if round(i) == -0.0
+                @test pr(y)[0.0] ≈ 1.0
+            else
+                @test pr(y)[round(i)] ≈ 1.0
+            end
+        end
+    end
+end
  

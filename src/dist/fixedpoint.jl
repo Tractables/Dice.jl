@@ -108,6 +108,18 @@ function Base.ifelse(cond::Dist{Bool}, then::DistFixedPoint{W, F}, elze::DistFix
     DistFixedPoint{W, F}(ifelse(cond, then.number, elze.number))
 end
 
+function round(x::DistFixedPoint{W, F}) where W where F
+    if F == 0
+        x
+    else
+        if x.number.number.bits[W - F + 1] 
+            convert(x, DistFixedPoint{W-F, 0}) + DistFixedPoint{W-F, 0}(1.0)
+        else
+            convert(x, DistFixedPoint{W-F, 0})
+        end
+    end
+end
+
 function Base.:(+)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F}
     DistFixedPoint{W, F}(x.number + y.number)
 end
