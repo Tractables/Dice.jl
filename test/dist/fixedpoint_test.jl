@@ -287,6 +287,10 @@ end
         end
     end
 
+    x = uniform(DistFixedPoint{4, 2}, 0.0, 1.0)
+    y = uniform(DistFixedPoint{4, 2}, 0.0, 1.0)
+    @test pr(x < x)[1.0] ≈ 0.0
+
 end
 
 @testset "DistFixedPoint round" begin
