@@ -1,9 +1,10 @@
 using Dice, Distributions
 using DelimitedFiles
 
-precision = 2
+precision = ARGS[1]
+num_pieces = ARGS[2]
+
 DFiP = DistFixedPoint{9+precision, precision}
-num_pieces = 8
 truncation = (-8.0, 8.0)
 mult_arg = false
 
@@ -24,4 +25,9 @@ code = @dice begin
   mu1
 end
 
-@time expectation(code)
+@time p = expectation(code)
+
+io = open(string("./benchmarks/normal_mixture/results.txt"), "a")
+@show precision, num_pieces, p
+writedlm(io, [precision num_pieces p], ",")  
+close(io)
