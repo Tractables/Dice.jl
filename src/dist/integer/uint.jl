@@ -78,8 +78,7 @@ function variance(x::DistUInt{W}; kwargs...) where W
     end
 
     prs = pr(x.bits..., queries... ; kwargs...)
-    # @show prs
-
+    
     probs = Matrix(undef, W, W)
     counter = 1
     for i = 1:W-1
@@ -91,7 +90,6 @@ function variance(x::DistUInt{W}; kwargs...) where W
         probs[i, i] = prs[i][1.0]
     end
     probs[W, W] = prs[W][1.0]
-    @show probs
     ans = 0
     
     exponent1 = 1
@@ -104,9 +102,7 @@ function variance(x::DistUInt{W}; kwargs...) where W
             bj = probs[W+1-j, W+1-j]
             bibj = probs[W+1-i, W+1-j]
             ans += exponent2 * (bibj - bi * bj)
-                # ans -= 2*exponent2 * (probs[i, mb] - probs[i, i] * probs[mb, mb])
         end
-        # @show exponent2 exponent1
         
         exponent1 = exponent1*4
     end

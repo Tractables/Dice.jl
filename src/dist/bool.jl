@@ -14,8 +14,9 @@ struct Flip <: Dist{Bool}
     global_id::Int
     prob
     
-    Flip(p) = begin
-        @assert !iszero(p) && !isone(p) "Use `true` and `false` for deterministic flips"
+    Flip(p::Real) = begin
+        @assert !isone(p) "Use `true` for deterministic flips"
+        @assert !iszero(p) "Use `false` for deterministic flips"
         @assert 0 < p < 1 "Probabilities are between 0 and 1"
         global global_flip_id
         new(global_flip_id += 1, p)
@@ -23,7 +24,7 @@ struct Flip <: Dist{Bool}
 end
 
 "Create a Bernoulli random variable with the given probability (a coin flip)"
-function flip(prob)
+function flip(prob::Real)
     iszero(prob) && return false
     isone(prob) && return true
     Flip(prob)
