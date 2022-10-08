@@ -1,13 +1,28 @@
-using Pkg; Pkg.activate("$(@__DIR__)/../")
+using Pkg; Pkg.activate(@__DIR__)
 using Dice, Distributions
 
-precision = 1
-DFiP = DistFixedPoint{8+precision, precision}
-num_pieces = 16
-truncation = (-8.0, 8.0)
-mult_arg = false
+#=
+data {
+  int<lower=0> N;
+  vector[N] y;
+  vector[N] y_lag;
+}
+parameters {
+  vector[2] beta;
+  real<lower=0> sigma;
+}
+model {
+  beta ~ normal(1,1);
+  y ~ normal(beta[1] + beta[2] * y_lag, sigma);
+}
+=#
 
-ys = DFiP.([12.1374259163952, 26.6903103048018, 38.5878897957254, 30.4930667829189, 39.2801876119107,
+precision = 1
+num_pieces = 16
+
+DFiP = DistFixedPoint{20+precision, precision}
+
+ys = DFiP.([12.137416259163952, 26.6903103048018, 38.5878897957254, 30.4930667829189, 39.2801876119107,
             20.4174324499166, 25.7777563431966, 11.5919826316299, 37.3521894576722, 42.3729512347165,
             33.1974931235148, 18.3925621724044, 38.2093756620254, 26.5178923853568, 4.52268843482463,
             17.4645068462391, 20.0241067156045, 14.6755540100198, 12.9841025634912, 42.3191772083172,
@@ -22,7 +37,9 @@ code = @dice begin
   sigma = uniform(DFiP, 0.0, 64.0)
 
   for y in ys
-    gaussian_observe(DFiP, num_pieces, truncation[1], truncation[2], beta, sigma, y, mult=mult_arg)
+    unitgaussian = continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
+    gaussian = sigma * unitgaussian + beta
+    observe(gaussian == y)
   end
   beta
 end

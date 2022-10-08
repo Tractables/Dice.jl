@@ -1,58 +1,54 @@
 using Test
-using Dice
-using Dice: Flip, ifelse, num_ir_nodes
-using Distributions
+using Dice, Distributions
 
 @testset "Gaussian observations" begin
-    datapt = DistFixedPoint{6, 2}(0.0)
+    
+    FP = DistFixedPoint{6, 2}
+    data = FP(0.0)
+    
     code = @dice begin
-                a = flip(0.5)
-                gaussian_observe(DistFixedPoint{6, 2}, 4, -4.0, 4.0, 0.0, 1.0, datapt)
-                a
+        a = flip(0.5)
+        gaussian_observe(FP, 4, -4.0, 4.0, 0.0, 1.0, data)
+        a
     end
 
     @test pr(code)[false] ≈ 0.5
 
+    FP = DistFixedPoint{8, 2}
+    data = FP(1.0)
+
     # test for conjugate gaussians
-    datapt = DistFixedPoint{8, 3}(1.0)
     map([true, false]) do add_arg
         code = @dice begin
-                    a = continuous(DistFixedPoint{8, 3}, Normal(0, 1), 16, -8.0, 8.0)
-                    gaussian_observe(DistFixedPoint{8, 3}, 16, -8.0, 8.0, a, 1.0, datapt, add=add_arg)
-                    a
+            a = continuous(FP, Normal(0, 1), 16, -8.0, 8.0)
+            gaussian_observe(FP, 8, -8.0, 8.0, a, 1.0, data, add=add_arg)
+            a
         end
-        @test expectation(code) ≈ 0.5
+        @test isapprox(expectation(code), 0.5;) rtol=0.02
     end
 
-    # no warning test for different gaussian observes
-    datapt = DistFixedPoint{10, 2}(1.0)
-    map([true, false]) do mult_arg
-        code = @dice begin
-                    a = continuous(DistFixedPoint{10, 2}, Normal(4, 1), 16, 0.25, 8.25)
-                    gaussian_observe(DistFixedPoint{10, 2}, 16, -8.0, 8.0, 0.0, a, datapt, mult=mult_arg)
-                    a
-        end
-        @test_nowarn pr(code)
-    end
+    FP = DistFixedPoint{5, 1}
+    data = FP(1.0)
 
     map([true, false]) do mult_arg
+
         code = @dice begin
-                    m = uniform(DistFixedPoint{10, 2}, -4.0, 4.0)
-                    s = continuous(DistFixedPoint{10, 2}, Normal(4, 1), 16, 0.25, 8.25)
-                    gaussian_observe(DistFixedPoint{10, 2}, 16, -8.0, 8.0, m, s, datapt, mult=mult_arg)
-                    m
+            a = continuous(FP, Normal(1, 1), 2, 0.5, 2.5)
+            gaussian_observe(FP, 2, -2.0, 2.0, 0.0, a, data, mult=mult_arg)
+            a
         end
-        @test_nowarn pr(code)
+        @test 1.2 < expectation(code) < 1.6
+
+        code = @dice begin
+            m = uniform(FP, -2.0, 2.0)
+            a = continuous(FP, Normal(1, 1), 2, 0.5, 2.5)
+            gaussian_observe(FP, 2, -2.0, 2.0, m, a, data, mult=mult_arg)
+            m
+        end
+        @test expectation(code) > 0.1
+
     end
 
-    datapt = 0.0
-    code = @dice begin
-                m = uniform(DistFixedPoint{4, 2}, -1.0, 1.0)
-                s = uniform(DistFixedPoint{4, 2}, -1.0, 1.0)
-                gaussian_observe_enumerate(DistFixedPoint{4, 2}, [datapt], m, s)
-                m
-            end
-    @test_nowarn pr(code)
 end
 
 @testset "Parametrised Flip" begin
@@ -62,7 +58,6 @@ end
         p = pr(a)
         l[i] = 0.7 - p[1.0]
     end
-    @show l
     @test reverse(l) == sort(l)
 
 end

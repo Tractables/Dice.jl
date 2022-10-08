@@ -16,7 +16,7 @@ end
 function DistInt{W}(i::Int) where W
     @assert i < 2^(W-1)
     @assert i >= -(2^(W-1))
-    new_i = if i >= 0 i else i + 2^W end
+    new_i = ifelse(i >= 0, i, i + 2^W)
     DistInt{W}(DistUInt{W}(new_i))
 end
 
