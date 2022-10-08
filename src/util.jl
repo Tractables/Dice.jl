@@ -1,6 +1,6 @@
 using Distributions
 
-export gaussian_observe
+export gaussian_observe, gaussian_observe_enumerate, parametrised_flip
 
 ##################################
 # Gaussian observation methods
@@ -49,14 +49,22 @@ function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Floa
     end
 end
 
-# function gaussian_observe_enumerate(::Type{DistFixedPoint{W, F}}, mean, sigma, data; mean_min=-2^(W-F-1), mean_max=2^(W-F)-1/2^F, sigma_min=1/2^F, sigma_max=2^(W-F)-1/2^F) where W where F
-#     @assert sigma_min > 0
-#     @assert mean_max > mean_min
-#     @assert sigma_max > sigma_min
-#     for i = mean_min: 1/2^F: mean_max
-#         for j = sigma_min: 1/2^F: sigma_max
-#             flip_prob = reduce(*, [pdf(Normal(i, j), datapt)*10^(-3) for datapt in data])
-#             observe(flip(flip_prob))
-#         end
-#     end
-# end
+# This API is for combining all the observations
+function gaussian_observe_enumerate(::Type{DistFixedPoint{W, F}}, data, mu, sigma) where W where F
+    for i = -2^(W-F-1):1/2^F:2^(W-F-1) - 1/2^F
+        for j =  1/2^F:1/2^F:2^(W-F-1) - 1/2^F
+            flip_prob = reduce(*, [pdf(Normal(i, j), datapt)/(10^5) for datapt in data])
+            a = prob_equals(mu, DistFixedPoint{W, F}(i)) & prob_equals(sigma, DistFixedPoint{W, F}(j))
+            # TODO: Verify the observed expression
+            observe(!a | (a & flip(flip_prob)))
+        end
+    end
+end
+
+#We might want to inline this to interleave bits of p and new uniform
+function parametrised_flip(p::DistFixedPoint{W, F}) where W where F
+    invalid = (p < DistFixedPoint{W, F}(0.0)) | (DistFixedPoint{W, F}(1.0) < p)
+    invalid && error("flip probability outside interval [0, 1]")
+
+    uniform(DistFixedPoint{W, F}, 0.0, 1.0) < p
+end

@@ -55,20 +55,29 @@ end
     y = DistInt{4}([true, false, true, false])
     @test expectation(y) == -6.0
     @test expectation(@dice y) == -6.0
+    @test variance(y) == 0.0
+    @test variance(@dice y) == 0.0
 
     y = DistInt{2}([flip(0.1), flip(0.1)])
     p = pr(y)
     mean = reduce(+, [(key*value) for (key, value) in p])
     @test expectation(y) ≈ mean
+    std_sq = reduce(+, [(key*key*value) for (key, value) in p]) - mean^2
+    @test variance(y) ≈ std_sq
 
     x = uniform(DistInt8)
+    p = pr(x)
     @test expectation(x) ≈ -0.5
+    std_sq = reduce(+, [(key*key*value) for (key, value) in p]) - (-0.5)^2
+    @test variance(x) ≈ std_sq
     
     y = prob_equals(x, DistInt8(42))
     @test expectation(x; evidence=y) ≈ 42
+    @test variance(x; evidence = y) ≈ 0.0
 
     y = prob_equals(x, DistInt8(-42))
     @test expectation(x; evidence=y) ≈ -42
+    @test variance(x; evidence = y) ≈ 0.0
 end
 
 @testset "DistInt triangle" begin
@@ -255,9 +264,29 @@ end
             if (j == 0)
                 @test_throws ProbException pr(@dice a%b)
             else
-                @show i, j, i%j
                 @test pr(@dice a%b)[i % j] ≈ 1.0
             end
         end
     end
+end
+
+@testset "DistInt isless" begin
+    x = DistInt{4}(3)
+    y = DistInt{4}(-7)
+    p = pr(x < y)
+    @test p[0.0] ≈ 1.0
+
+    x = uniform(DistInt{3}, 0, 2)
+    y = uniform(DistInt{3}, 0, 2)
+    p = pr(x < y)
+    @test p[1.0] ≈ 0.25
+
+    for i = -4:3
+        for j = -4:3
+            a = DistInt{3}(i)
+            b = DistInt{3}(j)
+            @test pr(@dice a < b)[i < j] ≈ 1.0
+        end
+    end
+
 end

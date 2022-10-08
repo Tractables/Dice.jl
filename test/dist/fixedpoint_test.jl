@@ -44,13 +44,17 @@ end
     y = DistFixedPoint{4, 3}([true, false, true, false])
     @test expectation(y) == -0.75
     @test expectation(@dice y) == -0.75
+    @test variance(y) == 0.0
+    @test variance(@dice y) == 0.0
 
     y = DistFixedPoint{2, 0}([flip(0.1), flip(0.1)])
     p = pr(y)
     mean = reduce(+, [(key*value) for (key, value) in p])
+    std_sq = reduce(+, [(key*key*value) for (key, value) in p]) - mean^2
     @test expectation(y) ≈ mean
     @test expectation(@dice y) ≈ mean
-
+    @test variance(y) ≈ std_sq
+    @test variance(@dice y) ≈ std_sq
 end
 
 @testset "DistFixedPoint triangle" begin
@@ -262,5 +266,26 @@ end
             end
         end
     end
+end
+
+@testset "DistFixedPoint isless" begin
+    x = DistFixedPoint{4, 2}(0.75)
+    y = DistFixedPoint{4, 2}(-1.75)
+    p = pr(x < y)
+    @test p[0.0] ≈ 1.0
+
+    x = uniform(DistFixedPoint{3, 1}, 0.0, 1.0)
+    y = uniform(DistFixedPoint{3, 1}, 0.0, 1.0)
+    p = pr(x < y)
+    @test p[1.0] ≈ 0.25
+
+    for i = -2:0.5:1.5
+        for j = -2:0.5:1.5
+            a = DistFixedPoint{3, 1}(i)
+            b = DistFixedPoint{3, 1}(j)
+            @test pr(@dice a < b)[i < j] ≈ 1.0
+        end
+    end
+
 end
  

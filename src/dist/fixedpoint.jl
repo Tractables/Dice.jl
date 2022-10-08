@@ -39,11 +39,15 @@ function frombits(x::DistFixedPoint{W, F}, world) where W where F
 end
 
 # ##################################
-# # expectation
+# # moments
 # ##################################
 
 function expectation(x::DistFixedPoint{W, F}; kwargs...) where W where F
     expectation(x.number; kwargs...)/2^F
+end
+
+function variance(x::DistFixedPoint{W, F}; kwargs...) where W where F
+    variance(x.number; kwargs...)/2^(2*F)
 end
     
 
@@ -94,6 +98,10 @@ end
 
 function prob_equals(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where W where F
     prob_equals(x.number, y.number)
+end
+
+function Base.isless(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where W where F
+    isless(x.number, y.number)
 end
 
 function Base.ifelse(cond::Dist{Bool}, then::DistFixedPoint{W, F}, elze::DistFixedPoint{W, F}) where W where F

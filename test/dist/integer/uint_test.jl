@@ -120,19 +120,26 @@ end
     @test p[3] ≈ 0.5
 end
 
-@testset "DistUInt expectation" begin
+@testset "DistUInt moments" begin
     y = DistUInt{4}([true, false, true, false])
     @test expectation(y) == 10.0
+    @test variance(y) == 0.0
 
     y = DistUInt{2}([flip(0.1), flip(0.1)])
     p = pr(y)
     mean = reduce(+, [(key*value) for (key, value) in p])
     @test expectation(y) ≈ mean
+    std_sq = reduce(+, [(key*key*value) for (key, value) in p]) - mean^2
+    @test variance(y) ≈ std_sq
 
     x = uniform(DistUInt8)
+    p = pr(x)
     @test expectation(x) ≈ (2^8-1)/2
+    std_sq = reduce(+, [(key*key*value) for (key, value) in p]) - ((2^8-1)/2)^2
+    @test variance(x) ≈ std_sq
     y = prob_equals(x, DistUInt8(42))
     @test expectation(x; evidence=y) ≈ 42
+    @test variance(x; evidence=y) ≈ 0.0
 end
 
 @testset "DistUInt casting" begin

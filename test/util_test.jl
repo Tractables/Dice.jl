@@ -44,4 +44,25 @@ using Distributions
         end
         @test_nowarn pr(code)
     end
+
+    datapt = 0.0
+    code = @dice begin
+                m = uniform(DistFixedPoint{4, 2}, -1.0, 1.0)
+                s = uniform(DistFixedPoint{4, 2}, -1.0, 1.0)
+                gaussian_observe_enumerate(DistFixedPoint{4, 2}, [datapt], m, s)
+                m
+            end
+    @test_nowarn pr(code)
+end
+
+@testset "Parametrised Flip" begin
+    l = Vector(undef, 10)
+    for i=1:10
+        a = parametrised_flip(DistFixedPoint{5 + i, 3+i}(0.7))
+        p = pr(a)
+        l[i] = 0.7 - p[1.0]
+    end
+    @show l
+    @test reverse(l) == sort(l)
+
 end
