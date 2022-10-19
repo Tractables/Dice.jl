@@ -23,18 +23,34 @@ default_infer_algo() = Cudd()
 function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}; errors)
     mgr = CuddMgr(cudd.reordering_type)
 
+    num_uncompiled_parents = Dict{Dist{Bool}, Int}()
+    for root in Iterators.flatten((
+        Iterators.flatten(query.bits for query in queries),
+        (err[1] for err in errors),
+        [evidence],
+    ))
+        foreach(root) do node
+            @assert isa(root, AnyBool)
+            if isa(node, Dist{Bool})
+                for child in children(node)
+                    num_uncompiled_parents[child] = get(num_uncompiled_parents, child, 0) + 1
+                end
+            end
+        end
+    end
+
     # TODO various optimizations
     # TODO variable order heuristics
-    ccache = order_variables(mgr, evidence, queries, errors)
-    
+    ccache = order_variables(mgr, evidence, queries, errors, num_uncompiled_parents)
+
     # compile BDD for evidence
-    evid_bdd = compile(mgr, evidence, ccache)
+    evid_bdd = compile(mgr, evidence, ccache, num_uncompiled_parents)
     evid_logp, pcache = logprobability(mgr, evid_bdd)
 
     # compile BDDs and infer probability of all errors
     prob_errors = ProbError[]
     for (cond, err) in errors
-        cond_bdd = compile(mgr, cond, ccache)
+        cond_bdd = compile(mgr, cond, ccache, num_uncompiled_parents)
         cond_bdd = conjoin(mgr, cond_bdd, evid_bdd)
         logp = logprobability(mgr, cond_bdd, pcache) - evid_logp
         isinf(logp) || push!(prob_errors, (exp(logp), err))
@@ -54,7 +70,7 @@ function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}; errors)
             else
                 head = rembits[1]
                 tail = @view rembits[2:end]
-                ifbdd, elsebdd = split(mgr, context, head, ccache)
+                ifbdd, elsebdd = split(mgr, context, head, ccache, num_uncompiled_parents)
                 rec(ifbdd, cons(head => true, state), tail)
                 rec(elsebdd, cons(head => false, state), tail)
             end
@@ -88,27 +104,67 @@ function CuddMgr(reordering_type::CUDD.Cudd_ReorderingType)
     end
 end
 
-function compile(mgr::CuddMgr, x)
+function compile(mgr::CuddMgr, x, num_uncompiled_parents)
     cache = Dict{Dist{Bool},Ptr{Nothing}}()
-    bdd = compile(mgr, x, cache)
+    bdd = compile(mgr, x, cache, num_uncompiled_parents)
     bdd, cache
 end
 
-compile(mgr::CuddMgr, x::Bool, _) =
+compile(mgr::CuddMgr, x::Bool, _, _) =
     constant(mgr, x)
 
 
-function compile(mgr::CuddMgr, x::Dist{Bool}, cache)
-    # TODO implement proper referencing and de-referencing of BDD nodes
+function compile(mgr::CuddMgr, x::Dist{Bool}, cache, num_uncompiled_parents)
     # TODO implement shortcuts for equivalence, etc.
-    fl(x::Flip) = new_var(mgr, x.prob) 
-    fi(n::DistAnd, call) = conjoin(mgr, call(n.x), call(n.y))
-    fi(n::DistOr, call) = disjoin(mgr, call(n.x), call(n.y))
-    fi(n::DistNot, call) = negate(mgr, call(n.x))
-    foldup(x, fl, fi, Ptr{Nothing}, cache)
+    function mark_as_compiled(node)
+        for child in unique(children(node))
+            num_uncompiled_parents[child] -= 1
+            @assert num_uncompiled_parents[child] >= 0
+            if num_uncompiled_parents[child] == 0
+                Cudd_RecursiveDeref(mgr.cuddmgr, cache[child])
+            end
+        end
+    end
+
+    fl(x::Flip) = begin
+        if !haskey(cache, x)
+            cache[x] = new_var(mgr, x.prob)
+        end
+        cache[x]
+    end
+
+    fi(n::DistAnd, call) = begin
+        if !haskey(cache, x)
+            call(n.x)
+            call(n.y)
+            cache[n] = conjoin(mgr, cache[n.x], cache[n.y])
+            mark_as_compiled(n)
+        end
+        cache[n]
+    end
+
+    fi(n::DistOr, call) = begin
+        if !haskey(cache, x)
+            call(n.x)
+            call(n.y)
+            cache[n] = disjoin(mgr, cache[n.x], cache[n.y])
+            mark_as_compiled(n)
+        end
+        cache[n]
+    end
+    fi(n::DistNot, call) = begin
+        if !haskey(cache, x)
+            call(n.x)
+            cache[n] = negate(mgr, cache[n.x])
+            mark_as_compiled(n)
+        end
+        cache[n]
+    end
+
+    foldup(x, fl, fi, Ptr{Nothing})
 end
 
-function order_variables(mgr, evidence, queries, errors)
+function order_variables(mgr, evidence, queries, errors, num_uncompiled_parents)
     cache = Dict{Dist{Bool},Ptr{Nothing}}()
     flips = Vector{Flip}()
     seen = Dict{DAG,Nothing}()
@@ -123,13 +179,13 @@ function order_variables(mgr, evidence, queries, errors)
     end
     sort!(flips; by= f -> f.global_id)
     for flip in flips
-        compile(mgr, flip, cache)
+        compile(mgr, flip, cache, num_uncompiled_parents)
     end
     cache
 end
     
-function split(mgr::CuddMgr, context, test::AnyBool, cache)
-    testbdd = compile(mgr, test, cache)
+function split(mgr::CuddMgr, context, test::AnyBool, cache, num_uncompiled_parents)
+    testbdd = compile(mgr, test, cache, num_uncompiled_parents)
     ifbdd = conjoin(mgr, context, testbdd)
     if ifbdd === context
         return (context, constant(mgr, false))
@@ -194,7 +250,7 @@ disjoin(mgr::CuddMgr, x, y) =
     rref(Cudd_bddOr(mgr.cuddmgr, x, y))
 
 negate(::CuddMgr, x) = 
-    Cudd_Not(x)
+    rref(Cudd_Not(x))
 
 ite(mgr::CuddMgr, cond, then, elze) =
     rref(Cudd_bddIte(mgr.cuddmgr, cond, then, elze))

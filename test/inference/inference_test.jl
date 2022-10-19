@@ -72,10 +72,14 @@ end
 end
 
 @testset "Cudd auto reordering" begin
-    x = false
-    for _ in 1:60
-        x = ifelse(flip(0.5), x, flip(0.5))
+    fs = [flip(0.5) for _ in 1:60]
+    xs = Vector{Any}(undef, 60)
+    xs[1] = flip(0.5)
+    for i in 2:60
+        temp = fs[i] | fs[i ÷ 2]
+        xs[i] = temp & xs[i - 1]
     end
+    x = last(xs)
 
     debug_info_ref = Ref{CuddDebugInfo}()
 
@@ -83,11 +87,14 @@ end
     # changing the reordering type is doing something.
 
     pr(x, algo=Cudd(debug_info_ref=debug_info_ref))
-    @assert debug_info_ref[].num_nodes == 181
+    @assert debug_info_ref[].num_nodes == 196604
+
+    pr(x, algo=Cudd(CUDD.CUDD_REORDER_NONE, debug_info_ref))
+    @assert debug_info_ref[].num_nodes == 196604
 
     pr(x, algo=Cudd(CUDD.CUDD_REORDER_SIFT, debug_info_ref))
-    @assert debug_info_ref[].num_nodes == 122
+    @assert debug_info_ref[].num_nodes == 160
 
     pr(x, algo=Cudd(CUDD.CUDD_REORDER_WINDOW2, debug_info_ref))
-    @assert debug_info_ref[].num_nodes == 180
+    @assert debug_info_ref[].num_nodes == 129820
 end
