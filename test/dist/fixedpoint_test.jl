@@ -175,6 +175,24 @@ end
     a = DistFixedPoint{20, 0}(14.0) * DistFixedPoint{20, 0}(-7.0)
     p = pr(@dice a)
     @test p[-98.0] ≈ 1.0
+
+    for i = -2.0:0.25:2-0.25
+        for j = -2.0:0.25:2-0.25
+            a = DistFixedPoint{4, 2}(i)
+            b = DistFixedPoint{4, 2}(j)
+            c = @dice a*b
+            d = floor(i*j *4)/4
+            if (d > 1.75) | (d < -2)
+                @test_throws ProbException pr(c)
+            else
+                if floor(i*j *4)/4 == 0.0
+                    @test pr(c)[0.0] ≈ 1.0
+                else
+                    @test pr(c)[floor(i*j *4)/4] ≈ 1.0
+                end
+            end
+        end
+    end
 end
 
 @testset "DistFixedPoint casting" begin
@@ -211,5 +229,13 @@ end
     @test issetequal(keys(p), -3.0:1/8:0.125 - 1/8)
     @test all(values(p) .≈ 1/25)
    
+    flags = [true, false]
+    map(flags) do flag
+        y = uniform(DistFixedPoint{7, 3}, -3.0, 1.0; ite=flag)
+        p = pr(y)
+    
+        @test issetequal(keys(p), -3.0:1/8:1.0 - 1/8)
+        @test all(values(p) .≈ 1/2^5)
+    end
 end
  

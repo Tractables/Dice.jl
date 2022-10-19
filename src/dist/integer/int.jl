@@ -63,11 +63,11 @@ function uniform(::Type{DistInt{W}}, n = W) where W
     DistInt{W}(uniform(DistUInt{W}, n).bits)
 end
 
-function uniform(::Type{DistInt{W}}, start::Int, stop::Int) where W
+function uniform(::Type{DistInt{W}}, start::Int, stop::Int; ite::Bool=false) where W
     @assert start >= -(2^(W - 1))
     @assert stop <= (2^(W - 1))
     @assert start < stop
-    ans = DistInt{W+1}(uniform_arith(DistUInt{W+1}, 0, stop - start)) + DistInt{W+1}(start)
+    ans = DistInt{W+1}(uniform(DistUInt{W+1}, 0, stop - start; ite=ite)) + DistInt{W+1}(start)
     return convert(ans, DistInt{W})
 end
 
@@ -121,24 +121,25 @@ function Base.:(-)(x::DistInt{W}, y::DistInt{W}) where W
 end
 
 function Base.:(*)(x::DistInt{W}, y::DistInt{W}) where W
-    # ans = DistUInt{W+1}(vcat([true], x.number.bits)) - DistUInt{W+1}(vcat([false], y.number.bits))
-    # borrow = (!x.number.bits[1] & y.number.bits[1] & ans.bits[2]) | (x.number.bits[1] & !y.number.bits[1] & !ans.bits[2])
-    # borrow && error("integer overflow or underflow")
-    # DistInt{W}(ans.bits[2:W+1])
-
-    p1 = x.number
-    p2 = y.number
-    P = DistUInt{W}(0)
+    p1 = convert(x, DistInt{2*W}).number
+    p2 = convert(y, DistInt{2*W}).number
+    P = DistUInt{2*W}(0)
     shifted_bits = p1.bits
-    
-    for i = W:-1:1
-        if (i != W)
-            shifted_bits = vcat(shifted_bits[2:W], false)
+    for i = 2*W:-1:1
+        if (i != 2*W)
+            shifted_bits = vcat(shifted_bits[2:2*W], false)
         end
-        added = ifelse(p2.bits[i], DistUInt{W}(shifted_bits), DistUInt{W}(0))
-        P = convert(P, DistUInt{W+2}) + convert(added, DistUInt{W+2})
-        P = convert(P, DistUInt{W})
+        added = ifelse(p2.bits[i], DistUInt{2*W}(shifted_bits), DistUInt{2*W}(0))
+        P = convert(P, DistUInt{2*W+2}) + convert(added, DistUInt{2*W+2})
+        P = convert(P, DistUInt{2*W})
     end
-    DistInt{W}(P)
+    P_ans = convert(DistInt{2*W}(P), DistInt{W})
+    P_overflow = DistInt{W}(P.bits[1:W])
+    overflow = (!prob_equals(P_overflow, DistInt{W}(-1)) & !prob_equals(P_ans, DistInt{W}(-1))) | (!prob_equals(P_overflow, DistInt{W}(0)) & !prob_equals(P_ans, DistInt{W}(0)))
+    overflow = prob_equals(P_overflow, DistInt{W}(-1)) | prob_equals(P_overflow, DistInt{W}(0))
+    !overflow && error("integer overflow")
+    overflow = !prob_equals(x, DistInt{W}(0)) & !prob_equals(y, DistInt{W}(0)) & ((!xor(p1.bits[W+1], p2.bits[W+1]) & P.bits[W+1]) | (xor(p1.bits[W+1], p2.bits[W+1]) & !P.bits[W+1]))
+    overflow && error("integer overflow")
+    return P_ans
 end
   
