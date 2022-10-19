@@ -1,4 +1,3 @@
-
 using Dice
 using Test
 using Dice: Flip, num_ir_nodes
@@ -56,20 +55,29 @@ end
     y = DistInt{4}([true, false, true, false])
     @test expectation(y) == -6.0
     @test expectation(@dice y) == -6.0
+    @test variance(y) == 0.0
+    @test variance(@dice y) == 0.0
 
     y = DistInt{2}([flip(0.1), flip(0.1)])
     p = pr(y)
     mean = reduce(+, [(key*value) for (key, value) in p])
     @test expectation(y) ≈ mean
+    std_sq = reduce(+, [(key*key*value) for (key, value) in p]) - mean^2
+    @test variance(y) ≈ std_sq
 
     x = uniform(DistInt8)
+    p = pr(x)
     @test expectation(x) ≈ -0.5
+    std_sq = reduce(+, [(key*key*value) for (key, value) in p]) - (-0.5)^2
+    @test variance(x) ≈ std_sq
     
     y = prob_equals(x, DistInt8(42))
     @test expectation(x; evidence=y) ≈ 42
+    @test variance(x; evidence = y) ≈ 0.0
 
     y = prob_equals(x, DistInt8(-42))
     @test expectation(x; evidence=y) ≈ -42
+    @test variance(x; evidence = y) ≈ 0.0
 end
 
 @testset "DistInt triangle" begin
@@ -204,4 +212,81 @@ end
         @test issetequal(keys(p), -7:1:1-1)
         @test all(values(p) .≈ 1/8)
     end
+end
+
+@testset "DistInt division" begin
+    x = DistInt{4}(7)
+    y = DistInt{4}(-3)
+    p = pr(@dice x / y)
+    @test p[-2] ≈ 1.0
+
+    a = uniform(DistInt{3}, -4, 4)
+    b = uniform(DistInt{3}, -4, 4)
+    @test_throws ProbException pr(@dice a/b)
+
+    x = DistInt{3}(-4)
+    y = DistInt{3}(-4)
+    p = pr(@dice x / y)
+    @test p[1] ≈ 1.0
+
+    for i = -4:3
+        for j = -4:3
+            a = DistInt{3}(i)
+            b = DistInt{3}(j)
+            if (j == 0) | ((i == -4) & (j == -1))
+                @test_throws ProbException pr(@dice a/b)
+            else
+                @test pr(@dice a/b)[i ÷ j] ≈ 1.0
+            end
+        end
+    end
+end
+
+@testset "DistInt mod" begin
+    x = DistInt{4}(7)
+    y = DistInt{4}(-3)
+    p = pr(@dice x % y)
+    @test p[1] ≈ 1.0
+
+    a = uniform(DistInt{3}, -4, 4)
+    b = uniform(DistInt{3}, -4, 4)
+    @test_throws ProbException pr(@dice a%b)
+
+    x = DistInt{3}(-4)
+    y = DistInt{3}(-4)
+    p = pr(@dice x % y)
+    @test p[0] ≈ 1.0
+
+    for i = -4:3
+        for j = -4:3
+            a = DistInt{3}(i)
+            b = DistInt{3}(j)
+            if (j == 0)
+                @test_throws ProbException pr(@dice a%b)
+            else
+                @test pr(@dice a%b)[i % j] ≈ 1.0
+            end
+        end
+    end
+end
+
+@testset "DistInt isless" begin
+    x = DistInt{4}(3)
+    y = DistInt{4}(-7)
+    p = pr(x < y)
+    @test p[0.0] ≈ 1.0
+
+    x = uniform(DistInt{3}, 0, 2)
+    y = uniform(DistInt{3}, 0, 2)
+    p = pr(x < y)
+    @test p[1.0] ≈ 0.25
+
+    for i = -4:3
+        for j = -4:3
+            a = DistInt{3}(i)
+            b = DistInt{3}(j)
+            @test pr(@dice a < b)[i < j] ≈ 1.0
+        end
+    end
+
 end

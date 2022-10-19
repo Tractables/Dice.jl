@@ -16,7 +16,7 @@ end
 function DistInt{W}(i::Int) where W
     @assert i < 2^(W-1)
     @assert i >= -(2^(W-1))
-    new_i = if i >= 0 i else i + 2^W end
+    new_i = ifelse(i >= 0, i, i + 2^W)
     DistInt{W}(DistUInt{W}(new_i))
 end
 
@@ -51,6 +51,59 @@ function expectation(x::DistInt{W}; kwargs...) where W
         start /= 2
     end
     ans
+end
+
+function variance(x::DistInt{W}; kwargs...) where W
+    queries = Vector(undef, Int((W * (W-1))/2))
+    counter = 1
+    for i = 1:W-1
+        for j = i+1:W
+            queries[counter] = x.number.bits[i] & x.number.bits[j]
+            counter += 1
+        end
+    end
+
+    prs = pr(x.number.bits..., queries... ; kwargs...)
+
+
+    # ans = 0
+    # mb = T
+    # b1 = t1.number
+    probs = Matrix(undef, W, W)
+    counter = 1
+    for i = 1:W-1
+        for j = i+1:W
+            probs[i, j] = prs[counter + W][1.0]
+            probs[j, i] = prs[counter + W][1.0]
+            counter += 1
+        end
+        probs[i, i] = prs[i][1.0]
+    end
+    probs[W, W] = prs[W][1.0]
+    ans = 0
+    
+    exponent1 = 1
+    for i = 1:W
+        ans += exponent1*(probs[W+1 - i, W+1 - i] - probs[W + 1 - i, W + 1 - i]^2)
+        exponent2 = exponent1*2
+        for j = i+1:W
+            exponent2 = 2*exponent2
+            bi = probs[W+1-i, W+1-i]
+            bj = probs[W+1-j, W+1-j]
+            bibj = probs[W+1-i, W+1-j]
+            
+            if j == W
+                ans -= exponent2 * (bibj - bi * bj)
+            else
+                ans += exponent2 * (bibj - bi * bj)
+                # ans -= 2*exponent2 * (probs[i, mb] - probs[i, i] * probs[mb, mb])
+            end
+        end
+        # @show exponent2 exponent1
+        
+        exponent1 = exponent1*4
+    end
+    return ans
 end
 
 ##################################
@@ -99,6 +152,18 @@ function prob_equals(x::DistInt{W}, y::DistInt{W}) where W
     prob_equals(x.number, y.number)
 end
 
+function Base.isless(x::DistInt{W}, y::DistInt{W}) where W
+    if x.number.bits[1] & !y.number.bits[1]
+        true
+    else
+        if !x.number.bits[1] & y.number.bits[1]
+            false
+        else
+            isless(DistUInt{W-1}(x.number.bits[2:W]), DistUInt{W-1}(y.number.bits[2:W]))
+        end
+    end
+end
+
 function Base.ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where W
     DistInt{W}(ifelse(cond, then.number, elze.number))
 end
@@ -142,4 +207,43 @@ function Base.:(*)(x::DistInt{W}, y::DistInt{W}) where W
     overflow && error("integer overflow")
     return P_ans
 end
-  
+
+function Base.:(/)(x::DistInt{W}, y::DistInt{W}) where W
+    overflow = prob_equals(x, DistInt{W}(-2^(W-1))) & prob_equals(y, DistInt{W}(-1))
+    overflow && error("integer overflow")
+
+    is_zero = prob_equals(y, DistInt{W}(0))
+    is_zero && error("division by zero")
+
+    xp = if x.number.bits[1] DistUInt{W}(1) + DistUInt{W}([!xb for xb in x.number.bits]) else x.number end
+    xp = convert(xp, DistUInt{W+1})
+    yp = if y.number.bits[1] DistUInt{W}(1) + DistUInt{W}([!yb for yb in y.number.bits]) else y.number end
+    yp = convert(yp, DistUInt{W+1})
+    ans = xp / yp
+
+    isneg = xor(x.number.bits[1], y.number.bits[1]) & !prob_equals(ans, DistUInt{W+1}(0))
+
+    ans = if isneg DistUInt{W+1}(1) + DistUInt{W+1}([!ansb for ansb in ans.bits]) else ans end
+    ans = DistInt{W}(ans.bits[2:W+1])
+    return ans
+end
+
+function Base.:(%)(x::DistInt{W}, y::DistInt{W}) where W
+    # overflow = prob_equals(x, DistInt{W}(-2^(W-1))) & prob_equals(y, DistInt{W}(-1))
+    # overflow && error("integer overflow")
+
+    is_zero = prob_equals(y, DistInt{W}(0))
+    is_zero && error("division by zero")
+
+    xp = if x.number.bits[1] DistUInt{W}(1) + DistUInt{W}([!xb for xb in x.number.bits]) else x.number end
+    xp = convert(xp, DistUInt{W+1})
+    yp = if y.number.bits[1] DistUInt{W}(1) + DistUInt{W}([!yb for yb in y.number.bits]) else y.number end
+    yp = convert(yp, DistUInt{W+1})
+    ans = xp % yp
+
+    isneg = x.number.bits[1] & !prob_equals(ans, DistUInt{W+1}(0))
+
+    ans = if isneg DistUInt{W+1}(1) + DistUInt{W+1}([!ansb for ansb in ans.bits]) else ans end
+    ans = DistInt{W}(ans.bits[2:W+1])
+    return ans
+end

@@ -17,7 +17,8 @@ function TikzGraphs.plot(x::Dist{Bool})
     TikzGraphs.plot(g, nodelabels)
 end
 
-shortlabel(f::Flip) = "f$(hash(f) ÷ 1000000000000000)"
+shortlabel(f::Flip) = 
+    isnothing(f.name) ? "f$(f.global_id)($(f.prob))" : f.name
 shortlabel(::DistAnd) = "⋀"
 shortlabel(::DistOr) = "⋁"
 shortlabel(::DistNot) = "¬"

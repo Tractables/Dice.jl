@@ -2,7 +2,7 @@ using MacroTools: prewalk, postwalk
 using IRTools
 using IRTools: @dynamo, IR, recurse!, self, xcall, functional
 
-export @dice_ite, @dice, dice, observe, constraint, assert_dice
+export @dice_ite, @dice, dice, observe, constraint, assert_dice, @code_ir_dice
 
 ##################################
 # Control flow macro
@@ -68,7 +68,6 @@ global dynamoed = Vector()
 @dynamo function (dyna::DiceDyna)(a...)
     ir, time, _ = @timed begin
         ir = IR(a...)
-        # TODO add dynasafe() to avoid doing recursive work for error-free methods
         (ir === nothing) && return
         ir = functional(ir)
         ir = prewalk(ir) do x
@@ -136,6 +135,14 @@ end
 for f in :[xor, atleast_two, prob_equals, (&), (|), (!), isless, ifelse, 
     Base.collect_to!, Base.collect, Base.steprange_last, oneunit, 
     Base.pairwise_blocksize, eltype, firstindex, iterate, 
-    continuous, uniform].args
+    continuous, uniform, flip].args
     @eval (::DiceDyna)(::typeof($f), args...) = $f(args...)
+end
+
+"Show pseudo-IR as run by dice's dynamo"
+macro code_ir_dice(code)
+    esc(quote
+        ir = @code_ir $code
+        functional(ir)
+    end)
 end

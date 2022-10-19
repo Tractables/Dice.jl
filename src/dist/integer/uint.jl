@@ -1,5 +1,5 @@
 export DistUInt, DistUInt8, DistUInt16, DistUInt32, DistUInt64, DistUInt128, 
-    uniform, uniform_arith, uniform_ite, expectation, triangle, discrete
+    uniform, uniform_arith, uniform_ite, triangle, discrete
 
 ##################################
 # types, structs, and constructors
@@ -64,6 +64,49 @@ function expectation(x::DistUInt{W}; kwargs...) where W
         start /= 2
     end
     ans
+end
+
+"Compute the variance of a random variable"
+function variance(x::DistUInt{W}; kwargs...) where W
+    queries = Vector(undef, Int((W * (W-1))/2))
+    counter = 1
+    for i = 1:W-1
+        for j = i+1:W
+            queries[counter] = x.bits[i] & x.bits[j]
+            counter += 1
+        end
+    end
+
+    prs = pr(x.bits..., queries... ; kwargs...)
+    
+    probs = Matrix(undef, W, W)
+    counter = 1
+    for i = 1:W-1
+        for j = i+1:W
+            probs[i, j] = prs[counter + W][1.0]
+            probs[j, i] = prs[counter + W][1.0]
+            counter += 1
+        end
+        probs[i, i] = prs[i][1.0]
+    end
+    probs[W, W] = prs[W][1.0]
+    ans = 0
+    
+    exponent1 = 1
+    for i = 1:W
+        ans += exponent1*(probs[W+1 - i, W+1 - i] - probs[W + 1 - i, W + 1 - i]^2)
+        exponent2 = exponent1*2
+        for j = i+1:W
+            exponent2 = 2*exponent2
+            bi = probs[W+1-i, W+1-i]
+            bj = probs[W+1-j, W+1-j]
+            bibj = probs[W+1-i, W+1-j]
+            ans += exponent2 * (bibj - bi * bj)
+        end
+        
+        exponent1 = exponent1*4
+    end
+    return ans
 end
 
 ##################################
@@ -277,6 +320,36 @@ function Base.:(*)(p1::DistUInt{W}, p2::DistUInt{W}) where W
         P = P + added
     end
     P
+end 
+
+function Base.:/(p1::DistUInt{W}, p2::DistUInt{W}) where W #p1/p2
+    is_zero = prob_equals(p2, DistUInt{W}(0))
+    is_zero && error("division by zero")
+
+    ans = Vector(undef, W)
+    p1_proxy = DistUInt{W}(0)
+
+    for i = 1:W
+        p1_proxy = DistUInt{W}(vcat(p1_proxy.bits[2:W], p1.bits[i]))
+        ans[i] = ifelse(p2 > p1_proxy, false, true)
+        p1_proxy = if p2 > p1_proxy p1_proxy else p1_proxy - p2 end
+    end
+    DistUInt{W}(ans)
+end 
+
+function Base.:%(p1::DistUInt{W}, p2::DistUInt{W}) where W #p1/p2
+    is_zero = prob_equals(p2, DistUInt{W}(0))
+    is_zero && error("division by zero")
+
+    # ans = Vector(undef, W)
+    p1_proxy = DistUInt{W}(0)
+
+    for i = 1:W
+        p1_proxy = DistUInt{W}(vcat(p1_proxy.bits[2:W], p1.bits[i]))
+        # ans[i] = ifelse(p2 > p1_proxy, false, true)
+        p1_proxy = if p2 > p1_proxy p1_proxy else p1_proxy - p2 end
+    end
+    p1_proxy
 end 
 
 function Base.ifelse(cond::Dist{Bool}, then::DistUInt{W}, elze::DistUInt{W}) where W
