@@ -37,7 +37,6 @@ abstract type DistBoolBinOp <: DistBoolOp end
 mutable struct DistAnd <: DistBoolBinOp
     const x::Dist{Bool}
     const y::Dist{Bool}
-    DistAnd(x,y) = (hash(x) > hash(y)) ? new(y,x) : new(x,y)
 end
 
 Base.:(&)(x::Dist{Bool}, y::Bool) = y ? x : false
@@ -56,7 +55,6 @@ end
 mutable struct DistOr <: DistBoolBinOp
     const x::Dist{Bool}
     const y::Dist{Bool}
-    DistOr(x,y) = (hash(x) > hash(y)) ? new(y,x) : new(x,y)
 end
 
 Base.:(|)(x::Dist{Bool}, y::Bool) = y ? true : x

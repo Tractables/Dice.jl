@@ -15,11 +15,57 @@ function canonicalize(root::Dist{Bool})
     canonical_root, cache
 end
 
+# Compress flip ids so that multiple Dice programs run in the same Julia program
+# still have consistent canonicalizations.
+#
+# For example, let some program produce flips {0, 1, 2}. When run again, it will
+# produce flips {3, 4, 5}.
+#
+# This func creates {0->0, 1->1, 2->2} for the first run and {3->0, 4->1, 5->2}
+# for the second, so canonicalize sees {0, 1, 2} for both.
+function compress_flip_ids(root::Dist{Bool})
+    ids = Set()
+
+    function fl(n::Flip)
+        push!(ids, n.global_id)
+        n
+    end
+
+    function fi(n, call)
+        for child in children(n)
+            call(child)
+        end
+        n
+    end
+
+    foldup(root, fl, fi, Dist{Bool})
+
+    ids = collect(ids)
+    sort!(ids)
+    return Dict((id, idx) for (idx, id) in enumerate(ids))
+end
+
+
 function canonicalize(root::Dist{Bool}, cache)
+    flip_id_compression = compress_flip_ids(root)
+    deterministic_hash_cache = Dict()
+    function deterministic_hash(n)
+        if isa(n, Flip)
+            return flip_id_compression[n.global_id]
+        end
+
+        if !haskey(deterministic_hash_cache, n)
+            children_hashes = collect(map(deterministic_hash, children(n)))
+            deterministic_hash_cache[n] = hash(children_hashes)
+        end
+
+        return deterministic_hash_cache[n]
+    end
+
     fl(n::Flip) = n # flips are by definition canonical
     fi(n::Union{DistOr,DistAnd}, call) = begin
         uniquex, uniquey = call(n.x), call(n.y)
-        if hash(uniquex) > hash(uniquey)
+        if deterministic_hash(uniquex) > deterministic_hash(uniquey)
             uniquex, uniquey = uniquey, uniquex
         end
         get!(cache, (typeof(n), uniquex, uniquey)) do 
