@@ -60,6 +60,9 @@ function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}; errors)
 
     # compile BDDs and infer probability for all queries
     results = map(queries) do query
+
+        # TODO should query bits be made unique to save time?
+        
         states = Pair{LinkedList, Float64}[]
 
         rec(context, state, rembits) = begin
