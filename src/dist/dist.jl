@@ -21,6 +21,7 @@ function Base.show(io::IO, x::Dist)
 end
 
 include("bool.jl")
+include("tuple.jl")
 include("integer/uint.jl")
 include("integer/int.jl")
 include("fixedpoint.jl")
