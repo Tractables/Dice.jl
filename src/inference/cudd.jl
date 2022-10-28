@@ -134,15 +134,15 @@ function compile(mgr::CuddMgr, x::Dist{Bool}, cache, num_uncompiled_parents)
         end
     end
 
-    fl(x::Flip) = begin
-        if !haskey(cache, x)
-            cache[x] = new_var(mgr, x.prob)
+    fl(n::Flip) = begin
+        if !haskey(cache, n)
+            cache[n] = new_var(mgr, n.prob)
         end
-        cache[x]
+        cache[n]
     end
 
     fi(n::DistAnd, call) = begin
-        if !haskey(cache, x)
+        if !haskey(cache, n)
             call(n.x)
             call(n.y)
             cache[n] = conjoin(mgr, cache[n.x], cache[n.y])
@@ -152,7 +152,7 @@ function compile(mgr::CuddMgr, x::Dist{Bool}, cache, num_uncompiled_parents)
     end
 
     fi(n::DistOr, call) = begin
-        if !haskey(cache, x)
+        if !haskey(cache, n)
             call(n.x)
             call(n.y)
             cache[n] = disjoin(mgr, cache[n.x], cache[n.y])
@@ -160,8 +160,9 @@ function compile(mgr::CuddMgr, x::Dist{Bool}, cache, num_uncompiled_parents)
         end
         cache[n]
     end
+
     fi(n::DistNot, call) = begin
-        if !haskey(cache, x)
+        if !haskey(cache, n)
             call(n.x)
             cache[n] = negate(mgr, cache[n.x])
             mark_as_compiled(n)
