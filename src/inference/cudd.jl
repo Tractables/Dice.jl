@@ -24,17 +24,19 @@ function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}; errors)
     mgr = CuddMgr(cudd.reordering_type)
 
     num_uncompiled_parents = Dict{Dist{Bool}, Int}()
+    seen = Set{Dist{Bool}}()
     for root in Iterators.flatten((
         Iterators.flatten(query.bits for query in queries),
         (err[1] for err in errors),
         [evidence],
     ))
         foreach(root) do node
-            @assert isa(root, AnyBool)
-            if isa(node, Dist{Bool})
-                for child in children(node)
-                    num_uncompiled_parents[child] = get(num_uncompiled_parents, child, 0) + 1
-                end
+            isa(node, Bool) && return
+            (node ∈ seen) && return
+            push!(seen, node)
+
+            for child in unique(children(node))
+                num_uncompiled_parents[child] = get(num_uncompiled_parents, child, 0) + 1
             end
         end
     end
@@ -94,6 +96,10 @@ function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}; errors)
         cudd.debug_info_ref[] = CuddDebugInfo(node_count)
     end
 
+    for nup in values(num_uncompiled_parents)
+        @assert nup == 0 "Dereferences are likely suboptimal because num_uncompiled_parents was initialized improperly."
+    end
+
     results
 end
 
@@ -112,12 +118,6 @@ function CuddMgr(reordering_type::CUDD.Cudd_ReorderingType)
     end
 end
 
-function compile(mgr::CuddMgr, x, num_uncompiled_parents)
-    cache = Dict{Dist{Bool},Ptr{Nothing}}()
-    bdd = compile(mgr, x, cache, num_uncompiled_parents)
-    bdd, cache
-end
-
 compile(mgr::CuddMgr, x::Bool, _, _) =
     constant(mgr, x)
 
@@ -134,15 +134,15 @@ function compile(mgr::CuddMgr, x::Dist{Bool}, cache, num_uncompiled_parents)
         end
     end
 
-    fl(x::Flip) = begin
-        if !haskey(cache, x)
-            cache[x] = new_var(mgr, x.prob)
+    fl(n::Flip) = begin
+        if !haskey(cache, n)
+            cache[n] = new_var(mgr, n.prob)
         end
-        cache[x]
+        cache[n]
     end
 
     fi(n::DistAnd, call) = begin
-        if !haskey(cache, x)
+        if !haskey(cache, n)
             call(n.x)
             call(n.y)
             cache[n] = conjoin(mgr, cache[n.x], cache[n.y])
@@ -152,7 +152,7 @@ function compile(mgr::CuddMgr, x::Dist{Bool}, cache, num_uncompiled_parents)
     end
 
     fi(n::DistOr, call) = begin
-        if !haskey(cache, x)
+        if !haskey(cache, n)
             call(n.x)
             call(n.y)
             cache[n] = disjoin(mgr, cache[n.x], cache[n.y])
@@ -160,8 +160,9 @@ function compile(mgr::CuddMgr, x::Dist{Bool}, cache, num_uncompiled_parents)
         end
         cache[n]
     end
+
     fi(n::DistNot, call) = begin
-        if !haskey(cache, x)
+        if !haskey(cache, n)
             call(n.x)
             cache[n] = negate(mgr, cache[n.x])
             mark_as_compiled(n)
