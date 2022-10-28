@@ -112,12 +112,6 @@ function CuddMgr(reordering_type::CUDD.Cudd_ReorderingType)
     end
 end
 
-function compile(mgr::CuddMgr, x, num_uncompiled_parents)
-    cache = Dict{Dist{Bool},Ptr{Nothing}}()
-    bdd = compile(mgr, x, cache, num_uncompiled_parents)
-    bdd, cache
-end
-
 compile(mgr::CuddMgr, x::Bool, _, _) =
     constant(mgr, x)
 
