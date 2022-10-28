@@ -24,17 +24,19 @@ function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}; errors)
     mgr = CuddMgr(cudd.reordering_type)
 
     num_uncompiled_parents = Dict{Dist{Bool}, Int}()
+    seen = Set{Dist{Bool}}()
     for root in Iterators.flatten((
         Iterators.flatten(query.bits for query in queries),
         (err[1] for err in errors),
         [evidence],
     ))
         foreach(root) do node
-            @assert isa(root, AnyBool)
-            if isa(node, Dist{Bool})
-                for child in children(node)
-                    num_uncompiled_parents[child] = get(num_uncompiled_parents, child, 0) + 1
-                end
+            isa(node, Bool) && return
+            (node ∈ seen) && return
+            push!(seen, node)
+
+            for child in unique(children(node))
+                num_uncompiled_parents[child] = get(num_uncompiled_parents, child, 0) + 1
             end
         end
     end
@@ -92,6 +94,10 @@ function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}; errors)
     if !isnothing(cudd.debug_info_ref)
         node_count = num_bdd_nodes(mgr, [ccache[bit] for query in queries for bit in query.bits])
         cudd.debug_info_ref[] = CuddDebugInfo(node_count)
+    end
+
+    for nup in values(num_uncompiled_parents)
+        @assert nup == 0 "Dereferences are likely suboptimal because num_uncompiled_parents was initialized improperly."
     end
 
     results
