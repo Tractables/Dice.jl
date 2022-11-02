@@ -1,13 +1,16 @@
 using Revise
 using Dice, Distributions
 using DelimitedFiles
+using BenchmarkTools
 
-bits = ARGS[1]
-pieces = ARGS[2]
+bits = parse(Int64, ARGS[1])
+pieces = parse(Int64, ARGS[2])
+
+p = pr(@dice uniform(DistUInt{3}))
 
 DFiP = DistFixedPoint{8+bits, bits}
 
-code = @dice begin
+t = @timed expectation(@dice begin
             engines = continuous(DFiP, Normal(5, 1), pieces, 0.0, 64.0)
             first_stage = continuous(DFiP, Normal(10, 3), pieces, 0.0, 64.0)
             completed_first_stage = engines + first_stage
@@ -15,11 +18,11 @@ code = @dice begin
             completed_rocket = completed_first_stage + second_stage
 
             completed_rocket
-end
+end)
 
-p = expectation(code)
+p = t.value
 
 io = open(string("./benchmarks/spacex/results.txt"), "a")
-@show bits, pieces, p
-writedlm(io, [bits, pieces, p], ",")  
+@show bits, pieces, p, t.time
+writedlm(io, [bits pieces p t.time], ",")  
 close(io)

@@ -1,10 +1,16 @@
-using Pkg; Pkg.activate("$(@__DIR__)/../")
-
+using Revise
 using Dice, Distributions
+using DelimitedFiles
+using BenchmarkTools
 
-precision = 5
+precision = parse(Int64, ARGS[1])
+num_pieces = parse(Int64, ARGS[2])
+
+p = pr(@dice uniform(DistUInt{3}))
+
 DFiP = DistFixedPoint{6+precision, precision}
-num_pieces = 64
+
+
 truncation = (-8.0, 8.0)
 add_arg = false
 
@@ -17,7 +23,7 @@ data = DFiP.([-2.57251482,  0.33806206,  2.71757796,  1.09861336,  2.85603752,
         -0.67970862,  0.93461681,  1.18187607, -1.49501051,  2.44755622,
         -2.06424237, -0.04584074,  1.93396696,  1.07685273, -0.09837907]);
 
-code = @dice begin
+t = @timed expectation(@dice begin
     # TODO use more general `uniform`
     mu1 = uniform(DFiP, -8.0, 8.0)
     mu2 = uniform(DFiP, -8.0, 8.0)
@@ -26,6 +32,10 @@ code = @dice begin
         gaussian_observe(DFiP, num_pieces, truncation[1], truncation[2], mu, 1.0, datapoint, add=add_arg)
     end
     mu1
-end;
+end;)
 
-@time expectation(code)
+p = t.value
+io = open(string("./benchmarks/altermu2/results.txt"), "a")
+@show precision, num_pieces, p, t.time
+writedlm(io, [precision num_pieces p t.time], ",")  
+close(io)

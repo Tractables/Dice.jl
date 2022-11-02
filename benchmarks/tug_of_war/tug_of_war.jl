@@ -1,13 +1,18 @@
+using Revise
 using Dice, Distributions
-using Dice: Flip, ifelse, num_ir_nodes
 using DelimitedFiles
+using BenchmarkTools
 
-bits = ARGS[1]
-pieces = ARGS[2]
+bits = parse(Int64, ARGS[1])
+pieces = parse(Int64, ARGS[2])
 
-p = pr(@dice begin
-            DFiP = DistFixedPoint{bits + 5, bits}
+p = pr(@dice uniform(DistUInt{3}))
 
+t = @timed pr(@dice begin
+    DFiP = DistFixedPoint{bits + 5, bits}
+
+            alice_skill = continuous(DFiP, Normal(5, 1), pieces, -3.0, 13.0)
+            bob_skill = continuous(DFiP, Normal(5, 1), pieces, -3.0, 13.0)
 
             alice_skill = continuous(DFiP, Normal(5, 1), pieces, -3.0, 13.0)
             bob_skill = continuous(DFiP, Normal(5, 1), pieces, -3.0, 13.0)
@@ -28,8 +33,10 @@ p = pr(@dice begin
             match[5]
         end)
 
+p = t.value
+
 io = open(string("./benchmarks/tug_of_war/results.txt"), "a")
-@show bits, pieces, p[1.0]
-writedlm(io, [bits pieces p[1.0]], ",")  
+@show bits, pieces, p[1.0], t.time
+writedlm(io, [bits pieces p[1.0] t.time], ",")  
 close(io)
         

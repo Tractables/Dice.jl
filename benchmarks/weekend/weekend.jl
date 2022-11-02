@@ -1,11 +1,16 @@
-using Pkg; Pkg.activate("$(@__DIR__)/../")
+using Revise
 using Dice, Distributions
+using DelimitedFiles
+using BenchmarkTools
 
-precision = 5
-DFiP = DistFixedPoint{9+precision, precision}
-num_pieces = 128
+precision = parse(Int64, ARGS[1])
+num_pieces = parse(Int64, ARGS[2])
 
-code = @dice begin
+p = pr(@dice uniform(DistUInt{3}))
+
+DFiP = DistFixedPoint{4+precision, precision}
+
+t = @timed pr(@dice begin
 
   isWeekend = flip(2/7)
   hour = if isWeekend
@@ -15,7 +20,11 @@ code = @dice begin
         end
   observe(hour == DFiP(6.0))
   isWeekend
-end
+end)
 
-# HMC-estimated ground truth: 1.363409828
-@time pr(code)
+p = t.value
+
+io = open(string("./benchmarks/weekend/results.txt"), "a")
+@show precision, num_pieces, p[1.0], t.time
+writedlm(io, [precision num_pieces p[1.0] t.time], ",")  
+close(io)
