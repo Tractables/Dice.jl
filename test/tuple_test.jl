@@ -11,6 +11,15 @@ using Distributions
 
     @test pr(x)[(false, false, 3)] ≈ 0.8/2^3
 
+    cg = @dice begin
+        x = (flip(0.2), false, uniform(DistUInt{3}))
+        if flip(0.5)
+            (false, false, DistUInt{3}(3))
+        else
+            x
+        end
+    end
+    @test pr(cg)[(false, false, 3)] ≈ 0.5 + 0.5 * 0.8/2^3
 end
 
 @testset "Probabilistic Matrix" begin
