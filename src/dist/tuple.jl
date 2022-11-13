@@ -7,3 +7,6 @@ tobits(x::Tuple) =
 
 frombits(x::Tuple, world) = 
     map(v -> frombits(v, world), x)
+
+Base.ifelse(cond::Dist{Bool}, then::Tuple, elze::Tuple) =
+    Tuple(ifelse(cond, x, y) for (x, y) in zip(then,elze))
