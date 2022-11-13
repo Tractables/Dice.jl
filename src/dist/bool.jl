@@ -1,5 +1,5 @@
 
-export flip, prob_equals
+export flip, prob_equals, AnyBool
 
 ##################################
 # types, structs, and constructors

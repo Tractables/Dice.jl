@@ -18,12 +18,6 @@ function prob_equals(x::DistString, y::DistString)
     res
 end
 
-prob_equals(x::DistString, y::String) =
-    prob_equals(x, DistString(y))
-
-prob_equals(x::String, y::DistString) =
-    prob_equals(y, x)
-
 function Base.ifelse(cond::Dist{Bool}, then::DistString, elze::DistString)
     mb = max(length(then.chars), length(elze.chars))
     chars = Vector(undef, mb)
