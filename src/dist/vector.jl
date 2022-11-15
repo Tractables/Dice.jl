@@ -1,5 +1,5 @@
 # Vectors
-export DistVector, prob_append, prob_extend, prob_startswith
+export DistVector, prob_append, prob_extend, prob_startswith, prob_setindex, prob_getindex
 
 mutable struct DistVector{T} <: Dist{Vector} where T <: Any
     contents::Vector{T}
@@ -51,11 +51,16 @@ function prob_append(d::DistVector{T}, x::T)::DistVector{T} where T <: Any
 end
 
 # Divide-and-conquer getindex
-function Base.getindex(d::DistVector, idx::DistUInt32)
+function prob_getindex(d::DistVector, idx::DistUInt32)
     (idx < DistUInt32(1) || idx > d.len) && error("Vector out of bounds access")
     function helper(i, v)
+        assert_dice()
         if i > length(idx.bits)
-            d.contents[v]
+            if v < 1 || v > length(d.contents)
+                d.contents[1]  # dummy
+            else
+                d.contents[v]
+            end
         else
             if idx.bits[i]
                 helper(i+1, v+2^(length(idx.bits) - i))
@@ -65,11 +70,6 @@ function Base.getindex(d::DistVector, idx::DistUInt32)
         end
     end
     return helper(1, 0)
-end
-
-function Base.getindex(s::DistVector, idx::Int)
-    (idx < 1 || DistUInt32(idx) > s.len) && error("Vector out of bounds access")
-    s.contents[idx]
 end
 
 function prob_setindex(s::DistVector, idx::DistUInt32, c::Any)
@@ -89,16 +89,19 @@ function prob_setindex(s::DistVector, idx::Int, c::Any)
 end
 
 function prob_extend(s::DistVector{T}, t::DistVector{T}) where T <: Any
+    if isempty(s.contents)
+        return t
+    end
     len = s.len + t.len
     contents = Vector{T}(undef, length(s.contents) + length(t.contents))
     for i = 1:length(contents)
-        contents[i] = if DistUInt32(i) <= s.len
-            s[i]
+        contents[i] = if DistUInt32(i) < s.len + DistUInt32(1) # TODO: make <= instead of adding 1 to rhs
+            prob_getindex(s, DistUInt32(i))
         else
-            if DistUInt32(i) <= s.len + t.len
-                t[DistUInt32(i) - s.len]
+            if (DistUInt32(i) > s.len) & (DistUInt32(i) < s.len + t.len+ DistUInt32(1))  # TODO same as above
+                prob_getindex(t, DistUInt32(i) - s.len)
             else
-                DistChar('x')
+                s.contents[1] # dummy value 
             end
         end
     end
