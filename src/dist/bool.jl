@@ -125,6 +125,9 @@ Base.xor(x::Dist{Bool}, y::Dist{Bool}) =
 
 Base.isless(x::AnyBool, y::AnyBool) = !x & y
 
+Base.:(<=)(x::AnyBool, y::AnyBool) = !isless(y, x)
+Base.:(>=)(x::AnyBool, y::AnyBool) = !isless(x, y)
+
 function Base.ifelse(cond::Dist{Bool}, then::AnyBool, elze::AnyBool)
     (then == elze) && return then
     (cond == then) && return cond | elze

@@ -286,6 +286,10 @@ function Base.isless(x::DistUInt{W}, y::DistUInt{W}) where W
     end
 end
 
+
+Base.:(<=)(x::DistUInt{W}, y::DistUInt{W}) where W = !isless(y, x)
+Base.:(>=)(x::DistUInt{W}, y::DistUInt{W}) where W = !isless(x, y)
+
 function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
     z = Vector{AnyBool}(undef, W)
     carry = false
