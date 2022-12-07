@@ -92,7 +92,15 @@ function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}; errors)
     end
 
     if !isnothing(cudd.debug_info_ref)
-        node_count = num_bdd_nodes(mgr, [ccache[bit] for query in queries for bit in query.bits])
+        node_count = num_bdd_nodes(mgr, [
+            ccache[root]
+            for root in Iterators.flatten((
+                Iterators.flatten(query.bits for query in queries),
+                (err[1] for err in errors),
+                [evidence],
+            ))
+            if !isa(root, Bool)
+        ])
         cudd.debug_info_ref[] = CuddDebugInfo(node_count)
     end
 
