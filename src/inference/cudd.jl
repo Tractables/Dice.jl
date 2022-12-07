@@ -25,17 +25,27 @@ function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}; errors)
 
     num_uncompiled_parents = Dict{Dist{Bool}, Int}()
     seen = Set{Dist{Bool}}()
-    for root in Iterators.flatten((
-        Iterators.flatten(query.bits for query in queries),
-        (err[1] for err in errors),
-        [evidence],
-    ))
+    roots = Set{Dist{Bool}}(
+        x for x in
+        Iterators.flatten((
+            Iterators.flatten(query.bits for query in queries),
+            (err[1] for err in errors),
+            [evidence],
+        ))
+        if !isa(x, Bool)
+    )
+
+    # prevent roots from being derefed by giving them an extra parent
+    for root in roots
+        num_uncompiled_parents[root] = 1
+    end
+    for root in roots
         foreach(root) do node
             isa(node, Bool) && return
             (node ∈ seen) && return
             push!(seen, node)
 
-            for child in unique(children(node))
+            for child in children(node)
                 num_uncompiled_parents[child] = get(num_uncompiled_parents, child, 0) + 1
             end
         end
@@ -94,18 +104,18 @@ function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}; errors)
     if !isnothing(cudd.debug_info_ref)
         node_count = num_bdd_nodes(mgr, [
             ccache[root]
-            for root in Iterators.flatten((
-                Iterators.flatten(query.bits for query in queries),
-                (err[1] for err in errors),
-                [evidence],
-            ))
-            if !isa(root, Bool)
+            for root in roots
         ])
         cudd.debug_info_ref[] = CuddDebugInfo(node_count)
+        CUDD.output_stats(mgr.cuddmgr, "hi")
     end
 
-    for nup in values(num_uncompiled_parents)
-        @assert nup == 0 "Dereferences are likely suboptimal because num_uncompiled_parents was initialized improperly."
+    for (node, nup) in num_uncompiled_parents
+        if node in roots
+            @assert nup == 1
+        else
+            @assert nup == 0 "Dereferences are likely suboptimal because num_uncompiled_parents was initialized improperly."
+        end
     end
 
     results
@@ -133,7 +143,7 @@ compile(mgr::CuddMgr, x::Bool, _, _) =
 function compile(mgr::CuddMgr, x::Dist{Bool}, cache, num_uncompiled_parents)
     # TODO implement shortcuts for equivalence, etc.
     function mark_as_compiled(node)
-        for child in unique(children(node))
+        for child in children(node)
             num_uncompiled_parents[child] -= 1
             @assert num_uncompiled_parents[child] >= 0
             if num_uncompiled_parents[child] == 0
