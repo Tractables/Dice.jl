@@ -95,10 +95,10 @@ function prob_extend(s::DistVector{T}, t::DistVector{T}) where T <: Any
     len = s.len + t.len
     contents = Vector{T}(undef, length(s.contents) + length(t.contents))
     for i = 1:length(contents)
-        contents[i] = if DistUInt32(i) < s.len + DistUInt32(1) # TODO: make <= instead of adding 1 to rhs
+        contents[i] = if DistUInt32(i) <= s.len
             prob_getindex(s, DistUInt32(i))
         else
-            if (DistUInt32(i) > s.len) & (DistUInt32(i) < s.len + t.len+ DistUInt32(1))  # TODO same as above
+            if (DistUInt32(i) > s.len) & (DistUInt32(i) <= s.len + t.len)
                 prob_getindex(t, DistUInt32(i) - s.len)
             else
                 s.contents[1] # dummy value 
