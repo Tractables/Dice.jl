@@ -21,7 +21,7 @@ t = @timed expectation(@dice begin
             for i=1:5
                 controlFlip = parametrised_flip(probIfControl)
                 observe(controlFlip == controlGroup[i])
-                
+                9
                 treatedFlip = parametrised_flip(probIfTreated)
                 observe(treatedFlip == treatedGroup[i])
             end

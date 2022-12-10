@@ -29,9 +29,11 @@ for j in 1:n_bits+1
     plot_lines[j] = (xs, ys)
 end
 
-plot([Int(log2(i)) for i in plot_lines[1][1]], plot_lines[1][2], xaxis = "Log(p)", ylabel = "pr(z1 == 1)", yaxis=:log, label = "b = 8", marker = :circle)
-for j = 2:n_bits-1
-    plot!([Int(log2(i)) for i in plot_lines[j][1]], plot_lines[j][2], xaxis = "Log(p)", label = "b = 9", marker = :circle)
+plot_lines
+
+plot([Int(log2(i)) for i in plot_lines[4][1]], plot_lines[4][2], xlabel = "Log(p)", ylabel = "pr(z1 == 1)", yaxis=:log, label = "b = 11", marker = :circle, line = (:solid), legendfont=15, legend=:topright, xguidefontsize=20, xtickfontsize=15, yguidefontsize=20, left_margin=5Plots.mm, ytickfontsize=15, bottom_margin=5Plots.mm, right_margin=5Plots.mm)
+for j = 5:n_bits-1
+    plot!([Int(log2(i)) for i in plot_lines[j][1]], plot_lines[j][2], xaxis = "Log(p)", label = "b = "*string(j+7), marker = :circle)
 end
 
 j = 2
