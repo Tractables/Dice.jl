@@ -1,6 +1,6 @@
 using CUDD
 using DataStructures: LinkedList, cons, nil
-
+export CuddMgr, compile, dump_dot, num_bdd_nodes
 ##################################
 # CUDD Inference
 ##################################
