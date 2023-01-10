@@ -6,46 +6,46 @@ A Julia prototype implementation of the Dice probabilistic programming language.
 See [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice)
 
 
-### Installation
+## Installation
 
-Install julia 1.7 or higher using the [link](https://julialang.org/downloads/platform/).
+Install Julia 1.7 or higher using [these instructions](https://julialang.org/downloads/platform/).
 
-Clone the git repository using the following command:
+Clone the git repository:
 ```bash
 git clone -b grammar_global_mgr https://github.com/Juice-jl/Dice.jl.git
 ```
 
-Start julia in project mode for current folder, i.e.:
+Start julia in project mode for current folder:
 ```bash
+cd Dice.jl
 julia --project
 ```
 
-Then can install Dice and update dependencies by doing (also can do `precompile` or `build`)
+Install Dice and update dependencies (one can also use `precompile` or `build`):
 
 ```julia
 ] up
 ```
 
-Press CTRL-C to exit from the pkg terminal and return to julia command line
-Examples for having distributions on parse trees, probabilistic grammars and finite state machines can be found in the folder examples/linguistics which can be run as follows:
+Press CTRL-C or backspace to exit from the pkg terminal and return to Julia REPL.
 
+One can now run a program from the Julia REPL:
 ```julia
-  include("examples/lingustics/grammar.jl")
+include("examples/lingustics/grammar.jl")
 ```
 
-Other examples can be run as follows
+Or from the command line:
 ```julia
-  include("examples/pfa.jl")
+julia --project examples/linguistics/grammar.jl
 ```
 
-Now can do `] status` to see what versions of dependencies we have (or for more details can look into the `Manifest.toml` file).
+## Recommended reading order
+See `examples/linguistics/tour.jl` for a quick start to Dice.jl.
 
-```julia
-(Dice) pkg> status
-     Project Dice v0.1.0
-      Status `~/Dice.jl/Project.toml`
-  [345a2cc7] CUDD v0.2.2
-  [1e6dae5e] DirectedAcyclicGraphs v0.1.0
-  [615f187c] IfElse v0.1.1
-  [1914dd2f] MacroTools v0.5.9
+Then, linguistics examples in order of increasing complexity are as follows. The
+expected output of each is in a comment at the bottom of the file.
+```
+examples/linguistics/state_machine.jl
+examples/linguistics/grammar.jl
+examples/linguistics/parser.jl
 ```

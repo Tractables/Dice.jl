@@ -1,5 +1,5 @@
 using Dice
-include("../util.jl")
+include("./util.jl")
 
 # Put enum in module so case variables are scoped
 module Syms
