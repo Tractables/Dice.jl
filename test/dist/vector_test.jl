@@ -79,4 +79,29 @@ using Dice
         prob_startswith(s, t)
     end
     @test pr(cg)[true] ≈ 0.1 * 0.7 * 0.4
+
+    # Test prob_contains
+    _5, _6, _7, _8 = DistUInt32(5), DistUInt32(6), DistUInt32(7), DistUInt32(8)
+
+    cg = @dice begin
+        s = DistVector([_5, _6, _7])
+        if flip(0.3)
+            prob_append(s, _8)
+        else
+            s
+        end
+        prob_contains(s, _5) & prob_contains(s, _6) & prob_contains(s, _7) & !prob_contains(s, _8)
+    end
+    @test pr(cg)[true] == 1
+
+    cg = @dice begin
+        s = DistVector([_5, _6, _7])
+        t = if flip(0.3)
+            prob_append(s, _8)
+        else
+            s
+        end
+        prob_contains(t, _8)
+    end
+    @test pr(cg)[true] == 0.3
 end

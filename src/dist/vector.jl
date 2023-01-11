@@ -1,5 +1,5 @@
 # Vectors
-export DistVector, prob_append, prob_extend, prob_startswith, prob_setindex, prob_getindex
+export DistVector, prob_append, prob_extend, prob_startswith, prob_setindex, prob_getindex, prob_contains
 
 mutable struct DistVector{T} <: Dist{Vector} where T <: Any
     contents::Vector{T}
@@ -48,6 +48,14 @@ function prob_append(d::DistVector{T}, x::T)::DistVector{T} where T <: Any
     end
     v[length(d.contents) + 1] = x
     DistVector(v, d.len + DistUInt32(1))
+end
+
+function prob_contains(d::DistVector{T}, x::T) where T
+    found = false
+    for (i, y) in enumerate(d.contents)
+        found = found | ((DistUInt32(i) <= d.len) & prob_equals(x, y))
+    end
+    found
 end
 
 # Divide-and-conquer getindex
