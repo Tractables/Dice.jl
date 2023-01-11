@@ -20,7 +20,7 @@ x = flip(0.7)
 #
 # infer() actually returns a pair where the first value is the above dictionary
 # and the second value is the probability of error. Let's ignore the second
-# value for now.
+# value for now (until it is mentioned again, it will always be 0).
 dist, error_p = infer(x)
 dist  # Dict(false => 0.3, true => 0.7)
 
@@ -91,7 +91,7 @@ infer_bool(net)  # 0.9995001124850018
 
 ################################ Ints and Errors ###############################
 
-# DistInts represent distributions over integers.
+# DistInts represent distributions over unsigned integers.
 dist, error_p = infer(
     @dice_ite if flip(0.3)
         DistInt(7)
@@ -107,9 +107,10 @@ i = DistInt([DistTrue(), DistTrue(), flip(0.3)]) # least significant bit first
 dist, error_p = infer(i)
 dist  # Dict(7 => 0.3, 3 => 0.7)
 
-# We can also do operations over DistInt. However, overflow is possible, so each
-# operator returns a pair. The first value is a distribution over the sum, and
-# the second is DistBool that indicates whether overflow happened.
+# We can also do operations over DistInt. However, errors are possible, such as
+# overflow/underflow for addition/subtraction, or div-by-zero, so each operator
+# returns a pair. The first value is the resulting DistInt, and the second is a
+# DistBool that indicates whether an error happened.
 x = DistInt([flip(0.5)])
 y = DistInt([flip(0.1)])
 x_plus_y, err = x + y
