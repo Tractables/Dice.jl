@@ -1,8 +1,5 @@
 ########################## Tour of Dice.jl by example ##########################
 
-# (This is for an old branch of Dice.jl, grammar_global_mgr, kept for its
-# greater support of linguistic features.)
-
 #################################### Basics ####################################
 
 using Dice

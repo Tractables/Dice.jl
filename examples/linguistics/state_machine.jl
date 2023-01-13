@@ -1,7 +1,15 @@
+# Probabilistic State Machine - state_machine.jl
+#
+# Given a probabilistic finite state machine, finds the distribution over
+# sentences in its language.
+#
+# The length of considered sentences is bounded to `num_steps`, and the
+# probability that this bound is exceeded is also calculated.
+
 using Dice
 include("./util.jl")
 
-# See state_machine.jpg for a diagram of this machine
+# See examples/linguistics/state_machine.jpg for a diagram of this machine
 machine = Dict(  # List of transitions
     1 =>  # Start state of edge
         [(2, 'a', .3),  # End state of edge, character, probability of taking

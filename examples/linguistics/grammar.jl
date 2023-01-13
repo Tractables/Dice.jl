@@ -1,3 +1,13 @@
+# Probabilistic Grammar - grammar.jl
+#
+# Given a probabilistic context-free grammar (rules are annotated with the
+# probability that its LHS nonterminal will expand to it), finds the
+# distribution over sentences it can generate, given that the sentence starts
+# with a particular prefix.
+#
+# The height of the considered sentences' parse trees is bounded to `num_steps`,
+# and the probability that this bound is exceeded is also calculated.
+
 using Dice
 include("./util.jl")
 

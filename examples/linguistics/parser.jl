@@ -1,3 +1,11 @@
+# Probabilistic Parser - parser.jl
+#
+# Given a probabilistic context-free grammar and sentence, finds the
+# distribution over possible parse trees for the sentence.
+#
+# The height of the considered parse trees is bounded to `num_steps`, and the
+# probability that this bound is exceeded is also calculated.
+
 using Dice
 include("./util.jl")
 
