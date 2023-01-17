@@ -281,6 +281,11 @@ end
     p = pr(x < y)
     @test p[1.0] ≈ 0.25
 
+    x = uniform(DistInt{3}, -2, 2)
+    y = DistInt{3}(0)
+    p = pr(x < y)
+    @test p[1] ≈ 1/2
+
     for i = -4:3
         for j = -4:3
             a = DistInt{3}(i)
