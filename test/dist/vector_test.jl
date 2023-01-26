@@ -80,8 +80,25 @@ using Dice
     end
     @test pr(cg)[true] ≈ 0.1 * 0.7 * 0.4
 
+    cg = @dice begin
+        v1 = DistVector{DistInt32}()
+        v2 = ifelse(flip(1/2), prob_append(v1, _6), v1)
+        v3 = ifelse(flip(1/2), prob_append(v2, _7), v2)
+        ifelse(flip(1/2), prob_append(v3, _6), v3)
+    end
+    dist = pr(cg)
+    print(dist)
+    @test length(dist) == 7
+    @test dist[[]] ≈ 1/8
+    @test dist[[7]] ≈ 1/8
+    @test dist[[6]] ≈ 1/4
+    @test dist[[6, 6]] ≈ 1/8
+    @test dist[[6, 7]] ≈ 1/8
+    @test dist[[7, 6]] ≈ 1/8
+    @test dist[[6, 7, 6]] ≈ 1/8
+
     # Test prob_contains
-    _5, _6, _7, _8 = DistUInt32(5), DistUInt32(6), DistUInt32(7), DistUInt32(8)
+    _5, _6, _7, _8 = DistInt32(5), DistInt32(6), DistInt32(7), DistInt32(8)
 
     cg = @dice begin
         s = DistVector([_5, _6, _7])
@@ -104,4 +121,65 @@ using Dice
         prob_contains(t, _8)
     end
     @test pr(cg)[true] == 0.3
+
+    # Test sort
+
+    cg = @dice begin
+        s = DistVector([_6, _5])
+        sort(s)
+    end
+    dist = pr(cg)
+    @test length(dist) == 1
+    @test dist[[5, 6]] == 1
+
+    cg = @dice begin
+        s = DistVector([_8, ifelse(flip(2/3), _5, _7)])
+        t = ifelse(flip(3/10), prob_append(s, _6), s)
+        sort(t)
+    end
+    dist = pr(cg)
+    @test length(dist) == 4
+    @test dist[[5, 6, 8]] ≈ 3/10 * 2/3
+    @test dist[[6, 7, 8]] ≈ 3/10 * 1/3
+    @test dist[[5, 8]] ≈ 7/10 * 2/3
+    @test dist[[7, 8]] ≈ 7/10 * 1/3
+
+    cg = @dice begin
+        v1 = DistVector{DistInt32}()
+        v2 = ifelse(flip(1/2), prob_append(v1, _8), v1)
+        v3 = ifelse(flip(1/2), prob_append(v2, _7), v2)
+        v4 = ifelse(flip(1/2), prob_append(v3, _6), v3)
+        sort(v4)
+    end
+    dist = pr(cg)
+    @test length(dist) == 8
+    @test dist[[]] ≈ 1/8
+    @test dist[[7]] ≈ 1/8
+    @test dist[[6]] ≈ 1/8
+    @test dist[[8]] ≈ 1/8
+    @test dist[[6, 8]] ≈ 1/8
+    @test dist[[6, 7]] ≈ 1/8
+    @test dist[[7, 8]] ≈ 1/8
+    @test dist[[6, 7, 8]] ≈ 1/8
+
+    cg = sort(DistVector{DistInt32}())
+    dist = pr(cg)
+    @test length(dist) == 1
+    @test dist[[]] == 1
+
+    cg = @dice begin
+        v1 = DistVector{DistInt32}()
+        v2 = ifelse(flip(1/2), prob_append(v1, _6), v1)
+        v3 = ifelse(flip(1/2), prob_append(v2, _7), v2)
+        v4 = ifelse(flip(1/2), prob_append(v3, _6), v3)
+        sort(v4)
+    end
+    dist = pr(cg)
+    @test length(dist) == 6
+    @test dist[[]] ≈ 1/8
+    @test dist[[7]] ≈ 1/8
+    @test dist[[6]] ≈ 1/4
+    @test dist[[6, 6]] ≈ 1/8
+    @test dist[[6, 7]] ≈ 1/4
+    @test dist[[6, 6, 7]] ≈ 1/8
 end
