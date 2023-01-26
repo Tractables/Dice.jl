@@ -50,6 +50,43 @@ function prob_append(d::DistVector{T}, x::T)::DistVector{T} where T <: Any
     DistVector(v, d.len + DistUInt32(1))
 end
 
+function Base.sort(d::DistVector{T}) where T
+    isempty(d.contents) && return d
+
+    # get index of greatest element
+    max_i = DistUInt32(1)
+    max_val = d.contents[1]
+    for i in 1:length(d.contents)
+        (max_i, max_val) = ifelse(
+            (DistUInt32(i) <= d.len) & (d.contents[i] > max_val),
+            (DistUInt32(i), d.contents[i]),
+            (max_i, max_val)
+        )
+    end
+
+    # selection sort
+    res_indices = DistVector{DistUInt32}()
+    res = DistVector{T}()
+    for i in 1:length(d.contents)
+        # get min element not yet included
+        min_i = max_i
+        min_val = max_val
+        for j in 1:length(d.contents)
+            min_i, min_val = ifelse(
+                (!prob_contains(res_indices, DistUInt32(j))) & (d.contents[j] <= min_val) & (DistUInt32(j) <= d.len),
+                (DistUInt32(j), d.contents[j]),
+                (min_i, min_val)
+            )
+        end
+        res_indices, res = ifelse(
+            DistUInt32(i) <= d.len,
+            (prob_append(res_indices, min_i), prob_append(res, min_val)),
+            (res_indices, res)
+        )
+    end
+    res
+end
+
 function prob_contains(d::DistVector{T}, x::T) where T
     found = false
     for (i, y) in enumerate(d.contents)
