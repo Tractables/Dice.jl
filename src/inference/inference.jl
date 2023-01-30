@@ -39,8 +39,11 @@ function pr(queries...; kwargs...)
     end
     queryworlds = pr(collect(joint_queries); kwargs...)
     ans = map(queries, queryworlds) do query, worlds
-        kvs = [(frombits(query, world), p) for (world,p) in worlds]
-        DefaultDict(0.0, kvs)
+        dist = DefaultDict(0.0)
+        for (world, p) in worlds
+            dist[frombits(query, world)] += p
+        end
+        dist
     end
     length(queries) == 1 ? ans[1] : ans
 end

@@ -78,7 +78,18 @@ using Dice
     @test pr(DistString("abc") <= DistString("abc"))[true] == 1
     @test pr(DistString("abc") >= DistString("abc"))[true] == 1
     @test pr(DistString("abcd") <= DistString("abc"))[true] == 0
-    @test pr("abc" <= DistString("abc"))[true] == 1
-    @test pr(DistString("abc") >= "abc")[true] == 1
-    @test pr("abcd" <= DistString("abc"))[true] == 0
+
+    # Test that case where multiple bit assignments represent the same string
+    # is handled properly
+    cg = @dice begin
+        chars = [
+            DistChar('a'),
+            DistChar('b'),
+            if flip(.3) DistChar('c') else DistChar('d') end
+        ]
+        DistString(chars, DistUInt32(2))
+    end
+    dist = pr(cg)
+    @test length(dist) == 1
+    @test dist["ab"] == 1
 end

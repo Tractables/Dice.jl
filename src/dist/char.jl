@@ -27,25 +27,9 @@ function Base.ifelse(cond::Dist{Bool}, then::DistChar, elze::DistChar)
     DistChar(ifelse(cond, then.i, elze.i))
 end
 
-Base.:>(x::DistChar, y::DistChar) = x.i > y.i
-
-Base.:>(x::DistChar, y::Char) = x.i > DistChar(y).i
-
-Base.:>(x::Char, y::DistChar) = DistChar(x).i > y.i
-
-Base.:<(x::DistChar, y::DistChar) = y > x
-
-Base.:<(x::DistChar, y::Char) = y > x
-
-Base.:<(x::Char, y::DistChar) = y > x
-
-Base.:(>=)(x::DistChar, y::DistChar) = !(x < y)
-Base.:(>=)(x::Char, y::DistChar) = DistChar(x) >= y
-Base.:(>=)(x::DistChar, y::Char) = x >= DistChar(y)
-
-Base.:(<=)(x::DistChar, y::DistChar) = !(x > y)
-Base.:(<=)(x::Char, y::DistChar) = DistChar(x) <= y
-Base.:(<=)(x::DistChar, y::Char) = x <= DistChar(y)
+Base.isless(x::DistChar, y::DistChar) = isless(x.i, y.i)
+Base.:(<=)(x::DistChar, y::DistChar) = !isless(y, x)
+Base.:(>=)(x::DistChar, y::DistChar) = !isless(x, y)
 
 tobits(c::DistChar) = tobits(c.i)
 frombits(c::DistChar, world) = valid_chars[frombits(c.i, world) + 1]

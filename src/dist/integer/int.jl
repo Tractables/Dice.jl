@@ -161,6 +161,9 @@ function Base.isless(x::DistInt{W}, y::DistInt{W}) where W
     )
 end
 
+Base.:(<=)(x::DistInt{W}, y::DistInt{W}) where W = !isless(y, x)
+Base.:(>=)(x::DistInt{W}, y::DistInt{W}) where W = !isless(x, y)
+
 function Base.ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where W
     DistInt{W}(ifelse(cond, then.number, elze.number))
 end

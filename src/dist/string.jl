@@ -18,12 +18,6 @@ function prob_equals(x::DistString, y::DistString)
     res
 end
 
-prob_equals(x::DistString, y::String) =
-    prob_equals(x, DistString(y))
-
-prob_equals(x::String, y::DistString) =
-    prob_equals(y, x)
-
 function Base.ifelse(cond::Dist{Bool}, then::DistString, elze::DistString)
     mb = max(length(then.chars), length(elze.chars))
     chars = Vector(undef, mb)
@@ -116,42 +110,27 @@ Base.:+(s::DistString, t::String) =
 Base.:+(s::String, t::DistString) =
     DistString(s) + t
 
-function Base.:>(s::DistString, t::DistString)
+function Base.isless(s::DistString, t::DistString)
     for i_ in 1:max(length(s.chars), length(t.chars))
         i = DistUInt32(i_)
         if i > s.len
-            return false
+            return true
         end
         if i > t.len
-            return true
-        end
-        if s[i] < t[i]
             return false
         end
-        if s[i] > t[i]
+        if s[i] < t[i]
             return true
+        end
+        if s[i] > t[i]
+            return false
         end
     end
     return false
 end
 
-Base.:>(x::DistString, y::String) = x > DistString(y)
-
-Base.:>(x::String, y::DistString) = DistString(x) > y
-
-Base.:<(x::DistString, y::DistString) = y > x
-
-Base.:<(x::String, y::DistString) = y > x
-
-Base.:<(x::DistString, y::String) = y > x
-
-Base.:(>=)(x::DistString, y::DistString) = !(x < y)
-Base.:(>=)(x::String, y::DistString) = DistString(x) >= y
-Base.:(>=)(x::DistString, y::String) = x >= DistString(y)
-
-Base.:(<=)(x::DistString, y::DistString) = !(x > y)
-Base.:(<=)(x::String, y::DistString) = DistString(x) <= y
-Base.:(<=)(x::DistString, y::String) = x <= DistString(y)
+Base.:(<=)(x::DistString, y::DistString) = !isless(y, x)
+Base.:(>=)(x::DistString, y::DistString) = !isless(x, y)
 
 tobits(s::DistString) =
     vcat(collect(Iterators.flatten(tobits(c) for c in s.chars)), tobits(s.len))

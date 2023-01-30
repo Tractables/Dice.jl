@@ -1,5 +1,5 @@
 
-export flip, prob_equals
+export flip, prob_equals, AnyBool
 
 ##################################
 # types, structs, and constructors
@@ -124,6 +124,9 @@ Base.xor(x::Dist{Bool}, y::Dist{Bool}) =
     x == y ? false : (!x | !y) & (x | y)
 
 Base.isless(x::AnyBool, y::AnyBool) = !x & y
+
+Base.:(<=)(x::AnyBool, y::AnyBool) = !isless(y, x)
+Base.:(>=)(x::AnyBool, y::AnyBool) = !isless(x, y)
 
 function Base.ifelse(cond::Dist{Bool}, then::AnyBool, elze::AnyBool)
     (then == elze) && return then
