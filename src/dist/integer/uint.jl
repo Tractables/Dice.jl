@@ -297,7 +297,7 @@ function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
         z[i] = xor(x.bits[i], y.bits[i], carry)
         carry = atleast_two(x.bits[i], y.bits[i], carry)
     end
-    carry && error("integer overflow")
+    # !unsafe && carry && error("integer overflow")
     DistUInt{W}(z)
 end
 
