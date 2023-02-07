@@ -1,0 +1,28 @@
+
+var sendChar = function(key, char) {
+  var freqs = [0.082, 0.018, 0.024, 0.04, 0.123, 0.022, 0.022, 0.066, 0.069, 0.001, 0.008, 0.045, 0.024, 0.069, 0.073, 0.018, 0.002, 0.055, 0.067, 0.092, 0.028, 0.009, 0.023, 0.001, 0.018, 0.001];
+  var gen = discrete({ps: freqs});
+  var enc = key + gen;
+  var enc = enc>25? enc-26:enc;
+  condition(enc == char)
+  return 0;
+};
+
+var observe_text = function(key, text) {
+  if (text.length == 0){
+      return 0;
+    }
+  else{
+    sendChar(key, text[0]);
+    return observe_text(key, text.slice(1));
+  }
+};
+
+var main = function(){
+  var text = [9, 11, 8, 21, 20, 21, 2, 5, 2, 12];
+  var key = randomInteger(26);
+  observe_text(key, text);
+  return key;
+};
+
+timeit(function(){Infer({method:'enumerate',model:main}).getDist(0)}).runtimeInMilliseconds

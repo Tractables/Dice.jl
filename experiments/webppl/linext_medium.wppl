@@ -1,0 +1,52 @@
+
+var update = function(ps, os) {
+  if (os.length == 0) {
+    return 0;
+  }
+  else {
+    var obs = os[0];
+    condition(ps[obs[0]] < ps[obs[1]]);
+    return update(ps, os.slice(1));
+  }
+}
+
+var gen = function(n, count) { 
+  if(count <= 0) { 
+    return [];
+  }
+  else {
+    return [randomInteger(n)].concat(gen(n, count-1));
+  }
+}
+
+var obs_mutex = function(ps) {
+  if (ps.length == 0){
+    return 0;
+  }
+  else {
+    return obs_neq(ps[0], ps.slice(1)) + obs_mutex(ps.slice(1));
+  }
+}
+
+var obs_neq = function(el, ps) {
+  if (ps.length == 0) { 
+    return 0;
+  }
+  else {
+    condition(el != ps[0]);
+    return obs_neq(el, ps.slice(1));
+  }
+}
+
+var main = function(){
+  var n = 6;
+  var ps = gen(n, n);
+  obs_mutex(ps);
+  
+  var os =  [[1, 3], [2, 3], [2, 0], [3, 4], [0, 4]];
+
+  update(ps, os);
+  return ps;
+};
+
+timeit(function(){Infer({method:'enumerate',model:main}).getDist(0)}).runtimeInMilliseconds

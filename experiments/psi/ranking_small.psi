@@ -1,0 +1,26 @@
+def update(ps:Z[], dp:Z[]) {
+    ns := array(4, 0:Z);
+    for i in [0..ps.length) {
+        ns[i] = ps[i] + uniformInt(-4, 4);
+    }
+    for i in [0..dp.length-1) {
+        observe(ns[dp[i]] < ns[dp[i+1]]);
+    }
+}
+
+def main(){
+    ps := array(4, 0:Z);
+    
+    for i in [0..ps.length) {
+        ps[i] = uniformInt(0, 3);
+    }
+    for i in [0..ps.length) {
+        for j in [i+1..ps.length) {
+            observe(ps[i] != ps[j]);
+        }
+    }
+
+    data:Z[][] := [[3, 2, 1, 0]];
+    update(ps, data[0]);
+    return ps;
+}

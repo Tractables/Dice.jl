@@ -1,0 +1,6 @@
+def main(){
+  param := uniformInt(100, 500);
+  nummet := binomial(param, 0.5);
+  numinfected := binomial(nummet, 0.3);
+  return numinfected;
+}

@@ -1,0 +1,28 @@
+var check = function(a, b, c) {
+  if ((a <= 0) || (b <= 0) || (c <= 0)) {
+      return 3;
+  }
+  else if ((a+b<=c) || (a+c<=b) || (b+c <= a)) {
+    return 3;
+  }
+  else if ((a == b) && (b == c) && (a == c)) {
+    return 2;
+  }
+  else if ((a == b) || (b == c) || (a == c)) {
+    return 1;
+  }
+  else {
+    return 0;
+  }
+}
+
+var main = function(){
+  var a = randomInteger(201) - 100;
+  var b = randomInteger(201) - 100;
+  var c = randomInteger(201) - 100;
+  
+  
+  return check(a, b, c);
+};
+
+timeit(function(){Infer({method:'enumerate',model:main}).getDist(0)}).runtimeInMilliseconds

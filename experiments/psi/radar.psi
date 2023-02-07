@@ -1,0 +1,23 @@
+def T(mu,l,r) {
+    x := uniformInt(-l,0)+uniformInt(0,l);
+    observe(x<=0);
+    y := uniformInt(-r,0)+uniformInt(0,r);
+    observe(y>0);
+    return (if flip(l/(l+r)) { x } else { y }) + mu;
+}
+
+
+def main(){
+    b0:B := flip(0.2);
+    b1:B := if b0 {true} else {flip(0.2)};
+    x0 := uniformInt(0,10);
+    x1 := x0 + uniformInt(-2, 2);
+
+    o0 := x0 + (if b0 {T(x0, 5, 1)} else {T(x0, 5, 5)});
+    o1 := x1 + (if b1 {T(x1, 5, 1)} else {T(x1, 5, 5)});
+
+    observe(o0 == 5);
+    observe(b0);
+    
+    return x1;
+}

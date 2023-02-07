@@ -1,0 +1,9 @@
+var main = function(){
+  var param = randomInteger(1001) + 500;
+  var nummet = binomial({p:0.5, n:param});
+  var numinfected = binomial({p:0.3, n:nummet+1});
+  return numinfected;
+};
+
+
+timeit(function(){Infer({method:'enumerate',model:main}).getDist(0)}).runtimeInMilliseconds
