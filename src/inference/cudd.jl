@@ -20,7 +20,7 @@ end
 
 default_infer_algo() = Cudd()
 
-function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}; errors)
+function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}, errors, dots)
     mgr = CuddMgr(cudd.reordering_type)
 
     num_uncompiled_parents = Dict{Dist{Bool}, Int}()
@@ -29,6 +29,7 @@ function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}; errors)
         Iterators.flatten(query.bits for query in queries),
         (err[1] for err in errors),
         [evidence],
+        Iterators.flatten(xs for (xs, filename) in dots),
     ))
         foreach(root) do node
             isa(node, Bool) && return
@@ -43,7 +44,7 @@ function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}; errors)
 
     # TODO various optimizations
     # TODO variable order heuristics
-    ccache = order_variables(mgr, evidence, queries, errors, num_uncompiled_parents)
+    ccache = order_variables(mgr, evidence, queries, errors, dots, num_uncompiled_parents)
     pcache = logprobability_cache(mgr)
 
     # compile BDDs and infer probability of all errors
@@ -54,6 +55,11 @@ function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}; errors)
         isinf(logp) || push!(prob_errors, (exp(logp), err))
     end
     isempty(prob_errors) || throw(ProbException(prob_errors))
+
+    for (xs, filename) in dots
+        xs = [compile(mgr, x, ccache, num_uncompiled_parents) for x in xs]
+        dump_dot(mgr, xs, filename)
+    end
 
     # compile BDD for evidence
     evid_bdd = compile(mgr, evidence, ccache, num_uncompiled_parents)
@@ -181,7 +187,7 @@ function compile(mgr::CuddMgr, x::Dist{Bool}, cache, num_uncompiled_parents)
     foldup(x, fl, fi, Ptr{Nothing})
 end
 
-function order_variables(mgr, evidence, queries, errors, num_uncompiled_parents)
+function order_variables(mgr, evidence, queries, errors, dots, num_uncompiled_parents)
     cache = Dict{Dist{Bool},Ptr{Nothing}}()
     flips = Vector{Flip}()
     seen = Dict{DAG,Nothing}()
@@ -193,6 +199,9 @@ function order_variables(mgr, evidence, queries, errors, num_uncompiled_parents)
     end
     for (cond, _) in errors
         cond isa Bool || foreach(cond, see_flip, noop, seen)
+    end
+    for (xs, filename) in dots, bit in xs
+        bit isa Bool || foreach(bit, see_flip, Returns(nothing), seen)
     end
     sort!(flips; by= f -> f.global_id)
     for flip in flips

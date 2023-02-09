@@ -23,9 +23,10 @@ Compute probabilities of queries, optionally given evidence,
 conditional errors, and a custom inference algorithm.
 """
 function pr(queries::Vector{JointQuery}; evidence::AnyBool = true, 
-            errors::Vector{CondError} = CondError[], 
+            errors::Vector{CondError} = CondError[],
+            dots::Vector{Tuple{Vector{AnyBool}, String}} = Tuple{Vector{AnyBool}, String}[],
             algo::InferAlgo = default_infer_algo()) 
-    pr(algo, evidence, queries; errors)
+    pr(algo, evidence, queries, errors, dots)
 end
 
 function pr(queries::JointQuery...; kwargs...)
@@ -57,6 +58,7 @@ struct MetaDist
     returnvalue
     errors::Vector{CondError}
     observations::Vector{AnyBool}
+    dots::Vector
 end
 
 returnvalue(x) = x.returnvalue
@@ -67,7 +69,7 @@ function pr(x::MetaDist; ignore_errors=false,
             algo::InferAlgo = default_infer_algo())
     evidence = allobservations(x)
     errors = ignore_errors ? CondError[] : x.errors
-    pr(returnvalue(x); evidence, errors, algo)
+    pr(returnvalue(x); evidence, errors, x.dots, algo)
 end
 
 function expectation(x::MetaDist; ignore_errors=false, 

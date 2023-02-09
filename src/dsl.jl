@@ -2,7 +2,7 @@ using MacroTools: prewalk, postwalk
 using IRTools
 using IRTools: @dynamo, IR, recurse!, self, xcall, functional
 
-export @dice_ite, @dice, dice, observe, constraint, assert_dice, @code_ir_dice
+export @dice_ite, @dice, dice, observe, constraint, assert_dice, @code_ir_dice, save_dot, pathcond
 
 ##################################
 # Control flow macro
@@ -38,7 +38,7 @@ end
 function dice(f) 
     dyna = DiceDyna()
     x = dyna(f)
-    MetaDist(x, dyna.errors, dyna.observations)
+    MetaDist(x, dyna.errors, dyna.observations, dyna.dots)
 end
 
 "Interpret dice code with control flow, observations, and errors"
@@ -55,13 +55,18 @@ struct DiceDyna
     path::Vector{AnyBool}
     errors::Vector{Tuple{AnyBool, ErrorException}}
     observations::Vector{AnyBool}
-    DiceDyna() = new(AnyBool[], Tuple{AnyBool, String}[], AnyBool[])
+    dots::Vector{Tuple{Vector{AnyBool}, String}}
+    DiceDyna() = new(AnyBool[], Tuple{AnyBool, String}[], AnyBool[], Tuple{Vector{AnyBool}, String}[])
 end
 
 "Assert that the current code must be run within an @dice evaluation"
 assert_dice() = error("This code must be called from within an @dice evaluation.")
 
 observe(_) = assert_dice()
+
+save_dot(_xs, _filename) = assert_dice()
+
+pathcond() = assert_dice()
 
 global dynamoed = Vector()
 
@@ -112,6 +117,11 @@ path_condition(dyna) = reduce(&, dyna.path; init=true)
 
 (dyna::DiceDyna)(::typeof(observe), x) =
     push!(dyna.observations, !path_condition(dyna) | x)
+
+(dyna::DiceDyna)(::typeof(pathcond)) = path_condition(dyna)
+
+(dyna::DiceDyna)(::typeof(save_dot), xs, filename) =
+    push!(dyna.dots, (xs, filename))
 
 (::DiceDyna)(::typeof(==), x::Dist, y) = 
     prob_equals(x,y)
