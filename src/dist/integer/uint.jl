@@ -297,7 +297,7 @@ function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
         z[i] = xor(x.bits[i], y.bits[i], carry)
         carry = atleast_two(x.bits[i], y.bits[i], carry)
     end
-    # !unsafe && carry && error("integer overflow")
+    # carry && error("integer overflow")
     DistUInt{W}(z)
 end
 
@@ -308,7 +308,7 @@ function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W
         z[i] = xor(x.bits[i], y.bits[i], borrow)
         borrow = ifelse(borrow, !x.bits[i] | y.bits[i], !x.bits[i] & y.bits[i])
     end
-    borrow && error("integer overflow")
+    # borrow && error("integer overflow")
     DistUInt{W}(z)
 end
 
@@ -350,8 +350,9 @@ function Base.:%(p1::DistUInt{W}, p2::DistUInt{W}) where W #p1/p2
 
     for i = 1:W
         p1_proxy = DistUInt{W}(vcat(p1_proxy.bits[2:W], p1.bits[i]))
-        # ans[i] = ifelse(p2 > p1_proxy, false, true)
-        p1_proxy = if p2 > p1_proxy p1_proxy else p1_proxy - p2 end
+        # ans[i] = ifelse(p2 > p1_proxy, false, true
+        p1_proxy = ifelse(p2 > p1_proxy, p1_proxy, p1_proxy - p2)
+        # p1_proxy = if p2 > p1_proxy p1_proxy else p1_proxy - p2 end
     end
     p1_proxy
 end 
