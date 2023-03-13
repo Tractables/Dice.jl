@@ -297,7 +297,7 @@ function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
         z[i] = xor(x.bits[i], y.bits[i], carry)
         carry = atleast_two(x.bits[i], y.bits[i], carry)
     end
-    carry && error("integer overflow")
+    # carry && error("integer overflow")
     DistUInt{W}(z)
 end
 
@@ -308,7 +308,7 @@ function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W
         z[i] = xor(x.bits[i], y.bits[i], borrow)
         borrow = ifelse(borrow, !x.bits[i] | y.bits[i], !x.bits[i] & y.bits[i])
     end
-    borrow && error("integer overflow")
+    # borrow && error("integer overflow")
     DistUInt{W}(z)
 end
 

@@ -95,27 +95,56 @@ function prob_contains(d::DistVector{T}, x::T) where T
     found
 end
 
-# Divide-and-conquer getindex
 function prob_getindex(d::DistVector, idx::DistUInt32)
-    (idx < DistUInt32(1) || idx > d.len) && error("Vector out of bounds access")
-    function helper(i, v)
-        assert_dice()
-        if i > length(idx.bits)
-            if v < 1 || v > length(d.contents)
-                d.contents[1]  # dummy
-            else
-                d.contents[v]
-            end
+    ans = d.contents[1]
+    for i in 1:length(d.contents)
+        ans = @dice_ite if prob_equals(DistUInt32(i), idx)
+            d.contents[i]
         else
-            if idx.bits[i]
-                helper(i+1, v+2^(length(idx.bits) - i))
-            else
-                helper(i+1, v)
-            end
+            ans
         end
     end
-    return helper(1, 0)
+    ans
 end
+
+
+# # Divide-and-conquer getindex
+# function prob_getindex(d::DistVector, idx::DistUInt32)
+#     # (idx < DistUInt32(1) || idx > d.len) && error("Vector out of bounds access")
+#     println(pr(idx))
+#     @dice_ite begin
+#         function helper(i, v)
+#             println("i: $(i) v: $(v)")
+#             if v == 4294967200
+#                 exit(123)
+#             else
+#                 nothing
+#             end
+#             # assert_dice()
+#             if i > length(idx.bits)
+#                 if v < 1 || v > length(d.contents)
+#                     d.contents[1]  # dummy
+#                 else
+#                     d.contents[v]
+#                 end
+#             else
+#                 if idx.bits[i]
+#                     # if i == 2
+#                     #     # It's unlikely that the top bit is one... investigate if this happens
+#                     #     error("uh oh... look at $(@__FILE__):$(@__LINE__)")
+#                     #     nothing
+#                     # else
+#                     #     nothing
+#                     # end
+#                     helper(i+1, v+2^(length(idx.bits) - i))
+#                 else
+#                     helper(i+1, v)
+#                 end
+#             end
+#         end
+#         helper(1, 0)
+#     end
+# end
 
 function prob_setindex(s::DistVector, idx::DistUInt32, c::Any)
     (idx < DistUInt32(1) || idx > s.len) && error("Vector out of bounds access")
@@ -134,23 +163,24 @@ function prob_setindex(s::DistVector, idx::Int, c::Any)
 end
 
 function prob_extend(s::DistVector{T}, t::DistVector{T}) where T <: Any
-    if isempty(s.contents)
-        return t
-    end
-    len = s.len + t.len
-    contents = Vector{T}(undef, length(s.contents) + length(t.contents))
-    for i = 1:length(contents)
-        contents[i] = if DistUInt32(i) <= s.len
-            prob_getindex(s, DistUInt32(i))
-        else
-            if (DistUInt32(i) > s.len) & (DistUInt32(i) <= s.len + t.len)
-                prob_getindex(t, DistUInt32(i) - s.len)
+    isempty(s.contents) && return t
+    @dice_ite begin
+        len = s.len + t.len
+        contents = Vector{T}(undef, length(s.contents) + length(t.contents))
+        for i = 1:length(contents)
+            # println(i)
+            contents[i] = if DistUInt32(i) <= s.len
+                prob_getindex(s, DistUInt32(i))
             else
-                s.contents[1] # dummy value 
+                if (DistUInt32(i) > s.len) & (DistUInt32(i) <= s.len + t.len)
+                    prob_getindex(t, DistUInt32(i) - s.len)
+                else
+                    s.contents[1] # dummy value 
+                end
             end
         end
+        DistVector(contents, len)
     end
-    DistVector(contents, len)
 end
 
 function prob_startswith(u::DistVector, v::DistVector)
