@@ -27,7 +27,7 @@ function genList(size)
 end
 
 println("started")
-md = genList(500)
+md = @time genList(1000)
 debug_info_ref = Ref{CuddDebugInfo}()
 d = @time pr(md, algo=Cudd(debug_info_ref=debug_info_ref))
 # println(d)
