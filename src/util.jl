@@ -1,6 +1,6 @@
 using Distributions
 
-export gaussian_observe, gaussian_observe_enumerate, parametrised_flip
+export gaussian_observe, gaussian_observe_enumerate, parametrised_flip, print_tree
 
 ##################################
 # Gaussian observation methods
@@ -67,4 +67,49 @@ function parametrised_flip(p::DistFixedPoint{W, F}) where W where F
     invalid && error("flip probability outside interval [0, 1]")
 
     uniform(DistFixedPoint{W, F}, 0.0, 1.0) < p
+end
+
+function print_tree(t; indent_per_level=4)
+    @assert indent_per_level >= 1
+    print_tree_helper(t, [], 0, false, indent_per_level)
+end
+
+function print_tree_helper(t, pipes, level, last_child, indent_per_level)
+    if !(t isa Tuple)
+        t = (t, [])
+    end
+    # Print padding
+    padding_size = level * indent_per_level
+    if level > 0
+        padding = [' ' for _ in 1:padding_size]
+        for pipe in pipes
+            padding[pipe] = '│'
+        end
+        # Connect last pipe to value
+        padding[last(pipes)] = if last_child '└' else '├' end
+        for i in (last(pipes)+1):(padding_size-1)
+            padding[i] = '─'
+        end
+        print(join(padding))
+    end
+
+    # Print value
+    println(t[1])
+    
+    # Consume last pipe if we are last child, always create new pipe below us
+    inherited_pipes = copy(pipes)
+    if last_child
+        pop!(inherited_pipes)
+    end
+    push!(inherited_pipes, padding_size + 1)
+
+    for i in 1:length(t[2])
+        print_tree_helper(
+            t[2][i],
+            inherited_pipes,
+            level + 1,
+            i == length(t[2]),
+            indent_per_level
+        )
+    end
 end
