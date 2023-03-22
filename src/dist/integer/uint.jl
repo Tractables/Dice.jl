@@ -10,7 +10,7 @@ struct DistUInt{W} <: Dist{Int}
     # first index is most significant bit
     bits::Vector{AnyBool}
     function DistUInt{W}(b) where W
-        @assert length(b) == W
+        @assert length(b) == W "Expected $W bits from type but got $(length(b)) bits instead"
         @assert W <= 63 #julia int overflow messes this up?
         new{W}(b)
     end
@@ -297,7 +297,7 @@ function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
         z[i] = xor(x.bits[i], y.bits[i], carry)
         carry = atleast_two(x.bits[i], y.bits[i], carry)
     end
-    carry && error("integer overflow")
+    errorcheck() & carry && error("integer overflow in `+`")
     DistUInt{W}(z)
 end
 
@@ -308,7 +308,7 @@ function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W
         z[i] = xor(x.bits[i], y.bits[i], borrow)
         borrow = ifelse(borrow, !x.bits[i] | y.bits[i], !x.bits[i] & y.bits[i])
     end
-    borrow && error("integer overflow")
+    errorcheck() & borrow && error("integer underflow in `-`")
     DistUInt{W}(z)
 end
 
@@ -326,9 +326,8 @@ function Base.:(*)(p1::DistUInt{W}, p2::DistUInt{W}) where W
     P
 end 
 
-function Base.:/(p1::DistUInt{W}, p2::DistUInt{W}) where W #p1/p2
-    is_zero = prob_equals(p2, DistUInt{W}(0))
-    is_zero && error("division by zero")
+function Base.:/(p1::DistUInt{W}, p2::DistUInt{W}) where W
+    errorcheck() & iszero(p2) && error("division by zero")
 
     ans = Vector(undef, W)
     p1_proxy = DistUInt{W}(0)
@@ -336,25 +335,39 @@ function Base.:/(p1::DistUInt{W}, p2::DistUInt{W}) where W #p1/p2
     for i = 1:W
         p1_proxy = DistUInt{W}(vcat(p1_proxy.bits[2:W], p1.bits[i]))
         ans[i] = ifelse(p2 > p1_proxy, false, true)
-        p1_proxy = if p2 > p1_proxy p1_proxy else p1_proxy - p2 end
+        p1_proxy = @dice_ite if p2 > p1_proxy 
+            p1_proxy 
+        else 
+            # make sure this is guarded (i.e., not using `ifelse``) to avoid underflow
+            p1_proxy - p2
+        end
     end
     DistUInt{W}(ans)
 end 
 
-function Base.:%(p1::DistUInt{W}, p2::DistUInt{W}) where W #p1/p2
-    is_zero = prob_equals(p2, DistUInt{W}(0))
-    is_zero && error("division by zero")
+function Base.:%(p1::DistUInt{W}, p2::DistUInt{W}) where W 
+    errorcheck() & iszero(p2) && error("division by zero")
 
-    # ans = Vector(undef, W)
     p1_proxy = DistUInt{W}(0)
-
     for i = 1:W
         p1_proxy = DistUInt{W}(vcat(p1_proxy.bits[2:W], p1.bits[i]))
-        # ans[i] = ifelse(p2 > p1_proxy, false, true)
-        p1_proxy = if p2 > p1_proxy p1_proxy else p1_proxy - p2 end
+        p1_proxy = @dice_ite if p2 > p1_proxy 
+            p1_proxy 
+        else 
+            # make sure this is guarded (i.e., not using `ifelse``) to avoid underflow
+            p1_proxy - p2 
+        end
     end
     p1_proxy
 end 
+
+function Base.:~(x::DistUInt{W}) where W 
+    DistUInt{W}(.! x.bits) 
+end 
+
+function Base.iszero(x::T) where T <: Dist{Int}
+    prob_equals(x, T(0))
+end
 
 function Base.ifelse(cond::Dist{Bool}, then::DistUInt{W}, elze::DistUInt{W}) where W
     (then == elze) && return then
