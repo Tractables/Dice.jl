@@ -1,4 +1,4 @@
-export DistUInt, DistUInt8, DistUInt16, DistUInt32, DistUInt64, DistUInt128, 
+export DistUInt, DistUInt8, DistUInt16, DistUInt32, 
     uniform, uniform_arith, uniform_ite, triangle, discrete
 
 ##################################
@@ -34,8 +34,6 @@ end
 const DistUInt8 = DistUInt{8}
 const DistUInt16 = DistUInt{16}
 const DistUInt32= DistUInt{32}
-const DistUInt64 = DistUInt{64}
-const DistUInt128 = DistUInt{128}
 
 ##################################
 # inference
@@ -54,19 +52,17 @@ function frombits(x::DistUInt{W}, world) where W
     v
 end
 
-"Compute the expected value of a random variable"
 function expectation(x::DistUInt{W}; kwargs...) where W
     ans = 0
-    a = pr(x.bits...; kwargs...)
+    bitprobs = pr(x.bits...; kwargs...)
     start = 2^(W-1)
     for i=1:W
-        ans += start*a[i][true]
+        ans += start * bitprobs[i][true]
         start /= 2
     end
     ans
 end
 
-"Compute the variance of a random variable"
 function variance(x::DistUInt{W}; kwargs...) where W
     queries = Vector(undef, Int((W * (W-1))/2))
     counter = 1
