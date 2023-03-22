@@ -69,11 +69,11 @@ end
 @testset "DistFixedPoint arithmetic" begin
     a = DistFixedPoint{3, 1}(1.5)
     b = DistFixedPoint{3, 1}(1.5)
-    @test_throws Exception pr(a + b)
+    @test_throws Exception pr(@dice a + b)
 
     a = DistFixedPoint{3, 1}(-1.5)
     b = DistFixedPoint{3, 1}(-1.5)
-    @test_throws Exception pr(a + b)
+    @test_throws Exception pr(@dice a + b)
 
     a = DistFixedPoint{3, 1}(-1.5)
     b = DistFixedPoint{3, 1}(1.5)
@@ -86,11 +86,11 @@ end
 
     a = DistFixedPoint{3, 1}(1.5)
     b = DistFixedPoint{3, 1}(-1.0)
-    @test_throws Exception pr(a - b)
+    @test_throws Exception pr(@dice a - b)
 
     a = DistFixedPoint{3, 1}(-1.5)
     b = DistFixedPoint{3, 1}(1.0)
-    @test_throws Exception pr(a - b)
+    @test_throws Exception pr(@dice a - b)
 
     a = DistFixedPoint{3, 1}(1.5)
     b = DistFixedPoint{3, 1}(1.0)
