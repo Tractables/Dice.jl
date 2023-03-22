@@ -10,7 +10,7 @@ struct DistUInt{W} <: Dist{Int}
     # first index is most significant bit
     bits::Vector{AnyBool}
     function DistUInt{W}(b) where W
-        @assert length(b) == W
+        @assert length(b) == W "Expected $W bits from type but got $(length(b)) bits instead"
         @assert W <= 63 #julia int overflow messes this up?
         new{W}(b)
     end
@@ -297,7 +297,7 @@ function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
         z[i] = xor(x.bits[i], y.bits[i], carry)
         carry = atleast_two(x.bits[i], y.bits[i], carry)
     end
-    carry && error("integer overflow")
+    #carry && error("integer overflow")
     DistUInt{W}(z)
 end
 

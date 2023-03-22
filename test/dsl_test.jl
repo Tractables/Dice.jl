@@ -163,6 +163,12 @@ end
     @test_throws ProbException pr(y) ≈ 0 
     @test pr(y; ignore_errors = true)[true] ≈ 0 
 
+    ferr() = (errorcheck() && error())
+    @test_nowarn pr(ferr())
+    @test_throws ProbException pr(@dice begin
+        ferr()
+    end)
+
 end
 
 @testset "Observe dynamo" begin
