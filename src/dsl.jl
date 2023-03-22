@@ -1,41 +1,18 @@
-using MacroTools: prewalk, postwalk
+
 using IRTools
 using IRTools: @dynamo, IR, recurse!, self, xcall, functional
 
-export @dice_ite, @dice, dice, observe, constraint, assert_dice, @code_ir_dice, errorcheck
-
-##################################
-# Control flow macro
-##################################
-
-"Syntactic macro to make if-then-else supported by dice"
-macro dice_ite(code)
-    postwalk(esc(code)) do x
-        if x isa Expr && (x.head == :if || x.head == :elseif)
-            @assert length(x.args) == 3 "@dice_ite macro only supports purely functional if-then-else"
-            ite_guard = gensym(:ite)
-            return :(begin $ite_guard = $(x.args[1])
-                    if ($(ite_guard) isa Dist{Bool})
-                        ifelse($(ite_guard), $(x.args[2:3]...))
-                    else
-                        (if $(ite_guard)
-                            $(x.args[2])
-                        else
-                            $(x.args[3])
-                        end)
-                    end
-                end)
-        end
-        return x
-    end
-end
+export @dice, dice, observe, constraint, assert_dice, @code_ir_dice, errorcheck, indynamo
 
 ##################################
 # Control flow + error + observation dynamo
 ##################################
 
 "Should (expensive) probabilistic errors be checked in this runtime context?"
-errorcheck() = false
+errorcheck() = indynamo()
+
+"Is this code running in the context of the Dice dynamo"
+indynamo() = false
 
 "Interpret dice code with control flow, observations, and errors"
 function dice(f) 
@@ -62,7 +39,8 @@ struct DiceDyna
 end
 
 "Assert that the current code must be run within an @dice evaluation"
-assert_dice() = error("This code must be called from within an @dice evaluation.")
+assert_dice() = 
+    indynamo() ? nothing : error("This code must be called from within an @dice evaluation.")
 
 observe(_) = assert_dice()
 
@@ -93,8 +71,6 @@ end
 
 top_dynamoed() = sort(dynamoed; by = x -> x[1], rev = true)
 
-(::DiceDyna)(::typeof(assert_dice)) = nothing
-
 (::DiceDyna)(::typeof(IRTools.cond), guard, then, elze) = IRTools.cond(guard, then, elze)
 
 function (dyna::DiceDyna)(::typeof(IRTools.cond), guard::Dist{Bool}, then, elze)
@@ -110,7 +86,7 @@ end
 path_condition(dyna) = reduce(&, dyna.path; init=true)
 
 # in a dice context, do check for probabilistic errors
-(dyna::DiceDyna)(::typeof(errorcheck)) = true
+(dyna::DiceDyna)(::typeof(indynamo)) = true
 
 # TODO catch Base exceptions in ifelse instead
 (dyna::DiceDyna)(::typeof(error), msg = "Error") = begin
@@ -145,12 +121,4 @@ for f in :[xor, atleast_two, prob_equals, (&), (|), (!), isless, ifelse,
     Base.pairwise_blocksize, eltype, firstindex, iterate, 
     continuous, uniform, flip].args
     @eval (::DiceDyna)(::typeof($f), args...) = $f(args...)
-end
-
-"Show pseudo-IR as run by dice's dynamo"
-macro code_ir_dice(code)
-    esc(quote
-        ir = @code_ir $code
-        functional(ir)
-    end)
 end
