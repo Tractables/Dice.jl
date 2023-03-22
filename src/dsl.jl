@@ -2,7 +2,7 @@ using MacroTools: prewalk, postwalk
 using IRTools
 using IRTools: @dynamo, IR, recurse!, self, xcall, functional
 
-export @dice_ite, @dice, dice, observe, constraint, assert_dice, @code_ir_dice
+export @dice_ite, @dice, dice, observe, constraint, assert_dice, @code_ir_dice, errorcheck
 
 ##################################
 # Control flow macro
@@ -33,6 +33,9 @@ end
 ##################################
 # Control flow + error + observation dynamo
 ##################################
+
+"Should (expensive) probabilistic errors be checked in this runtime context?"
+errorcheck() = false
 
 "Interpret dice code with control flow, observations, and errors"
 function dice(f) 
@@ -106,9 +109,14 @@ end
 
 path_condition(dyna) = reduce(&, dyna.path; init=true)
 
+# in a dice context, do check for probabilistic errors
+(dyna::DiceDyna)(::typeof(errorcheck)) = true
+
 # TODO catch Base exceptions in ifelse instead
-(dyna::DiceDyna)(::typeof(error), msg) =
+(dyna::DiceDyna)(::typeof(error), msg = "Error") = begin
     push!(dyna.errors, (path_condition(dyna), ErrorException(msg)))
+    nothing
+end
 
 (dyna::DiceDyna)(::typeof(observe), x) =
     push!(dyna.observations, !path_condition(dyna) | x)
