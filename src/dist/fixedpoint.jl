@@ -131,7 +131,7 @@ function Base.:(/)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F
 
     n_overflow = DistInt{F+1}(ans.number.bits[1:F+1])
     overflow = !prob_equals(n_overflow, DistInt{F+1}(-1)) & !prob_equals(n_overflow, DistInt{F+1}(0))
-    overflow && error("integer overflow")
+    dice_assert(!overflow, "integer overflow in /", false)
 
     DistFixedPoint{W, F}(ans.number.bits[F+1:W+F])
 end

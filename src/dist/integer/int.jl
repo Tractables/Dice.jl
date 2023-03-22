@@ -174,14 +174,14 @@ function Base.:(+)(x::DistInt{W}, y::DistInt{W}) where W
     cannot_overflow = prob_equals(y.number.bits[1], y.number.bits[2]) & prob_equals(x.number.bits[1], x.number.bits[2])
     # this sufficient condition is more easily proven true than the exact one, test it first
     overflow = !cannot_overflow & ((!x.number.bits[1] & !y.number.bits[1] & ans.bits[2]) | (x.number.bits[1] & y.number.bits[1] & !ans.bits[2]))
-    overflow && error("integer overflow or underflow")
+    dice_assert(!overflow, "integer overflow or underflow in +", true)
     DistInt{W}(ans.bits[2:W+1])
 end
 
 function Base.:(-)(x::DistInt{W}, y::DistInt{W}) where W
     ans = DistUInt{W+1}(vcat([true], x.number.bits)) - DistUInt{W+1}(vcat([false], y.number.bits))
     borrow = (!x.number.bits[1] & y.number.bits[1] & ans.bits[2]) | (x.number.bits[1] & !y.number.bits[1] & !ans.bits[2])
-    borrow && error("integer overflow or underflow")
+    dice_assert(!borrow, "integer overflow or underflow in -", true)
     DistInt{W}(ans.bits[2:W+1])
 end
 
@@ -202,18 +202,18 @@ function Base.:(*)(x::DistInt{W}, y::DistInt{W}) where W
     P_overflow = DistInt{W}(P.bits[1:W])
     overflow = (!prob_equals(P_overflow, DistInt{W}(-1)) & !prob_equals(P_ans, DistInt{W}(-1))) | (!prob_equals(P_overflow, DistInt{W}(0)) & !prob_equals(P_ans, DistInt{W}(0)))
     overflow = prob_equals(P_overflow, DistInt{W}(-1)) | prob_equals(P_overflow, DistInt{W}(0))
-    !overflow && error("integer overflow")
+    dice_assert(overflow, "integer overflow in *", true)
     overflow = !prob_equals(x, DistInt{W}(0)) & !prob_equals(y, DistInt{W}(0)) & ((!xor(p1.bits[W+1], p2.bits[W+1]) & P.bits[W+1]) | (xor(p1.bits[W+1], p2.bits[W+1]) & !P.bits[W+1]))
-    overflow && error("integer overflow")
+    dice_assert(!overflow, "integer overflow in * (2)", true)
     return P_ans
 end
 
 function Base.:(/)(x::DistInt{W}, y::DistInt{W}) where W
     overflow = prob_equals(x, DistInt{W}(-2^(W-1))) & prob_equals(y, DistInt{W}(-1))
-    overflow && error("integer overflow")
+    dice_assert(!overflow, "integer overflow in /", true)
 
     is_zero = prob_equals(y, DistInt{W}(0))
-    is_zero && error("division by zero")
+    dice_assert(!is_zero, "division by zero in / (2)", true)
 
     xp = if x.number.bits[1] DistUInt{W}(1) + DistUInt{W}([!xb for xb in x.number.bits]) else x.number end
     xp = convert(xp, DistUInt{W+1})
