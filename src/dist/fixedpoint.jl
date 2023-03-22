@@ -130,8 +130,8 @@ function Base.:(/)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F
     ans = xp.number / yp.number
 
     n_overflow = DistInt{F+1}(ans.number.bits[1:F+1])
-    overflow = !prob_equals(n_overflow, DistInt{F+1}(-1)) & !prob_equals(n_overflow, DistInt{F+1}(0))
-    overflow && error("integer overflow")
+    overflow = !prob_equals(n_overflow, DistInt{F+1}(-1)) & !iszero(n_overflow)
+    errorcheck() & overflow && error("integer overflow")
 
     DistFixedPoint{W, F}(ans.number.bits[F+1:W+F])
 end
