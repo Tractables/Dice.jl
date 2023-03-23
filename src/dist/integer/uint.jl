@@ -35,119 +35,47 @@ const DistUInt8 = DistUInt{8}
 const DistUInt16 = DistUInt{16}
 const DistUInt32= DistUInt{32}
 
-##################################
-# inference
-##################################
 
-tobits(x::DistUInt) = 
-    filter(y -> y isa Dist{Bool}, x.bits)
-
-function frombits(x::DistUInt{W}, world) where W
-    v = 0
-    for i = 1:W
-        if frombits(x.bits[i], world)
-            v += 2^(W-i)
-        end
-    end
-    v
-end
-
-function expectation(x::DistUInt{W}; kwargs...) where W
-    ans = 0
-    bitprobs = pr(x.bits...; kwargs...)
-    start = 2^(W-1)
-    for i=1:W
-        ans += start * bitprobs[i][true]
-        start /= 2
-    end
-    ans
-end
-
-function variance(x::DistUInt{W}; kwargs...) where W
-    queries = Vector(undef, Int((W * (W-1))/2))
-    counter = 1
-    for i = 1:W-1
-        for j = i+1:W
-            queries[counter] = x.bits[i] & x.bits[j]
-            counter += 1
-        end
-    end
-
-    prs = pr(x.bits..., queries... ; kwargs...)
-    
-    probs = Matrix(undef, W, W)
-    counter = 1
-    for i = 1:W-1
-        for j = i+1:W
-            probs[i, j] = prs[counter + W][1.0]
-            probs[j, i] = prs[counter + W][1.0]
-            counter += 1
-        end
-        probs[i, i] = prs[i][1.0]
-    end
-    probs[W, W] = prs[W][1.0]
-    ans = 0
-    
-    exponent1 = 1
-    for i = 1:W
-        ans += exponent1*(probs[W+1 - i, W+1 - i] - probs[W + 1 - i, W + 1 - i]^2)
-        exponent2 = exponent1*2
-        for j = i+1:W
-            exponent2 = 2*exponent2
-            bi = probs[W+1-i, W+1-i]
-            bj = probs[W+1-j, W+1-j]
-            bibj = probs[W+1-i, W+1-j]
-            ans += exponent2 * (bibj - bi * bj)
-        end
-        
-        exponent1 = exponent1*4
-    end
-    return ans
-end
-
-##################################
-# methods
-##################################
-
-bitwidth(::DistUInt{W}) where W = W
-
+"Construct a uniform random number"
 function uniform(::Type{DistUInt{W}}, n = W) where W
     @assert W >= n >= 0
     DistUInt{W}([i > W-n ? flip(0.5) : false for i=1:W])
 end
 
-# question: is this a good way of passing the argument? 
-function uniform(::Type{DistUInt{W}}, start::Int, stop::Int; ite::Bool = false)::DistUInt{W} where W
-    if ite 
+"Construct a uniform random number between `start` (inclusive) and `stop` (exclusive)"
+function uniform(::Type{DistUInt{W}}, start, stop; strategy = :arith) where W
+    if strategy == :ite 
         uniform_ite(DistUInt{W}, start, stop)
-    else
+    elseif strategy == :arith
         uniform_arith(DistUInt{W}, start, stop)
+    else
+        error("Unknown uniform strategy $strategy")
     end
 end
 
-function uniform_arith(::Type{DistUInt{W}}, start::Int, stop::Int)::DistUInt{W} where W
-    # WARNING: will cause an error in certain cases where overflow is falsely detected
-    # instead use with the @dice macro or increase bit-width
-    @assert start >= 0
-    @assert stop <= 2^W
-    @assert stop > start
+"Construct a uniform random number by offsetting a 0-based uniform"
+function uniform_arith(::Type{DistUInt{W}}, start, stop) where W
+    @assert 0 <= start < stop <= 2^W
+    DInt = DistUInt{W}
     if start > 0
-        DistUInt{W}(start) + uniform_arith(DistUInt{W}, 0, stop-start)
+        DInt(start) + uniform_arith(DInt, 0, stop-start)
     else
-        is_power_of_two = (stop) & (stop-1) == 0
-        if is_power_of_two
-            uniform(DistUInt{W}, ndigits(stop, base=2)-1)
+        digits = ndigits(stop, base=2)-1
+        pivot = 2^digits
+        pivotflip = flip(pivot/stop) # first in variable order
+        before = uniform(DInt, digits)
+        if pivot == stop
+            before
         else 
-            power_lt = 2^(ndigits(stop, base=2)-1)
-            ifelse(flip(power_lt/stop), uniform_arith(DistUInt{W}, 0, power_lt), uniform_arith(DistUInt{W}, power_lt, stop))
+            after = uniform_arith(DInt, pivot, stop)
+            ifelse(pivotflip, before, after)
         end
     end
 end
 
+"Construct a uniform random number by case analysis on the bits"
 function uniform_ite(::Type{DistUInt{W}}, start::Int, stop::Int)::DistUInt{W} where W
-    @assert start >= 0
-    @assert stop <= 2^W
-    @assert stop > start
+    @assert 0 <= start < stop <= 2^W
 
     if start == 0
         upper_pow = floor(Int, log2(stop))
@@ -253,10 +181,6 @@ function discrete(t::Type{DistUInt{W}}, p::Vector{Float64}) where W
     if add == 0 DistUInt{W}(0) else DistUInt{W}(int_vector) end
 end
 
-##################################
-# casting
-##################################
-
 function Base.convert(x::DistUInt{W1}, t::Type{DistUInt{W2}}) where W1 where W2
     if W1 <= W2
         DistUInt{W2}(vcat(fill(false, W2 - W1), x.bits))
@@ -268,8 +192,76 @@ function Base.convert(x::DistUInt{W1}, t::Type{DistUInt{W2}}) where W1 where W2
 end
 
 ##################################
-# other method overloading
+# inference
 ##################################
+
+tobits(x::DistUInt) = 
+    filter(y -> y isa Dist{Bool}, x.bits)
+
+function frombits(x::DistUInt{W}, world) where W
+    v = 0
+    for i = 1:W
+        if frombits(x.bits[i], world)
+            v += 2^(W-i)
+        end
+    end
+    v
+end
+
+function expectation(x::DistUInt{W}; kwargs...) where W
+    ans = 0
+    bitprobs = pr(x.bits...; kwargs...)
+    start = 2^(W-1)
+    for i=1:W
+        ans += start * bitprobs[i][true]
+        start /= 2
+    end
+    ans
+end
+
+function variance(x::DistUInt{W}; kwargs...) where W
+    queries = Vector(undef, Int((W * (W-1))/2))
+    counter = 1
+    for i = 1:W-1, j = i+1:W
+        queries[counter] = x.bits[i] & x.bits[j]
+        counter += 1
+    end
+    prs = pr(x.bits..., queries... ; kwargs...)
+    
+    probs = Matrix(undef, W, W)
+    counter = 1
+    for i = 1:W-1
+        for j = i+1:W
+            probs[i, j] = prs[W + counter][true]
+            probs[j, i] = prs[W + counter][true]
+            counter += 1
+        end
+        probs[i, i] = prs[i][true]
+    end
+    probs[W, W] = prs[W][true]
+    
+    ans = 0
+    exponent1 = 1
+    for i = 1:W
+        ans += exponent1 * (probs[W+1-i, W+1-i] - probs[W+1-i, W+1-i]^2)
+        exponent2 = exponent1*2
+        for j = i+1:W
+            exponent2 = 2*exponent2
+            bi = probs[W+1-i, W+1-i]
+            bj = probs[W+1-j, W+1-j]
+            bibj = probs[W+1-i, W+1-j]
+            ans += exponent2 * (bibj-bi*bj)
+        end
+        exponent1 = exponent1*4
+    end
+    return ans
+end
+
+##################################
+# methods
+##################################
+
+bitwidth(::DistUInt{W}) where W = W
 
 function prob_equals(x::DistUInt{W}, y::DistUInt{W}) where W
     mapreduce(prob_equals, &, x.bits, y.bits)
