@@ -93,7 +93,6 @@ end
     @assert debug_info_ref[].num_nodes == 196604
 
     pr(x, algo=Cudd(CUDD.CUDD_REORDER_SIFT, debug_info_ref))
-    println(debug_info_ref)
     @assert debug_info_ref[].num_nodes == 160
 
     pr(x, algo=Cudd(CUDD.CUDD_REORDER_WINDOW2, debug_info_ref))

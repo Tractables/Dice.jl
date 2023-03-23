@@ -143,7 +143,7 @@ function compile(mgr::CuddMgr, x::Dist{Bool}, cache, num_uncompiled_parents)
             num_uncompiled_parents[child] -= 1
             @assert num_uncompiled_parents[child] >= 0
             if num_uncompiled_parents[child] == 0
-                Cudd_RecursiveDeref(mgr.cuddmgr, cache[child])
+                # Cudd_RecursiveDeref(mgr.cuddmgr, cache[child])
             end
         end
     end
