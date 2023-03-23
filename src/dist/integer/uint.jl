@@ -77,61 +77,41 @@ end
 function uniform_ite(::Type{DistUInt{W}}, start::Int, stop::Int)::DistUInt{W} where W
     @assert 0 <= start < stop <= 2^W
 
+    upper_pow = floor(Int, log2(stop))
+    high_pivot = 2^upper_pow
     if start == 0
-        upper_pow = floor(Int, log2(stop))
         pivots = [0, 2^upper_pow]
         low_pivot = 0
-        high_pivot = 2^upper_pow
     else 
-        # get our initial powers of two 
-        upper_pow = floor(Int, log2(stop))
         lower_pow = ceil(Int, log2(start))
         pivots = [2^p for p=lower_pow:1:upper_pow]
         low_pivot = 2^lower_pow
-        high_pivot = 2^upper_pow
     end
 
-    # find remaining pivots
+    # add remaining pivots
     while low_pivot > start
         new_pivot = low_pivot - 2^floor(Int, log2(low_pivot-start))
-        prepend!(pivots, [new_pivot])
+        insert!(pivots, 1, new_pivot)
         low_pivot = new_pivot
     end
     while high_pivot < stop
         new_pivot = high_pivot + 2^floor(Int, log2(stop-high_pivot))
-        append!(pivots, [new_pivot])
+        push!(pivots, new_pivot)
         high_pivot = new_pivot
     end
      
-    # better way to do this with map?
-    segments = []
     total_length = stop-start
-    for j=1:1:length(pivots)-1
+    segments = map(1:length(pivots)-1) do j
         a, b = pivots[j], pivots[j+1]
         segment_length = b-a
-        segment = uniform_part(DistUInt{W}, a, floor(Int, log2(segment_length)))
+        randbits = floor(Int, log2(segment_length))
+        segment = DistUInt{W}(a) + uniform(DistUInt{W}, randbits) 
         prob = flip(segment_length/total_length)
         total_length -= segment_length
-        append!(segments, [(prob, segment)])
+        (prob, segment)
     end
 
-    len = length(segments)
-    foldr(((x, y), z)->ifelse(x, y, z), segments[1:len-1],init=segments[len][2])        
-end
-
-
-function uniform_part(::Type{DistUInt{W}}, lower, bit_length) where W 
-    bits = Vector{AnyBool}(undef, W)
-    num_b = ndigits(lower, base=2)
-    for bit_idx = W:-1:1
-        bits[bit_idx] = (bit_idx > W - num_b) ? Bool(lower & 1) : false
-        lower = lower >> 1
-    end
-
-    for bit_idx = W:-1:W-bit_length+1
-        bits[bit_idx] = flip(0.5)
-    end
-    DistUInt{W}(bits)
+    foldr( ((x,y),z) -> ifelse(x, y, z), segments[1:end-1], init=segments[end][2])
 end
 
 # Generates triangle distribution of type t and bits b
