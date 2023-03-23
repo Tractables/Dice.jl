@@ -208,9 +208,9 @@ end
 
     end
     
-    flags = [true, false]
+    flags = [:ite, :arith]
     map(flags) do flag
-        x = uniform(DistUInt{3}, 0, 7; ite=flag)
+        x = uniform(DistUInt{3}, 0, 7; strategy=flag)
         p = pr(x)
         for i=0:6
             @test p[i] ≈ 1/7
