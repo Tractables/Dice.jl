@@ -92,11 +92,11 @@ end
 @testset "DistInt arithmetic" begin
     a = DistInt{3}(3)
     b = DistInt{3}(3)
-    @test_throws Exception pr(@dice a + b)
+    @test_throws Exception pr(a + b)
 
     a = DistInt{3}(-3)
     b = DistInt{3}(-3)
-    @test_throws Exception pr(@dice a + b)
+    @test_throws Exception pr(a + b)
 
     a = DistInt{3}(-3)
     b = DistInt{3}(3)
@@ -109,11 +109,11 @@ end
 
     a = DistInt{3}(3)
     b = DistInt{3}(-2)
-    @test_throws Exception pr(@dice a - b)
+    @test_throws Exception pr(a - b)
 
     a = DistInt{3}(-3)
     b = DistInt{3}(2)
-    @test_throws Exception pr(@dice a - b)
+    @test_throws Exception pr(a - b)
 
     a = DistInt{3}(3)
     b = DistInt{3}(2)
