@@ -1,5 +1,6 @@
 
 using DirectedAcyclicGraphs
+import DirectedAcyclicGraphs: children, NodeType, DAG, Inner, Leaf
 
 export Dist, isdeterministic
 

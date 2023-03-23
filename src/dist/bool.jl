@@ -1,7 +1,4 @@
-export flip, prob_equals, AnyBool, Dist, isdeterministic
-
-using DirectedAcyclicGraphs
-import DirectedAcyclicGraphs: children, NodeType, DAG, Inner, Leaf
+export flip, prob_equals, AnyBool
 
 ##################################
 # types, structs, and constructors
