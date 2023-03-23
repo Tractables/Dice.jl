@@ -79,10 +79,10 @@ end
 # casting
 ##################################
 
-function Base.convert(x::DistFixedPoint{W1, F1}, t::Type{DistFixedPoint{W2, F2}}) where W1 where W2 where F1 where F2
+function Base.convert(::Type{DistFixedPoint{W2, F2}}, x::DistFixedPoint{W1, F1}) where W1 where W2 where F1 where F2
     #TODO: check if cases are exhaustive
     if (F1 == F2)
-        DistFixedPoint{W2, F2}(convert(x.number, DistInt{W2}))
+        DistFixedPoint{W2, F2}(convert(DistInt{W2}, x.number))
     elseif (W1 - F1 == W2 - F2)
         if (F2 > F1)
             DistFixedPoint{W2, F2}(vcat(x.number.number.bits, fill(false, F2 - F1)))
@@ -117,16 +117,16 @@ function Base.:(-)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F
 end
 
 function Base.:(*)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F}
-    x1 = convert(x, DistFixedPoint{W+F, F})
-    y1 = convert(y, DistFixedPoint{W+F, F})
+    x1 = convert(DistFixedPoint{W+F, F}, x)
+    y1 = convert(DistFixedPoint{W+F, F}, y)
     prodint = x1.number * y1.number
     prodfip = DistFixedPoint{W+F, 2F}(prodint)
-    convert(prodfip, DistFixedPoint{W, F})
+    convert(DistFixedPoint{W, F}, prodfip)
 end
 
 function Base.:(/)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F}
-    xp = convert(x, DistFixedPoint{W+F, 2*F})
-    yp = convert(y, DistFixedPoint{W+F, F})
+    xp = convert(DistFixedPoint{W+F, 2*F}, x)
+    yp = convert(DistFixedPoint{W+F, F}, y)
     ans = xp.number / yp.number
 
     n_overflow = DistInt{F+1}(ans.number.bits[1:F+1])

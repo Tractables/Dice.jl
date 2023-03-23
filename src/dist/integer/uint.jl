@@ -11,7 +11,7 @@ struct DistUInt{W} <: Dist{Int}
     bits::Vector{AnyBool}
     function DistUInt{W}(b) where W
         @assert length(b) == W "Expected $W bits from type but got $(length(b)) bits instead"
-        @assert W <= 63 #julia int overflow messes this up?
+        @assert 0 < W <= 63 #julia int overflow messes this up?
         new{W}(b)
     end
 end
@@ -114,8 +114,8 @@ function uniform_ite(::Type{DistUInt{W}}, start::Int, stop::Int)::DistUInt{W} wh
     foldr( ((x,y),z) -> ifelse(x, y, z), segments[1:end-1], init=segments[end][2])
 end
 
-# Generates triangle distribution of type t and bits b
-function triangle(t::Type{DistUInt{W}}, b::Int) where W
+"Construct a triangle distribution with a range of `b` bits"
+function triangle(::Type{DistUInt{W}}, b::Int) where W
     @assert b <= W
     s = false
     n = 2^b
@@ -125,7 +125,7 @@ function triangle(t::Type{DistUInt{W}}, b::Int) where W
         x[i] = false
     end
     for i = W - b + 1:W
-        x[i] = Dice.ifelse(s, flip(1/2), flip((3n - 2)/ (4n-4)))
+        x[i] = ifelse(s, flip(1/2), flip((3n - 2) / (4n-4)))
         y[i] = flip((n-2)/(3n-2))
         s = s | (x[i] & !y[i])
         n = n/2
@@ -133,35 +133,38 @@ function triangle(t::Type{DistUInt{W}}, b::Int) where W
     return DistUInt{W}(x)
 end
 
-# bitwise Holtzen to generate a categorical distribution
-function discrete(t::Type{DistUInt{W}}, p::Vector{Float64}) where W
-    @assert sum(p) ≈ 1
+"Construct a categorical distribution from a vector of probabilities `probs` 
+(using the bitwise Holtzen encoding strategy)"
+function discrete(::Type{DistUInt{W}}, probs) where W
+    @assert sum(probs) ≈ 1 "Probabilities $probs do not sum to one ($(sum(probs)))"
+    V = ndigits(length(probs)-1; base=2)
+    probs = vcat(probs, zeros(2^V - length(probs)))
+    bits = []
 
-    function recurse(p::Vector, i, s, e, prob::Vector)
+    function recurse(i, s, e)
         if (i == 0)
-            a = sum(prob[s:e])
-            if a == 0
-                flip(0)
+            denom = sum(probs[s:e])
+            if denom == 0
+                false
             else
-                flip(sum(prob[Int((s+e+1)/2):e])/sum(prob[s:e]))
+                flip(sum(probs[Int((s+e+1)/2):e])/denom)
             end
         else
-            (Dice.ifelse(p[length(p) - i + 1], recurse(p, i-1, Int((s+e+1)/2), e, prob), recurse(p, i-1, s, Int((s+e-1)/2), prob)))
+            Dice.ifelse(bits[end-i+1], 
+                recurse(i-1, Int((s+e+1)/2), e), 
+                recurse(i-1, s, Int((s+e-1)/2)))
         end
     end
 
-    mb = length(p)
-    add = W
-    p_proxy = vcat(p, zeros(2^add - mb))
-    int_vector = []
-    for i=1:add
-        a = recurse(int_vector, i-1, 1, 2^add, p_proxy)
-        push!(int_vector, a)
+    for i=1:V
+        a = recurse(i-1, 1, 2^V)
+        push!(bits, a)
     end
-    if add == 0 DistUInt{W}(0) else DistUInt{W}(int_vector) end
+    x = DistUInt{V}(bits)
+    convert(DistUInt{W}, x)
 end
 
-function Base.convert(x::DistUInt{W1}, t::Type{DistUInt{W2}}) where W1 where W2
+function Base.convert(::Type{DistUInt{W2}}, x::DistUInt{W1}) where {W1,W2}
     if W1 <= W2
         DistUInt{W2}(vcat(fill(false, W2 - W1), x.bits))
     else

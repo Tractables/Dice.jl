@@ -207,19 +207,19 @@ end
     y = DistFixedPoint{4, 2}([true, false, true, false])
     p1 = pr(y)
 
-    z = convert(y, DistFixedPoint{5, 2})
+    z = convert(DistFixedPoint{5, 2}, y)
     p2 = pr(z)
     @test p1 == p2
 
-    z = convert(y, DistFixedPoint{5, 3})
+    z = convert(DistFixedPoint{5, 3}, y)
     p2 = pr(z)
     @test p1 == p2
 
-    z = convert(y, DistFixedPoint{3, 1})
+    z = convert(DistFixedPoint{3, 1}, y)
     p2 = pr(z)
     @test p1 == p2
 
-    z = convert(y, DistFixedPoint{3, 2})
+    z = convert(DistFixedPoint{3, 2}, y)
     p2 = pr(z)
     @test p2[0.5] ≈ 1.0
 end
