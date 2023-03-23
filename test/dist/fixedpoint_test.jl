@@ -207,19 +207,19 @@ end
     y = DistFixedPoint{4, 2}([true, false, true, false])
     p1 = pr(y)
 
-    z = convert(y, DistFixedPoint{5, 2})
+    z = convert(DistFixedPoint{5, 2}, y)
     p2 = pr(z)
     @test p1 == p2
 
-    z = convert(y, DistFixedPoint{5, 3})
+    z = convert(DistFixedPoint{5, 3}, y)
     p2 = pr(z)
     @test p1 == p2
 
-    z = convert(y, DistFixedPoint{3, 1})
+    z = convert(DistFixedPoint{3, 1}, y)
     p2 = pr(z)
     @test p1 == p2
 
-    z = convert(y, DistFixedPoint{3, 2})
+    z = convert(DistFixedPoint{3, 2}, y)
     p2 = pr(z)
     @test p2[0.5] ≈ 1.0
 end
@@ -237,9 +237,9 @@ end
     @test issetequal(keys(p), -3.0:1/8:0.125 - 1/8)
     @test all(values(p) .≈ 1/25)
    
-    flags = [true, false]
+    flags = [:ite, :arith]
     map(flags) do flag
-        y = uniform(DistFixedPoint{7, 3}, -3.0, 1.0; ite=flag)
+        y = uniform(DistFixedPoint{7, 3}, -3.0, 1.0; strategy=flag)
         p = pr(y)
     
         @test issetequal(keys(p), -3.0:1/8:1.0 - 1/8)

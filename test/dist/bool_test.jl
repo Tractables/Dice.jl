@@ -78,6 +78,9 @@ end
 
     @test pr(false)[true] ≈ 0.00
     @test pr(true)[true] ≈ 1.00
+
+    @test expectation(f) ≈ 0.78
+    @test variance(f) ≈ 0.78*(1-0.78)
 end
 
 @testset "DistBool mapreduce" begin

@@ -41,12 +41,12 @@ end
 
 @testset "DistInt casting" begin
     y = DistInt{4}([flip(0.5), false, true, true])
-    z = convert(y, DistInt{5})
+    z = convert(DistInt{5}, y)
     p1 = pr(z)
     p2 = pr(y)
     @test p1 == p2
 
-    z = convert(y, DistInt{3})
+    z = convert(DistInt{3}, y)
     p = pr(z)
     @test p[3] ≈ 1.0
 end
@@ -144,7 +144,7 @@ end
     T = DistInt{B}
     x = uniform(T,1) - T(1)
     y = uniform(T,1) - T(1)
-    s = convert(x.number, DistUInt{B+1}) + convert(y.number, DistUInt{B+1})
+    s = convert(DistUInt{B+1}, x.number) + convert(DistUInt{B+1}, y.number)
     @test Dice.num_ir_nodes(s.bits[2]) < 15 
     
 end
@@ -206,9 +206,9 @@ end
 
     @test_throws Exception y = uniform(DistInt{4}, -7, 9)
 
-    flags = [true, false]
+    flags = [:ite, :arith]
     map(flags) do flag
-        y = @dice uniform(DistInt{4}, -7, 1; ite=flag)
+        y = @dice uniform(DistInt{4}, -7, 1; strategy=flag)
         p = pr(y)
       
         @test issetequal(keys(p), -7:1:1-1)

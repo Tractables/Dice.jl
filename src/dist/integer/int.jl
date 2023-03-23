@@ -116,12 +116,12 @@ function uniform(::Type{DistInt{W}}, n = W) where W
     DistInt{W}(uniform(DistUInt{W}, n).bits)
 end
 
-function uniform(::Type{DistInt{W}}, start::Int, stop::Int; ite::Bool=false) where W
+function uniform(::Type{DistInt{W}}, start::Int, stop::Int; kwargs...) where W
     @assert start >= -(2^(W - 1))
     @assert stop <= (2^(W - 1))
     @assert start < stop
-    ans = DistInt{W+1}(uniform(DistUInt{W+1}, 0, stop - start; ite=ite)) + DistInt{W+1}(start)
-    return convert(ans, DistInt{W})
+    ans = DistInt{W+1}(uniform(DistUInt{W+1}, 0, stop - start; kwargs...)) + DistInt{W+1}(start)
+    return convert(DistInt{W}, ans)
 end
 
 # Generates a triangle on positive part of the support
@@ -134,7 +134,7 @@ end
 # casting
 ##################################
 
-function Base.convert(x::DistInt{W1}, t::Type{DistInt{W2}}) where W1 where W2
+function Base.convert(::Type{DistInt{W2}}, x::DistInt{W1}) where W1 where W2
     if W1 <= W2
         DistInt{W2}(vcat(fill(x.number.bits[1], W2 - W1), x.number.bits))
     else
@@ -169,7 +169,7 @@ function Base.ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where
 end
 
 function Base.:(+)(x::DistInt{W}, y::DistInt{W}) where W
-    ans = convert(x.number, DistUInt{W+1}) + convert(y.number, DistUInt{W+1})
+    ans = convert(DistUInt{W+1}, x.number) + convert(DistUInt{W+1}, y.number)
     # a sufficient condition for avoiding overflow is that the first two bits are all the same in both operands
     cannot_overflow = prob_equals(y.number.bits[1], y.number.bits[2]) & prob_equals(x.number.bits[1], x.number.bits[2])
     # this sufficient condition is more easily proven true than the exact one, test it first
@@ -186,8 +186,8 @@ function Base.:(-)(x::DistInt{W}, y::DistInt{W}) where W
 end
 
 function Base.:(*)(x::DistInt{W}, y::DistInt{W}) where W
-    p1 = convert(x, DistInt{2*W}).number
-    p2 = convert(y, DistInt{2*W}).number
+    p1 = convert(DistInt{2*W}, x).number
+    p2 = convert(DistInt{2*W}, y).number
     P = DistUInt{2*W}(0)
     shifted_bits = p1.bits
     for i = 2*W:-1:1
@@ -195,10 +195,10 @@ function Base.:(*)(x::DistInt{W}, y::DistInt{W}) where W
             shifted_bits = vcat(shifted_bits[2:2*W], false)
         end
         added = ifelse(p2.bits[i], DistUInt{2*W}(shifted_bits), DistUInt{2*W}(0))
-        P = convert(P, DistUInt{2*W+2}) + convert(added, DistUInt{2*W+2})
-        P = convert(P, DistUInt{2*W})
+        P = convert(DistUInt{2*W+2}, P) + convert(DistUInt{2*W+2}, added)
+        P = convert(DistUInt{2*W}, P)
     end
-    P_ans = convert(DistInt{2*W}(P), DistInt{W})
+    P_ans = convert(DistInt{W}, DistInt{2*W}(P))
     P_overflow = DistInt{W}(P.bits[1:W])
     overflow = prob_equals(P_overflow, DistInt{W}(-1)) | iszero(P_overflow)
     errorcheck() & !overflow && error("integer overflow")
@@ -219,14 +219,14 @@ function Base.:(/)(x::DistInt{W}, y::DistInt{W}) where W
     else 
         x.number 
     end
-    xp = convert(xp, DistUInt{W+1})
+    xp = convert(DistUInt{W+1}, xp)
 
     yp = @dice_ite if y.number.bits[1] 
         DistUInt{W}(1) + ~y.number
     else 
         y.number 
     end
-    yp = convert(yp, DistUInt{W+1})
+    yp = convert(DistUInt{W+1}, yp)
     ans = xp / yp
 
     isneg = xor(x.number.bits[1], y.number.bits[1]) & !iszero(ans)
@@ -247,9 +247,9 @@ function Base.:(%)(x::DistInt{W}, y::DistInt{W}) where W
     errorcheck() & iszero(y) && error("division by zero")
 
     xp = if x.number.bits[1] DistUInt{W}(1) + DistUInt{W}([!xb for xb in x.number.bits]) else x.number end
-    xp = convert(xp, DistUInt{W+1})
+    xp = convert(DistUInt{W+1}, xp)
     yp = if y.number.bits[1] DistUInt{W}(1) + DistUInt{W}([!yb for yb in y.number.bits]) else y.number end
-    yp = convert(yp, DistUInt{W+1})
+    yp = convert(DistUInt{W+1}, yp)
     ans = xp % yp
 
     isneg = x.number.bits[1] & !iszero(ans)

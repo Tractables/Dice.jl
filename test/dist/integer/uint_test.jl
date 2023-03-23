@@ -102,18 +102,18 @@ end
 
 @testset "DistUInt casting" begin
     y = DistUInt{4}([false, false, true, true]) # 3
-    z = convert(y, DistUInt{3})
+    z = convert(DistUInt{3}, y)
     p = pr(z)
     @test p[2] ≈ 0
     @test p[3] ≈ 1
     @test p[4] ≈ 0
 
     y = DistUInt{4}([flip(0.5), false, true, true]) # 3
-    code = @dice convert(y, DistUInt{3})
+    code = @dice convert(DistUInt{3}, y)
     @test_throws Exception pr(code)
 
     y = DistUInt{4}([false, false, true, flip(0.5)]) # 3
-    z = convert(y, DistUInt{5})
+    z = convert(DistUInt{5}, y)
     @test typeof(z) == DistUInt{5}
     p = pr(y)
     @test p[2] ≈ 0.5
@@ -144,18 +144,18 @@ end
 
 @testset "DistUInt casting" begin
     y = DistUInt{4}([false, false, true, true]) # 3
-    z = convert(y, DistUInt{3})
+    z = convert(DistUInt{3}, y)
     p = pr(z)
     @test p[2] ≈ 0
     @test p[3] ≈ 1
     @test p[4] ≈ 0
 
     y = DistUInt{4}([flip(0.5), false, true, true]) # 3
-    code = @dice convert(y, DistUInt{3})
+    code = @dice convert(DistUInt{3}, y)
     @test_throws Exception pr(code)
 
     y = DistUInt{4}([false, false, true, flip(0.5)]) # 3
-    z = convert(y, DistUInt{5})
+    z = convert(DistUInt{5}, y)
     @test typeof(z) == DistUInt{5}
     p = pr(y)
     @test p[2] ≈ 0.5
@@ -208,9 +208,9 @@ end
 
     end
     
-    flags = [true, false]
+    flags = [:ite, :arith]
     map(flags) do flag
-        x = uniform(DistUInt{3}, 0, 7; ite=flag)
+        x = uniform(DistUInt{3}, 0, 7; strategy=flag)
         p = pr(x)
         for i=0:6
             @test p[i] ≈ 1/7
