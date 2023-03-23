@@ -266,7 +266,7 @@ function Base.convert(x::DistUInt{W1}, t::Type{DistUInt{W2}}) where W1 where W2
         DistUInt{W2}(vcat(fill(false, W2 - W1), x.bits))
     else
         err = reduce(&, x.bits[1:W1 - W2])
-        dice_assert(!err, "throwing away bits", true)
+        err && error("throwing away bits")
         DistUInt{W2}(x.bits[W1 - W2 + 1:W1])
     end
 end
@@ -297,7 +297,7 @@ function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
         z[i] = xor(x.bits[i], y.bits[i], carry)
         carry = atleast_two(x.bits[i], y.bits[i], carry)
     end
-    dice_assert(!carry, "integer overflow in +", true)
+    # carry && error("integer overflow")
     DistUInt{W}(z)
 end
 
@@ -308,7 +308,7 @@ function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W
         z[i] = xor(x.bits[i], y.bits[i], borrow)
         borrow = ifelse(borrow, !x.bits[i] | y.bits[i], !x.bits[i] & y.bits[i])
     end
-    dice_assert(!borrow, "integer overflow in -", true)
+    # borrow && error("integer overflow")
     DistUInt{W}(z)
 end
 
@@ -328,7 +328,7 @@ end
 
 function Base.:/(p1::DistUInt{W}, p2::DistUInt{W}) where W #p1/p2
     is_zero = prob_equals(p2, DistUInt{W}(0))
-    dice_assert(!is_zero, "division by zero", true)
+    is_zero && error("division by zero")
 
     ans = Vector(undef, W)
     p1_proxy = DistUInt{W}(0)
@@ -343,7 +343,7 @@ end
 
 function Base.:%(p1::DistUInt{W}, p2::DistUInt{W}) where W #p1/p2
     is_zero = prob_equals(p2, DistUInt{W}(0))
-    dice_assert(!is_zero, "modulo by zero", true)
+    is_zero && error("division by zero")
 
     # ans = Vector(undef, W)
     p1_proxy = DistUInt{W}(0)

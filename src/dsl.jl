@@ -36,10 +36,6 @@ end
 "Assert that the current code must be run within an @dice evaluation"
 assert_dice() = error("This code must be called from within an @dice evaluation.")
 
-function dice_assert(cond, msg, suppress_warning=false)
-    suppress_warning || println("Warning: skipping dice_assert outside of @dice with \"msg $(msg)\"")
-end
-
 observe(_) = assert_dice()
 
 save_dot(_xs, _filename) = assert_dice()
@@ -100,13 +96,6 @@ path_condition(dyna) = reduce(&, dyna.path; init=true)
 
 (dyna::DiceDyna)(::typeof(save_dot), xs, filename) =
     push!(dyna.dots, (xs, filename))
-
-
-(dyna::DiceDyna)(::typeof(dice_assert), cond, msg, _suppress_warning) =
-    push!(dyna.errors, ((path_condition(dyna) & !cond), ErrorException(msg)))
-
-(dyna::DiceDyna)(::typeof(dice_assert), cond, msg) =
-    push!(dyna.errors, ((path_condition(dyna) & !cond), ErrorException(msg)))
 
 (::DiceDyna)(::typeof(==), x::Dist, y) = 
     prob_equals(x,y)
