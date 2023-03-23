@@ -206,9 +206,9 @@ end
 
     @test_throws Exception y = uniform(DistInt{4}, -7, 9)
 
-    flags = [true, false]
+    flags = [:ite, :arith]
     map(flags) do flag
-        y = @dice uniform(DistInt{4}, -7, 1; ite=flag)
+        y = @dice uniform(DistInt{4}, -7, 1; strategy=flag)
         p = pr(y)
       
         @test issetequal(keys(p), -7:1:1-1)

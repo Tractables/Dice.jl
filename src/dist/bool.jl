@@ -1,4 +1,5 @@
-export flip, prob_equals, AnyBool
+
+export flip, prob_equals, AnyBool, expectation, variance
 
 ##################################
 # types, structs, and constructors
@@ -136,3 +137,17 @@ function Base.ifelse(cond::Dist{Bool}, then::AnyBool, elze::AnyBool)
 end
   
 atleast_two(x,y,z) = (x & y) | ((x | y) & z)
+
+##################################
+# inference
+##################################
+
+"Compute the expected value of a random variable"
+expectation(x::AnyBool; kwargs...) = 
+    pr(x; kwargs...)[true]
+
+"Compute the variance of a random variable"
+function variance(x::AnyBool; kwargs...)
+    p = pr(x; kwargs...)
+    p[true] * p[false]
+end
