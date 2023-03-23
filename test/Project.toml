@@ -1,4 +1,5 @@
 [deps]
+CUDD = "345a2cc7-28d8-58b2-abdf-cff77ea7d7f1"
 Dice = "94eeadfc-1ba6-40b7-9ed8-dee71557d525"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
 IRTools = "7869d1d1-7146-5819-86e3-90919afe41df"
