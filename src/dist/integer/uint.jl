@@ -166,13 +166,16 @@ end
 
 function Base.convert(::Type{DistUInt{W2}}, x::DistUInt{W1}) where {W1,W2}
     if W1 <= W2
-        DistUInt{W2}(vcat(fill(false, W2 - W1), x.bits))
+        DistUInt{W2}(vcat(fill(false, W2-W1), x.bits))
     else
-        err = reduce(&, x.bits[1:W1 - W2])
-        err && error("throwing away bits")
-        DistUInt{W2}(x.bits[W1 - W2 + 1:W1])
+        err = reduce(&, x.bits[1:W1-W2])
+        errorcheck() & err && error("Cannot convert losslessly from bitwidth $W1 to $W2")
+        DistUInt{W2}(x.bits[W1-W2+1:W1])
     end
 end
+
+Base.zero(::Type{T}) where {T<:Dist{Int}} = T(0)
+Base.one(::Type{T}) where {T<:Dist{Int}} = T(1)
 
 ##################################
 # inference
@@ -251,12 +254,10 @@ function prob_equals(x::DistUInt{W}, y::DistUInt{W}) where W
 end
 
 function Base.isless(x::DistUInt{W}, y::DistUInt{W}) where W
-    foldr(zip(x.bits,y.bits); init=false) do bits, tail_isless
-        xbit, ybit = bits
+    foldr(zip(x.bits,y.bits); init=false) do (xbit, ybit), tail_isless
         (xbit < ybit) | prob_equals(xbit,ybit) & tail_isless
     end
 end
-
 
 Base.:(<=)(x::DistUInt{W}, y::DistUInt{W}) where W = !isless(y, x)
 Base.:(>=)(x::DistUInt{W}, y::DistUInt{W}) where W = !isless(x, y)
@@ -283,38 +284,27 @@ function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W
     DistUInt{W}(z)
 end
 
-
-function Base.:(*)(p1::DistUInt{W}, p2::DistUInt{W}) where W
-    P = DistUInt{W}(0)
-    shifted_bits = p1.bits
+function Base.:(*)(x::DistUInt{W}, y::DistUInt{W}) where W
+    z = zero(DistUInt{W})
+    shift_bits = x.bits
     for i = W:-1:1
-        if (i != W)
-            shifted_bits = vcat(shifted_bits[2:W], false)
-        end
-        added = ifelse(p2.bits[i], DistUInt{W}(shifted_bits), DistUInt{W}(0))
-        P = P + added
+        (i != W) && (shift_bits = vcat(shift_bits[2:W], false))
+        z += ifelse(y.bits[i], DistUInt{W}(shift_bits), zero(DistUInt{W}))
     end
-    P
+    z
 end 
 
-function Base.:/(p1::DistUInt{W}, p2::DistUInt{W}) where W
-    errorcheck() & iszero(p2) && error("division by zero")
-
+function Base.:/(x::DistUInt{W}, y::DistUInt{W}) where W
+    errorcheck() & iszero(y) && error("division by zero")
     ans = Vector(undef, W)
-    p1_proxy = DistUInt{W}(0)
-
+    x_proxy = zero(DistUInt{W})
     for i = 1:W
-        p1_proxy = DistUInt{W}(vcat(p1_proxy.bits[2:W], p1.bits[i]))
-        ans[i] = ifelse(p2 > p1_proxy, false, true)
-        p1_proxy = @dice_ite if p2 > p1_proxy 
-            p1_proxy 
-        else 
-            # make sure this is guarded (i.e., not using `ifelse``) to avoid underflow
-            p1_proxy - p2
-        end
+        x_proxy = DistUInt{W}(vcat(x_proxy.bits[2:W], x.bits[i]))
+        ans[i] = (y <= x_proxy)
+        x_proxy -= ifelse(ans[i], y, zero(DistUInt{W}))
     end
     DistUInt{W}(ans)
-end 
+end
 
 function Base.:%(p1::DistUInt{W}, p2::DistUInt{W}) where W 
     errorcheck() & iszero(p2) && error("division by zero")
