@@ -306,20 +306,14 @@ function Base.:/(x::DistUInt{W}, y::DistUInt{W}) where W
     DistUInt{W}(ans)
 end
 
-function Base.:%(p1::DistUInt{W}, p2::DistUInt{W}) where W 
-    errorcheck() & iszero(p2) && error("division by zero")
-
-    p1_proxy = DistUInt{W}(0)
+function Base.:%(x::DistUInt{W}, y::DistUInt{W}) where W 
+    errorcheck() & iszero(y) && error("division by zero")
+    x_proxy = zero(DistUInt{W})
     for i = 1:W
-        p1_proxy = DistUInt{W}(vcat(p1_proxy.bits[2:W], p1.bits[i]))
-        p1_proxy = @dice_ite if p2 > p1_proxy 
-            p1_proxy 
-        else 
-            # make sure this is guarded (i.e., not using `ifelse``) to avoid underflow
-            p1_proxy - p2 
-        end
+        x_proxy = DistUInt{W}(vcat(x_proxy.bits[2:W], x.bits[i]))
+        x_proxy -= ifelse((y <= x_proxy), y, zero(DistUInt{W}))
     end
-    p1_proxy
+    x_proxy
 end 
 
 function Base.:~(x::DistUInt{W}) where W 
