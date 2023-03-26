@@ -149,10 +149,11 @@ end
     @test p[2] ≈ 0
     @test p[3] ≈ 1
     @test p[4] ≈ 0
+    @test_nowarn convert(DistUInt{3}, y)
 
     y = DistUInt{4}([flip(0.5), false, true, true]) # 3
     code = @dice convert(DistUInt{3}, y)
-    @test_throws Exception pr(code)
+    @test_throws ProbException pr(code)
 
     y = DistUInt{4}([false, false, true, flip(0.5)]) # 3
     z = convert(DistUInt{5}, y)
@@ -160,6 +161,9 @@ end
     p = pr(y)
     @test p[2] ≈ 0.5
     @test p[3] ≈ 0.5
+
+    x = DistUInt{4}([false, flip(0.5), true, true])
+    @test_throws ProbException pr(@dice convert(DistUInt{2}, x))
 end
 
 @testset "DistUInt expectation" begin

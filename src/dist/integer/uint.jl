@@ -168,10 +168,18 @@ function Base.convert(::Type{DistUInt{W2}}, x::DistUInt{W1}) where {W1,W2}
     if W1 <= W2
         DistUInt{W2}(vcat(fill(false, W2-W1), x.bits))
     else
-        err = reduce(&, x.bits[1:W1-W2])
-        errorcheck() & err && error("Cannot convert losslessly from bitwidth $W1 to $W2")
-        DistUInt{W2}(x.bits[W1-W2+1:W1])
+        if errorcheck()
+            err = reduce(|, x.bits[1:W1-W2])
+            err && error("Cannot convert `DistUInt` losslessly from bitwidth $W1 to $W2: $(x.bits)")
+        end
+        drop_bits(DistUInt{W2}, x)
     end
+end
+
+"Reduce bit width by dropping the leading bits, whatever they are"
+function drop_bits(::Type{DistUInt{W2}}, x::DistUInt{W1}) where {W1,W2}
+    @assert W2 < W1
+    DistUInt{W2}(x.bits[W1-W2+1:end])
 end
 
 Base.zero(::Type{T}) where {T<:Dist{Int}} = T(0)
