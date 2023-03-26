@@ -107,27 +107,25 @@ end
 function Base.isless(x::DistInt{W}, y::DistInt{W}) where W
     ifelse(x.number.bits[1] & !y.number.bits[1], 
         true, 
-    ifelse(!x.number.bits[1] & y.number.bits[1], 
+        ifelse(!x.number.bits[1] & y.number.bits[1], 
             false, 
-            isless(DistUInt{W-1}(x.number.bits[2:W]), DistUInt{W-1}(y.number.bits[2:W])))
+            isless(DistUInt{W-1}(x.number.bits[2:W]), DistUInt{W-1}(y.number.bits[2:W]))
+        )
     )
 end
-
-Base.:(<=)(x::DistInt{W}, y::DistInt{W}) where W = !isless(y, x)
-Base.:(>=)(x::DistInt{W}, y::DistInt{W}) where W = !isless(x, y)
 
 function Base.ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where W
     DistInt{W}(ifelse(cond, then.number, elze.number))
 end
 
 function Base.:(+)(x::DistInt{W}, y::DistInt{W}) where W
-    ans = convert(DistUInt{W+1}, x.number) + convert(DistUInt{W+1}, y.number)
-    # a sufficient condition for avoiding overflow is that the first two bits are all the same in both operands
-    cannot_overflow = prob_equals(y.number.bits[1], y.number.bits[2]) & prob_equals(x.number.bits[1], x.number.bits[2])
-    # this sufficient condition is more easily proven true than the exact one, test it first
-    overflow = !cannot_overflow & ((!x.number.bits[1] & !y.number.bits[1] & ans.bits[2]) | (x.number.bits[1] & y.number.bits[1] & !ans.bits[2]))
-    errorcheck() & overflow && error("integer overflow or underflow")
-    DistInt{W}(ans.bits[2:W+1])
+    z = convert(DistUInt{W+1}, x.number) + convert(DistUInt{W+1}, y.number)
+    if errorcheck()
+        overflow = ((!x.number.bits[1] & !y.number.bits[1] & z.bits[2]) | 
+                    (x.number.bits[1] & y.number.bits[1] & !z.bits[2]))
+        overflow && error("integer overflow or underflow")
+    end
+    DistInt{W}(drop_bits(DistUInt{W}, z))
 end
 
 function Base.:(-)(x::DistInt{W}, y::DistInt{W}) where W
