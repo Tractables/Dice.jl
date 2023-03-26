@@ -1,10 +1,11 @@
 
-export DistInt, DistInt8, DistInt16, DistInt32, DistInt64, DistInt128
+export DistInt, DistInt8, DistInt16, DistInt32
 
 ##################################
 # types, structs, and constructors
 ##################################
 
+"A signed random W-bit integer in two's complement"
 struct DistInt{W} <: Dist{Int}
     number::DistUInt{W}
 end
@@ -13,18 +14,45 @@ function DistInt{W}(b::AbstractVector) where W
     DistInt{W}(DistUInt{W}(b))
 end
 
-function DistInt{W}(i::Int) where W
-    @assert i < 2^(W-1)
-    @assert i >= -(2^(W-1))
-    new_i = ifelse(i >= 0, i, i + 2^W)
-    DistInt{W}(DistUInt{W}(new_i))
+function DistInt{W}(x::Int) where W
+    @assert -(2^(W-1)) <= x < 2^(W-1)
+    unsignedx = ifelse(x >= 0, x, x+2^W)
+    DistInt{W}(DistUInt{W}(unsignedx))
 end
 
 const DistInt8 = DistInt{8}
 const DistInt16 = DistInt{16}
 const DistInt32= DistInt{32}
-const DistInt64 = DistInt{64}
-const DistInt128 = DistInt{128}
+
+function uniform(::Type{DistInt{W}}, n = W) where W
+    DistInt{W}(uniform(DistUInt{W}, n).bits)
+end
+
+function uniform(::Type{DistInt{W}}, start::Int, stop::Int; kwargs...) where W
+    @assert -(2^(W - 1)) <= start < stop <= (2^(W - 1))
+    xoff = uniform(DistUInt{W+1}, 0, stop-start; kwargs...)
+    x = DistInt{W+1}(xoff) + DistInt{W+1}(start)
+    return convert(DistInt{W}, x)
+end
+
+# Generates a triangle on positive part of the support
+function triangle(t::Type{DistInt{W}}, b::Int) where W
+    @assert b < W
+    DistInt(triangle(DistUInt{W}, b))
+end
+
+function Base.convert(::Type{DistInt{W2}}, x::DistInt{W1}) where W1 where W2
+    bits = x.number.bits
+    if W1 <= W2
+        DistInt{W2}(vcat(fill(bits[1], W2 - W1), bits))
+    else
+        if errorcheck()
+            err = any(b -> !prob_equals(b, bits[W1-W2+1]), bits[1:W1-W2])
+            err && error("Cannot convert `DistInt` losslessly from bitwidth $W1 to $W2: $bits")
+        end
+        DistInt{W2}(bits[W1-W2+1:W1])
+    end
+end
 
 ##################################
 # inference
@@ -112,42 +140,6 @@ end
 
 bitwidth(::DistInt{W}) where W = W
 
-function uniform(::Type{DistInt{W}}, n = W) where W
-    DistInt{W}(uniform(DistUInt{W}, n).bits)
-end
-
-function uniform(::Type{DistInt{W}}, start::Int, stop::Int; kwargs...) where W
-    @assert start >= -(2^(W - 1))
-    @assert stop <= (2^(W - 1))
-    @assert start < stop
-    ans = DistInt{W+1}(uniform(DistUInt{W+1}, 0, stop - start; kwargs...)) + DistInt{W+1}(start)
-    return convert(DistInt{W}, ans)
-end
-
-# Generates a triangle on positive part of the support
-function triangle(t::Type{DistInt{W}}, b::Int) where W
-    @assert b < W
-    DistInt(triangle(DistUInt{W}, b))
-end
-
-##################################
-# casting
-##################################
-
-function Base.convert(::Type{DistInt{W2}}, x::DistInt{W1}) where W1 where W2
-    if W1 <= W2
-        DistInt{W2}(vcat(fill(x.number.bits[1], W2 - W1), x.number.bits))
-    else
-        #TODO: throw error if msb is not irrelevant
-        DistInt{W2}(x.number.bits[W1 - W2 + 1:W1])
-    end
-end
-
-
-# ##################################
-# # other method overloading
-# ##################################
-
 function prob_equals(x::DistInt{W}, y::DistInt{W}) where W
     prob_equals(x.number, y.number)
 end
@@ -196,7 +188,7 @@ function Base.:(*)(x::DistInt{W}, y::DistInt{W}) where W
         end
         added = ifelse(p2.bits[i], DistUInt{2*W}(shifted_bits), DistUInt{2*W}(0))
         P = convert(DistUInt{2*W+2}, P) + convert(DistUInt{2*W+2}, added)
-        P = convert(DistUInt{2*W}, P)
+        P = drop_bits(DistUInt{2*W}, P)
     end
     P_ans = convert(DistInt{W}, DistInt{2*W}(P))
     P_overflow = DistInt{W}(P.bits[1:W])
