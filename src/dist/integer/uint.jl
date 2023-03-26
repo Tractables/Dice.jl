@@ -290,6 +290,12 @@ function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
     DistUInt{W}(z)
 end
 
+"Perform addition while ignoring overflow bits"
+function overflow_sum(x::DistUInt{W}, y::DistUInt{W}) where W
+    z = convert(DistUInt{W+1}, x) + convert(DistUInt{W+1}, y)
+    drop_bits(DistUInt{W}, z)
+end
+
 function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W
     z = Vector{AnyBool}(undef, W)
     borrow = false
@@ -301,12 +307,16 @@ function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W
     DistUInt{W}(z)
 end
 
+function Base.:(<<)(x::DistUInt{W}, n) where W
+    @assert 0 <= n <= W
+    DistUInt{W}(vcat(x.bits[n+1:end], falses(n)))
+end
+
 function Base.:(*)(x::DistUInt{W}, y::DistUInt{W}) where W
     z = zero(DistUInt{W})
-    shift_bits = x.bits
     for i = W:-1:1
-        (i != W) && (shift_bits = vcat(shift_bits[2:W], false))
-        z += ifelse(y.bits[i], DistUInt{W}(shift_bits), zero(DistUInt{W}))
+        (i != W) && (x <<= 1)
+        z += ifelse(y.bits[i], x, zero(DistUInt{W}))
     end
     z
 end 
