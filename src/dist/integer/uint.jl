@@ -202,9 +202,14 @@ function frombits(x::DistUInt{W}, world) where W
     v
 end
 
-function expectation(x::DistUInt{W}; kwargs...) where W
-    ans = 0
+function expectation(x::DistUInt; kwargs...)
     bitprobs = pr(x.bits...; kwargs...)
+    expectation(bitprobs)
+end
+
+function expectation(bitprobs)
+    W = length(bitprobs)
+    ans = 0
     start = 2^(W-1)
     for i=1:W
         ans += start * bitprobs[i][true]
@@ -213,7 +218,7 @@ function expectation(x::DistUInt{W}; kwargs...) where W
     ans
 end
 
-function variance(x::DistUInt{W}; kwargs...) where W
+function variance_probs(x::DistUInt{W}; kwargs...) where W
     queries = Vector(undef, Int((W * (W-1))/2))
     counter = 1
     for i = 1:W-1, j = i+1:W
@@ -233,7 +238,11 @@ function variance(x::DistUInt{W}; kwargs...) where W
         probs[i, i] = prs[i][true]
     end
     probs[W, W] = prs[W][true]
-    
+    probs
+end
+
+function variance(x::DistUInt{W}; kwargs...) where W
+    probs = variance_probs(x; kwargs...)
     ans = 0
     exponent1 = 1
     for i = 1:W
