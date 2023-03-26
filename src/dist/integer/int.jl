@@ -121,40 +121,34 @@ end
 function Base.:(+)(x::DistInt{W}, y::DistInt{W}) where W
     z = convert(DistUInt{W+1}, x.number) + convert(DistUInt{W+1}, y.number)
     if errorcheck()
-        overflow = ((!x.number.bits[1] & !y.number.bits[1] & z.bits[2]) | 
-                    (x.number.bits[1] & y.number.bits[1] & !z.bits[2]))
+        overflow = ((!x.number.bits[1] & !y.number.bits[1] &  z.bits[2]) | 
+                    ( x.number.bits[1] &  y.number.bits[1] & !z.bits[2]))
         overflow && error("integer overflow or underflow")
     end
-    DistInt{W}(drop_bits(DistUInt{W}, z))
+    DistInt{W}(drop_bits(DistUInt{W},z))
 end
 
 function Base.:(-)(x::DistInt{W}, y::DistInt{W}) where W
-    ans = DistUInt{W+1}(vcat([true], x.number.bits)) - DistUInt{W+1}(vcat([false], y.number.bits))
-    borrow = (!x.number.bits[1] & y.number.bits[1] & ans.bits[2]) | (x.number.bits[1] & !y.number.bits[1] & !ans.bits[2])
-    errorcheck() & borrow && error("integer overflow or underflow")
-    DistInt{W}(ans.bits[2:W+1])
+    z  = DistUInt{W+1}([true,  x.number.bits...]) 
+    z -= DistUInt{W+1}([false, y.number.bits...])
+    if errorcheck() 
+        borrow = (!x.number.bits[1] &  y.number.bits[1] &  z.bits[2]) | 
+                  (x.number.bits[1] & !y.number.bits[1] & !z.bits[2])
+        borrow && error("integer overflow or underflow")
+    end
+    DistInt{W}(drop_bits(DistUInt{W},z))
 end
 
 function Base.:(*)(x::DistInt{W}, y::DistInt{W}) where W
-    p1 = convert(DistInt{2*W}, x).number
-    p2 = convert(DistInt{2*W}, y).number
-    P = DistUInt{2*W}(0)
-    shifted_bits = p1.bits
-    for i = 2*W:-1:1
-        if (i != 2*W)
-            shifted_bits = vcat(shifted_bits[2:2*W], false)
-        end
-        added = ifelse(p2.bits[i], DistUInt{2*W}(shifted_bits), DistUInt{2*W}(0))
-        P = convert(DistUInt{2*W+2}, P) + convert(DistUInt{2*W+2}, added)
-        P = drop_bits(DistUInt{2*W}, P)
+    ux = convert(DistInt{2W}, x).number
+    uy = convert(DistInt{2W}, y).number
+    uz = zero(DistUInt{2W})
+    for i = 2W:-1:1
+        (i != 2W) && (ux <<= 1)
+        added = ifelse(uy.bits[i], ux, zero(DistUInt{2W}))
+        uz = overflow_sum(uz, added)
     end
-    P_ans = convert(DistInt{W}, DistInt{2*W}(P))
-    P_overflow = DistInt{W}(P.bits[1:W])
-    overflow = prob_equals(P_overflow, DistInt{W}(-1)) | iszero(P_overflow)
-    errorcheck() & !overflow && error("integer overflow")
-    overflow = !iszero(x) & !iszero(y) & ((!xor(p1.bits[W+1], p2.bits[W+1]) & P.bits[W+1]) | (xor(p1.bits[W+1], p2.bits[W+1]) & !P.bits[W+1]))
-    errorcheck() & overflow && error("integer overflow")
-    return P_ans
+    convert(DistInt{W}, DistInt{2W}(uz)) # there is an overflow check happening here
 end
 
 function Base.:(/)(x::DistInt{W}, y::DistInt{W}) where W
