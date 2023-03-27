@@ -181,24 +181,13 @@ function Base.:(/)(x::DistInt{W}, y::DistInt{W}) where W
     end
     uz =  unsigned_abs(x) /  unsigned_abs(y)
     z = convert(DistInt{W+1}, uz) # increase bit width to represent abs of min value
-    isneg = xor(signbit(x), signbit(y)) & !iszero(z)
-    z = ifelse(isneg, -z, z)
+    z = ifelse(xor(signbit(x), signbit(y)), -z, z)
     convert(DistInt{W}, z)
 end
 
 function Base.:(%)(x::DistInt{W}, y::DistInt{W}) where W
-
     errorcheck() & iszero(y) && error("division by zero")
-
-    xp = if signbit(x) one(DistUInt{W}) + DistUInt{W}([!xb for xb in x.number.bits]) else x.number end
-    xp = convert(DistUInt{W+1}, xp)
-    yp = if signbit(y) one(DistUInt{W}) + DistUInt{W}([!yb for yb in y.number.bits]) else y.number end
-    yp = convert(DistUInt{W+1}, yp)
-    ans = xp % yp
-
-    isneg = signbit(x) & !iszero(ans)
-
-    ans = if isneg one(DistUInt{W+1}) + DistUInt{W+1}([!ansb for ansb in ans.bits]) else ans end
-    ans = DistInt{W}(ans.bits[2:W+1])
-    return ans
+    uz = unsigned_abs(x) % unsigned_abs(y)
+    z = convert(DistInt{W}, uz)
+    ifelse(signbit(x), -z, z)
 end
