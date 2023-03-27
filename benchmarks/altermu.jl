@@ -2,7 +2,7 @@ using Pkg; Pkg.activate(@__DIR__)
 using Dice, Distributions
 
 precision = 0
-DFiP = DistFixedPoint{4+precision, precision}
+DFiP = DistFix{4+precision, precision}
 num_pieces = 2
 truncation = (-8.0, 8.0)
 add_arg = false

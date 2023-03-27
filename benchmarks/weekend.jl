@@ -2,7 +2,7 @@ using Pkg; Pkg.activate(@__DIR__)
 using Dice, Distributions
 
 precision = 5
-DFiP = DistFixedPoint{9+precision, precision}
+DFiP = DistFix{9+precision, precision}
 num_pieces = 128
 
 code = @dice begin

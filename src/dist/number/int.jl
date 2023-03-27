@@ -179,7 +179,7 @@ function Base.:(/)(x::DistInt{W}, y::DistInt{W}) where W
         iszero(y) && error("division by zero")
         prob_equals(x, DistInt{W}(-2^(W-1))) & prob_equals(y, DistInt{W}(-1)) && error("integer overflow")
     end
-    uz =  unsigned_abs(x) /  unsigned_abs(y)
+    uz = unsigned_abs(x) / unsigned_abs(y)
     z = convert(DistInt{W+1}, uz) # increase bit width to represent abs of min value
     z = ifelse(xor(signbit(x), signbit(y)), -z, z)
     convert(DistInt{W}, z)
