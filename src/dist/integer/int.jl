@@ -1,5 +1,5 @@
 
-export DistInt, DistInt8, DistInt16, DistInt32
+export DistInt, DistInt8, DistInt16, DistInt32, unsigned_abs
 
 ##################################
 # types, structs, and constructors
@@ -15,7 +15,7 @@ function DistInt{W}(b::AbstractVector) where W
 end
 
 function DistInt{W}(x::Int) where W
-    @assert -(2^(W-1)) <= x < 2^(W-1)
+    @assert -(2^(W-1)) <= x < 2^(W-1) "Number $x cannot be represented by a `DistInt{$W}`"
     unsignedx = ifelse(x >= 0, x, x+2^W)
     DistInt{W}(DistUInt{W}(unsignedx))
 end
@@ -41,6 +41,10 @@ function triangle(t::Type{DistInt{W}}, b::Int) where W
     DistInt(triangle(DistUInt{W}, b))
 end
 
+function Base.convert(::Type{T}, x::DistUInt{W1}) where T <: DistInt where W1
+    convert(T, DistInt{W1+1}(x))
+end
+
 function Base.convert(::Type{DistInt{W2}}, x::DistInt{W1}) where W1 where W2
     bits = x.number.bits
     if W1 <= W2
@@ -61,7 +65,7 @@ end
 tobits(x::DistInt) = tobits(x.number)
 
 function frombits(x::DistInt{W}, world) where W
-    base = frombits(x.number.bits[1], world) ? -2^(W-1) : 0
+    base = frombits(signbit(x), world) ? -2^(W-1) : 0
     base + frombits(drop_bits(DistUInt{W-1}, x.number), world)
 end
 
@@ -105,9 +109,9 @@ function prob_equals(x::DistInt{W}, y::DistInt{W}) where W
 end
 
 function Base.isless(x::DistInt{W}, y::DistInt{W}) where W
-    ifelse(x.number.bits[1] & !y.number.bits[1], 
+    ifelse(signbit(x) & !signbit(y), 
         true, 
-        ifelse(!x.number.bits[1] & y.number.bits[1], 
+        ifelse(!signbit(x) & signbit(y), 
             false, 
             isless(DistUInt{W-1}(x.number.bits[2:W]), DistUInt{W-1}(y.number.bits[2:W]))
         )
@@ -118,22 +122,41 @@ function Base.ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where
     DistInt{W}(ifelse(cond, then.number, elze.number))
 end
 
+"Compute the absolute value of a `DistInt{W}` as a `DistUInt{W}`"
+function unsigned_abs(x::DistInt{W}) where W
+    xp = ifelse(signbit(x), ~x.number, x.number)
+    xpadd = ifelse(signbit(x), one(DistUInt{W}), zero(DistUInt{W}))
+    xp + xpadd
+end
+
+Base.signbit(x::DistInt) = 
+    x.number.bits[1]
+
+function drop_bits(::Type{DistInt{W}}, x::DistInt) where W
+    DistInt{W}(drop_bits(DistUInt{W}, x.number))
+end
+
 function Base.:(+)(x::DistInt{W}, y::DistInt{W}) where W
     z = convert(DistUInt{W+1}, x.number) + convert(DistUInt{W+1}, y.number)
     if errorcheck()
-        overflow = ((!x.number.bits[1] & !y.number.bits[1] &  z.bits[2]) | 
-                    ( x.number.bits[1] &  y.number.bits[1] & !z.bits[2]))
+        overflow = ((!signbit(x) & !signbit(y) &  z.bits[2]) | 
+                    ( signbit(x) &  signbit(y) & !z.bits[2]))
         overflow && error("integer overflow or underflow")
     end
-    DistInt{W}(drop_bits(DistUInt{W},z))
+    DistInt{W}(drop_bits(DistUInt{W}, z))
+end
+
+function Base.:(-)(x::DistInt{W}) where W
+    errorcheck() & prob_equals(x, DistInt{W}(-2^(W-1))) && error("integer overflow in `-$x`")
+    DistInt{W}(overflow_sum(~x.number, one(DistUInt{W})))
 end
 
 function Base.:(-)(x::DistInt{W}, y::DistInt{W}) where W
     z  = DistUInt{W+1}([true,  x.number.bits...]) 
     z -= DistUInt{W+1}([false, y.number.bits...])
     if errorcheck() 
-        borrow = (!x.number.bits[1] &  y.number.bits[1] &  z.bits[2]) | 
-                  (x.number.bits[1] & !y.number.bits[1] & !z.bits[2])
+        borrow = (!signbit(x) &  signbit(y) &  z.bits[2]) | 
+                  (signbit(x) & !signbit(y) & !z.bits[2])
         borrow && error("integer overflow or underflow")
     end
     DistInt{W}(drop_bits(DistUInt{W},z))
@@ -154,51 +177,28 @@ end
 function Base.:(/)(x::DistInt{W}, y::DistInt{W}) where W
     if errorcheck()
         iszero(y) && error("division by zero")
-        overflow = prob_equals(x, DistInt{W}(-2^(W-1))) & prob_equals(y, DistInt{W}(-1))
-        errorcheck() & overflow && error("integer overflow")
+        prob_equals(x, DistInt{W}(-2^(W-1))) & prob_equals(y, DistInt{W}(-1)) && error("integer overflow")
     end
-
-    xp = @dice_ite if x.number.bits[1]
-        DistUInt{W}(1) + ~x.number
-    else 
-        x.number 
-    end
-    xp = convert(DistUInt{W+1}, xp)
-
-    yp = @dice_ite if y.number.bits[1] 
-        DistUInt{W}(1) + ~y.number
-    else 
-        y.number 
-    end
-    yp = convert(DistUInt{W+1}, yp)
-    ans = xp / yp
-
-    isneg = xor(x.number.bits[1], y.number.bits[1]) & !iszero(ans)
-
-    ans = @dice_ite if isneg 
-        DistUInt{W+1}(1) + DistUInt{W+1}([!ansb for ansb in ans.bits]) 
-    else 
-        ans 
-    end
-    ans = DistInt{W}(ans.bits[2:W+1])
-    return ans
+    uz =  unsigned_abs(x) /  unsigned_abs(y)
+    z = convert(DistInt{W+1}, uz) # increase bit width to represent abs of min value
+    isneg = xor(signbit(x), signbit(y)) & !iszero(z)
+    z = ifelse(isneg, -z, z)
+    convert(DistInt{W}, z)
 end
 
 function Base.:(%)(x::DistInt{W}, y::DistInt{W}) where W
-    # overflow = prob_equals(x, DistInt{W}(-2^(W-1))) & prob_equals(y, DistInt{W}(-1))
-    # overflow && error("integer overflow")
 
     errorcheck() & iszero(y) && error("division by zero")
 
-    xp = if x.number.bits[1] DistUInt{W}(1) + DistUInt{W}([!xb for xb in x.number.bits]) else x.number end
+    xp = if signbit(x) one(DistUInt{W}) + DistUInt{W}([!xb for xb in x.number.bits]) else x.number end
     xp = convert(DistUInt{W+1}, xp)
-    yp = if y.number.bits[1] DistUInt{W}(1) + DistUInt{W}([!yb for yb in y.number.bits]) else y.number end
+    yp = if signbit(y) one(DistUInt{W}) + DistUInt{W}([!yb for yb in y.number.bits]) else y.number end
     yp = convert(DistUInt{W+1}, yp)
     ans = xp % yp
 
-    isneg = x.number.bits[1] & !iszero(ans)
+    isneg = signbit(x) & !iszero(ans)
 
-    ans = if isneg DistUInt{W+1}(1) + DistUInt{W+1}([!ansb for ansb in ans.bits]) else ans end
+    ans = if isneg one(DistUInt{W+1}) + DistUInt{W+1}([!ansb for ansb in ans.bits]) else ans end
     ans = DistInt{W}(ans.bits[2:W+1])
     return ans
 end

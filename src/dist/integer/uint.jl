@@ -9,7 +9,7 @@ export DistUInt, DistUInt8, DistUInt16, DistUInt32,
 struct DistUInt{W} <: Dist{Int}
     # first index is most significant bit
     bits::Vector{AnyBool}
-    function DistUInt{W}(b) where W
+    function DistUInt{W}(b::AbstractVector) where W
         @assert length(b) == W "Expected $W bits from type but got $(length(b)) bits instead"
         @assert 0 < W <= 63 #julia int overflow messes this up?
         new{W}(b)
@@ -178,7 +178,7 @@ end
 
 "Reduce bit width by dropping the leading bits, whatever they are"
 function drop_bits(::Type{DistUInt{W2}}, x::DistUInt{W1}) where {W1,W2}
-    @assert W2 < W1
+    @assert W2 <= W1
     DistUInt{W2}(x.bits[W1-W2+1:end])
 end
 
@@ -286,7 +286,7 @@ function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
         z[i] = xor(x.bits[i], y.bits[i], carry)
         carry = atleast_two(x.bits[i], y.bits[i], carry)
     end
-    errorcheck() & carry && error("integer overflow in `+`")
+    errorcheck() & carry && error("integer overflow in `$x + $y`")
     DistUInt{W}(z)
 end
 
