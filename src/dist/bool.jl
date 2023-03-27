@@ -135,7 +135,8 @@ function Base.ifelse(cond::Dist{Bool}, then::AnyBool, elze::AnyBool)
     # TODO special case some DistNot branches
     (cond & then) | (!cond & elze)
 end
-  
+
+"Test whether at least two of three arguments are true"
 atleast_two(x,y,z) = (x & y) | ((x | y) & z)
 
 ##################################

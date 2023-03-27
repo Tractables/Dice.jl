@@ -9,7 +9,7 @@ export DistUInt, DistUInt8, DistUInt16, DistUInt32,
 struct DistUInt{W} <: Dist{Int}
     # first index is most significant bit
     bits::Vector{AnyBool}
-    function DistUInt{W}(b) where W
+    function DistUInt{W}(b::AbstractVector) where W
         @assert length(b) == W "Expected $W bits from type but got $(length(b)) bits instead"
         @assert 0 < W <= 63 #julia int overflow messes this up?
         new{W}(b)
@@ -166,13 +166,24 @@ end
 
 function Base.convert(::Type{DistUInt{W2}}, x::DistUInt{W1}) where {W1,W2}
     if W1 <= W2
-        DistUInt{W2}(vcat(fill(false, W2 - W1), x.bits))
+        DistUInt{W2}(vcat(fill(false, W2-W1), x.bits))
     else
-        err = reduce(&, x.bits[1:W1 - W2])
-        err && error("throwing away bits")
-        DistUInt{W2}(x.bits[W1 - W2 + 1:W1])
+        if errorcheck()
+            err = reduce(|, x.bits[1:W1-W2])
+            err && error("Cannot convert `DistUInt` losslessly from bitwidth $W1 to $W2: $(x.bits)")
+        end
+        drop_bits(DistUInt{W2}, x)
     end
 end
+
+"Reduce bit width by dropping the leading bits, whatever they are"
+function drop_bits(::Type{DistUInt{W2}}, x::DistUInt{W1}) where {W1,W2}
+    @assert W2 <= W1
+    DistUInt{W2}(x.bits[W1-W2+1:end])
+end
+
+Base.zero(::Type{T}) where {T<:Dist{Int}} = T(0)
+Base.one(::Type{T}) where {T<:Dist{Int}} = T(1)
 
 ##################################
 # inference
@@ -191,9 +202,14 @@ function frombits(x::DistUInt{W}, world) where W
     v
 end
 
-function expectation(x::DistUInt{W}; kwargs...) where W
-    ans = 0
+function expectation(x::DistUInt; kwargs...)
     bitprobs = pr(x.bits...; kwargs...)
+    expectation(bitprobs)
+end
+
+function expectation(bitprobs)
+    W = length(bitprobs)
+    ans = 0
     start = 2^(W-1)
     for i=1:W
         ans += start * bitprobs[i][true]
@@ -202,7 +218,7 @@ function expectation(x::DistUInt{W}; kwargs...) where W
     ans
 end
 
-function variance(x::DistUInt{W}; kwargs...) where W
+function variance_probs(x::DistUInt{W}; kwargs...) where W
     queries = Vector(undef, Int((W * (W-1))/2))
     counter = 1
     for i = 1:W-1, j = i+1:W
@@ -222,7 +238,11 @@ function variance(x::DistUInt{W}; kwargs...) where W
         probs[i, i] = prs[i][true]
     end
     probs[W, W] = prs[W][true]
-    
+    probs
+end
+
+function variance(x::DistUInt{W}; kwargs...) where W
+    probs = variance_probs(x; kwargs...)
     ans = 0
     exponent1 = 1
     for i = 1:W
@@ -251,15 +271,13 @@ function prob_equals(x::DistUInt{W}, y::DistUInt{W}) where W
 end
 
 function Base.isless(x::DistUInt{W}, y::DistUInt{W}) where W
-    foldr(zip(x.bits,y.bits); init=false) do bits, tail_isless
-        xbit, ybit = bits
+    foldr(zip(x.bits,y.bits); init=false) do (xbit, ybit), tail_isless
         (xbit < ybit) | prob_equals(xbit,ybit) & tail_isless
     end
 end
 
-
-Base.:(<=)(x::DistUInt{W}, y::DistUInt{W}) where W = !isless(y, x)
-Base.:(>=)(x::DistUInt{W}, y::DistUInt{W}) where W = !isless(x, y)
+Base.:(<=)(x::Dist{Int}, y::Dist{Int}) = !isless(y, x)
+Base.:(>=)(x::Dist{Int}, y::Dist{Int}) = !isless(x, y)
 
 function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
     z = Vector{AnyBool}(undef, W)
@@ -268,8 +286,14 @@ function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
         z[i] = xor(x.bits[i], y.bits[i], carry)
         carry = atleast_two(x.bits[i], y.bits[i], carry)
     end
-    errorcheck() & carry && error("integer overflow in `+`")
+    errorcheck() & carry && error("integer overflow in `$x + $y`")
     DistUInt{W}(z)
+end
+
+"Perform addition while ignoring overflow bits"
+function overflow_sum(x::DistUInt{W}, y::DistUInt{W}) where W
+    z = convert(DistUInt{W+1}, x) + convert(DistUInt{W+1}, y)
+    drop_bits(DistUInt{W}, z)
 end
 
 function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W
@@ -283,53 +307,40 @@ function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W
     DistUInt{W}(z)
 end
 
+function Base.:(<<)(x::DistUInt{W}, n) where W
+    @assert 0 <= n <= W
+    DistUInt{W}(vcat(x.bits[n+1:end], falses(n)))
+end
 
-function Base.:(*)(p1::DistUInt{W}, p2::DistUInt{W}) where W
-    P = DistUInt{W}(0)
-    shifted_bits = p1.bits
+function Base.:(*)(x::DistUInt{W}, y::DistUInt{W}) where W
+    z = zero(DistUInt{W})
     for i = W:-1:1
-        if (i != W)
-            shifted_bits = vcat(shifted_bits[2:W], false)
-        end
-        added = ifelse(p2.bits[i], DistUInt{W}(shifted_bits), DistUInt{W}(0))
-        P = P + added
+        (i != W) && (x <<= 1)
+        z += ifelse(y.bits[i], x, zero(DistUInt{W}))
     end
-    P
+    z
 end 
 
-function Base.:/(p1::DistUInt{W}, p2::DistUInt{W}) where W
-    errorcheck() & iszero(p2) && error("division by zero")
-
+function Base.:/(x::DistUInt{W}, y::DistUInt{W}) where W
+    errorcheck() & iszero(y) && error("division by zero")
     ans = Vector(undef, W)
-    p1_proxy = DistUInt{W}(0)
-
+    x_proxy = zero(DistUInt{W})
     for i = 1:W
-        p1_proxy = DistUInt{W}(vcat(p1_proxy.bits[2:W], p1.bits[i]))
-        ans[i] = ifelse(p2 > p1_proxy, false, true)
-        p1_proxy = @dice_ite if p2 > p1_proxy 
-            p1_proxy 
-        else 
-            # make sure this is guarded (i.e., not using `ifelse``) to avoid underflow
-            p1_proxy - p2
-        end
+        x_proxy = DistUInt{W}(vcat(x_proxy.bits[2:W], x.bits[i]))
+        ans[i] = (y <= x_proxy)
+        x_proxy -= ifelse(ans[i], y, zero(DistUInt{W}))
     end
     DistUInt{W}(ans)
-end 
+end
 
-function Base.:%(p1::DistUInt{W}, p2::DistUInt{W}) where W 
-    errorcheck() & iszero(p2) && error("division by zero")
-
-    p1_proxy = DistUInt{W}(0)
+function Base.:%(x::DistUInt{W}, y::DistUInt{W}) where W 
+    errorcheck() & iszero(y) && error("division by zero")
+    x_proxy = zero(DistUInt{W})
     for i = 1:W
-        p1_proxy = DistUInt{W}(vcat(p1_proxy.bits[2:W], p1.bits[i]))
-        p1_proxy = @dice_ite if p2 > p1_proxy 
-            p1_proxy 
-        else 
-            # make sure this is guarded (i.e., not using `ifelse``) to avoid underflow
-            p1_proxy - p2 
-        end
+        x_proxy = DistUInt{W}(vcat(x_proxy.bits[2:W], x.bits[i]))
+        x_proxy -= ifelse((y <= x_proxy), y, zero(DistUInt{W}))
     end
-    p1_proxy
+    x_proxy
 end 
 
 function Base.:~(x::DistUInt{W}) where W 
