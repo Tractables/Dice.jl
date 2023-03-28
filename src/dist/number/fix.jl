@@ -43,17 +43,16 @@ function triangle(t::Type{DistFix{W, F}}, b::Int) where {W,F}
     DistFix{W, F}(triangle(DistInt{W}, b))
 end
 
-function Base.convert(::Type{DistFix{W2, F2}}, x::DistFix{W1, F1}) where W1 where W2 where F1 where F2
-    #TODO: check if cases are exhaustive
+function Base.convert(::Type{DistFix{W2, F2}}, x::DistFix{W1, F1}) where {W1,W2,F1,F2}
     if (F1 == F2)
-        DistFix{W2, F2}(convert(DistInt{W2}, x.mantissa))
-    elseif (W1 - F1 == W2 - F2)
-        if (F2 > F1)
-            DistFix{W2, F2}(vcat(x.mantissa.number.bits, fill(false, F2 - F1)))
-        else
-            DistFix{W2, F2}(x.mantissa.number.bits[1:W2])
-        end
+        return DistFix{W2, F2}(convert(DistInt{W2}, x.mantissa))
+    elseif (F2 > F1)
+        mantissa = convert(DistInt{W1+(F2-F1)}, x.mantissa)
+        mantissa <<= (F2-F1)
+    else #F2 < F1
+        mantissa = drop_bits(DistInt{W1+(F2-F1)}, x.mantissa; last=true)
     end
+    convert(DistFix{W2, F2}, DistFix{W1+(F2-F1), F2}(mantissa))
 end
 
 # ##################################

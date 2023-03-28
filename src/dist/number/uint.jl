@@ -177,9 +177,10 @@ function Base.convert(::Type{DistUInt{W2}}, x::DistUInt{W1}) where {W1,W2}
 end
 
 "Reduce bit width by dropping the leading bits, whatever they are"
-function drop_bits(::Type{DistUInt{W2}}, x::DistUInt{W1}) where {W1,W2}
+function drop_bits(::Type{DistUInt{W2}}, x::DistUInt{W1}; last=false) where {W1,W2}
     @assert W2 <= W1
-    DistUInt{W2}(x.bits[W1-W2+1:end])
+    bits = last ? x.bits[1:W2] : x.bits[W1-W2+1:end]
+    DistUInt{W2}(bits)
 end
 
 Base.zero(::Type{T}) where {T<:Dist{Int}} = T(0)
@@ -308,8 +309,8 @@ function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W
 end
 
 function Base.:(<<)(x::DistUInt{W}, n) where W
-    @assert 0 <= n <= W
-    DistUInt{W}(vcat(x.bits[n+1:end], falses(n)))
+    @assert 0 <= n
+    DistUInt{W}(vcat(x.bits[n+1:end], falses(min(n,W))))
 end
 
 function Base.:(*)(x::DistUInt{W}, y::DistUInt{W}) where W

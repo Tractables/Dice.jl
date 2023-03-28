@@ -122,6 +122,14 @@ function Base.ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where
     DistInt{W}(ifelse(cond, then.number, elze.number))
 end
 
+function Base.:(<<)(x::DistInt{W}, n) where W
+    DistInt{W}(x.number << n)
+end
+
+function Base.:(>>)(x::DistInt{W}, n) where W
+    DistInt{W}(x.number >> n)
+end
+
 "Compute the absolute value of a `DistInt{W}` as a `DistUInt{W}`"
 function unsigned_abs(x::DistInt{W}) where W
     xp = ifelse(signbit(x), ~x.number, x.number)
@@ -132,8 +140,8 @@ end
 Base.signbit(x::DistInt) = 
     x.number.bits[1]
 
-function drop_bits(::Type{DistInt{W}}, x::DistInt) where W
-    DistInt{W}(drop_bits(DistUInt{W}, x.number))
+function drop_bits(::Type{DistInt{W}}, x::DistInt; last=false) where W
+    DistInt{W}(drop_bits(DistUInt{W}, x.number; last))
 end
 
 function Base.:(+)(x::DistInt{W}, y::DistInt{W}) where W
