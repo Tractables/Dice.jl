@@ -25,7 +25,7 @@ const DistInt16 = DistInt{16}
 const DistInt32= DistInt{32}
 
 function uniform(::Type{DistInt{W}}, n = W) where W
-    DistInt{W}(uniform(DistUInt{W}, n).bits)
+    DistInt{W}(uniform(DistUInt{W}, n))
 end
 
 function uniform(::Type{DistInt{W}}, start::Int, stop::Int; kwargs...) where W

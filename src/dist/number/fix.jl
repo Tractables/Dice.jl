@@ -25,20 +25,21 @@ function DistFix{W, F}(x::Float64) where {W,F}
 end
 
 function uniform(::Type{DistFix{W, F}}, n = W) where {W,F}
-    DistFix{W, F}(DistInt{W}(uniform(DistUInt{W}, n).bits))
+    DistFix{W, F}(uniform(DistInt{W}, n))
 end
 
-function uniform(t::Type{DistFix{W, F}}, start::Float64, stop::Float64; kwargs...) where {W,F}
-    @assert start >= -(2^(W - F - 1))
-    @assert stop <= (2^(W - F - 1))
-    @assert start < stop
-    a = Int(round((stop - start)*2^F))
-    return DistFix{W, F}(uniform(DistInt{W}, 0, a; kwargs...)) + DistFix{W, F}(start)
+function uniform(t::Type{DistFix{W, F}}, start, stop; rtol=√eps(), kwargs...) where {W,F}
+    @assert -(2^(W-F-1)) <= start < stop <= 2^(W-F-1)
+    start = start > 0 ? start*(1+rtol) : start*(1-rtol)
+    stop =  stop  > 0 ? stop*(1-rtol)  : stop*(1+rtol) 
+    startint = floor(Int, start*2^F)
+    stopint = ceil(Int, (stop*2^F))
+    mantissa = uniform(DistInt{W}, startint, stopint; kwargs...)
+    DistFix{W, F}(mantissa)
  end
  
 
 function triangle(t::Type{DistFix{W, F}}, b::Int) where {W,F}
-    @assert b <= W
     DistFix{W, F}(triangle(DistInt{W}, b))
 end
 

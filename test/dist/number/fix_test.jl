@@ -228,15 +228,27 @@ end
     y = uniform(DistFix{7, 3}, -3.0, 1.0)
     p = pr(y)
   
-    @test issetequal(keys(p), -3.0:1/8:1.0 - 1/8)
+    @test issetequal(keys(p), -3.0: 1/8 : (1.0-1/8))
     @test all(values(p) .≈ 1/2^5)
 
     y = uniform(DistFix{7, 3}, -3.0, 0.125)
     p = pr(y)
   
-    @test issetequal(keys(p), -3.0:1/8:0.125 - 1/8)
+    @test issetequal(keys(p), -3.0 : 1/8 : (0.125-1/8))
     @test all(values(p) .≈ 1/25)
-   
+
+    y = uniform(DistFix{6, 2}, -1.1, 2.3)
+    p = pr(y)
+    @test issetequal(keys(p), -1.25 : 0.25 : 2.25)
+
+    y = uniform(DistFix{6, 2}, -1.100000001, 2.2499999999)
+    p = pr(y)
+    @test issetequal(keys(p), -1.25 : 0.25 : 2.00)
+
+    y = uniform(DistFix{6, 2}, -1.0999999999, 2.2500000001)
+    p = pr(y)
+    @test issetequal(keys(p), -1.25 : 0.25 : 2.00)
+
     flags = [:ite, :arith]
     map(flags) do flag
         y = uniform(DistFix{7, 3}, -3.0, 1.0; strategy=flag)
