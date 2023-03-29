@@ -1,5 +1,5 @@
 
-export flip, prob_equals, AnyBool, expectation, variance
+export flip, prob_equals, AnyBool, expectation, variance, flip_prob!
 
 ##################################
 # types, structs, and constructors
@@ -10,25 +10,35 @@ const AnyBool = Union{Dist{Bool}, Bool}
 # TODO should become and atomic int when we care about multithreading
 global_flip_id::Int64 = one(Int64)
 
-struct Flip <: Dist{Bool}
-    global_id::Int
+mutable struct Flip <: Dist{Bool}
+    const global_id::Int
     prob
-    name
+    const name
     
     Flip(p::Real, name) = begin
         @assert !isone(p) "Use `true` for deterministic flips"
         @assert !iszero(p) "Use `false` for deterministic flips"
-        @assert 0 < p < 1 "Probabilities are between 0 and 1"
+        @assert isnan(p) || 0 < p < 1 "Probabilities are between 0 and 1 (or undefined as NaN)"
         global global_flip_id
         new(global_flip_id += 1, p, name)
     end
 end
 
 "Create a Bernoulli random variable with the given probability (a coin flip)"
-function flip(prob::Real; name = nothing)
+function flip(prob::Real = NaN16; name = nothing)
     iszero(prob) && return false
     isone(prob) && return true
     Flip(prob, name)
+end
+
+"Set the probability of a flip that has not been assigned a probability yet"
+function flip_prob!(f::Flip, prob::Real)
+    @assert isnan(f.prob)
+    iszero(prob) && return false
+    isone(prob) && return true
+    @assert isnan(prob) || 0 < prob < 1 "Probabilities are between 0 and 1 (or undefined as NaN), not $prob"
+    f.prob = prob
+    f
 end
 
 abstract type DistBoolOp <: Dist{Bool} end
