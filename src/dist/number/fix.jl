@@ -134,7 +134,7 @@ function bitblast(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution,
 
     total_prob = 0
     piece_probs = Vector(undef, numpieces) # prob of each piece
-    end_probs = Vector(undef, numpieces) # prob of first and last interval in each piece
+    border_probs = Vector(undef, numpieces) # prob of first and last interval in each piece
     linear_piece_probs = Vector(undef, numpieces) # prob of each piece if it were linear between end points
 
     for i=1:numpieces
@@ -144,47 +144,47 @@ function bitblast(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution,
         piece_probs[i] = (cdf.(dist, lastinter) - cdf.(dist, firstinter))
         total_prob += piece_probs[i]
 
-        end_probs[i] = [cdf(dist, firstinter + 1/2^F ) - cdf(dist, firstinter), 
+        border_probs[i] = [cdf(dist, firstinter + 1/2^F ) - cdf(dist, firstinter), 
                         cdf(dist, lastinter) - cdf(dist, lastinter - 1/2^F )]
-        linear_piece_probs[i] = (end_probs[i][1] + end_probs[i][2])/2 * 2^(bits_per_piece)
+        linear_piece_probs[i] = (border_probs[i][1] + border_probs[i][2])/2 * 2^(bits_per_piece)
     end
 
     PieceChoice = DistUInt{max(1,Int(log2(numpieces)))}
     piecechoice = discrete(PieceChoice, piece_probs ./ total_prob) # selector variable for pieces
-    piece_flips = Vector(undef, numpieces)
-    l_vector = Vector(undef, numpieces)
+    slope_flips = Vector(undef, numpieces)
+
+    isdecreasing = Vector(undef, numpieces)
     for i=numpieces:-1:1
-        if (linear_piece_probs[i] == 0)
-            a = 0.0
+        iszero(linear_piece_probs[i]) && assert(iszero(piece_probs[i])) && continue
+        a = border_probs[i][1]/linear_piece_probs[i]
+        isdecreasing[i] = a > 1/2^bits_per_piece
+        if isdecreasing[i]
+            slope_flips[i] = flip(2-a*2^bits_per_piece)
         else
-            a = end_probs[i][1]/linear_piece_probs[i]
-        end
-        l_vector[i] = a > 1/2^bits_per_piece
-        if l_vector[i]
-            # @show 2 - a*2^bits, i, areas[i]
-            piece_flips[i] = flip(2 - a*2^bits_per_piece)
-        else
-            # @show a*2^bits
-            piece_flips[i] = flip(a*2^bits_per_piece)
+            slope_flips[i] = flip(a*2^bits_per_piece)
         end  
     end
 
-    unif = uniform(DistFix{W, F}, bits_per_piece)
-    tria = triangle(DistFix{W, F}, bits_per_piece)
-    ans = DistFix{W, F}((2^(W-1)-1)/2^F)
-
-    for i=numpieces:-1:1
-        ans = ifelse( prob_equals(piecechoice, PieceChoice(i-1)), 
-                (if l_vector[i]
-                    (ifelse(piece_flips[i], 
-                        (DistFix{W, F}((i - 1)*2^bits_per_piece/2^F + start) + unif), 
-                        (DistFix{W, F}((i*2^bits_per_piece - 1)/2^F + start) - tria)))
-                else
-                    (DistFix{W, F}((i - 1)*2^bits_per_piece/2^F + start) + 
-                        ifelse(piece_flips[i], unif, tria))
-                    
-                end),
-                ans)  
+    unif = uniform(DistFix{W,F},  bits_per_piece)
+    tria = triangle(DistFix{W,F}, bits_per_piece)
+    z = nothing
+    for i=1:numpieces
+        iszero(linear_piece_probs[i]) && continue
+        firstinterval = DistFix{W,F}(start + (i-1)*2^bits_per_piece/2^F)
+        lastinterval = DistFix{W,F}(start + (i*2^bits_per_piece-1)/2^F)
+        linear_dist = 
+            if isdecreasing[i]
+                (ifelse(slope_flips[i], 
+                    (firstinterval + unif), 
+                    (lastinterval - tria)))
+            else
+                firstinterval + ifelse(slope_flips[i], unif, tria)
+            end
+        z = if isnothing(z)
+                linear_dist
+            else
+                ifelse(prob_equals(piecechoice, PieceChoice(i-1)), linear_dist, z)  
+            end
     end
-    return ans
+    return z
 end
