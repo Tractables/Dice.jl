@@ -136,7 +136,7 @@ end
 
     kl_vector = [0.0, 0.0, 0.0, 0.0]
     map(pieces) do piece
-        y = continuous(DistFix{5, 2}, Normal(1, 1), piece, -1.0, 3.0)
+        y = bitblast(DistFix{5, 2}, Normal(1, 1), piece, -1.0, 3.0)
         p = pr(y)
 
         # Symmetric gaussian around mean
@@ -155,7 +155,7 @@ end
     @test issorted(kl_vector, rev=true)
     
     # Exactness for maximum number of pieces
-    y = continuous(DistFix{5, 2}, Normal(1, 1), 8, -1.0, 3.0)
+    y = bitblast(DistFix{5, 2}, Normal(1, 1), 8, -1.0, 3.0)
     p = pr(y)
     p2 = map(a -> a[2], sort([(k, v) for (k, v) in p]))
     @test p2 ≈ q

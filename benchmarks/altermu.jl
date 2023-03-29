@@ -18,9 +18,9 @@ data = DFiP.([-2.57251482,  0.33806206,  2.71757796,  1.09861336,  2.85603752,
 
 code = @dice begin
     # TODO use more general `uniform`
-    mu1 = continuous(DFiP, Normal(0, 5), num_pieces, -2.0, 2.0)
-    mu2 = continuous(DFiP, Normal(0, 5), num_pieces, -2.0, 2.0)
-    mu3 = continuous(DFiP, Normal(0, 5), num_pieces, -2.0, 2.0)
+    mu1 = bitblast(DFiP, Normal(0, 5), num_pieces, -2.0, 2.0)
+    mu2 = bitblast(DFiP, Normal(0, 5), num_pieces, -2.0, 2.0)
+    mu3 = bitblast(DFiP, Normal(0, 5), num_pieces, -2.0, 2.0)
     mu = mu1*mu2-mu3
     for datapoint in data
         gaussian_observe(DFiP, num_pieces, truncation[1], truncation[2], mu, 1.0, datapoint, add=add_arg)

@@ -17,8 +17,8 @@ code = @dice begin
     for datapt in data
         x += v
         v += a
-        a += continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
-        o = x + continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
+        a += bitblast(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
+        o = x + bitblast(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
         observe(o == datapt)
     end
     x

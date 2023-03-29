@@ -9,9 +9,9 @@ code = @dice begin
 
   isWeekend = flip(2/7)
   hour = if isWeekend
-            continuous(DFiP, Normal(5, 4), num_pieces, 0.0, 8.0)
+            bitblast(DFiP, Normal(5, 4), num_pieces, 0.0, 8.0)
         else
-            continuous(DFiP, Normal(2, 4), num_pieces, 0.0, 8.0)
+            bitblast(DFiP, Normal(2, 4), num_pieces, 0.0, 8.0)
         end
   observe(hour == DFiP(6.0))
   isWeekend

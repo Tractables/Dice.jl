@@ -20,7 +20,7 @@ using Dice, Distributions
     # test for conjugate gaussians
     map([true, false]) do add_arg
         code = @dice begin
-            a = continuous(FP, Normal(0, 1), 16, -8.0, 8.0)
+            a = bitblast(FP, Normal(0, 1), 16, -8.0, 8.0)
             gaussian_observe(FP, 8, -8.0, 8.0, a, 1.0, data, add=add_arg)
             a
         end
@@ -33,7 +33,7 @@ using Dice, Distributions
     map([true, false]) do mult_arg
 
         code = @dice begin
-            a = continuous(FP, Normal(1, 1), 2, 0.5, 2.5)
+            a = bitblast(FP, Normal(1, 1), 2, 0.5, 2.5)
             gaussian_observe(FP, 2, -2.0, 2.0, 0.0, a, data, mult=mult_arg)
             a
         end
@@ -41,7 +41,7 @@ using Dice, Distributions
 
         code = @dice begin
             m = uniform(FP, -2.0, 2.0)
-            a = continuous(FP, Normal(1, 1), 2, 0.5, 2.5)
+            a = bitblast(FP, Normal(1, 1), 2, 0.5, 2.5)
             gaussian_observe(FP, 2, -2.0, 2.0, m, a, data, mult=mult_arg)
             m
         end

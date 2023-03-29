@@ -37,7 +37,7 @@ code = @dice begin
   sigma = uniform(DFiP, 0.0, 64.0)
 
   for y in ys
-    unitgaussian = continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
+    unitgaussian = bitblast(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
     gaussian = sigma * unitgaussian + beta
     observe(gaussian == y)
   end

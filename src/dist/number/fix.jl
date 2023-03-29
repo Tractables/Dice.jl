@@ -1,6 +1,6 @@
 using Distributions
 
-export DistFix, continuous
+export DistFix, bitblast
 
 ##################################
 # types, structs, and constructors
@@ -77,7 +77,7 @@ end
 # # methods
 # ##################################
 
-bitwidth(::DistFix{W, F}) where {W,F} = W
+bitwidth(::DistFix{W}) where W = W
 
 function prob_equals(x::DistFix{W, F}, y::DistFix{W, F}) where {W,F}
     prob_equals(x.mantissa, y.mantissa)
@@ -100,112 +100,87 @@ function Base.:(-)(x::DistFix{W, F}, y::DistFix{W, F}) where {W, F}
 end
 
 function Base.:(*)(x::DistFix{W, F}, y::DistFix{W, F}) where {W, F}
-    x1 = convert(DistFix{W+F, F}, x)
-    y1 = convert(DistFix{W+F, F}, y)
-    prodint = x1.mantissa * y1.mantissa
-    prodfip = DistFix{W+F, 2F}(prodint)
-    convert(DistFix{W, F}, prodfip)
+    xbig = convert(DistFix{W+F,F}, x)
+    ybig = convert(DistFix{W+F,F}, y)
+    z_mantissa = xbig.mantissa * ybig.mantissa
+    zbig = DistFix{W+F,2F}(z_mantissa)
+    convert(DistFix{W,F}, zbig)
 end
 
 function Base.:(/)(x::DistFix{W, F}, y::DistFix{W, F}) where {W, F}
-    xp = convert(DistFix{W+F, 2*F}, x)
-    yp = convert(DistFix{W+F, F}, y)
-    ans = xp.mantissa / yp.mantissa
-
-    n_overflow = DistInt{F+1}(ans.number.bits[1:F+1])
-    overflow = !prob_equals(n_overflow, DistInt{F+1}(-1)) & !iszero(n_overflow)
-    errorcheck() & overflow && error("integer overflow")
-
-    DistFix{W, F}(ans.number.bits[F+1:W+F])
+    xbig = convert(DistFix{W+F,2F}, x)
+    ybig = convert(DistFix{W+F,F}, y)
+    z_mantissa_big = xbig.mantissa / ybig.mantissa
+    z_mantissa = convert(DistInt{W}, z_mantissa_big)
+    DistFix{W, F}(z_mantissa)
 end
 
 #################################
-# continuous distributions
+# bit blasting continuous distributions
 #################################
   
-function continuous(t::Type{DistFix{W, F}}, d::ContinuousUnivariateDistribution, pieces::Int, start::Float64, stop::Float64) where {W, F}
+function bitblast(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution, 
+                  numpieces::Int, start::Float64, stop::Float64) where {W,F}
 
-    # basic checks
-    @assert start >= -(2^(W - F - 1))
-    @assert stop <= (2^(W - F - 1))
-    @assert start < stop
-    a = Int(log2((stop - start)*2^F))
-    @assert a isa Int 
-    @assert ispow2(pieces) "Number of pieces must be a power of two"
-    piece_bits = Int(log2(pieces))
-    if piece_bits == 0
-        piece_bits = 1
-    end
-    @assert typeof(piece_bits) == Int
+    # count bits and pieces
+    @assert -(2^(W-F-1)) <= start < stop <= 2^(W-F-1)
+    f_range_bits = log2((stop - start)*2^F)
+    @assert isinteger(f_range_bits) "The number of $(2^F)-sized intervals between $start and $stop must be a power of two (not $f_range_bits)."
+    @assert ispow2(numpieces) "Number of pieces must be a power of two (not $numpieces)"
+    intervals_per_piece = (2^Int(f_range_bits))/numpieces
+    bits_per_piece = Int(log2(intervals_per_piece))
 
-    # preliminaries
-    d = truncated(d, start, stop)
-    whole_bits = a
-    point = F
-    interval_sz = (2^whole_bits/pieces)
-    bits = Int(log2(interval_sz))
-    areas = Vector(undef, pieces)
-    trap_areas = Vector(undef, pieces)
-    total_area = 0
-    end_pts = Vector(undef, pieces)
+    dist = truncated(dist, start, stop)
 
-    # Figuring out end points
-    for i=1:pieces
-        p1 = start + (i-1)*interval_sz/2^point 
-        p2 = p1 + 1/2^(point) 
-        p3 = start + (i)*interval_sz/2^point 
-        p4 = p3 - 1/2^point 
+    total_prob = 0
+    piece_probs = Vector(undef, numpieces) # prob of each piece
+    end_probs = Vector(undef, numpieces) # prob of first and last interval in each piece
+    linear_piece_probs = Vector(undef, numpieces) # prob of each piece if it were linear between end points
 
-        # @show p1, p2, p3, p4
+    for i=1:numpieces
+        firstinter = start + (i-1)*intervals_per_piece/2^F 
+        lastinter = start + (i)*intervals_per_piece/2^F 
 
-        pts = [cdf.(d, p2) - cdf.(d, p1), cdf.(d, p3) - cdf.(d, p4)]
-        end_pts[i] = pts
+        piece_probs[i] = (cdf.(dist, lastinter) - cdf.(dist, firstinter))
+        total_prob += piece_probs[i]
 
-        trap_areas[i] = (pts[1] + pts[2])*2^(bits - 1)
-        areas[i] = (cdf.(d, p3) - cdf.(d, p1))
-        # @show p1, p2, p3, p4, areas[i]
-
-        total_area += areas[i]
+        end_probs[i] = [cdf(dist, firstinter + 1/2^F ) - cdf(dist, firstinter), 
+                        cdf(dist, lastinter) - cdf(dist, lastinter - 1/2^F )]
+        linear_piece_probs[i] = (end_probs[i][1] + end_probs[i][2])/2 * 2^(bits_per_piece)
     end
 
-    rel_prob = areas/total_area
-
-    # @show rel_prob
-    # @show areas
-
-    b = discrete(DistUInt{piece_bits}, rel_prob)
-    
-    #Move flips here
-    piece_flips = Vector(undef, pieces)
-    l_vector = Vector(undef, pieces)
-    for i=pieces:-1:1
-        if (trap_areas[i] == 0)
+    PieceChoice = DistUInt{max(1,Int(log2(numpieces)))}
+    piecechoice = discrete(PieceChoice, piece_probs ./ total_prob) # selector variable for pieces
+    piece_flips = Vector(undef, numpieces)
+    l_vector = Vector(undef, numpieces)
+    for i=numpieces:-1:1
+        if (linear_piece_probs[i] == 0)
             a = 0.0
         else
-            a = end_pts[i][1]/trap_areas[i]
+            a = end_probs[i][1]/linear_piece_probs[i]
         end
-        l_vector[i] = a > 1/2^bits
+        l_vector[i] = a > 1/2^bits_per_piece
         if l_vector[i]
             # @show 2 - a*2^bits, i, areas[i]
-            piece_flips[i] = flip(2 - a*2^bits)
+            piece_flips[i] = flip(2 - a*2^bits_per_piece)
         else
             # @show a*2^bits
-            piece_flips[i] = flip(a*2^bits)
+            piece_flips[i] = flip(a*2^bits_per_piece)
         end  
     end
 
-    unif = uniform(DistFix{W, F}, bits)
-    tria = triangle(DistFix{W, F}, bits)
+    unif = uniform(DistFix{W, F}, bits_per_piece)
+    tria = triangle(DistFix{W, F}, bits_per_piece)
     ans = DistFix{W, F}((2^(W-1)-1)/2^F)
 
-    for i=pieces:-1:1
-        ans = ifelse( prob_equals(b, DistUInt{piece_bits}(i-1)), 
+    for i=numpieces:-1:1
+        ans = ifelse( prob_equals(piecechoice, PieceChoice(i-1)), 
                 (if l_vector[i]
                     (ifelse(piece_flips[i], 
-                        (DistFix{W, F}((i - 1)*2^bits/2^F + start) + unif), 
-                        (DistFix{W, F}((i*2^bits - 1)/2^F + start) - tria)))
+                        (DistFix{W, F}((i - 1)*2^bits_per_piece/2^F + start) + unif), 
+                        (DistFix{W, F}((i*2^bits_per_piece - 1)/2^F + start) - tria)))
                 else
-                    (DistFix{W, F}((i - 1)*2^bits/2^F + start) + 
+                    (DistFix{W, F}((i - 1)*2^bits_per_piece/2^F + start) + 
                         ifelse(piece_flips[i], unif, tria))
                     
                 end),

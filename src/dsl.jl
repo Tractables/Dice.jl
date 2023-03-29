@@ -119,6 +119,6 @@ end
 for f in :[xor, atleast_two, prob_equals, (&), (|), (!), isless, ifelse, 
     Base.collect_to!, Base.collect, Base.steprange_last, oneunit, 
     Base.pairwise_blocksize, eltype, firstindex, iterate, 
-    continuous, uniform, flip].args
+    bitblast, uniform, flip, truncated].args
     @eval (::DiceDyna)(::typeof($f), args...) = $f(args...)
 end

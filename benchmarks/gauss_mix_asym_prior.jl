@@ -18,14 +18,14 @@ ys = DFiP.([-4.42240141499726, -2.38254474811358, 4.46003506755005, -2.067793495
 
 code = @dice begin
   
-  mu1 = continuous(DFiP, Normal(2.75, 0.5), num_pieces, -1.25, 6.75)
-  mu2 = continuous(DFiP, Normal(-2.75, 0.5), num_pieces, -6.75, 1.25)
+  mu1 = bitblast(DFiP, Normal(2.75, 0.5), num_pieces, -1.25, 6.75)
+  mu2 = bitblast(DFiP, Normal(-2.75, 0.5), num_pieces, -6.75, 1.25)
   sigma1 = uniform(DFiP, 0.0 + 1/2^precision, 4.0)
   sigma2 = uniform(DFiP, 0.0 + 1/2^precision, 4.0)
 
   for y in ys[1:1]
-    c1 = continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
-    c2 = continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
+    c1 = bitblast(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
+    c2 = bitblast(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
     a = if flip(0.3) sigma1*c1 + mu1 else sigma2*c2 + mu2 end
     observe(a == y)
   end
