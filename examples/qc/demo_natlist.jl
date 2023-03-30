@@ -87,7 +87,7 @@ function main()
     println()
 
     # Compile to BDDs
-    bools_to_maximize = [prob_equals(len, x) for x in DATASET]
+    bools_to_maximize = AnyBool[prob_equals(len, x) for x in DATASET]
     bdds_to_maximize, level_to_flip_id = compile_helper(bools_to_maximize, flips)
 
     # Learn best flip probs to match dataset
