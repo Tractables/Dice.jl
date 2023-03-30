@@ -1,6 +1,6 @@
 using Distributions
 
-export DistFix, bitblast
+export DistFix, bitblast, bitblast_linear, bitblast_exact
 
 ##################################
 # types, structs, and constructors
@@ -125,7 +125,7 @@ function bitblast(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution,
     # count bits and pieces
     @assert -(2^(W-F-1)) <= start < stop <= 2^(W-F-1)
     f_range_bits = log2((stop - start)*2^F)
-    @assert isinteger(f_range_bits) "The number of $(2^F)-sized intervals between $start and $stop must be a power of two (not $f_range_bits)."
+    @assert isinteger(f_range_bits) "The number of $(1/2^F)-sized intervals between $start and $stop must be a power of two (not $f_range_bits)."
     @assert ispow2(numpieces) "Number of pieces must be a power of two (not $numpieces)"
     intervals_per_piece = (2^Int(f_range_bits))/numpieces
     bits_per_piece = Int(log2(intervals_per_piece))
@@ -189,22 +189,29 @@ function bitblast(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution,
     return z
 end
 
+
 function bitblast(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution, 
+                  start::Float64, stop::Float64, blast_strategy=:exact; kwargs...) where {W,F}
+    if blast_strategy == :linear
+        bitblast_linear(DistFix{W,F}, dist, start, stop; kwargs...)
+    else
+        error("Unknown bitblasting strategy: $strategy")
+    end
+end
+
+"Approximate a continuous distribution on an interval using a bit-blasted linear density"
+function bitblast_linear(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution, 
                   start::Float64, stop::Float64;
                   slope_flip = nothing, unif = nothing, tria = nothing) where {W,F}
 
-    @assert -(2^(W-F-1)) <= start < stop <= 2^(W-F-1) "Start and stop must be in range of `DistFix{$W,$F}`"
-    @assert isinteger(log2((stop - start)*2^F)) "The number of $(2^F)-sized intervals between $start and $stop must be a power of two."
-    
     dist = truncated(dist, start, stop)
-    @assert (cdf(dist, stop) - cdf(dist, start)) ≈ 1.0 "Distribution $dist must be normalized on the interval [$start,$stop) "
-    
     firstprob = cdf(dist, start + 1/2^F ) - cdf(dist, start)
     lastprob = cdf(dist, stop) - cdf(dist, stop - 1/2^F)
     avgprob = (firstprob + lastprob)/2
 
-    @assert !iszero(firstprob) || !iszero(lastprob) "No probability mass found at the boundaries. Consider a uniform distribution instead?"
+    @assert !iszero(firstprob) || !iszero(lastprob) "No probability mass found at the given boundaries."
 
+    @assert isinteger(log2((stop - start)*2^F)) "The number of $(1/2^F)-sized intervals between $start and $stop must be a power of two."
     num_bits = Int(log2((stop-start)*2^F))
     isnothing(slope_flip) && (slope_flip = flip())
     isnothing(unif) && (unif = uniform(DistFix{W,F}, num_bits))
@@ -214,11 +221,9 @@ function bitblast(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution,
     lastinterval = DistFix{W,F}(start + (2^num_bits-1)/2^F)
     if firstprob > avgprob # the slope is decreasing
         slope_flip = flip_prob!(slope_flip, 2-firstprob/avgprob)
-        return (ifelse(slope_flip, 
-            (firstinterval + unif), 
-            (lastinterval - tria)))
+        ifelse(slope_flip, (firstinterval + unif), (lastinterval - tria))
     else # the slope is increasing
         slope_flip = flip_prob!(slope_flip, firstprob/avgprob)
-        return linear_dist = firstinterval + ifelse(slope_flip, unif, tria)
+        firstinterval + ifelse(slope_flip, unif, tria)
     end  
 end
