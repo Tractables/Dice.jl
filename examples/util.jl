@@ -2,7 +2,7 @@ function print_dict(d; top_n=20)
     top_n === nothing && (top_n = length(d))
     truncated = top_n < length(d)
 
-    d = sort(collect(d), by= xv -> -xv[2])  # by decreasing probability
+    d = sort(collect(d), by= xv -> (-xv[2], xv[1]))  # by decreasing probability, increasing key
     truncated && (d = d[1:top_n])  # truncate
     d = [(to_str_pretty(k), v) for (k, v) in d]  # print trees/tups/vectors more nicely
 
