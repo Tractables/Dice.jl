@@ -5,7 +5,7 @@
 using CUDD
 
 
-# I think that CUDD.jl is wrong and UInt needs to be used instead of Int
+# See this PR: https://github.com/sisl/CUDD.jl/pull/24
 
 Fixed_Cudd_Not(node) =
     convert(Ptr{Nothing}, xor(convert(UInt,node), one(UInt)))
