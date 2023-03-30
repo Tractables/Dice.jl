@@ -7,6 +7,8 @@ using DataStructures: LinkedList, cons, nil
 
 struct CuddDebugInfo
     num_nodes::Integer
+    mgr
+    ccache
 end
 
 struct Cudd <: InferAlgo
@@ -107,7 +109,7 @@ function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}, errors, dots)
             ))
             if !isa(root, Bool)
         ])
-        cudd.debug_info_ref[] = CuddDebugInfo(node_count)
+        cudd.debug_info_ref[] = CuddDebugInfo(node_count, mgr, ccache)
     end
 
     for nup in values(num_uncompiled_parents)

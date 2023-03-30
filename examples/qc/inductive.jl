@@ -1,3 +1,5 @@
+# Distributions over inductively-defined types
+
 using Dice
 import Dice: frombits, tobits
 
@@ -85,6 +87,7 @@ function construct(t::InductiveDistType, constructor::String, args::Tuple)
 end
 
 function match(x::DistInductive, cases)
+    # TODO: more flexible argument orders
     res = nothing
     for (i, ((cname, f), (cname2, arg_types), args)) in enumerate(zip(cases, x.type.constructors, x.args_by_constructor))
         @assert cname == cname2
@@ -104,69 +107,3 @@ function match(x::DistInductive, cases)
     end
     res
 end
-
-DistNatList = InductiveDistType()
-DistNatList.constructors = [
-    ("Nil",  []),
-    ("Cons", [DistUInt32, DistNatList]),
-]
-
-DistNil()       = construct(DistNatList, "Nil",  ())
-DistCons(x, xs) = construct(DistNatList, "Cons", (x, xs))
-
-d = pr(DistCons(DistUInt32(5), DistNil()))
-print_tree(first(keys(d)))
-
-hi = 8
-
-# returns (list, evidence)
-function genList(size, lo=DistUInt32(0))
-    if size == 0
-        return (DistNil(), true)
-    end
-
-    @dice_ite if flip(0.5)
-        (DistNil(), true)
-    else
-        x = DistUInt32(5) #uniform(DistUInt32, 0, hi)
-        list, evid = genList(size-1, x)
-        DistCons(x, list), (x >= lo) & evid
-    end
-end
-
-function probLength(l)
-    match(l, [
-        "Nil"  => ()      -> DistUInt32(0),
-        "Cons" => (x, xs) -> DistUInt32(1) + probLength(xs),
-    ])
-end
-
-
-println("started")
-list, evid = @time genList(3)
-debug_info_ref = Ref{CuddDebugInfo}()
-d = @time pr(list, evidence=evid, algo=Cudd(debug_info_ref=debug_info_ref))
-for key in keys(d)
-    print_tree(key)
-end
-println(d)
-println(debug_info_ref[].num_nodes)
-
-
-println(pr(probLength(list), evidence=evid))
-#==
-Cons
-├── 1
-└── Cons
-    ├── 2
-    └── Cons
-        ├── 5
-        └── Nil
-==#
-
-# 104 -> 72 nodes
-# hi = 8
-# size = 3
-
-# [5, 0]
-#  ("Cons", Any[0, ("Cons", Any[5, ("Nil", Union{}[])])]) => 0.0022988505
