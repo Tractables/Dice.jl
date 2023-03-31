@@ -30,17 +30,17 @@ end
 
 
 # ==============================================================================
-# Define DistNatList
+# Define DistList
 # ==============================================================================
 
-DistNatList = InductiveDistType()
-DistNatList.constructors = [
+DistList = InductiveDistType()
+DistList.constructors = [
     ("Nil",  []),
-    ("Cons", [DistUInt32, DistNatList]),
+    ("Cons", [Dist, DistList]),
 ]
 
-DistNil()       = construct(DistNatList, "Nil",  ())
-DistCons(x, xs) = construct(DistNatList, "Cons", (x, xs))
+DistNil()       = construct(DistList, "Nil",  ())
+DistCons(x, xs) = construct(DistList, "Cons", (x, xs))
 
 function probLength(l)
     match(l, [
