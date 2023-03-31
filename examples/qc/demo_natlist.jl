@@ -86,14 +86,14 @@ LEARNING_RATE = 0.006
 function main()
     # Use Dice to build computation graph
     empty!(flip_to_prob_group)
-    len = len(gen_list(INIT_SIZE))
+    generated_len = len(gen_list(INIT_SIZE))
     
     println("Distribution over lengths before training:")
-    print_dict(pr(len))
+    print_dict(pr(generated_len))
     println()
 
     # Compile to BDDs
-    bools_to_maximize = AnyBool[prob_equals(len, x) for x in DATASET]
+    bools_to_maximize = AnyBool[prob_equals(generated_len, x) for x in DATASET]
     bdds_to_maximize, level_to_prob_group = compile_helper(bools_to_maximize, flip_to_prob_group)
 
     prob_groups = Set(values(flip_to_prob_group))

@@ -2,7 +2,7 @@
 
 # Calculate dict from BDD node to its log-probability
 #   flip_probs: flip id -> probability
-#   level_to_flip_id: CUDD level -> flip id
+#   flip_to_prob_group: map flip to corresponding prob group
 function logprob(
     bdds::Vector{CuddNode},
     flip_probs::Dict{<:Any, Float64},

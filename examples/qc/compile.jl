@@ -2,7 +2,7 @@
 
 # Returns a pair:
 #   1. bdds_to_maximize: CUDD BDD nodes we want to maximize likelihood of
-#   2. level_to_flip_id: map CUDD decisionvar level to corresponding flip_id
+#   2. flip_to_prob_group: map flip to corresponding prob group
 mgr = nothing
 ccache = nothing
 function compile_helper(bools_to_maximize::Vector{<:AnyBool}, flip_to_prob_group)
