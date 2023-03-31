@@ -42,19 +42,19 @@ DistList.constructors = [
 DistNil()       = construct(DistList, "Nil",  ())
 DistCons(x, xs) = construct(DistList, "Cons", (x, xs))
 
-function probLength(l)
+function len(l)
     match(l, [
         "Nil"  => ()      -> DistUInt32(0),
-        "Cons" => (x, xs) -> DistUInt32(1) + probLength(xs),
+        "Cons" => (x, xs) -> DistUInt32(1) + len(xs),
     ])
 end
 
 
 # ==============================================================================
-# genList
+# gen_list
 # ==============================================================================
 
-function genList(size)
+function gen_list(size)
     size == 0 && return DistNil()
 
     # Try changing the parameter to flip_for to a constant, which would force
@@ -64,7 +64,7 @@ function genList(size)
     else
         # The flips used in the uniform aren't tracked via flip_for, so we
         # don't learn their probabilities (this is on purpose - we could).
-        DistCons(uniform(DistUInt32, 0, 10), genList(size-1))
+        DistCons(uniform(DistUInt32, 0, 10), gen_list(size-1))
     end
 end
 
@@ -73,7 +73,7 @@ end
 # main
 # ==============================================================================
 
-# Top-level size/fuel. For genList, this is the max length.
+# Top-level size/fuel. For gen_list, this is the max length.
 INIT_SIZE = 5
 
 # Dataset over the desired property to match. Below is a uniform distribution
@@ -86,7 +86,7 @@ LEARNING_RATE = 0.006
 function main()
     # Use Dice to build computation graph
     empty!(flip_to_prob_group)
-    len = probLength(genList(INIT_SIZE))
+    len = len(gen_list(INIT_SIZE))
     
     println("Distribution over lengths before training:")
     print_dict(pr(len))
@@ -111,7 +111,7 @@ function main()
 
     println("Distribution over lengths after training:")
     global flip_probs = flip_probs
-    print_dict(pr(probLength(genList(INIT_SIZE))))
+    print_dict(pr(len(gen_list(INIT_SIZE))))
 end
 
 main()
