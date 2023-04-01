@@ -15,16 +15,17 @@ include("../util.jl")
 # Flips whose probability is shared
 # ==============================================================================
 
-flip_to_prob_group = Dict{Dice.Flip, Any}()
+# Map flip to group of flips that much share a probability
+flip_to_group = Dict{Dice.Flip, Any}()
 
-# Prob group to flip probability
-flip_probs = Dict{Any, Float64}()
+# Prob group to psp ("pre-sigmoid probability")
+group_to_psp = Dict{Any, Float64}()
 
 # flip_for(x) and flip_for(y) are always separate flips, but if x == y, then
 # they share their probability.
-function flip_for(pg)
-    f = flip(get!(flip_probs, pg, 0.5))
-    flip_to_prob_group[f] = pg
+function flip_for(group)
+    f = flip(sigmoid(get!(group_to_psp, group, 0.)))
+    flip_to_group[f] = group
     f
 end
 
@@ -80,12 +81,16 @@ INIT_SIZE = 5
 # over sizes.
 DATASET = [DistUInt32(x) for x in 0:INIT_SIZE]
 
-EPOCHS = 1000
-LEARNING_RATE = 0.006
+EPOCHS = 500
+LEARNING_RATE = 0.1
 
 function main()
+    global flip_to_group
+    global group_to_psp
+    empty!(flip_to_group)
+    empty!(group_to_psp)
+
     # Use Dice to build computation graph
-    empty!(flip_to_prob_group)
     generated_len = len(gen_list(INIT_SIZE))
     
     println("Distribution over lengths before training:")
@@ -94,23 +99,20 @@ function main()
 
     # Compile to BDDs
     bools_to_maximize = AnyBool[prob_equals(generated_len, x) for x in DATASET]
-    bdds_to_maximize, level_to_prob_group = compile_helper(bools_to_maximize, flip_to_prob_group)
-
-    prob_groups = Set(values(flip_to_prob_group))
+    bdds_to_maximize, level_to_group = compile_helper(bools_to_maximize, flip_to_group)
 
     # Learn best flip probs to match dataset
-    flip_probs = Dict(pg => rand() for pg in prob_groups)
+    group_to_psp = Dict(group => 0. for group in keys(group_to_psp))
     for _ in 1:EPOCHS
-        flip_probs = step_flip_probs(flip_probs, prob_groups, bdds_to_maximize, level_to_prob_group, LEARNING_RATE)
+        group_to_psp = step_flip_probs(group_to_psp, bdds_to_maximize, level_to_group, LEARNING_RATE)
     end
 
     # Done!
     println("Learned flip probability for each size:")
-    print_dict(flip_probs)
+    print_dict(Dict(group => sigmoid(psp) for (group, psp) in group_to_psp))
     println()
 
     println("Distribution over lengths after training:")
-    global flip_probs = flip_probs
     print_dict(pr(len(gen_list(INIT_SIZE))))
 end
 
@@ -126,17 +128,17 @@ Distribution over lengths before training:
    5 => 0.03125
 
 Learned flip probability for each size:
-   1 => 0.5000000000000011
-   2 => 0.33333333333333365
-   3 => 0.25000000000000017
-   4 => 0.20000000000000007
-   5 => 0.16666666666666669
+   1 => 0.5
+   2 => 0.33333333333333354
+   3 => 0.2500000000000003
+   4 => 0.2000000000000002
+   5 => 0.16666666666666685
 
 Distribution over lengths after training:
-   4 => 0.16666666666666685
-   2 => 0.16666666666666674
-   3 => 0.16666666666666674
-   1 => 0.1666666666666667
-   0 => 0.16666666666666669
-   5 => 0.16666666666666613
+   0 => 0.16666666666666685
+   1 => 0.1666666666666668
+   2 => 0.1666666666666668
+   3 => 0.16666666666666663
+   4 => 0.1666666666666665
+   5 => 0.1666666666666665
 ==#
