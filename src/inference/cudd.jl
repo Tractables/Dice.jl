@@ -47,6 +47,8 @@ function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}, errors, dots)
     # TODO various optimizations
     # TODO variable order heuristics
     ccache = order_variables(mgr, evidence, queries, errors, dots, num_uncompiled_parents)
+    ccache[true] = constant(mgr, true)
+    ccache[false] = constant(mgr, false)
     pcache = logprobability_cache(mgr)
 
     # compile BDDs and infer probability of all errors
@@ -138,59 +140,59 @@ compile(mgr::CuddMgr, x::Bool, _, _) =
     constant(mgr, x)
 
 
-function compile(mgr::CuddMgr, x::Dist{Bool}, cache, num_uncompiled_parents)
+function compile(mgr::CuddMgr, x::Dist{Bool}, ccache, num_uncompiled_parents)
     # TODO implement shortcuts for equivalence, etc.
     function mark_as_compiled(node)
         for child in unique(children(node))
             num_uncompiled_parents[child] -= 1
             @assert num_uncompiled_parents[child] >= 0
             if num_uncompiled_parents[child] == 0
-                Cudd_RecursiveDeref(mgr.cuddmgr, cache[child])
+                Cudd_RecursiveDeref(mgr.cuddmgr, ccache[child])
             end
         end
     end
 
     fl(n::Flip) = begin
-        if !haskey(cache, n)
-            cache[n] = new_var(mgr, n.prob)
+        if !haskey(ccache, n)
+            ccache[n] = new_var(mgr, n.prob)
         end
-        cache[n]
+        ccache[n]
     end
 
     fi(n::DistAnd, call) = begin
-        if !haskey(cache, n)
+        if !haskey(ccache, n)
             call(n.x)
             call(n.y)
-            cache[n] = conjoin(mgr, cache[n.x], cache[n.y])
+            ccache[n] = conjoin(mgr, ccache[n.x], ccache[n.y])
             mark_as_compiled(n)
         end
-        cache[n]
+        ccache[n]
     end
 
     fi(n::DistOr, call) = begin
-        if !haskey(cache, n)
+        if !haskey(ccache, n)
             call(n.x)
             call(n.y)
-            cache[n] = disjoin(mgr, cache[n.x], cache[n.y])
+            ccache[n] = disjoin(mgr, ccache[n.x], ccache[n.y])
             mark_as_compiled(n)
         end
-        cache[n]
+        ccache[n]
     end
 
     fi(n::DistNot, call) = begin
-        if !haskey(cache, n)
+        if !haskey(ccache, n)
             call(n.x)
-            cache[n] = negate(mgr, cache[n.x])
+            ccache[n] = negate(mgr, ccache[n.x])
             mark_as_compiled(n)
         end
-        cache[n]
+        ccache[n]
     end
 
     foldup(x, fl, fi, Ptr{Nothing})
 end
 
 function order_variables(mgr, evidence, queries, errors, dots, num_uncompiled_parents)
-    cache = Dict{Dist{Bool},Ptr{Nothing}}()
+    ccache = Dict{AnyBool,Ptr{Nothing}}()
     flips = Vector{Flip}()
     seen = Dict{DAG,Nothing}()
     see_flip(f) = push!(flips, f)
@@ -207,9 +209,9 @@ function order_variables(mgr, evidence, queries, errors, dots, num_uncompiled_pa
     end
     sort!(flips; by= f -> f.global_id)
     for flip in flips
-        compile(mgr, flip, cache, num_uncompiled_parents)
+        compile(mgr, flip, ccache, num_uncompiled_parents)
     end
-    cache
+    ccache
 end
     
 function split(mgr::CuddMgr, context, test::AnyBool, cache, num_uncompiled_parents)
