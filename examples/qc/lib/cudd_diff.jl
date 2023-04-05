@@ -67,15 +67,22 @@ end
 # Step flip probs in direction of gradient to maximize likelihood of BDDS
 function step_flip_probs(
     group_to_psp::Dict{<:Any, Float64},
-    bdds_to_maximize::Vector{CuddNode},
+    cond_bdds_to_maximize::Vector{Tuple{CuddNode, CuddNode}},
     level_to_group::Dict{<:Integer, <:Any},
     learning_rate::AbstractFloat
 )
     total_grad = Dict(group => 0. for group in keys(group_to_psp))
-    logprobs = logprob(bdds_to_maximize, group_to_psp, level_to_group)
-    for bdd in bdds_to_maximize
-        @assert !is_constant(bdd)
-        total_grad += grad_logprob(bdd, group_to_psp, level_to_group, logprobs)
+    must_logprob = collect(Iterators.flatten(cond_bdds_to_maximize))
+    logprobs = logprob(must_logprob, group_to_psp, level_to_group)
+    for (bdd, obs_bdd) in cond_bdds_to_maximize
+        is_constant(bdd) && continue
+        # maximize log(  exp(logpr(bdd)) / exp(logpr(obs))  )
+        # = logpr(bdd) - logpr(obs)
+        total_grad += (
+            grad_logprob(bdd, group_to_psp, level_to_group, logprobs)
+            - grad_logprob(obs_bdd, group_to_psp, level_to_group, logprobs)
+        )
+        # print_dict(grad_logprob(obs_bdd, group_to_psp, level_to_group, logprobs))
     end
     # Add as we want to maximize probability
     group_to_psp + learning_rate * total_grad

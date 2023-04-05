@@ -1,59 +1,24 @@
 # Demo of using BDD MLE to learn flip probs for nat list of uniform length.
 
-using Revise
 using Dice
 
-include("inductive.jl")
-include("dict_vec.jl")
-include("cudd_view.jl")
-include("cudd_diff.jl")
-include("compile.jl")
+# Utils
+include("lib/dict_vec.jl")
 include("../util.jl")
 
+# Support DistList
+include("lib/inductive.jl")
+include("lib/dist_list.jl")
 
-# ==============================================================================
-# Flips whose probability is shared
-# ==============================================================================
+# Support conditional BDD differentiation
+include("lib/cudd_view.jl")
+include("lib/cudd_diff.jl")
 
-# Map flip to group of flips that much share a probability
-flip_to_group = Dict{Dice.Flip, Any}()
+# Track flip groups
+include("lib/compile.jl")
+include("lib/flip_groups.jl")
+include("lib/train_group_probs.jl")
 
-# Prob group to psp ("pre-sigmoid probability")
-group_to_psp = Dict{Any, Float64}()
-
-# flip_for(x) and flip_for(y) are always separate flips, but if x == y, then
-# they share their probability.
-function flip_for(group)
-    f = flip(sigmoid(get!(group_to_psp, group, 0.)))
-    flip_to_group[f] = group
-    f
-end
-
-
-# ==============================================================================
-# Define DistList
-# ==============================================================================
-
-DistList = InductiveDistType()
-DistList.constructors = [
-    ("Nil",  []),
-    ("Cons", [Dist, DistList]),
-]
-
-DistNil()       = construct(DistList, "Nil",  ())
-DistCons(x, xs) = construct(DistList, "Cons", (x, xs))
-
-function len(l)
-    match(l, [
-        "Nil"  => ()      -> DistUInt32(0),
-        "Cons" => (x, xs) -> DistUInt32(1) + len(xs),
-    ])
-end
-
-
-# ==============================================================================
-# gen_list
-# ==============================================================================
 
 function gen_list(size)
     size == 0 && return DistNil()
@@ -70,10 +35,6 @@ function gen_list(size)
 end
 
 
-# ==============================================================================
-# main
-# ==============================================================================
-
 # Top-level size/fuel. For gen_list, this is the max length.
 INIT_SIZE = 5
 
@@ -81,42 +42,13 @@ INIT_SIZE = 5
 # over sizes.
 DATASET = [DistUInt32(x) for x in 0:INIT_SIZE]
 
+# Training hyperparams
 EPOCHS = 500
 LEARNING_RATE = 0.1
 
-function main()
-    global flip_to_group
-    global group_to_psp
-    empty!(flip_to_group)
-    empty!(group_to_psp)
+generate = () -> len(gen_list(INIT_SIZE))
 
-    # Use Dice to build computation graph
-    generated_len = len(gen_list(INIT_SIZE))
-    
-    println("Distribution over lengths before training:")
-    print_dict(pr(generated_len))
-    println()
-
-    # Compile to BDDs
-    bools_to_maximize = AnyBool[prob_equals(generated_len, x) for x in DATASET]
-    bdds_to_maximize, level_to_group = compile_helper(bools_to_maximize, flip_to_group)
-
-    # Learn best flip probs to match dataset
-    group_to_psp = Dict(group => 0. for group in keys(group_to_psp))
-    for _ in 1:EPOCHS
-        group_to_psp = step_flip_probs(group_to_psp, bdds_to_maximize, level_to_group, LEARNING_RATE)
-    end
-
-    # Done!
-    println("Learned flip probability for each size:")
-    print_dict(Dict(group => sigmoid(psp) for (group, psp) in group_to_psp))
-    println()
-
-    println("Distribution over lengths after training:")
-    print_dict(pr(len(gen_list(INIT_SIZE))))
-end
-
-main()
+train_group_probs!(generate, DATASET, EPOCHS, LEARNING_RATE)
 
 #==
 Distribution over lengths before training:

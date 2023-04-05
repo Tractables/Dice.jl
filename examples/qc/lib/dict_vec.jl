@@ -3,6 +3,9 @@
 Base.:(+)(x::Dict, y::Dict) =
     Dict(k => x[k] + y[k] for k in keys(x))
 
+Base.:(-)(x::Dict, y::Dict) =
+    Dict(k => x[k] - y[k] for k in keys(x))
+
 Base.:(*)(c::Number, x::Dict) =
     Dict(k => c * v for (k, v) in x)
 
