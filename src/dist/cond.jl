@@ -27,3 +27,5 @@ end
 function pr(x::Cond{T}, args...; kwargs...) where T
     pr(x.x, args..., evidence=x.evid; kwargs...)
 end
+
+tobits(x) = vcat(tobits(x.x), tobits(x.evid))
