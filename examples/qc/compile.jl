@@ -13,11 +13,13 @@ function compile_helper(bools_to_maximize::Vector{<:AnyBool}, flip_to_prob_group
     # Keep manager in scope so Cudd_Quit doesn't get called
     global mgr = debug_info_ref[].mgr
     global ccache = debug_info_ref[].ccache
+    @show flip_to_prob_group
 
     bdds_to_maximize = [ccache[b] for b in bools_to_maximize]
     level_to_prob_group = Dict(
         level(ccache[f]) => pg
         for (f, pg) in flip_to_prob_group
     )
+    @show level_to_prob_group
     bdds_to_maximize, level_to_prob_group
 end

@@ -67,7 +67,7 @@ function genList(size)
         DistCons(uniform(DistUInt32, 0, 10), genList(size-1))
     end
 end
-
+@show flip_probs
 
 # ==============================================================================
 # main
@@ -93,9 +93,10 @@ function main()
     println()
 
     # Compile to BDDs
+    print
     bools_to_maximize = AnyBool[prob_equals(len, x) for x in DATASET]
     bdds_to_maximize, level_to_prob_group = compile_helper(bools_to_maximize, flip_to_prob_group)
-
+    @show level_to_prob_group
     prob_groups = Set(values(flip_to_prob_group))
 
     # Learn best flip probs to match dataset

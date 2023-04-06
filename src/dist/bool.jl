@@ -13,22 +13,23 @@ global_flip_id::Int64 = one(Int64)
 struct Flip <: Dist{Bool}
     global_id::Int
     prob
+    learn
     name
     
-    Flip(p::Real, name) = begin
+    Flip(p::Real, learn, name) = begin
         @assert !isone(p) "Use `true` for deterministic flips"
         @assert !iszero(p) "Use `false` for deterministic flips"
         @assert 0 < p < 1 "Probabilities are between 0 and 1"
         global global_flip_id
-        new(global_flip_id += 1, p, name)
+        new(global_flip_id += 1, p, learn, name)
     end
 end
 
-"Create a Bernoulli random variable with the given probability (a coin flip)"
-function flip(prob::Real; name = nothing)
+"Create a Bernoulli random variable with the given probability (a coin flip). Set learn to true to learn the parameters of the flip."
+function flip(prob::Real; learn = false, name = nothing)
     iszero(prob) && return false
     isone(prob) && return true
-    Flip(prob, name)
+    Flip(prob, learn, name)
 end
 
 abstract type DistBoolOp <: Dist{Bool} end

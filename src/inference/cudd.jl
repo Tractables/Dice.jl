@@ -5,6 +5,8 @@ using DataStructures: LinkedList, cons, nil
 # CUDD Inference
 ##################################
 
+CuddNode = CUDD.DdNodePtr
+
 struct CuddDebugInfo
     num_nodes::Integer
     mgr
@@ -122,13 +124,17 @@ end
 mutable struct CuddMgr
     cuddmgr::Ptr{Nothing}
     probs::Dict{Int,Float64}
+
+    learn::Dict{Int, Float64}     # records which parameters should be learned
+    new_probs::Dict{Int, Float64} # updated probabilities after step for learning
+    derivs::Dict{CuddNode, Float64}    # derivatives for each node (dlogp/dlogn)
 end
 
 function CuddMgr(reordering_type::CUDD.Cudd_ReorderingType)
     cudd_mgr = initialize_cudd()
     Cudd_DisableGarbageCollection(cudd_mgr) # note: still need to ref because CUDD can delete nodes without doing a GC pass
     reordering_type == CUDD.CUDD_REORDER_NONE || Cudd_AutodynEnable(cudd_mgr, reordering_type)
-    mgr = CuddMgr(cudd_mgr, Dict{Int,Float64}())
+    mgr = CuddMgr(cudd_mgr, Dict{Int,Float64}(), Dict{Int, Float64}(), Dict{Int, Float64}(), Dict{CuddNode, Float64}())
     finalizer(mgr) do x
         Cudd_Quit(x.cuddmgr)
     end
@@ -152,7 +158,7 @@ function compile(mgr::CuddMgr, x::Dist{Bool}, cache, num_uncompiled_parents)
 
     fl(n::Flip) = begin
         if !haskey(cache, n)
-            cache[n] = new_var(mgr, n.prob)
+            cache[n] = new_var(mgr, n.prob, n.learn)
         end
         cache[n]
     end
@@ -229,8 +235,8 @@ end
 function logprobability_cache(mgr::CuddMgr)
     cache = Dict{Tuple{Ptr{Nothing},Bool},Float64}()
     t = constant(mgr, true)
-    cache[(t,false)] = log(one(Float64))
-    cache[(t,true)] = log(zero(Float64))
+    cache[(t,false)] = log(zero(Float64)) 
+    cache[(t,true)] = log(one(Float64))
     cache
 end
 
@@ -259,11 +265,40 @@ function logprobability(mgr::CuddMgr, x::Ptr{Nothing}, cache)
             end
         end
     
-    rec(x, false)
+    rec(x, true)
 end
 
 probability(mgr::CuddMgr, x::Ptr{Nothing}) =
     exp(logprobability(mgr, x))
+
+##################################
+# Gradient Descent
+##################################
+
+function topological_sort(mgr::CuddMgr, x::Ptr{Nothing}, cache)
+    visited = [constant(mgr, true)]
+    ans_list = []
+    rec(y) = 
+        if !(y in visited)
+            push!(visited, y)
+            rec(Cudd_T(y))
+            rec(Cudd_E(y))
+            push!(ans_list, y)
+        end
+    rec(x)
+    reverse(ans_list)
+end
+
+function compute_gradient(mgr::CuddMgr, x::Ptr{Nothing})
+
+function compute_gradient(mgr::CuddMgr, x::Vector{Ptr{Nothing}})
+    
+end
+
+function step_probs()
+
+    
+end
 
 ##################################
 # Core CUDD API
@@ -287,9 +322,11 @@ negate(::CuddMgr, x) =
 ite(mgr::CuddMgr, cond, then, elze) =
     rref(Cudd_bddIte(mgr.cuddmgr, cond, then, elze))
 
-new_var(mgr::CuddMgr, prob) = begin
+new_var(mgr::CuddMgr, prob, learn) = begin
     x = rref(Cudd_bddNewVar(mgr.cuddmgr))
     mgr.probs[decisionvar(mgr, x)] = prob
+    mgr.new_probs[decisionvar(mgr, x)] = prob
+    mgr.learn[decisionvar(mgr, x)] = learn
     x
 end
 
