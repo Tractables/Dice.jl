@@ -46,9 +46,23 @@ DATASET = [DistUInt32(x) for x in 0:INIT_SIZE]
 EPOCHS = 500
 LEARNING_RATE = 0.1
 
-generate = () -> len(gen_list(INIT_SIZE))
+# Use Dice to build computation graph
+generated = len(gen_list(INIT_SIZE))
 
-train_group_probs!(generate, DATASET, EPOCHS, LEARNING_RATE)
+println("Distribution before training:")
+print_dict(pr(generated))
+println()
+
+bools_to_maximize = AnyBool[prob_equals(generated, x) for x in DATASET]
+train_group_probs!(bools_to_maximize, EPOCHS, LEARNING_RATE)
+
+# Done!
+println("Learned flip probability for each size:")
+print_dict(Dict(group => sigmoid(psp) for (group, psp) in group_to_psp))
+println()
+
+println("Distribution over lengths after training:")
+print_dict(pr(len(gen_list(INIT_SIZE))))
 
 #==
 Distribution over lengths before training:

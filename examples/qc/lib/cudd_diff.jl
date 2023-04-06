@@ -18,7 +18,11 @@ function logprob(
 
     rec(x) = 
         get!(cache, x) do
-            prob = sigmoid(group_to_psp[level_to_group[level(x)]])
+            prob = if haskey(level_to_group, level(x))
+                sigmoid(group_to_psp[level_to_group[level(x)]])
+            else
+                mgr.probs[level(x)]
+            end
             a = log(prob) + rec(high(x))
             b = log(1.0-prob) + rec(low(x))
             if (!isfinite(a))
@@ -50,16 +54,22 @@ function grad_logprob(
     deriv[bdd] = 1
     level_traversal(bdd) do node
         i, lo, hi = level(node), low(node), high(node)
-        group = level_to_group[i]
-        psp = group_to_psp[group]
-        prob = sigmoid(psp)
+        if haskey(level_to_group, i)
+            group = level_to_group[i]
+            psp = group_to_psp[group]
+            prob = sigmoid(psp)
+        else
+            prob = mgr.probs[i]
+        end
         fhi, flo = logprobs[hi], logprobs[lo]
         get!(deriv, hi, 0)
         get!(deriv, lo, 0)
         denom = prob * exp(fhi) + (1 - prob) * exp(flo)
         deriv[hi] += deriv[node] * prob * exp(fhi) / denom
         deriv[lo] += deriv[node] * (1 - prob) * exp(flo) / denom
-        grad[group] += deriv[node] * sigmoid_deriv(psp) * (exp(fhi) - exp(flo)) / denom
+        if haskey(level_to_group, i)
+            grad[group] += deriv[node] * sigmoid_deriv(psp) * (exp(fhi) - exp(flo)) / denom
+        end
     end
     grad
 end
@@ -82,7 +92,6 @@ function step_flip_probs(
             grad_logprob(bdd, group_to_psp, level_to_group, logprobs)
             - grad_logprob(obs_bdd, group_to_psp, level_to_group, logprobs)
         )
-        # print_dict(grad_logprob(obs_bdd, group_to_psp, level_to_group, logprobs))
     end
     # Add as we want to maximize probability
     group_to_psp + learning_rate * total_grad

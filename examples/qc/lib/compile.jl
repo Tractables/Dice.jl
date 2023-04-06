@@ -9,12 +9,13 @@
 #   1. bdds_to_maximize: pairs of (BDD of nodes we want to maximize likelihood,
 #      conjoined with the observation, BDD of observation)
 #   2. level_to_group: map BDD level to corresponding group
+mgrs = []
 mgr = nothing
 ccache = nothing
-function compile_helper(cond_bools_to_maximize::Vector{<:Tuple{<:AnyBool, <:AnyBool}}, flip_to_group)
+function compile_helper(cond_bools_to_maximize::Vector{<:Cond{<:AnyBool}}, flip_to_group)
     cond_bools_to_maximize = [
-        ((b & obs), obs)
-        for (b, obs) in cond_bools_to_maximize
+        ((b.x & b.evid), b.evid)
+        for b in cond_bools_to_maximize
     ]
 
     must_compile = Dist{Bool}[]
@@ -29,6 +30,7 @@ function compile_helper(cond_bools_to_maximize::Vector{<:Tuple{<:AnyBool, <:AnyB
 
     # Keep manager in scope so Cudd_Quit doesn't get called
     global mgr = debug_info_ref[].mgr
+    push!(mgrs, mgrs)
     global ccache = debug_info_ref[].ccache
 
     bdds_to_maximize = [(ccache[b], ccache[obs]) for (b, obs) in cond_bools_to_maximize]
@@ -40,5 +42,8 @@ function compile_helper(cond_bools_to_maximize::Vector{<:Tuple{<:AnyBool, <:AnyB
 end
 
 function compile_helper(bools_to_maximize::Vector{<:AnyBool}, flip_to_group)
-    compile_helper([(b, true) for b in bools_to_maximize], flip_to_group)
+    compile_helper(
+        Cond{<:AnyBool}[EvidMonad.ret(b) for b in bools_to_maximize],
+        flip_to_group
+    )
 end
