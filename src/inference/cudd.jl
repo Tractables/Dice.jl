@@ -132,7 +132,7 @@ function CuddMgr(reordering_type::CUDD.Cudd_ReorderingType)
     reordering_type == CUDD.CUDD_REORDER_NONE || Cudd_AutodynEnable(cudd_mgr, reordering_type)
     mgr = CuddMgr(cudd_mgr, Dict{Int,Float64}())
     finalizer(mgr) do x
-        Cudd_Quit(x.cuddmgr)
+        # Cudd_Quit(x.cuddmgr)
     end
 end
 
@@ -147,7 +147,7 @@ function compile(mgr::CuddMgr, x::Dist{Bool}, ccache, num_uncompiled_parents)
             num_uncompiled_parents[child] -= 1
             @assert num_uncompiled_parents[child] >= 0
             if num_uncompiled_parents[child] == 0
-                Cudd_RecursiveDeref(mgr.cuddmgr, ccache[child])
+                # Cudd_RecursiveDeref(mgr.cuddmgr, ccache[child])
             end
         end
     end
