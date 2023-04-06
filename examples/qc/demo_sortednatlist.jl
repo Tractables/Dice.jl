@@ -34,7 +34,7 @@ function gen_sorted_list(size, lo, hi)
         # don't learn their probabilities (this is on purpose - we could).
         mx = unif(lo, hi)
         mxs = EvidMonad.bind(mx, x -> gen_sorted_list(size-1, x, hi))
-        liftM2(EvidMonad, DistCons)(mx, mxs)
+        liftM(EvidMonad, DistCons)(mx, mxs)
     end
 end
 
@@ -64,7 +64,7 @@ print_dict(pr(generated))
 println()
 
 cond_bools_to_maximize = Cond{<:AnyBool}[
-    liftM2(EvidMonad, prob_equals)(generated, EvidMonad.ret(x))
+    liftM(EvidMonad, prob_equals)(generated, EvidMonad.ret(x))
     for x in DATASET
 ]
 train_group_probs!(cond_bools_to_maximize, EPOCHS, LEARNING_RATE)

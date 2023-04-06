@@ -35,7 +35,7 @@ function gen_bst(size, lo, hi)
         mx = unif(lo, hi)
         ml = EvidMonad.bind(mx, x -> gen_bst(size-1, lo, x))
         mr = EvidMonad.bind(mx, x -> gen_bst(size-1, x, hi))
-        liftM3(EvidMonad, DistBranch)(mx, ml, mr)
+        liftM(EvidMonad, DistBranch)(mx, ml, mr)
     end
 end
 
@@ -65,7 +65,7 @@ print_dict(pr(generated))
 println()
 
 cond_bools_to_maximize = Cond{<:AnyBool}[
-    liftM2(EvidMonad, prob_equals)(generated, EvidMonad.ret(x))
+    liftM(EvidMonad, prob_equals)(generated, EvidMonad.ret(x))
     for x in DATASET
 ]
 train_group_probs!(cond_bools_to_maximize, EPOCHS, LEARNING_RATE)

@@ -1,11 +1,36 @@
-export Monad, liftM, liftM2, liftM3
+export Monad, liftM
 
 struct Monad
     bind # (m a) * (a -> m b) -> m b
     ret  # a -> m a
 end
 
+# Variadic liftM
 function liftM(m::Monad, f)
+    f_vec(args) = f(args...)
+    function g(mas...)
+        liftM_helper(m, f_vec)(collect(mas))
+    end
+end
+
+# liftM but takes in vector input for efficiency
+function liftM_helper(m::Monad, f)
+    function g(mas)
+        if isempty(mas)
+            m.ret(f([]))
+        else
+            ma = pop!(mas)
+            m.bind(ma,
+                a -> liftM_helper(m, as -> f(push!(as, a)))(mas)
+            )
+        end
+    end
+end
+
+# Specialized versions
+#==
+
+function liftM1(m::Monad, f)
     function g(ma)
         m.bind(ma, a -> m.ret(f(a)))
     end
@@ -32,3 +57,4 @@ function liftM3(m::Monad, f)
         )
     end
 end
+==#
