@@ -1,3 +1,4 @@
+using Revise
 using Dice
 using Test
 using Dice: Flip, num_ir_nodes
@@ -188,6 +189,14 @@ end
         end
     end
 end
+
+code = @dice begin
+        a = DistInt{4}(-8)
+        b = DistInt{4}(-1)
+        c = a*b
+        c
+end
+pr(code)
 
 @testset "DistInt uniform" begin
     y = @dice uniform(DistInt{4}, -7, 1)

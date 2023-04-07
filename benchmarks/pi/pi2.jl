@@ -7,7 +7,8 @@ p = pr(@dice uniform(DistUInt{3}); ignore_errors=true)
 
 # b = parse(Int64, ARGS[1])
 
-for a = 1:20
+# for a = 1:20
+    a = 3
     b = a
     t = @timed pr(@dice begin
                 x = uniform(DistFixedPoint{b+2, b}, 1/2^b, 1.0 + 1/2^b)
@@ -25,4 +26,4 @@ for a = 1:20
     @show b, p[1.0], t.time
     writedlm(io, [b p[1.0] t.time], ",")  
     close(io)
-end
+# end

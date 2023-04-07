@@ -1,6 +1,9 @@
 using CUDD
 using DataStructures: LinkedList, cons, nil
 
+
+export CuddMgr, compile, dump_dot, num_bdd_nodes, derivative
+
 ##################################
 # CUDD Inference
 ##################################
@@ -71,12 +74,13 @@ end
 mutable struct CuddMgr
     cuddmgr::Ptr{Nothing}
     probs::Dict{Int,Float64}
+    derivs::Dict{Int, Float64}
 end
 
 function CuddMgr() 
     cudd_mgr = initialize_cudd()
     Cudd_DisableGarbageCollection(cudd_mgr) # note: still need to ref because CUDD can delete nodes without doing a GC pass
-    mgr = CuddMgr(cudd_mgr, Dict{Int,Float64}())
+    mgr = CuddMgr(cudd_mgr, Dict{Int,Float64}(), Dict{Int, Float64}())
     finalizer(mgr) do x
         Cudd_Quit(x.cuddmgr)
     end
@@ -100,6 +104,10 @@ function compile(mgr::CuddMgr, x::Dist{Bool}, cache)
     fi(n::DistOr, call) = disjoin(mgr, call(n.x), call(n.y))
     fi(n::DistNot, call) = negate(mgr, call(n.x))
     foldup(x, fl, fi, Ptr{Nothing}, cache)
+end
+
+function compile(mgr::CuddMgr, x, cache)
+    [compile(mgr, i, cache) for i in tobits(x)]
 end
 
 function order_variables(mgr, evidence, queries, errors)
@@ -171,6 +179,33 @@ function logprobability(mgr::CuddMgr, x::Ptr{Nothing}, cache)
     
     rec(x, false)
 end
+
+#################################
+# Learning parameters
+#################################
+
+function derivative(mgr::CuddMgr, x::Ptr{Nothing}, deriv::Float64)
+    v = decisionvar(mgr, x)
+    theta = mgr.probs[v]
+    p1 = get!(logprobability_cache(mgr), (Cudd_T(x), p'))
+    p2 = logprobability_cache(Cudd_E(x))
+    mgr.deriv[v] += deriv*(exp(p1)-exp(p2)) * theta * (1 - theta)
+
+    derivative(mgr, Cudd_T(x), deriv*(p1 - p2))
+    derivative(mgr, Cudd_E(x), deriv*(p1 - p2))
+end
+
+function update_probs(mgr::CuddMgr, eta::Float64)
+    for (y, c) in mgr.probs
+        new_c = sigmoid(inv_sigmoid(c) - eta*mgr.derivs[y])
+        mgr.probs[y] = new_c
+    end
+end
+
+
+
+    
+
 
 probability(mgr::CuddMgr, x::Ptr{Nothing}) =
     exp(logprobability(mgr, x))

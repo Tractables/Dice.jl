@@ -194,7 +194,7 @@ function Base.:(*)(x::DistInt{W}, y::DistInt{W}) where W
     end
     P_ans = convert(DistInt{2*W}(P), DistInt{W})
     P_overflow = DistInt{W}(P.bits[1:W])
-    overflow = (!prob_equals(P_overflow, DistInt{W}(-1)) & !prob_equals(P_ans, DistInt{W}(-1))) | (!prob_equals(P_overflow, DistInt{W}(0)) & !prob_equals(P_ans, DistInt{W}(0)))
+    # overflow = (!prob_equals(P_overflow, DistInt{W}(-1)) & !prob_equals(P_ans, DistInt{W}(-1))) | (!prob_equals(P_overflow, DistInt{W}(0)) & !prob_equals(P_ans, DistInt{W}(0)))
     overflow = prob_equals(P_overflow, DistInt{W}(-1)) | prob_equals(P_overflow, DistInt{W}(0))
     !overflow && error("integer overflow")
     overflow = !prob_equals(x, DistInt{W}(0)) & !prob_equals(y, DistInt{W}(0)) & ((!xor(p1.bits[W+1], p2.bits[W+1]) & P.bits[W+1]) | (xor(p1.bits[W+1], p2.bits[W+1]) & !P.bits[W+1]))
