@@ -111,4 +111,7 @@ end
 # Inference backends
 ##################################
 
-include("cudd.jl")
+include("cudd/core.jl")
+include("cudd/compile.jl")
+include("cudd/wmc.jl")
+include("cudd/diff.jl")

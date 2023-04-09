@@ -33,6 +33,7 @@ end
 
 include("monad.jl")
 include("dist/dist.jl")
+include("flip_groups.jl")
 include("inference/inference.jl")
 include("analysis/analysis.jl")
 include("dsl.jl")

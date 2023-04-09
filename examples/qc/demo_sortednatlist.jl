@@ -2,8 +2,7 @@
 
 using Dice
 
-# Utils
-include("lib/dict_vec.jl")
+# For print_dict
 include("../util.jl")
 
 # Support DistList
@@ -11,6 +10,7 @@ include("lib/inductive.jl")
 include("lib/dist_list.jl")
 
 # Support conditional BDD differentiation
+include("lib/dict_vec.jl")
 include("lib/cudd_view.jl")
 include("lib/cudd_diff.jl")
 
@@ -24,7 +24,7 @@ include("lib/unif_between.jl")
 # Return list, evid pair
 function gen_sorted_list(size, lo, hi)
     size == 0 && return EvidMonad.ret(DistNil())
-
+    
     # Try changing the parameter to flip_for to a constant, which would force
     # all sizes to use the same probability.
     @dice_ite if flip_for(size)
@@ -79,7 +79,7 @@ generated = liftM(EvidMonad, len)(gen())
 print_dict(pr(generated))
 println()
 
-include("lib/sample.jl")
+include("lib/sample.jl")  # sample
 println("A few sampled lists:")
 l = gen()
 for _ in 1:3

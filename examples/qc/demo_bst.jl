@@ -2,8 +2,7 @@
 
 using Dice
 
-# Utils
-include("lib/dict_vec.jl")
+# For print_dict
 include("../util.jl")
 
 # Support DistTree
@@ -11,6 +10,7 @@ include("lib/inductive.jl")
 include("lib/dist_tree.jl")
 
 # Support conditional BDD differentiation
+include("lib/dict_vec.jl")
 include("lib/cudd_view.jl")
 include("lib/cudd_diff.jl")
 
