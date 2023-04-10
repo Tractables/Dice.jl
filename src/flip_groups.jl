@@ -21,8 +21,8 @@ function get_group_probs()
 end
 
 function reset_flips!()
-	empty!(_flip_to_group)
-    empty!(_group_to_psp)
+    global _flip_to_group = Dict{Dice.Flip, Any}()
+    global _group_to_psp = Dict{Any, Float64}()
 end
 
 function update_group_to_psp!(group_to_psp::Dict{Any, Float64})

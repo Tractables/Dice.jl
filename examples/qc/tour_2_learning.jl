@@ -1,12 +1,10 @@
 # An introduction to using MLE to learn flip probabilities
 
-using Revise
-using Dice
-
-
 ################################################################################
 # Maximizing expression probabilities
 ################################################################################
+
+using Dice
 
 # What value for ? maximizes the probability of the following expression?
 #   flip(?) & flip(?) & !flip(?)
@@ -150,6 +148,7 @@ train_group_probs!(bools_to_maximize)
 get_group_probs()
 #   "?" => 0.25
 
+reset_flips!()
 
 ################################################################################
 # Uniform list lengths with dynamic groups

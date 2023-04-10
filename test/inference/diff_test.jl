@@ -2,6 +2,8 @@ using Test
 using Dice
 
 @testset "MLE" begin
+    dataset = [true, true, false]
+    
     reset_flips!()
     b = @dice_ite if flip_for("?") true else flip_for("?") end
     train_group_probs!([prob_equals(b, x) for x in dataset], 200)
