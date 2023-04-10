@@ -2,6 +2,8 @@
 # CUDD Inference
 ##################################
 
+export WMC
+
 using DataStructures: LinkedList, cons, nil
 
 mutable struct WMC
@@ -9,6 +11,12 @@ mutable struct WMC
     group_to_psp::Dict{<:Any, Float64}
     flip_to_group::Dict{Flip, <:Any}
     cache::Dict{CuddNode, Float64}
+    function WMC(c, group_to_psp, flip_to_group)
+        w = new(c, group_to_psp, flip_to_group, Dict{CuddNode, Float64}())
+        w.cache[constant(w.c.mgr, true)] = log(one(Float64))
+        w.cache[constant(w.c.mgr, false)] = log(zero(Float64))
+        w
+    end
 end
 
 struct CuddDebugInfo
@@ -80,12 +88,11 @@ function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}, errors, dots)
             [evidence],
             Iterators.flatten(xs for (xs, filename) in dots),
         ))),
-        group_to_psp,  # global
-        flip_to_group,  # global
-        Dict{CuddNode, Float64}()
+        _group_to_psp,  # global (todo: lift references to this to edges of API
+        _flip_to_group,  # global (todo: lift references to this to edges of API
     )
-    w.cache[constant(w.c.mgr, true)] = log(one(Float64))
-    w.cache[constant(w.c.mgr, false)] = log(zero(Float64))
+
+    enable_reordering(w.c, cudd.reordering_type)
 
     # compile BDDs and infer probability of all errors
     prob_errors = ProbError[]

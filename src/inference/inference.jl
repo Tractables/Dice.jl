@@ -114,4 +114,5 @@ end
 include("cudd/core.jl")
 include("cudd/compile.jl")
 include("cudd/wmc.jl")
+include("cudd/dict_vec.jl")
 include("cudd/diff.jl")

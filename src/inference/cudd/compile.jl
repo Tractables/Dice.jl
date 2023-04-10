@@ -2,6 +2,8 @@
 # CUDD Compilation
 ##################################
 
+export BDDCompiler, compile, enable_reordering
+
 mutable struct BDDCompiler
     mgr::CuddMgr
     roots::Set{AnyBool}
@@ -89,7 +91,7 @@ function compile(c::BDDCompiler, root::AnyBool)::CuddNode
         end
         c.cache[n]
     end
-    
+
     # TODO: is GC right with complement arcs? I think so... - Ryan
     fi(n::DistNot, call) = begin
         if !haskey(c.cache, n)
