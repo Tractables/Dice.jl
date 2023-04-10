@@ -3,7 +3,7 @@ using Dice
 
 # Without PPL
 a_true = 0.3; a_false = 0.7;
-b_true = 0.7; b_false = 0.3
+b_true = 0.7; b_false = 0.3;
 a_true_b_true = 0.3*0.7
 
 # With a PPL
