@@ -1,43 +1,26 @@
 # Demo of using BDD MLE to learn flip probs for a sorted nat list of uniform length.
 
 using Dice
+include("../util.jl")           # print_dict
+include("lib/dist_list.jl")     # DistNil, DistCons, len
+include("lib/unif_between.jl")  # unif
 
-# For print_dict
-include("../util.jl")
-
-# Support DistList
-include("lib/inductive.jl")
-include("lib/dist_list.jl")
-
-# Support conditional BDD differentiation
-include("lib/dict_vec.jl")
-include("lib/cudd_view.jl")
-include("lib/cudd_diff.jl")
-
-# Track flip groups
-include("lib/compile.jl")
-include("lib/flip_groups.jl")
-include("lib/train_group_probs.jl")
-
-include("lib/unif_between.jl")
-
-# Return list, evid pair
+# Return a list, evid pair
 function gen_sorted_list(size, lo, hi)
-    size == 0 && return EvidMonad.ret(DistNil())
+    size == 0 && return DistNil(), true
     
     # Try changing the parameter to flip_for to a constant, which would force
     # all sizes to use the same probability.
     @dice_ite if flip_for(size)
-        EvidMonad.ret(DistNil())
+        DistNil(), true
     else
         # The flips used in the uniform aren't tracked via flip_for, so we
         # don't learn their probabilities (this is on purpose - we could).
-        mx = unif(lo, hi)
-        mxs = EvidMonad.bind(mx, x -> gen_sorted_list(size-1, x, hi))
-        liftM(EvidMonad, DistCons)(mx, mxs)
+        x, x_evid = unif(lo, hi)
+        xs, xs_evid = gen_sorted_list(size-1, x, hi)
+        DistCons(x, xs), x_evid & xs_evid
     end
 end
-
 
 # Top-level size/fuel. For gen_list, this is the max length.
 INIT_SIZE = 5
@@ -56,27 +39,28 @@ gen() = gen_sorted_list(
     DistUInt32(1),
     DistUInt32(INIT_SIZE),
 )
-x = gen()
-generated = liftM(EvidMonad, len)(x)
+list, evid = gen()
+list_len = len(list)
 
 println("Distribution before training:")
-print_dict(pr(generated))
+print_dict(pr(list_len, evidence=evid))
 println()
 
-cond_bools_to_maximize = Cond{<:AnyBool}[
-    liftM(EvidMonad, prob_equals)(generated, EvidMonad.ret(x))
+cond_bools_to_maximize = [
+    (prob_equals(list_len, x), evid)
     for x in DATASET
 ]
-train_group_probs!(cond_bools_to_maximize, EPOCHS, LEARNING_RATE)
+train_group_probs!(cond_bools_to_maximize)
 
 # Done!
 println("Learned flip probability for each size:")
-print_dict(Dict(group => sigmoid(psp) for (group, psp) in group_to_psp))
+print_dict(get_group_probs())
 println()
 
 println("Distribution over lengths after training:")
-generated = liftM(EvidMonad, len)(gen())
-print_dict(pr(generated))
+list, evid = gen()
+list_len = len(list)
+print_dict(pr(list_len, evidence=evid))
 println()
 
 include("lib/sample.jl")  # sample
@@ -97,19 +81,19 @@ Distribution before training:
    5 => 0.0007344968696442925
 
 Learned flip probability for each size:
-   1 => 0.23076992187684997
-   2 => 0.07142880101797898
-   3 => 0.027027114085751116
-   4 => 0.013333375907124311
-   5 => 0.013157936194860715
+   1 => 0.2307692307692313
+   2 => 0.07142857142857169
+   3 => 0.02702702702702712
+   4 => 0.013333333333333386
+   5 => 0.013157894736842155
 
 Distribution over lengths after training:
-   1 => 0.16666681044677775
-   0 => 0.16666681041111409
-   2 => 0.16666680794498645
-   3 => 0.16666679187862538
-   4 => 0.1666667140950012
-   5 => 0.16666606522349497
+   0 => 0.16666666666666674
+   1 => 0.16666666666666674
+   2 => 0.1666666666666666
+   3 => 0.1666666666666666
+   4 => 0.1666666666666663
+   5 => 0.1666666666666657
 
 A few sampled lists:
 Cons

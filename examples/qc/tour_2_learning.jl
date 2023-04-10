@@ -1,27 +1,7 @@
 # An introduction to using MLE to learn flip probabilities
 
-################################################################################
-# Setup
-################################################################################
-
+using Revise
 using Dice
-
-# For print_dict
-include("../util.jl")
-
-# Inductive datatypes
-include("lib/inductive.jl")
-include("lib/dist_tree.jl")
-
-# Support conditional BDD differentiation
-include("lib/dict_vec.jl")
-include("lib/cudd_view.jl")
-include("lib/cudd_diff.jl")
-
-# Track flip groups
-include("lib/compile.jl")
-include("lib/flip_groups.jl")
-include("lib/train_group_probs.jl")
 
 
 ################################################################################
@@ -44,16 +24,16 @@ get_group_probs()  # ? => 0.666667
 #   the parameters of registered flips, to maximize the product of the
 #   probabilities of the bools
 
-reset_flips!()  # clear registered flips
+reset_flips!()  # call this before the first flip_for of the next program
 
 # If the flips above can have different groups, each can take on a
 # different probability.
 x = flip_for("a") & flip_for("b") & !flip_for("c")
 train_group_probs!([x])
-print_dict(get_group_probs())
-# a => 0.9966337256742784
-# b => 0.9966337256742784
-# c => 0.003366274325721429
+get_group_probs()
+# a => 0.996634
+# b => 0.996634
+# c => 0.00336627
 
 # Not surprising! We can also keep training to get closer to 1, 1, 0.
 train_group_probs!(
@@ -61,10 +41,10 @@ train_group_probs!(
 	10000, # epochs
 	3.0    # learning rate
 )
-print_dict(get_group_probs())
-# a => 0.9999669960226594
-# b => 0.9999669960226594
-# c => 3.3003977340565305e-5
+get_group_probs()
+# a => 0.999967
+# b => 0.999967
+# c => 3.3004e-5
 
 reset_flips!()
 
@@ -75,65 +55,140 @@ reset_flips!()
 
 # Consider the following probabilistic program with holes. What probability
 # will cause x to be true 2/3 of the time?
-x = @dice_ite if flip_for("?")
-    true
-else
-    flip(0.5)
-end
+b = @dice_ite if flip_for("?") true else flip(0.5) end
 
 # We can match this dataset...
 dataset = [true, true, false]
 
 # ...by maximizing these distributions over bools:
-bools_to_maximize = [prob_equals(x, y) for y in dataset]
-
+bools_to_maximize = [prob_equals(b, x) for x in dataset]
 train_group_probs!(bools_to_maximize)
-print_dict(get_group_probs())  # ? => 0.3333333333333336
+get_group_probs()  # ? => 0.33333
 
-# Again - we can also constrain multiple flips to have the same probability
+# We can also check how close we are by performing normal Dice inference.
+# Let's back up:
 reset_flips!()
-x = @dice_ite if flip_for("?")
-    true
-else
-    flip_for("?")
+b = @dice_ite if flip_for("?") true else flip(0.5) end
+
+# By default, `flip_for`s have a probability of 0.5
+pr(b)  # true => 0.75
+
+# `train_group_probs` mutates the probabilities of `flip_for`s (but not `flip`s)
+train_group_probs!([prob_equals(b, x) for x in dataset])
+
+# The program is true 2/3 of the time, as desired!
+pr(b)  # true  => 0.666667
+
+reset_flips!()
+
+# As before, we can also constrain multiple flips to have the same probability
+#                                        vvvvvvvvvvvv changed
+b = @dice_ite if flip_for("?") true else flip_for("?") end
+train_group_probs!([prob_equals(b, x) for x in dataset])
+get_group_probs() # ? => 0.42264973081037427
+pr(b)  # true => 0.666667
+
+reset_flips!()
+
+# Here's an example for ints. Lets say we build an int whose bits are flips such
+# that it has a uniform distribution over 0, 2, 4, ..., 14.
+n = DistUInt{4}([flip_for("b$(i)") for i in 1:4])
+dataset = [DistUInt{4}(even) for even in 0:2:14]
+bools_to_maximize = [prob_equals(n, x) for x in dataset]
+train_group_probs!(bools_to_maximize)
+get_group_probs()
+# "b1" => 0.5
+# "b2" => 0.5
+# "b3" => 0.5
+# "b4" => 0.000416122
+
+reset_flips!()
+
+
+################################################################################
+# Uniform list lengths
+################################################################################
+
+# Load support for distributions over cons lists
+include("lib/dist_list.jl")
+
+# Consider this recursive function which generates lists up to a certain size
+function gen_list(size)
+    size == 0 && return DistNil()
+
+    @dice_ite if flip_for("?")
+        DistNil()
+    else
+        # The flips used in the uniform aren't tracked via flip_for, so we
+        # don't learn their probabilities.
+        DistCons(uniform(DistUInt32, 0, 10), gen_list(size-1))
+    end
 end
-train_group_probs!([prob_equals(x, y) for y in dataset])
-print_dict(get_group_probs()) # ? => 0.42264973081037427
-# This value for ? isn't as intuitive. Let's double-check the distribution:
-pr(@dice_ite if flip(0.42265) true else flip(0.42265) end)
-# false => 0.333333
-# true  => 0.666667
-pr(x)
-	
+
+# What if we want to learn a probability for ? such that the list lengths are
+# uniformly distributed from 0 to 5?
+
+# Note that the distribution of gen_list depends on the initial size passed to
+# the top call. Let's choose to pass in 5 to the top call since we don't want to
+# generate lists larger than that.
+
+init_size = 5
+dataset = [DistUInt32(x) for x in 0:init_size]
+generated = len(gen_list(init_size))
+
+# Distribution over lengths before training
+pr(generated)
+#    0 => 0.5
+#    1 => 0.25
+#    2 => 0.12500000000000003
+#    3 => 0.0625
+#    4 => 0.03125
+#    5 => 0.03125
+
+bools_to_maximize = AnyBool[prob_equals(generated, x) for x in dataset]
+train_group_probs!(bools_to_maximize)
+get_group_probs()
+#   "?" => 0.25
 
 
+################################################################################
+# Uniform list lengths with dynamic groups
+################################################################################
 
-simple dependency
-
-function f(x)
-	if x > 0
-		f(x - 1)
-if flip_for(x) flip(0.5) else flip(0.3) end
+# Suppose instead that we can have the flip probability change depend based on
+# the size in the subcall.
+function gen_list(size)
+    size == 0 && return DistNil()
+    
+    #                     vvvvv changed
+    @dice_ite if flip_for(size)
+        DistNil()
+    else
+        # The flips used in the uniform aren't tracked via flip_for, so we
+        # don't learn their probabilities.
+        DistCons(uniform(DistUInt32, 0, 10), gen_list(size-1))
+    end
 end
 
-train!(
-	[prob_eq(f(1), true)
-	prob_eq(f(1), false)
-	prob_eq(f(2), false)
-)
+generated = len(gen_list(init_size))
+bools_to_maximize = AnyBool[prob_equals(generated, x) for x in dataset]
+train_group_probs!(bools_to_maximize)
+get_group_probs()
+#   "?" => 0.25
 
-result:
-1 => ??
-2 =>  ??
 
-recursive function that calls smaller 
+################################################################################
+# Including evidence
+################################################################################
 
-list
+# So far, we've been passing a list like [x, y, z, ...] to `train_group_probs`.
+# This chooses flip_for probabilities to maximize Pr(x) * Pr(y) * Pr(z)
 
-flips = [...]
-list = generateList(...) # depends on flips
-train_flip_probs!(flips, wrt=[
-prob_equals(list, [1, 2, 3]),
-prob_equals(list, [2, 3, 4]),
-])
+# We can also pass a list of tuples to `train_group_probs`, like:
+#   [(x, evid1), (y, evid2), (z, evid3)]
+# This chooses flip_for probabilities to maximize:
+#   Pr(x given evid1) * Pr(y given evid2) * Pr(z given evid3)
 
+# Examples for this include demo_sortednatlist.jl and demo_bst.jl.
+
+# TODO: What's a good small example?

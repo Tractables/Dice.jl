@@ -1,8 +1,10 @@
+using Dice: tobits, frombits
+
 minvalue(x::DistUInt) = frombits(x, Dict(b => false for b in tobits(x)))
 maxvalue(x::DistUInt) = frombits(x, Dict(b => true for b in tobits(x)))
 
 # Return generated value and observation
 function unif(lo::DistUInt{W}, hi::DistUInt{W}) where W
     x = uniform(DistUInt{W}, minvalue(lo), maxvalue(hi) + 1)
-    Cond{DistUInt{W}}(x, (x >= lo) & (x <= hi))
+    x, (x >= lo) & (x <= hi)
 end

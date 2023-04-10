@@ -1,55 +1,34 @@
 # Demo of using BDD MLE to learn flip probs for a BST of uniform depth
 
 using Dice
-
-# For print_dict
-include("../util.jl")
-
-# Support DistTree
-include("lib/inductive.jl")
-include("lib/dist_tree.jl")
-
-# Support conditional BDD differentiation
-include("lib/dict_vec.jl")
-include("lib/cudd_view.jl")
-include("lib/cudd_diff.jl")
-
-# Track flip groups
-include("lib/compile.jl")
-include("lib/flip_groups.jl")
-include("lib/train_group_probs.jl")
-
-include("lib/unif_between.jl")
+include("../util.jl")           # print_dict
+include("lib/dist_tree.jl")     # DistLeaf, DistBranch, depth
+include("lib/unif_between.jl")  # unif
 
 # Return tree, evid pair
 function gen_bst(size, lo, hi)
-    size == 0 && return EvidMonad.ret(DistLeaf())
+    size == 0 && return DistLeaf(), true
 
     # Try changing the parameter to flip_for to a constant, which would force
     # all sizes to use the same probability.
     @dice_ite if flip_for(size)
-        EvidMonad.ret(DistLeaf())
+        DistLeaf(), true
     else
         # The flips used in the uniform aren't tracked via flip_for, so we
         # don't learn their probabilities (this is on purpose - we could).
-        mx = unif(lo, hi)
-        ml = EvidMonad.bind(mx, x -> gen_bst(size-1, lo, x))
-        mr = EvidMonad.bind(mx, x -> gen_bst(size-1, x, hi))
-        liftM(EvidMonad, DistBranch)(mx, ml, mr)
+        x, x_evid = unif(lo, hi)
+        l, l_evid = gen_bst(size-1, lo, x)
+        r, r_evid = gen_bst(size-1, x, hi)
+        DistBranch(x, l, r), x_evid | l_evid | r_evid
     end
 end
 
-
-# Top-level size/fuel. For gen_list, this is the max length.
+# Top-level size/fuel. For gen_bst, this is the max depth.
 INIT_SIZE = 3
 
 # Dataset over the desired property to match. Below is a uniform distribution
 # over sizes.
 DATASET = [DistUInt32(x) for x in 0:INIT_SIZE]
-
-# Training hyperparams
-EPOCHS = 500
-LEARNING_RATE = 0.1
 
 # Use Dice to build computation graph
 gen() = gen_bst(
@@ -57,27 +36,28 @@ gen() = gen_bst(
     DistUInt32(1),
     DistUInt32(2 * INIT_SIZE),
 )
-x = gen()
-generated = liftM(EvidMonad, depth)(x)
+tree, evid = gen()
+tree_depth = depth(x)
 
 println("Distribution before training:")
-print_dict(pr(generated))
+print_dict(pr(tree_depth, evidence=evid))
 println()
 
-cond_bools_to_maximize = Cond{<:AnyBool}[
-    liftM(EvidMonad, prob_equals)(generated, EvidMonad.ret(x))
+cond_bools_to_maximize = [
+    (prob_equals(tree_depth, x), evid)
     for x in DATASET
 ]
-train_group_probs!(cond_bools_to_maximize, EPOCHS, LEARNING_RATE)
+train_group_probs!(cond_bools_to_maximize)
 
 # Done!
 println("Learned flip probability for each size:")
-print_dict(Dict(group => sigmoid(psp) for (group, psp) in group_to_psp))
+print_dict(get_group_probs())
 println()
 
 println("Distribution over depths after training:")
-generated = liftM(EvidMonad, depth)(gen())
-print_dict(pr(generated))
+tree, evid = gen()
+tree_depth = depth(x)
+print_dict(pr(tree_depth, evidence=evid))
 println()
 
 include("lib/sample.jl")
@@ -97,15 +77,15 @@ Distribution before training:
    3 => 0.023319900448265686
 
 Learned flip probability for each size:
-   1 => 0.4221866018509798
-   2 => 0.13012499953148837
-   3 => 0.016650759153960585
+   1 => 0.4221209887029583
+   2 => 0.1300886284852543
+   3 => 0.016641427530024785
 
 Distribution over depths after training:
-   0 => 0.2500235318247399
-   1 => 0.2500207856193543
-   2 => 0.2500178265709582
-   3 => 0.24993785598494764
+   1 => 0.2500000000000004
+   2 => 0.2500000000000004
+   0 => 0.25000000000000017
+   3 => 0.24999999999999972
 
 A few sampled trees:
 Branch

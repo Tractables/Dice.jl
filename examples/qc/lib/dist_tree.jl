@@ -10,7 +10,7 @@ DistLeaf()          = construct(DistTree, "Leaf",   ())
 DistBranch(x, l, r) = construct(DistTree, "Branch", (x, l, r))
 
 function depth(l)
-    match(l, [
+    prob_match(l, [
         "Leaf"    => ()      -> DistUInt32(0),
         "Branch"  => (x, l, r) -> begin
             dl, dr = depth(l), depth(r)

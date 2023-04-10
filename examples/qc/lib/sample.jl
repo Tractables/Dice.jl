@@ -1,12 +1,13 @@
 using DirectedAcyclicGraphs: foldup
 
-function sample(x::Cond{T}) where T
+function sample(tup)
+    x, evid = tup
     while true
         vcache = Dict()
         fl(n::Dice.Flip) = begin
             if !haskey(vcache, n)
-                prob = if haskey(flip_to_group, n)
-                    sigmoid(group_to_psp[flip_to_group[n]])
+                prob = if haskey(Dice._flip_to_group, n)
+                    Dice.sigmoid(Dice._group_to_psp[Dice._flip_to_group[n]])
                 else
                     n.prob
                 end
@@ -37,10 +38,10 @@ function sample(x::Cond{T}) where T
         end
 
         vcache = Dict()
-        foldup(x.evid, fl, fi, Bool) || continue
-        for bit in tobits(x.x)
+        foldup(evid, fl, fi, Bool) || continue
+        for bit in tobits(x)
             foldup(bit, fl, fi, Bool)
         end
-        return frombits(x.x, vcache)
+        return frombits(x, vcache)
     end
 end

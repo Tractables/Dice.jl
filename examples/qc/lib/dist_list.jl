@@ -10,7 +10,7 @@ DistNil()       = construct(DistList, "Nil",  ())
 DistCons(x, xs) = construct(DistList, "Cons", (x, xs))
 
 function len(l)
-    match(l, [
+    prob_match(l, [
         "Nil"  => ()      -> DistUInt32(0),
         "Cons" => (x, xs) -> DistUInt32(1) + len(xs),
     ])
