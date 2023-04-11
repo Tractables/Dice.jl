@@ -190,6 +190,73 @@ function bitblast(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution,
 end
 
 
+function bitblast2(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution, 
+                  numpieces::Int, start::Float64, stop::Float64, strategy=:linear) where {W,F}
+
+    @assert ispow2(numpieces) "Number of pieces must be a power of two (not $numpieces)"
+    intervals_per_piece = (2^Int(f_range_bits))/numpieces
+    bits_per_piece = Int(log2(intervals_per_piece))
+
+    dist = truncated(dist, start, stop)
+
+    total_prob = 0
+    piece_probs = Vector(undef, numpieces) # prob of each piece
+    border_probs = Vector(undef, numpieces) # prob of first and last interval in each piece
+    linear_piece_probs = Vector(undef, numpieces) # prob of each piece if it were linear between end points
+
+    for i=1:numpieces
+        firstinter = start + (i-1)*intervals_per_piece/2^F 
+        lastinter = start + (i)*intervals_per_piece/2^F 
+
+        piece_probs[i] = (cdf(dist, lastinter) - cdf(dist, firstinter))
+        total_prob += piece_probs[i]
+
+        border_probs[i] = [cdf(dist, firstinter + 1/2^F ) - cdf(dist, firstinter), 
+                        cdf(dist, lastinter) - cdf(dist, lastinter - 1/2^F )]
+        linear_piece_probs[i] = (border_probs[i][1] + border_probs[i][2])/2 * 2^(bits_per_piece)
+    end
+
+    PieceChoice = DistUInt{max(1,Int(log2(numpieces)))}
+    piecechoice = discrete(PieceChoice, piece_probs ./ total_prob) # selector variable for pieces
+    slope_flips = Vector(undef, numpieces)
+
+    isdecreasing = Vector(undef, numpieces)
+    for i=numpieces:-1:1
+        iszero(linear_piece_probs[i]) && assert(iszero(piece_probs[i])) && continue
+        a = border_probs[i][1]/linear_piece_probs[i]
+        isdecreasing[i] = a > 1/2^bits_per_piece
+        if isdecreasing[i]
+            slope_flips[i] = flip(2-a*2^bits_per_piece)
+        else
+            slope_flips[i] = flip(a*2^bits_per_piece)
+        end  
+    end
+
+    unif = uniform(DistFix{W,F},  bits_per_piece)
+    tria = triangle(DistFix{W,F}, bits_per_piece)
+    z = nothing
+    for i=1:numpieces
+        iszero(linear_piece_probs[i]) && continue
+        firstinterval = DistFix{W,F}(start + (i-1)*2^bits_per_piece/2^F)
+        lastinterval = DistFix{W,F}(start + (i*2^bits_per_piece-1)/2^F)
+        linear_dist = 
+            if isdecreasing[i]
+                (ifelse(slope_flips[i], 
+                    (firstinterval + unif), 
+                    (lastinterval - tria)))
+            else
+                firstinterval + ifelse(slope_flips[i], unif, tria)
+            end
+        z = if isnothing(z)
+                linear_dist
+            else
+                ifelse(prob_equals(piecechoice, PieceChoice(i-1)), linear_dist, z)  
+            end
+    end
+    return z
+end
+
+
 function bitblast(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution, 
                   start::Float64, stop::Float64, blast_strategy=:exact; kwargs...) where {W,F}
     if blast_strategy == :linear
@@ -211,7 +278,7 @@ function bitblast_linear(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistrib
 
     @assert !iszero(firstprob) || !iszero(lastprob) "No probability mass found at the given boundaries."
 
-    @assert isinteger(log2((stop - start)*2^F)) "The number of $(1/2^F)-sized intervals between $start and $stop must be a power of two."
+    @assert ispow2((stop - start)*2^F) "The number of $(1/2^F)-sized intervals between $start and $stop must be a power of two."
     num_bits = Int(log2((stop-start)*2^F))
     isnothing(slope_flip) && (slope_flip = flip())
     isnothing(unif) && (unif = uniform(DistFix{W,F}, num_bits))
