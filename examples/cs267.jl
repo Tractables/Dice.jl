@@ -196,93 +196,140 @@ end
 
 pr(alarm_given_no_earthquake)[true]
 
-
-#####################################################
 #####################################################
 
-# what should we get here?
+# betting
 
-function myevents()
-    world = mytable()
-    earthquake, burglery, alarm = world
-    x = secret(world) & alarm
-    y = secret(world) & !alarm
-    z = x | y
-    (x,y,z)
+a = flip(0.4)
+mybet = 60
+yourbet = -40
+
+pr(a)[true] * mybet + pr(a)[false] * yourbet
+
+
+#####################################################
+
+# product rule
+
+both = @dice begin
+    earthquake, burglery, alarm = mytable()
+    alarm & earthquake
 end
 
+pr(both)[true]
 
 
-# Without PPL
-a_true = 0.3; a_false = 0.7;
-b_true = 0.7; b_false = 0.3;
-a_true_b_true = 0.3*0.7
+# Can I write this without Boolean operators?
 
-# With a PPL
-a = flip(0.3); b = flip(0.7);
-pr(a & b)
-
-# Values in a program
-true
-
-true
-
-# Variables in a program
-x = true
-
-x = flip(0.3)
-pr(x)
-
-# Tuples
-t1 = (true, false)
-
-t1 = @dice begin
-            (flip(0.3), flip(0.4))            
+alarm_goes_off = @dice begin
+    earthquake, burglery, alarm = mytable()
+    alarm
 end
-pr(t1)
 
-# Conditionals in a program
-y = if true false else true end
-
-y = @dice if flip(0.3) false else true end
-pr(y)
-
-y = @dice if flip(0.3) flip(0.4) else flip(0.5) end
-pr(y)
+pr(alarm_goes_off)[true]
 
 
-
-# Sequential statements
-let1 = 1
-let2 = 2
-
-let1 = flip(0.3)
-let2 = flip(0.4)
-pr((let1, let2))
-pr(let1)
-pr(let2)
-
-# Functions
-code = @dice begin
-                f(x) = if x flip(0.3) else flip(0.4) end
-                x = flip(0.3)
-                y = f(x)
-                y
-        end
-pr(code)
-
-# Conditional probabilities
-code = @dice begin
-    function f(x)
-        y = x || flip(0.5)
-        observe(y)
-        y 
-    end
-    x = flip(0.5)
-    y = f(x)
-    x
+earthquake_given_alarm_goes_off = @dice begin
+    earthquake, burglery, alarm = mytable()
+    observe(alarm)
+    earthquake
 end
-pr(code)
+
+pr(earthquake_given_alarm_goes_off)[true]
+
+
+pr(alarm_goes_off)[true] * pr(earthquake_given_alarm_goes_off)[true]
+
+pr(both)[true]
+
+#####################################################
+
+# what's the effect of burglery on earthquake?
+
+earthquake_given_burglery = @dice begin
+    earthquake, burglery, alarm = mytable()
+    observe(burglery)
+    earthquake
+end
+
+pr(earthquake_given_burglery)[true]
+
+#####################################################
+
+flip(done)
+
+#####################################################
+
+# # Without PPL
+# a_true = 0.3; a_false = 0.7;
+# b_true = 0.7; b_false = 0.3;
+# a_true_b_true = 0.3*0.7
+
+# # With a PPL
+# a = flip(0.3); b = flip(0.7);
+# pr(a & b)
+
+# # Values in a program
+# true
+
+# true
+
+# # Variables in a program
+# x = true
+
+# x = flip(0.3)
+# pr(x)
+
+# # Tuples
+# t1 = (true, false)
+
+# t1 = @dice begin
+#             (flip(0.3), flip(0.4))            
+# end
+# pr(t1)
+
+# # Conditionals in a program
+# y = if true false else true end
+
+# y = @dice if flip(0.3) false else true end
+# pr(y)
+
+# y = @dice if flip(0.3) flip(0.4) else flip(0.5) end
+# pr(y)
+
+
+
+# # Sequential statements
+# let1 = 1
+# let2 = 2
+
+# let1 = flip(0.3)
+# let2 = flip(0.4)
+# pr((let1, let2))
+# pr(let1)
+# pr(let2)
+
+# # Functions
+# code = @dice begin
+#                 f(x) = if x flip(0.3) else flip(0.4) end
+#                 x = flip(0.3)
+#                 y = f(x)
+#                 y
+#         end
+# pr(code)
+
+# # Conditional probabilities
+# code = @dice begin
+#     function f(x)
+#         y = x || flip(0.5)
+#         observe(y)
+#         y 
+#     end
+#     x = flip(0.5)
+#     y = f(x)
+#     x
+# end
+# pr(code)
 
 # sing Dice
 # ​
