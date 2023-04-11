@@ -175,7 +175,6 @@ train_group_probs!(bools_to_maximize)
 get_group_probs()
 #   "?" => 0.25
 
-
 ################################################################################
 # Including evidence
 ################################################################################
@@ -188,6 +187,37 @@ get_group_probs()
 # This chooses flip_for probabilities to maximize:
 #   Pr(x given evid1) * Pr(y given evid2) * Pr(z given evid3)
 
-# Examples for this include demo_sortednatlist.jl and demo_bst.jl.
+reset_flips!()
 
-# TODO: What's a good small example?
+# Lets say we know that x was sampled an unknown dist. over 1, 2, and 3
+x = @dice_ite begin
+    if flip_for("f1")
+        DistUInt32(1) 
+    elseif flip_for("f2")
+        DistUInt32(2)
+    else
+        DistUInt32(3)
+    end
+end
+
+# Given that x is odd, what flip probabilities cause x to be uniformly distributed?
+is_odd(x::DistUInt32) = prob_equals(x % DistUInt32(2), DistUInt32(1))
+evid = is_odd(x)
+pr(x, evidence=evid)  # 1 => 0.6667, 3 => 0.3333 - not what we want
+
+train_group_probs!(
+    [
+        (prob_equals(x, DistUInt32(1)), evid),
+        (prob_equals(x, DistUInt32(3)), evid),
+        # Datapoints that indicate x is 2 have no effect under an observation
+        # that removes these worlds
+        (prob_equals(x, DistUInt32(2)), evid),
+        (prob_equals(x, DistUInt32(2)), evid),
+    ]
+)
+get_group_probs()
+
+pr(x, evidence=evid) # 1 => 0.5, 3 => 0.5
+
+# More realistic examples for this include demo_sortednatlist.jl and
+# demo_bst.jl.
