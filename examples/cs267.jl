@@ -33,17 +33,62 @@ end
 pr(x) 
 
 
+# control flow
+
+x = @dice begin
+    if flip(0.9)
+        true
+    else
+        false
+    end
+end
+pr(x)
+
+x = @dice begin
+    if flip(0.9)
+        DistInt(42)
+    else
+        DistInt(1337)
+    end
+end
+pr(x)
+
+
 # joint probability tables
 
-world = @dice begin
+function mytable() 
     world_id = discrete(DistUInt8, [.0190, .0010, 0.0560, 0.0240, .1620, .0180, .0072, .7128])
-    if prob_equals(world_id, DistUInt8(1))
+    if prob_equals(world_id, DistUInt8(0))
         (true, true, true)
+    elseif prob_equals(world_id, DistUInt8(1))
+        (true, true, false)
+    elseif prob_equals(world_id, DistUInt8(2))
+        (true, false, true)
+    elseif prob_equals(world_id, DistUInt8(3))
+        (true, false, false)
+    elseif prob_equals(world_id, DistUInt8(4))
+        (false, true, true)
+    elseif prob_equals(world_id, DistUInt8(5))
+        (false, true, false)
+    elseif prob_equals(world_id, DistUInt8(6))
+        (false, false, true)
     else
         (false, false, false)
     end
 end
-pr(world)
+
+pr(@dice mytable())
+
+
+# what about events that are more than a single world?
+
+function unlucky(world) 
+    earthquake, burglery, alarm = world
+    earthquake | burglery
+end
+
+pr(@dice unlucky(mytable())) ????????
+
 
 
 # Without PPL
