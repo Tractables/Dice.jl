@@ -87,7 +87,108 @@ function unlucky(world)
     earthquake | burglery
 end
 
-pr(@dice unlucky(mytable())) ????????
+pr(@dice unlucky(mytable())) !?
+
+
+# what do we expect to get here?
+
+function secret(world) 
+    # DO NOT READ -- MAGIC
+    x, y, z = world
+    (x | y & z) & (!x | !z) | (!y & z)
+end
+
+pr(@dice secret(mytable())) !?
+
+
+# Axiom 1
+
+pr(@dice secret(mytable()))[true] > 0 !?
+
+pr(@dice secret(mytable()))[true] > 0
+
+
+# Axiom 2
+
+x = @dice begin
+    world = mytable()
+    secret(world) | !secret(world)
+end
+
+pr(x)[true] !?
+
+pr(x)[true]
+
+
+# Axiom 3
+
+function myevents()
+    world = mytable()
+    earthquake, burglery, alarm = world
+    x = secret(world) & alarm
+    y = secret(world) & !alarm
+    z = x | y
+    (x,y,z)
+end
+
+pr(@dice myevents()[1])[true] + pr(@dice myevents()[2])[true] - pr(@dice myevents()[3])[true]
+
+
+# what do we expect to get here? now we know
+
+pr(@dice secret(mytable()))
+
+
+# what do we expect to get here?
+
+code = @dice begin
+    earthquake, burglery, alarm = mytable()
+    observe(earthquake)
+    alarm
+end
+
+pr(code)[true] !?
+
+
+# reduce to what we know
+
+condition = @dice begin
+    earthquake, burglery, alarm = mytable()
+    earthquake
+end
+
+pr(condition)[true]
+
+
+both = @dice begin
+    earthquake, burglery, alarm = mytable()
+    alarm & earthquake
+end
+
+pr(both)[true]
+
+
+# find out
+
+pr(both)[true] / pr(condition)[true]
+
+pr(code)[true]
+
+
+
+#####################################################
+#####################################################
+
+# what should we get here?
+
+function myevents()
+    world = mytable()
+    earthquake, burglery, alarm = world
+    x = secret(world) & alarm
+    y = secret(world) & !alarm
+    z = x | y
+    (x,y,z)
+end
 
 
 
