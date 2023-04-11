@@ -1,5 +1,50 @@
-using Revise
-using Dice
+using Dice, Plots
+
+# classic programs are probabilistic programs 
+
+pr(@dice true)
+
+pr(@dice DistInt(42))
+
+pr(@dice DistInt(42+2))
+
+pr(@dice DistInt(42)+DistInt(2))
+bar(ans)
+
+
+# random variables are first class
+
+pr(@dice flip(0.5))
+bar(ans)
+
+pr(@dice discrete(DistUInt8, [.0190, .0010, 0.0560, 0.0240, .1620, .0180, .0072, .7128]))
+bar(ans)
+
+
+# ask for a specific values
+
+probabilities = pr(@dice discrete(DistUInt8, [.0190, .0010, 0.0560, 0.0240, .1620, .0180, .0072, .7128]))
+probabilities[7]
+
+x = @dice begin
+    world_id = discrete(DistUInt8, [.0190, .0010, 0.0560, 0.0240, .1620, .0180, .0072, .7128])
+    prob_equals(world_id, DistUInt8(7))
+end
+pr(x) 
+
+
+# joint probability tables
+
+world = @dice begin
+    world_id = discrete(DistUInt8, [.0190, .0010, 0.0560, 0.0240, .1620, .0180, .0072, .7128])
+    if prob_equals(world_id, DistUInt8(1))
+        (true, true, true)
+    else
+        (false, false, false)
+    end
+end
+pr(world)
+
 
 # Without PPL
 a_true = 0.3; a_false = 0.7;
@@ -71,3 +116,65 @@ code = @dice begin
     x
 end
 pr(code)
+
+# sing Dice
+# ​
+# # thoughts: 
+# # it would be nice to hide the distint syntax
+# # also unsure if the @dice blocks are necessary 
+# ​
+# ​
+# a = 3
+# b = if a<5 5 else 3 end
+# b
+# ​
+# ​
+# # introducing randomness 
+# c = @dice begin 
+#     flip(0.7)
+# end 
+# c
+# pr(c)
+# ​
+# ​
+# ​
+# c = @dice begin 
+#     f1 = flip(0.7)
+#     r = if f1 DistInt8(5) else DistInt8(3) end 
+#     r 
+# end 
+# pr(c)
+# ​
+# ​
+# # operations 
+# c = @dice begin 
+#     f1 = flip(0.7)
+#     f2 = flip(0.3)
+#     a = if f1 DistInt8(5) else DistInt8(3) end 
+#     b = if f2 DistInt8(4) else DistInt8(0) end 
+#     a + b
+# end 
+# pr(c)
+# ​
+# ​
+# # conditioning 
+# c = @dice begin 
+#     f1 = flip(0.7)
+#     f2 = flip(0.3)
+#     a = if f1 DistInt8(5) else DistInt8(3) end 
+#     b = if f2 DistInt8(4) else DistInt8(0) end 
+#     observe(f1)
+#     a+b 
+# end 
+# pr(c)
+# ​
+# ​
+# ​
+# ​
+# ​
+# # independence
+# ​
+# ​
+# ​
+# ​
+# # conditional independence 
