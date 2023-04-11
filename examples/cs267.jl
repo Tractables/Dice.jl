@@ -12,6 +12,7 @@ pr(@dice DistInt(42)+DistInt(2))
 bar(ans)
 
 
+#####################################################
 # random variables are first class
 
 pr(@dice flip(0.5))
@@ -80,6 +81,8 @@ end
 pr(@dice mytable())
 
 
+
+#####################################################
 # what about events that are more than a single world?
 
 function unlucky(world) 
@@ -174,6 +177,24 @@ pr(both)[true] / pr(condition)[true]
 
 pr(code)[true]
 
+
+#####################################################
+# power of conditioning on evidence
+
+alarm_goes_off = @dice begin
+    earthquake, burglery, alarm = mytable()
+    alarm
+end
+
+pr(alarm_goes_off)[true]
+
+alarm_given_no_earthquake = @dice begin
+    earthquake, burglery, alarm = mytable()
+    observe(!earthquake)
+    alarm
+end
+
+pr(alarm_given_no_earthquake)[true]
 
 
 #####################################################
