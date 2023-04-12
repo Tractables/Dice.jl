@@ -60,6 +60,6 @@ function fun()
     println(debug_info_ref[].num_nodes)
     println("NUM_NODES_END")
 end 
-x = @benchmark fun() 
+x = fun() 
 
 println((median(x).time)/10^9)

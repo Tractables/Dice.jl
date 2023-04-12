@@ -43,5 +43,5 @@ function fun()
     println("NUM_NODES_END")
 end 
 
-x = @benchmark fun()
+x = fun()
 println((median(x).time)/10^9)

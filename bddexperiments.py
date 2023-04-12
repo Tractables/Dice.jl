@@ -23,7 +23,7 @@ EXPERIMENTS = [
     ("gcd-small", ""),
     ("gcd-medium", ""),
     ("gcd-large", ""),
-    ("disease-large", "disease_large.jl"),
+    ("disease-large", ""), #"disease_large.jl"),
     ("disease-medium", "disease_medium.jl"),
     ("disease-small", "disease_small.jl"),
     ("luhn-small", "luhn_small.jl"),
