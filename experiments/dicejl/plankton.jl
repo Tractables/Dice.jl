@@ -18,8 +18,10 @@ function fun()
         planktoncount
     end
 
-    pr(c)
+    debug_info_ref = Ref{CuddDebugInfo}()
+    pr(c, algo=Cudd(debug_info_ref=debug_info_ref))
+    println("NUM_NODES_START")
+    println(debug_info_ref[].num_nodes)
+    println("NUM_NODES_END")
 end 
-x = @benchmark fun()
-
-println((median(x).time)/10^9)
+fun()
