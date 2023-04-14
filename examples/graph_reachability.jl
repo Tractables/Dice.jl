@@ -1,3 +1,4 @@
+using Revise
 using Dice
 
 function reachable(adjacency::Matrix, src::Int, dest::Int)
