@@ -66,3 +66,10 @@ end
     @test reverse(l) == sort(l)
 
 end
+
+@testset "CDF_overapproximate" begin
+    DFiP = DistFixedPoint{6, 3}
+    dist = uniform(DFiP, 0.0, 4.0)
+    limit = 1.253
+    @test cdf_overapproximate(dist, limit) == pr(dist < DFiP(1.375))
+end

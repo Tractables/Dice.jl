@@ -1,6 +1,6 @@
 using Distributions
 
-export gaussian_observe, gaussian_observe_enumerate, parametrised_flip
+export gaussian_observe, gaussian_observe_enumerate, parametrised_flip, cdf_overapproximate
 
 ##################################
 # Gaussian observation methods
@@ -67,4 +67,11 @@ function parametrised_flip(p::DistFixedPoint{W, F}) where W where F
     invalid && error("flip probability outside interval [0, 1]")
 
     uniform(DistFixedPoint{W, F}, 0.0, 1.0) < p
+end
+
+function cdf_overapproximate(p::DistFixedPoint{W, F}, limit::Float64) where W where F
+    DFiP = DistFixedPoint{W, F}
+    new_limit = DFiP(limit)
+    proposition = (p < new_limit) | prob_equals(p, new_limit)
+    return pr(proposition)
 end
