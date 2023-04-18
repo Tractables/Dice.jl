@@ -1,11 +1,26 @@
 using Dice
 
-include("util.jl")
-char_freqs = get_char_freqs_from_url("https://raw.githubusercontent.com/teropa/nlp/master/resources/corpora/gutenberg/shakespeare-macbeth.txt")
 cipher_text = "lipps, hmgi!"
+
+function get_char_freqs_from_url(corpus_url)
+    corpus = join(c for c in lowercase(read(download(corpus_url), String)) if c in valid_chars)
+    counts = Dict([(c, 0) for c in valid_chars])
+    for c in corpus
+        counts[c] += 1
+    end
+    [counts[c]/length(corpus) for c in valid_chars]
+end
+
+char_freqs = get_char_freqs_from_url("https://raw.githubusercontent.com/teropa/nlp/master/resources/corpora/gutenberg/shakespeare-macbeth.txt")
+
 
 function choose_char(char_freqs)
     DistChar(discrete(DistUInt{char_nbits}, char_freqs))
+end
+
+function sample_str(char_freqs, len)
+    chars = [choose_char(char_freqs) for _ in 1:len]
+    DistString(chars, DistUInt32(len))
 end
 
 function rotate_letter(c::DistChar, k::DistUInt)
@@ -30,23 +45,26 @@ function rotate_str(s::DistString, k::DistUInt)
     DistString(chars, s.len)
 end
 
-function sample_str(char_freqs, len)
-    chars = [choose_char(char_freqs) for _ in 1:len]
-    DistString(chars, DistUInt32(len))
-end
 
 function original_given_cipher(cipher_text, char_freqs)
     original = sample_str(char_freqs, length(cipher_text))
     k = uniform(DistUInt{char_nbits}, 0, 25)
     rotated = rotate_str(original, k)
-    observe(prob_equals(rotated, cipher_text))
+    observe(prob_equals(rotated, DistString(cipher_text)))
     return original
 end
 
 # Distribution over original strings given observation
-k = @dice begin original_given_cipher(cipher_text, char_freqs) end
-dist = pr(k)
-print_dict(dist)
+clear_text = pr(@dice original_given_cipher(cipher_text, char_freqs));
+
+sort(collect(clear_text), by = x->x[2], rev=true)
+
+
+
+
+
+
+
 
 #==
    hello, dice! => 0.9510913373902465

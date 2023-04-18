@@ -23,4 +23,4 @@ println("Sampled graph reachability: ", x)
 # run on random graph
 adjacency_rand = [flip(0.5) for i=1:n, j=1:n]
 y = reachable(adjacency_rand, 1, n)
-println("Random graph reachability: ", pr(y))
+println("Random graph reachability: ", pr(y)[true])
