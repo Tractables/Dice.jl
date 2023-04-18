@@ -254,141 +254,155 @@ end
 
 pr(earthquake_given_burglery)[true]
 
+earthquake_without_given_burglery = @dice begin
+    earthquake, burglery, alarm = mytable()
+    # observe(burglery)
+    earthquake
+end
+
+pr(earthquake_without_given_burglery)[true]
+
+#####################################################
+
+# we have been using the joint probability table as our distribution
+pr(@dice mytable())
+
+
+# let us focus on the marginal distributin on just earthquake and burglery
+
+earthquak_burglary = @dice begin
+    earthquake, burglery, alarm = mytable()
+    earthquake, burglery
+end
+
+pr(earthquak_burglary)
+
+
+# there is a better way to write this using what we have learned of independence
+
+earthquak_burglary2 = @dice begin
+    earthquake = flip(0.1)
+    burglery = flip(0.2)
+    earthquake, burglery
+end
+
+pr(earthquak_burglary2)
+
+
+# how do we incorporate alarm?
+
+pr(alarm_goes_off)[true]
+pr(alarm_given_no_earthquake)[true]
+
+
+# product rule to the rescue
+
+function earthquake_burglary_alarm()
+    earthquake = flip(0.1)
+    burglery = flip(0.2)
+    if earthquake & burglery
+        alarm = flip(0.95)
+    elseif earthquake & !burglery
+        alarm = flip(0.7)
+    elseif !earthquake & burglery
+        alarm = flip(0.9)
+    else # !earthquake & !burglery
+        alarm = flip(0.01)
+    end
+    earthquake, burglery, alarm
+end
+
+pr(@dice earthquake_burglary_alarm())
+
+#####################################################
+
+# recall that burglary and earthquake were independent
+# what's the effect of burglery on earthquake, given alarm?
+
+burglary_given_alarm = @dice begin
+    earthquake, burglery, alarm =  earthquake_burglary_alarm()
+    observe(alarm)
+    burglery
+end;
+
+pr(burglary_given_alarm)[true]
+
+burglary_given_alarm_earthquake = @dice begin
+    earthquake, burglery, alarm =  earthquake_burglary_alarm()
+    observe(alarm & earthquake)
+    burglery
+end;
+
+pr(burglary_given_alarm_earthquake)[true]
+
+#####################################################
+
+# let's add another variable to our distribution
+
+function alarm_network()
+    earthquake, burglery, alarm =  earthquake_burglary_alarm()
+    if alarm
+        neighborcall = flip(0.9)
+    else 
+        neighborcall = flip(0.05)
+    end
+    earthquake, burglery, alarm, neighborcall
+end
+
+pr(@dice alarm_network())
+
+
+# the neighbor calling clearly affects the probability of burglary
+
+burglary_given_call = @dice begin
+    earthquake, burglery, alarm, neighborcall = alarm_network()
+    observe(neighborcall)
+    burglery
+end;
+
+pr(burglary_given_call)[true]
+
+
+# we already know that alarm also affects this probability
+
+pr(burglary_given_alarm)[true]
+
+
+# what if we know both?
+
+burglary_given_alarm_call = @dice begin
+    earthquake, burglery, alarm, neighborcall = alarm_network()
+    observe(alarm & neighborcall)
+    burglery
+end;
+
+pr(burglary_given_alarm_call)[true]
+
+#####################################################
+
+function spamfilter(words) 
+    spam = flip(1/2)
+
+    casino = ifelse(spam, flip(0.1), flip(0.005))
+    cs267a = ifelse(spam, flip(0.001), flip(0.1))
+    homework = ifelse(spam, flip(0.01), flip(0.05))
+
+    observe(prob_equals(casino, "casino" ∈ words))
+    observe(prob_equals(cs267a, "cs267a" ∈ words))
+    observe(prob_equals(homework, "homework" ∈ words))
+
+    spam
+end;
+
+
+pr(@dice spamfilter(["cs267a", "homework", "is", "due"]))[true]
+
+pr(@dice spamfilter(["join", "my", "casino"]))[true]
+
+pr(@dice spamfilter(["I", "do", "cs267a", "homeworks", "in", "a", "casino"]))[true]
+
 #####################################################
 
 flip(done)
 
 #####################################################
-
-# # Without PPL
-# a_true = 0.3; a_false = 0.7;
-# b_true = 0.7; b_false = 0.3;
-# a_true_b_true = 0.3*0.7
-
-# # With a PPL
-# a = flip(0.3); b = flip(0.7);
-# pr(a & b)
-
-# # Values in a program
-# true
-
-# true
-
-# # Variables in a program
-# x = true
-
-# x = flip(0.3)
-# pr(x)
-
-# # Tuples
-# t1 = (true, false)
-
-# t1 = @dice begin
-#             (flip(0.3), flip(0.4))            
-# end
-# pr(t1)
-
-# # Conditionals in a program
-# y = if true false else true end
-
-# y = @dice if flip(0.3) false else true end
-# pr(y)
-
-# y = @dice if flip(0.3) flip(0.4) else flip(0.5) end
-# pr(y)
-
-
-
-# # Sequential statements
-# let1 = 1
-# let2 = 2
-
-# let1 = flip(0.3)
-# let2 = flip(0.4)
-# pr((let1, let2))
-# pr(let1)
-# pr(let2)
-
-# # Functions
-# code = @dice begin
-#                 f(x) = if x flip(0.3) else flip(0.4) end
-#                 x = flip(0.3)
-#                 y = f(x)
-#                 y
-#         end
-# pr(code)
-
-# # Conditional probabilities
-# code = @dice begin
-#     function f(x)
-#         y = x || flip(0.5)
-#         observe(y)
-#         y 
-#     end
-#     x = flip(0.5)
-#     y = f(x)
-#     x
-# end
-# pr(code)
-
-# sing Dice
-# ​
-# # thoughts: 
-# # it would be nice to hide the distint syntax
-# # also unsure if the @dice blocks are necessary 
-# ​
-# ​
-# a = 3
-# b = if a<5 5 else 3 end
-# b
-# ​
-# ​
-# # introducing randomness 
-# c = @dice begin 
-#     flip(0.7)
-# end 
-# c
-# pr(c)
-# ​
-# ​
-# ​
-# c = @dice begin 
-#     f1 = flip(0.7)
-#     r = if f1 DistInt8(5) else DistInt8(3) end 
-#     r 
-# end 
-# pr(c)
-# ​
-# ​
-# # operations 
-# c = @dice begin 
-#     f1 = flip(0.7)
-#     f2 = flip(0.3)
-#     a = if f1 DistInt8(5) else DistInt8(3) end 
-#     b = if f2 DistInt8(4) else DistInt8(0) end 
-#     a + b
-# end 
-# pr(c)
-# ​
-# ​
-# # conditioning 
-# c = @dice begin 
-#     f1 = flip(0.7)
-#     f2 = flip(0.3)
-#     a = if f1 DistInt8(5) else DistInt8(3) end 
-#     b = if f2 DistInt8(4) else DistInt8(0) end 
-#     observe(f1)
-#     a+b 
-# end 
-# pr(c)
-# ​
-# ​
-# ​
-# ​
-# ​
-# # independence
-# ​
-# ​
-# ​
-# ​
-# # conditional independence 
