@@ -4,22 +4,25 @@ using Dice
 include("../util.jl")           # print_dict
 include("lib/dist_tree.jl")     # DistLeaf, DistBranch, depth
 include("lib/unif_between.jl")  # unif
+include("lib/sample.jl")        # sample
 
 # Return tree, evid pair
 function gen_bst(size, lo, hi)
     size == 0 && return DistLeaf(), true
 
+    x, x_evid = unif(lo, hi)
+    l, l_evid = gen_bst(size-1, lo, x)
+    r, r_evid = gen_bst(size-1, x, hi)
+    evid = x_evid & l_evid & r_evid
+
     # Try changing the parameter to flip_for to a constant, which would force
     # all sizes to use the same probability.
     @dice_ite if flip_for(size)
-        DistLeaf(), true
+        DistLeaf(), evid
     else
         # The flips used in the uniform aren't tracked via flip_for, so we
         # don't learn their probabilities (this is on purpose - we could).
-        x, x_evid = unif(lo, hi)
-        l, l_evid = gen_bst(size-1, lo, x)
-        r, r_evid = gen_bst(size-1, x, hi)
-        DistBranch(x, l, r), x_evid & l_evid & r_evid
+        DistBranch(x, l, r), evid
     end
 end
 
@@ -60,52 +63,58 @@ tree_depth = depth(tree)
 print_dict(pr(tree_depth, evidence=evid))
 println()
 
-include("lib/sample.jl")
 println("A few sampled trees:")
-l = gen()
 for _ in 1:3
-    print_tree(sample(l))
+    print_tree(sample((tree, evid)))
     println()
 end
 
-
 #==
 Distribution before training:
-   0 => 0.7529011474060479
-   1 => 0.188225286851512
-   2 => 0.035553665294174475
-   3 => 0.023319900448265686
+   0 => 0.49999999999999994
+   3 => 0.30468750000000006
+   1 => 0.12499999999999997
+   2 => 0.0703125
 
 Learned flip probability for each size:
-   1 => 0.4221209887029583
-   2 => 0.1300886284852543
-   3 => 0.016641427530024785
+   1 => 0.7522142306508817
+   2 => 0.5773502691896257
+   3 => 0.25
 
 Distribution over depths after training:
-   1 => 0.2500000000000004
-   2 => 0.2500000000000004
-   0 => 0.25000000000000017
-   3 => 0.24999999999999972
+   0 => 0.2500000000000004
+   1 => 0.24999999999999994
+   2 => 0.24999999999999994
+   3 => 0.24999999999999994
 
 A few sampled trees:
 Branch
 ├── 2
-├── Leaf
+├── Branch
+│   ├── 2
+│   ├── Leaf
+│   └── Leaf
 └── Branch
-    ├── 4
-    ├── Branch
-    │   ├── 3
-    │   ├── Leaf
-    │   └── Leaf
-    └── Leaf
-
-Leaf
+    ├── 5
+    ├── Leaf
+    └── Branch
+        ├── 6
+        ├── Leaf
+        └── Leaf
 
 Branch
-├── 1
+├── 3
 ├── Leaf
 └── Branch
-    ├── 6
+    ├── 3
     ├── Leaf
-    └── Leaf
+    └── Branch
+        ├── 3
+        ├── Leaf
+        └── Leaf
+
+Branch
+├── 2
+├── Leaf
+└── Leaf
 ==#
