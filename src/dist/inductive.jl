@@ -75,7 +75,7 @@ function construct(t::InductiveDistType, constructor::String, args::Tuple)
         if c == constructor
             @assert length(arg_types) == length(args)
             for (arg, arg_type) in zip(args, arg_types)
-                @assert arg isa DistInductive && arg.type == arg_type || arg isa arg_type
+                @assert (arg isa DistInductive && arg.type == arg_type || arg_type isa Type && arg isa arg_type) "expected $(arg_type) got $(arg)"
             end
             return DistInductive(t, DistUInt32(i), [
                 if i == j args else nothing end
