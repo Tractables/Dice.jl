@@ -1,6 +1,6 @@
 # Flips whose probability is shared via global dicts
 
-export flip_for, get_group_probs, reset_flips!, update_group_to_psp!
+export flip_for, get_group_probs, reset_flips!, update_group_to_psp!, get_group_prob
 
 # Map flip to group of flips that much share a probability
 _flip_to_group = Dict{Dice.Flip, Any}()
@@ -18,6 +18,10 @@ end
 
 function get_group_probs()
 	Dict(group => sigmoid(psp) for (group, psp) in _group_to_psp)
+end
+
+function get_group_prob(group)
+    sigmoid(_group_to_psp[group])
 end
 
 function reset_flips!()
