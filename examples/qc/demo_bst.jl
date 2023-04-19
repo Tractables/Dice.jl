@@ -37,7 +37,7 @@ gen() = gen_bst(
     DistUInt32(2 * INIT_SIZE),
 )
 tree, evid = gen()
-tree_depth = depth(x)
+tree_depth = depth(tree)
 
 println("Distribution before training:")
 print_dict(pr(tree_depth, evidence=evid))
@@ -56,7 +56,7 @@ println()
 
 println("Distribution over depths after training:")
 tree, evid = gen()
-tree_depth = depth(x)
+tree_depth = depth(tree)
 print_dict(pr(tree_depth, evidence=evid))
 println()
 

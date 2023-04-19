@@ -38,8 +38,14 @@ function sample(tup)
         end
 
         vcache = Dict()
-        foldup(evid, fl, fi, Bool) || continue
+        evid_computed = if evid isa Bool
+            evid
+        else
+            foldup(evid, fl, fi, Bool)
+        end
+        evid_computed || continue
         for bit in tobits(x)
+            bit isa Bool && continue
             foldup(bit, fl, fi, Bool)
         end
         return frombits(x, vcache)
