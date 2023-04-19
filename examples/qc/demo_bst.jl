@@ -19,7 +19,7 @@ function gen_bst(size, lo, hi)
         x, x_evid = unif(lo, hi)
         l, l_evid = gen_bst(size-1, lo, x)
         r, r_evid = gen_bst(size-1, x, hi)
-        DistBranch(x, l, r), x_evid | l_evid | r_evid
+        DistBranch(x, l, r), x_evid & l_evid & r_evid
     end
 end
 
