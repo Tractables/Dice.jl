@@ -173,7 +173,11 @@ generated = len(gen_list(init_size))
 bools_to_maximize = AnyBool[prob_equals(generated, x) for x in dataset]
 train_group_probs!(bools_to_maximize)
 get_group_probs()
-#   "?" => 0.25
+# 5 => 0.166667
+# 4 => 0.2
+# 2 => 0.333333
+# 3 => 0.25
+# 1 => 0.5
 
 ################################################################################
 # Including evidence
