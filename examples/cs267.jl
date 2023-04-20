@@ -403,6 +403,20 @@ pr(@dice spamfilter(["I", "do", "cs267a", "homeworks", "in", "a", "casino"]))[tr
 
 #####################################################
 
+x = flip(0.5);
+y = flip(0.8);
+z = flip(0.3);
+code = x & y | !x & z | !y & z;
+pr(code)
+
+
+rain = flip(0.5);
+cloudy = flip(0.5);
+code = !rain | cloudy; # rain => cloudy
+pr(code)
+
+#####################################################
+
 flip(done)
 
 #####################################################
