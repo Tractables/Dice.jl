@@ -1,4 +1,5 @@
 using DirectedAcyclicGraphs: foldup
+using Dice: frombits, tobits
 
 function sample(tup)
     x, evid = tup

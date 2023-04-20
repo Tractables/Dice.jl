@@ -1,5 +1,5 @@
 # Vectors
-export DistVector, prob_append, prob_extend, prob_startswith, prob_setindex, prob_getindex, prob_contains
+export DistVector, prob_append, prob_extend, prob_startswith, prob_setindex, prob_getindex, prob_contains, choice
 
 mutable struct DistVector{T} <: Dist{Vector} where T <: Any
     contents::Vector{T}
@@ -95,8 +95,11 @@ function prob_contains(d::DistVector{T}, x::T) where T
     found
 end
 
-function prob_getindex(d::DistVector, idx::DistUInt32)
-    ans = d.contents[1]
+dummy(::Type{DistString}) = DistString("dummy")
+dummy(::Type{DistUInt32}) = DistUInt32(555)
+
+function prob_getindex(d::DistVector{T}, idx::DistUInt32) where T
+    ans = if isempty(d.contents) dummy(T) else d.contents[1] end
     for i in 1:length(d.contents)
         ans = @dice_ite if prob_equals(DistUInt32(i), idx)
             d.contents[i]
@@ -202,4 +205,12 @@ tobits(s::DistVector) =
 function frombits(s::DistVector, world)
     len = frombits(s.len, world)
     collect(frombits(c, world) for c in s.contents[1:len])
+end
+
+function choice(v::DistVector{T})::Tuple{T, AnyBool} where T
+    if prob_equals(v.len, DistUInt32(0))
+        return dummy(T), true
+    end
+    i, evid = unif(DistUInt32(1), v.len)
+    prob_getindex(v, i), evid
 end

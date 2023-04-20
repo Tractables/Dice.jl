@@ -3,7 +3,6 @@
 using Dice
 include("../util.jl")           # print_dict
 include("lib/dist_list.jl")     # DistNil, DistCons, len
-include("lib/unif_between.jl")  # unif
 include("lib/sample.jl")        # sample
 
 # Return a list, evid pair

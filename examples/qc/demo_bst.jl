@@ -3,7 +3,6 @@
 using Dice
 include("../util.jl")           # print_dict
 include("lib/dist_tree.jl")     # DistLeaf, DistBranch, depth
-include("lib/unif_between.jl")  # unif
 include("lib/sample.jl")        # sample
 
 # Return tree, evid pair

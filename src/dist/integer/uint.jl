@@ -1,5 +1,5 @@
 export DistUInt, DistUInt8, DistUInt16, DistUInt32, 
-    uniform, uniform_arith, uniform_ite, triangle, discrete
+    uniform, uniform_arith, uniform_ite, triangle, discrete, unif
 
 ##################################
 # types, structs, and constructors
@@ -348,3 +348,13 @@ function Base.ifelse(cond::Dist{Bool}, then::DistUInt{W}, elze::DistUInt{W}) whe
     DistUInt{W}(bits)
 end
   
+using Dice: tobits, frombits
+
+minvalue(x::DistUInt) = frombits(x, Dict(b => false for b in tobits(x)))
+maxvalue(x::DistUInt) = frombits(x, Dict(b => true for b in tobits(x)))
+
+# Return generated value and observation
+function unif(lo::DistUInt{W}, hi::DistUInt{W}) where W
+    x = uniform(DistUInt{W}, minvalue(lo), maxvalue(hi) + 1)
+    x, (x >= lo) & (x <= hi)
+end
