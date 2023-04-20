@@ -17,18 +17,11 @@ end
 
 # Return ast, evid pair
 function gen_utlc(size, in_scope)
-    # Generate Var
-    var, var_evid = @dice_ite if in_scope.len > DistUInt32(0)
-        # Uniformly choose variable in scope
-        name, name_evid = choice(in_scope)
-        DistVar(name), name_evid
-    else
-        # If we run out of fuel and nothing is in scope, just return id fn
-        DistAbs(DistString("x"), DistVar(DistString("x"))), true
-    end
+    # Generate Var arg
+    name, name_evid = choice(in_scope)
 
     # Fuel check
-    size == 0 && return var, var_evid
+    size == 0 && return DistVar(name), name_evid
 
     # Generate Abs args
     fresh = gen_name()
@@ -39,11 +32,13 @@ function gen_utlc(size, in_scope)
     e2, e2_evid = gen_utlc(size-1, in_scope)
 
     # Evidence must be lifted out of probabilistic branches
-    evid = var_evid & e_evid & e1_evid & e2_evid
+    evid = name_evid & e_evid & e1_evid & e2_evid
 
     @dice_ite if flip_for(size) & (in_scope.len > DistUInt32(0))
-        var, evid
-    elseif flip(2/3)  # fix weight between Abs and App
+        DistVar(name), evid
+    # Fix weight between Abs and App. We must also always choose Abs if
+    # size=1 and the scope is empty so far.
+    elseif flip(2/3) | (size==1 & prob_equals(in_scope.len, DistUInt32(0)))
         DistAbs(fresh, e), evid
     else
         DistApp(e1, e2), evid
@@ -86,7 +81,7 @@ print_dict(pr(e_depth, evidence=evid))
 println()
 
 println("A few sampled exprs:")
-for _ in 1:10
+for _ in 1:50
     expr = sample((e, evid))
     println(utlc_str(expr))
     # println(print_tree(expr))  # concrete AST
@@ -94,34 +89,32 @@ end
 
 #==
 Distribution before training:
+   4 => 0.3670624714220393
    1 => 0.3333333333333333
-   4 => 0.2965619796424217
    2 => 0.1759259259259259
    3 => 0.12367826931870127
-   5 => 0.07050049177961776
 
 Learned flip probability for each size:
-   1 => 0.6979495720875983
-   2 => 0.5243949811082593
+   1 => 0.7709384509910406
+   2 => 0.5673658539871177
    4 => 0.5
-   3 => 0.3485623155826433
+   3 => 0.3749999999999999
 
 Distribution over depths after training:
-   4 => 0.23237487705509566
-   2 => 0.2323748770550956
-   1 => 0.23237487705509552
-   3 => 0.23237487705509546
-   5 => 0.07050049177961776
+   2 => 0.2500000000000001
+   4 => 0.25000000000000006
+   1 => 0.2499999999999999
+   3 => 0.24999999999999983
 
 A few sampled exprs:
-λb.b b
-(λb.b) (λb.b) (λa.a)
-(λa.λc.c) (λc.c c) (λc.c)
-(λa.λc.a) ((λa.a) ((λx.x) (λx.x))) ((λc.c) (λb.b) (λb.b))
-λa.a
-(λb.b) ((λa.a) (λc.c)) (λc.c)
-(λa.a) ((λa.λa.a) (λb.b))
-λa.λb.a
+λc.λb.b b
+λb.λa.λc.a b
+(λa.a) (λa.a)
+λb.(λa.λc.c) (b b)
 λb.b
-λc.λb.c
+λb.b
+(λc.c) (λa.λc.λc.c)
+(λb.b) (λb.λc.c b)
+λb.b
+λa.λb.λb.λb.b
 ==#
