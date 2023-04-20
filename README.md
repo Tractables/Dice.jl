@@ -17,6 +17,10 @@ The following related programs are included. The expected output of each is in a
   - Given a generator for sorted nat lists with a hole dependent on size, chooses probabilities such that the list has uniform length.
 - Generator for binary search trees ([`examples/qc/demo_bst.jl`](examples/qc/demo_bst.jl))
   - Given a generator for binary search trees with a hole dependent on size, chooses probabilities such that the tree has uniform depth.
+  - 50 example generated BSTs are visible at [`examples/qc/samples/bst.txt`](examples/qc/samples/bst.txt)
+- Generator for closed untyped lambda calculus expressions ([`examples/qc/demo_utlc.jl`](examples/qc/demo_utlc.jl))
+  - Given a generator for UTLC exprs with a hole dependent on size, chooses probabilities such that the AST has near uniform depth
+  - 50 example generated expressions are visible at [`examples/qc/samples/utlc.txt`](examples/qc/samples/utlc.txt).
 
 Beware that the programs expected to run on this version of Dice.jl are the examples listed above and the tests. Other examples are known to be broken.
 
