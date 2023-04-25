@@ -10,21 +10,24 @@ See [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice)
 
 First install ```Julia1.8```, then follow the following instructions.
 
-To setup Dice.jl, run the following commands in a terminal:
+To setup Dice.jl, run the following commands in a terminal. This will create a copy of the Dice directory and install necessary dependencies. 
+
 ```
 git clone https://github.com/Juice-jl/Dice.jl.git
 cd Dice.jl
 julia --project
 ] up
 ```
-To exit from julia terminal, use the follwing command:
+
+To then exit the Julia terminal, use the following command:
+
 ```
 exit()
 ```
 
-To execute an example file, any of the following methods can be used.
+To execute a Dice.jl file (in this case, the graph reachability example), the following methods can be used:
 
-1. Run file in julia REPL: Execute follwing commands inside Dice directory
+1. Run file in Julia REPL: Execute the following commands inside the Dice.jl directory
 ```
 julia --project
 include("examples/graph_reachability.jl")
