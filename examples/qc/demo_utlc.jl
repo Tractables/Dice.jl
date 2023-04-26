@@ -81,7 +81,7 @@ print_dict(pr(e_depth, evidence=evid))
 println()
 
 println("A few sampled exprs:")
-for _ in 1:50
+for _ in 1:10
     expr = sample((e, evid))
     println(utlc_str(expr))
     # println(print_tree(expr))  # concrete AST
