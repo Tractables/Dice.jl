@@ -1,13 +1,22 @@
+using Revise
+using Dice
+import Dice: param_lists
 # Define DistList
 
-DistList = InductiveDistType()
-DistList.constructors = [
-    ("Nil",  []),
-    ("Cons", [Dist, DistList]),
-]
+struct DistList{T} <: DistInductive{Any}
+    constructor::DistUInt32
+    arg_lists::Vector{Union{Vector,Nothing}}
+end
 
-DistNil()       = construct(DistList, "Nil",  ())
-DistCons(x, xs) = construct(DistList, "Cons", (x, xs))
+function param_lists(::Type{<:DistList{T}})::Vector{Pair{String,Vector{Type}}} where T <: Dist{<:Any} #Union{<:Dist, AnyBool}
+    [
+        "Nil" => [],
+        "Cons" => [T, DistList{T}],
+    ]
+end
+
+DistNil(T) = construct(DistList{T}, "Nil",  [])
+DistCons(x::T, xs::DistList{T}) where T = construct(DistList{T}, "Cons", [x, xs])
 
 function len(l)
     prob_match(l, [

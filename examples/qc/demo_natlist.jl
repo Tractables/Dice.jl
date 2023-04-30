@@ -6,12 +6,12 @@ include("../util.jl")  # print_dict
 include("lib/dist_list.jl")  # DistNil, DistCons, len
 
 function gen_list(size)
-    size == 0 && return DistNil()
+    size == 0 && return DistNil(DistUInt32)
 
     # Try changing the parameter to flip_for to a constant, which would force
     # all sizes to use the same probability.
     @dice_ite if flip_for(size)
-        DistNil()
+        DistNil(DistUInt32)
     else
         # The flips used in the uniform aren't tracked via flip_for, so we
         # don't learn their probabilities (this is on purpose - we could).

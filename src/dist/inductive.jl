@@ -1,28 +1,26 @@
 # Distributions over inductively-defined types
 
-export InductiveDistType, DistInductive, construct, prob_match
+export DistInductive, construct, prob_match
 
 # TODO: support prob_equals
+abstract type DistInductive{T} <: Dist{T} end
 
-mutable struct InductiveDistType
-    constructors::Vector{Tuple{String, Vector}}
-end
+# All DistInductive subtypes must have these fields:
+# constructor::DistUInt32
+# arg_lists::Vector{Union{Vector,Nothing}}
 
-InductiveDistType() = InductiveDistType([])
-
-struct DistInductive
-    # Julia is not dependently-typed 😢
-    type::InductiveDistType
-    constructor::DistUInt32
-    args_by_constructor::Vector{Union{Tuple,Nothing}}
-end
+# And support this function:
+function param_lists end
+# function param_lists(t::Type{<:DistInductive{<:Any}})::Dict{String,Vector{Type}}
+    # error("param_lists not implemented for $(t)")
+# end
 
 function tobits(x::DistInductive)
     collect(
         Iterators.flatten([
             Iterators.flatten(
                 tobits(y)
-                for args in x.args_by_constructor
+                for args in x.arg_lists
                 if args !== nothing
                 for y in args
             ),
@@ -34,25 +32,14 @@ end
 function frombits(x::DistInductive, world)
     constructor = frombits(x.constructor, world)
     dist_args = x.args_by_constructor[constructor]
-    args = if dist_args === nothing
-        []
-    else
-        [
-            if arg isa DistInductive || true
-                frombits(arg, world)
-            else
-                (frombits(arg, world), [])
-            end
-            for arg in dist_args
-        ]
-    end
+    @assert dist_args !== nothing
+    args = [frombits(arg, world) for arg in dist_args]
     (x.type.constructors[constructor][1], args)
 end
 
 function Base.ifelse(cond::Dist{Bool}, then::DistInductive, elze::DistInductive)
-    @assert then.type == elze.type
-    DistInductive(
-        then.type,
+    @assert param_lists(typeof(then)) == param_lists(typeof(elze))
+    typeof(then)(
         ifelse(cond, then.constructor, elze.constructor),
         [
             if then_args === nothing
@@ -62,42 +49,44 @@ function Base.ifelse(cond::Dist{Bool}, then::DistInductive, elze::DistInductive)
             else
                 ifelse(cond, then_args, elze_args)
             end
-            for (then_args, elze_args) in zip(
-                then.args_by_constructor,
-                elze.args_by_constructor
-            )
+            for (then_args, elze_args) in zip(then.arg_lists, elze.arg_lists)
         ]
     )
 end
 
-function construct(t::InductiveDistType, constructor::String, args::Tuple)
-    for (i, (c, arg_types)) in enumerate(t.constructors)
-        if c == constructor
-            @assert length(arg_types) == length(args)
-            for (arg, arg_type) in zip(args, arg_types)
-                @assert (arg isa DistInductive && arg.type == arg_type || arg_type isa Type && arg isa arg_type) "expected $(arg_type) got $(arg)"
-            end
-            return DistInductive(t, DistUInt32(i), [
-                if i == j args else nothing end
-                for j in 1:length(t.constructors)
-            ])
-        end
+function param_list_dict(t::Type{<:DistInductive})
+    Dict(
+        ctr => (i, params)
+        for (i, (ctr, params)) in enumerate(param_lists(t))
+    )
+end
+
+function construct(t::Type{<:DistInductive}, constructor::String, args::Vector)
+    ctr_i, params = get(param_list_dict(t), constructor) do
+        error("$(t) has no constructor $(constructor)")
     end
-    error("t has no constructor '$(constructor)'")
+
+    @assert length(params) == length(args)
+    for (param, arg) in zip(params, args)
+        @assert arg isa param "$(t) $(constructor) ctr: expected $(param) got $(arg)"
+    end
+
+    arg_lists = Vector{Union{Vector,Nothing}}([nothing for _ in param_lists(t)])
+    arg_lists[ctr_i] = args
+    t(DistUInt32(ctr_i), arg_lists)
 end
 
 function prob_match(x::DistInductive, cases)
-    # TODO: more flexible argument orders
+    pld = param_list_dict(typeof(x))
+
+    branches = Set(map(first, cases))
+    branches != keys(pld) && error("branches $(branches) do not match $(typeof(x))'s ctrs")
+
     res = nothing
-    for (i, ((cname, f), (cname2, arg_types), args)) in enumerate(zip(cases, x.type.constructors, x.args_by_constructor))
-        @assert cname == cname2
-        if args === nothing
-            continue
-        end
-        @assert length(arg_types) == length(args)
-        for (arg, arg_type) in zip(args, arg_types)
-            @assert arg isa DistInductive && arg.type == arg_type || arg isa arg_type
-        end
+    for (ctr, f) in cases
+        i, params = pld[ctr]
+        args = x.arg_lists[i]
+        args === nothing && continue
         v = f(args...)
         if res === nothing
             res = v
