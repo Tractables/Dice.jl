@@ -7,7 +7,7 @@ include("lib/sample.jl")        # sample
 
 # Return a list, evid pair
 function gen_sorted_list(size, lo, hi)
-    size == 0 && return DistNil(), true
+    size == 0 && return DistNil(DistUInt32), true
     
     # The flips used in the uniform aren't tracked via flip_for, so we
     # don't learn their probabilities (this is on purpose - we could).
@@ -18,7 +18,7 @@ function gen_sorted_list(size, lo, hi)
     # Try changing the parameter to flip_for to a constant, which would force
     # all sizes to use the same probability.
     @dice_ite if flip_for(size)
-        DistNil(), evid
+        DistNil(DistUInt32), evid
     else
         DistCons(x, xs), evid
     end

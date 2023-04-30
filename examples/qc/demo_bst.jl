@@ -7,7 +7,7 @@ include("lib/sample.jl")        # sample
 
 # Return tree, evid pair
 function gen_bst(size, lo, hi)
-    size == 0 && return DistLeaf(), true
+    size == 0 && return DistLeaf(DistUInt32), true
 
     x, x_evid = unif(lo, hi)
     l, l_evid = gen_bst(size-1, lo, x)
@@ -17,7 +17,7 @@ function gen_bst(size, lo, hi)
     # Try changing the parameter to flip_for to a constant, which would force
     # all sizes to use the same probability.
     @dice_ite if flip_for(size)
-        DistLeaf(), evid
+        DistLeaf(DistUInt32), evid
     else
         # The flips used in the uniform aren't tracked via flip_for, so we
         # don't learn their probabilities (this is on purpose - we could).
