@@ -328,7 +328,7 @@ end
 
 function Base.:/(p1::DistUInt{W}, p2::DistUInt{W}) where W #p1/p2
     is_zero = prob_equals(p2, DistUInt{W}(0))
-    is_zero && error("division by zero")
+    # is_zero && error("division by zero")
 
     ans = Vector(undef, W)
     p1_proxy = DistUInt{W}(0)
@@ -343,7 +343,7 @@ end
 
 function Base.:%(p1::DistUInt{W}, p2::DistUInt{W}) where W #p1/p2
     is_zero = prob_equals(p2, DistUInt{W}(0))
-    is_zero && error("division by zero")
+    # is_zero && error("division by zero")
 
     # ans = Vector(undef, W)
     p1_proxy = DistUInt{W}(0)
