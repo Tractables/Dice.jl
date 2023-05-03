@@ -1,5 +1,5 @@
 # Vectors
-export DistVector, prob_append, prob_extend, prob_startswith, prob_setindex, prob_getindex, prob_contains, choice
+export DistVector, prob_append, prob_extend, prob_startswith, prob_setindex, prob_getindex, prob_contains, choice, choice_obs
 
 mutable struct DistVector{T} <: Dist{Vector} where T <: Any
     contents::Vector{T}
@@ -207,10 +207,18 @@ function frombits(s::DistVector, world)
     collect(frombits(c, world) for c in s.contents[1:len])
 end
 
-function choice(v::DistVector{T})::Tuple{T, AnyBool} where T
+function choice_obs(v::DistVector{T})::Tuple{T, AnyBool} where T
     if prob_equals(v.len, DistUInt32(0))
         return dummy(T), true
     end
-    i, evid = unif(DistUInt32(1), v.len)
+    i, evid = unif_obs(DistUInt32(1), v.len)
     prob_getindex(v, i), evid
+end
+
+function choice(v::DistVector{T})::T where T
+    if prob_equals(v.len, DistUInt32(0))
+        return dummy(T)
+    end
+    i = unif(DistUInt32(1), v.len)
+    prob_getindex(v, i)
 end

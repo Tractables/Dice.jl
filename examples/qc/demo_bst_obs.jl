@@ -5,19 +5,23 @@ include("../util.jl")           # print_dict
 include("lib/dist_tree.jl")     # DistLeaf, DistBranch, depth
 include("lib/sample.jl")        # sample
 
-# Return tree
+# Return tree, evid pair
 function gen_bst(size, lo, hi)
-    size == 0 && return DistLeaf(DistUInt32)
+    size == 0 && return DistLeaf(DistUInt32), true
+
+    x, x_evid = unif_obs(lo, hi)
+    l, l_evid = gen_bst(size-1, lo, x)
+    r, r_evid = gen_bst(size-1, x, hi)
+    evid = x_evid & l_evid & r_evid
 
     # Try changing the parameter to flip_for to a constant, which would force
     # all sizes to use the same probability.
     @dice_ite if flip_for(size)
-        DistLeaf(DistUInt32)
+        DistLeaf(DistUInt32), evid
     else
         # The flips used in the uniform aren't tracked via flip_for, so we
         # don't learn their probabilities (this is on purpose - we could).
-        x = unif(lo, hi)
-        DistBranch(x, gen_bst(size-1, lo, x), gen_bst(size-1, x, hi))
+        DistBranch(x, l, r), evid
     end
 end
 
@@ -34,14 +38,18 @@ gen() = gen_bst(
     DistUInt32(1),
     DistUInt32(2 * INIT_SIZE),
 )
-tree_depth = depth(gen())
+tree, evid = gen()
+tree_depth = depth(tree)
 
 println("Distribution before training:")
-print_dict(pr(tree_depth))
+print_dict(pr(tree_depth, evidence=evid))
 println()
 
-bools_to_maximize = [prob_equals(tree_depth, x) for x in DATASET]
-train_group_probs!(bools_to_maximize)
+cond_bools_to_maximize = [
+    (prob_equals(tree_depth, x), evid)
+    for x in DATASET
+]
+train_group_probs!(cond_bools_to_maximize)
 
 # Done!
 println("Learned flip probability for each size:")
@@ -49,13 +57,14 @@ print_dict(get_group_probs())
 println()
 
 println("Distribution over depths after training:")
-tree = gen()
-print_dict(pr(depth(tree)))
+tree, evid = gen()
+tree_depth = depth(tree)
+print_dict(pr(tree_depth, evidence=evid))
 println()
 
 println("A few sampled trees:")
 for _ in 1:3
-    print_tree(sample((tree, true)))
+    print_tree(sample((tree, evid)))
     println()
 end
 
