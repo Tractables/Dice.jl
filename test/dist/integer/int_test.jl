@@ -49,6 +49,14 @@ end
     z = convert(DistInt{3}, y)
     p = pr(z)
     @test p[3] ≈ 1.0
+
+    @test pr(@dice convert(DistInt{3}, DistUInt{3}(0)))[0] ≈ 1
+    @test pr(@dice convert(DistInt{2}, DistUInt{3}(0)))[0] ≈ 1
+    @test pr(@dice convert(DistInt{4}, DistUInt{3}(0)))[0] ≈ 1
+    @test pr(@dice convert(DistInt{2}, DistUInt{3}(1)))[1] ≈ 1
+    @test pr(@dice convert(DistInt{4}, DistUInt{3}(1)))[1] ≈ 1
+    @test pr(@dice convert(DistInt{3}, DistUInt{3}(3)))[3] ≈ 1
+    @test_throws ProbException pr(@dice convert(DistInt{3}, DistUInt{3}(4)))
 end
 
 @testset "DistInt expectation" begin
@@ -93,11 +101,11 @@ end
     a = DistInt{3}(3)
     b = DistInt{3}(3)
     @test_nowarn pr(a + b)
-    @test_throws Exception pr(@dice a + b)
+    @test_throws ProbException pr(@dice a + b)
 
     a = DistInt{3}(-3)
     b = DistInt{3}(-3)
-    @test_throws Exception pr(@dice a + b)
+    @test_throws ProbException pr(@dice a + b)
 
     a = DistInt{3}(-3)
     b = DistInt{3}(3)
@@ -106,16 +114,16 @@ end
 
     a = uniform(DistInt{3}, 3)
     b = DistInt{3}(-1)
-    @test_throws Exception p = pr(@dice a + b)
+    @test_throws ProbException p = pr(@dice a + b)
 
     a = DistInt{3}(3)
     b = DistInt{3}(-2)
     @test_nowarn pr(a - b)
-    @test_throws Exception pr(@dice a - b)
+    @test_throws ProbException pr(@dice a - b)
 
     a = DistInt{3}(-3)
     b = DistInt{3}(2)
-    @test_throws Exception pr(@dice a - b)
+    @test_throws ProbException pr(@dice a - b)
 
     a = DistInt{3}(3)
     b = DistInt{3}(2)
@@ -146,6 +154,11 @@ end
     y = uniform(T,1) - T(1)
     s = convert(DistUInt{B+1}, x.number) + convert(DistUInt{B+1}, y.number)
     @test Dice.num_ir_nodes(s.bits[2]) < 15 
+    
+    @test pr(@dice -DistInt8(127))[-127] ≈ 1
+    @test pr(@dice -DistInt8(-127))[127] ≈ 1
+    @test pr(@dice -DistInt8(0))[0] ≈ 1
+    @test_throws ProbException pr(@dice -DistInt8(-128))
     
 end
 
@@ -296,4 +309,28 @@ end
         end
     end
 
+end
+
+@testset "DistInt unsigned_abs" begin
+
+    x = unsigned_abs(DistInt{8}(3))
+    @test x isa DistUInt{8}
+    @test pr(x)[3] ≈ 1
+
+    x = unsigned_abs(DistInt{8}(-3))
+    @test x isa DistUInt{8}
+    @test pr(x)[3] ≈ 1
+
+    x = unsigned_abs(DistInt{8}(0))
+    @test x isa DistUInt{8}
+    @test pr(x)[0] ≈ 1
+
+    x = unsigned_abs(DistInt{8}(127))
+    @test x isa DistUInt{8}
+    @test pr(x)[127] ≈ 1
+
+    x = unsigned_abs(DistInt{8}(-128))
+    @test x isa DistUInt{8}
+    @test pr(x)[128] ≈ 1
+    
 end
