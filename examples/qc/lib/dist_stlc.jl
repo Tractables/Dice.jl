@@ -1,24 +1,32 @@
 # Define DistSTLC
 
-DistSTLCType = InductiveDistType()
-DistSTLCType.constructors = [
-    ("Arrow",   [DistSTLCType, DistSTLCType]),
-    ("TypeVar", [DistString]),
+DistTyp = InductiveDistType()
+DistTyp.constructors = [
+    ("TBool", []),
+    ("TFun",  [DistTyp, DistTyp]),
 ]
 
-DistSTLC = InductiveDistType()
-DistSTLC.constructors = [
-    ("Var", [DistString]),
-    ("App", [DistSTLC, DistSTLC]),
-    ("Abs", [DistString, DistSTLCType, DistSTLC]),
+DistExpr = InductiveDistType()
+DistExpr.constructors = [
+    ("Var",     [DistUInt32]),
+    ("Boolean", [AnyBool]),
+    ("Abs",     [DistTyp, DistExpr]),
+    ("App",     [DistExpr, DistExpr])
 ]
 
-DistArrow(arg_ty, ret_ty) = construct(DistSTLCType, "Arrow", (arg_ty, ret_ty))
-DistTypeVar(s)            = construct(DistSTLCType, "TypeVar", (s,))
+DistTBool()        = construct(DistTyp, "TBool", ())
+DistTFun(fty, xty) = construct(DistTyp, "TFun",  (fty, xty))
 
-DistVar(s)        = construct(DistSTLC, "Var", (s,))
-DistApp(e1, e2)   = construct(DistSTLC, "App", (e1, e2))
-DistAbs(s, ty, e) = construct(DistSTLC, "Abs", (s, ty, e))
+DistVar(i)     = construct(DistExpr, "Var",     (i,))
+DistBoolean(b) = construct(DistExpr, "Boolean", (b,))
+DistAbs(ty, e) = construct(DistExpr, "Abs",     (ty, e))
+DistApp(f, x)  = construct(DistExpr, "App",     (f, x))
+
+# DistBind = InductiveDistType()
+# DistBind.constructors = [
+#     ("BindNow"
+# ]
+
 
 function ast_depth(l)
     prob_match(l, [
