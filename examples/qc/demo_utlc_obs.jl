@@ -18,23 +18,30 @@ end
 # Return ast, evid pair
 function gen_utlc(size, in_scope)
     # Generate Var arg
-    name = choice(in_scope)
+    name, name_evid = choice_obs(in_scope)
 
     # Fuel check
-    size == 0 && return DistVar(name)
+    size == 0 && return DistVar(name), name_evid
+
+    # Generate Abs args
+    fresh = gen_name()
+    e, e_evid = gen_utlc(size-1, prob_append(in_scope, fresh))
+
+    # Generate App args
+    e1, e1_evid = gen_utlc(size-1, in_scope)
+    e2, e2_evid = gen_utlc(size-1, in_scope)
+
+    # Evidence must be lifted out of probabilistic branches
+    evid = name_evid & e_evid & e1_evid & e2_evid
 
     @dice_ite if flip_for(size) & (in_scope.len > DistUInt32(0))
-        DistVar(name)
+        DistVar(name), evid
     # Fix weight between Abs and App. We must also always choose Abs if
     # size=1 and the scope is empty so far.
     elseif flip(2/3) | (size==1 & prob_equals(in_scope.len, DistUInt32(0)))
-        fresh = gen_name()
-        DistAbs(
-            fresh,
-            gen_utlc(size-1, prob_append(in_scope, fresh))
-        )
+        DistAbs(fresh, e), evid
     else
-        DistApp(gen_utlc(size-1, in_scope), gen_utlc(size-1, in_scope))
+        DistApp(e1, e2), evid
     end
 end
 
@@ -48,14 +55,19 @@ DATASET = [DistUInt32(x) for x in 0:INIT_SIZE]
 # Use Dice to build computation graph
 gen() = gen_utlc(INIT_SIZE, DistVector{DistString}())
 
-e_depth = ast_depth(gen())
+e, evid = gen()
+e_depth = ast_depth(e)
 
 println("Distribution before training:")
-print_dict(pr(e_depth))
+pr(evid)
+print_dict(pr(e_depth, evidence=evid))
 println()
 
-bools_to_maximize = [prob_equals(e_depth, x) for x in DATASET]
-train_group_probs!(bools_to_maximize)
+cond_bools_to_maximize = [
+    (prob_equals(e_depth, x), evid)
+    for x in DATASET
+]
+train_group_probs!(cond_bools_to_maximize)
 
 # Done!
 println("Learned flip probability for each size:")
@@ -63,13 +75,14 @@ print_dict(get_group_probs())
 println()
 
 println("Distribution over depths after training:")
-e = gen()
-print_dict(pr(ast_depth(e)))
+e, evid = gen()
+e_depth = ast_depth(e)
+print_dict(pr(e_depth, evidence=evid))
 println()
 
 println("A few sampled exprs:")
 for _ in 1:10
-    expr = sample((e, true))
+    expr = sample((e, evid))
     println(utlc_str(expr))
     # println(print_tree(expr))  # concrete AST
 end

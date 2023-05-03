@@ -1,27 +1,27 @@
 # Demo of using BDD MLE to learn flip probs for a sorted nat list of uniform length.
 
-using Revise
-
 using Dice
 include("../util.jl")           # print_dict
 include("lib/dist_list.jl")     # DistNil, DistCons, len
 include("lib/sample.jl")        # sample
 
-# Return a DistList
+# Return a list, evid pair
 function gen_sorted_list(size, lo, hi)
-    size == 0 && return DistNil(DistUInt32)
+    size == 0 && return DistNil(DistUInt32), true
     
     # The flips used in the uniform aren't tracked via flip_for, so we
     # don't learn their probabilities (this is on purpose - we could).
+    x, x_evid = unif_obs(lo, hi)
+    xs, xs_evid = gen_sorted_list(size-1, x, hi)
+    evid = x_evid & xs_evid
+    
+    # Try changing the parameter to flip_for to a constant, which would force
+    # all sizes to use the same probability.
     @dice_ite if flip_for(size)
-        DistNil(DistUInt32)
+        DistNil(DistUInt32), evid
     else
-        # Try changing the parameter to flip_for to a constant, which would force
-        # all sizes to use the same probability.
-        x = unif(lo, hi)
-        DistCons(x, gen_sorted_list(size-1, x, hi))
+        DistCons(x, xs), evid
     end
-
 end
 
 # Top-level size/fuel. For gen_list, this is the max length.
@@ -37,14 +37,18 @@ gen() = gen_sorted_list(
     DistUInt32(1),
     DistUInt32(INIT_SIZE),
 )
-list_len = len(gen())
+list, evid = gen()
+list_len = len(list)
 
 println("Distribution before training:")
-print_dict(pr(list_len))
+print_dict(pr(list_len, evidence=evid))
 println()
 
-bools_to_maximize = [prob_equals(list_len, x) for x in DATASET]
-train_group_probs!(bools_to_maximize)
+cond_bools_to_maximize = [
+    (prob_equals(list_len, x), evid)
+    for x in DATASET
+]
+train_group_probs!(cond_bools_to_maximize)
 
 # Done!
 println("Learned flip probability for each size:")
@@ -52,14 +56,15 @@ print_dict(get_group_probs())
 println()
 
 println("Distribution over lengths after training:")
-list_len = len(gen())
-print_dict(pr(list_len))
+list, evid = gen()
+list_len = len(list)
+print_dict(pr(list_len, evidence=evid))
 println()
 
 println("A few sampled lists:")
 l = gen()
 for _ in 1:3
-    print_tree(sample((l, true)))
+    print_tree(sample(l))
     println()
 end
 
