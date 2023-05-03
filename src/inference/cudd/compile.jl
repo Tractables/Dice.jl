@@ -12,10 +12,10 @@ mutable struct BDDCompiler
     level_to_flip::Dict{Integer, Flip}
 end
 
-function BDDCompiler(roots)
+function BDDCompiler()
     c = BDDCompiler(
         initialize_cudd(),
-        Set{AnyBool}(roots),
+        Set{AnyBool}(),
         Dict{Dist{Bool}, Int}(),
         Dict{AnyBool, CuddNode}(),
         Dict{Integer, Any}(),
@@ -26,10 +26,23 @@ function BDDCompiler(roots)
     finalizer(c) do x
         Cudd_Quit(x.mgr)
     end
+    c
+end
+
+function BDDCompiler(roots)
+    c = BDDCompiler()
+    add_roots!(c, roots)
+    c
+end
+
+function add_roots!(c::BDDCompiler, roots)
+    # De-dupe
+    roots = unique(setdiff(roots, c.roots))
+    union!(c.roots, roots)
 
     # Collect flips and reference count
     flips = Vector{Flip}()
-    foreach_node(c.roots) do node
+    foreach_node(roots) do node
         node isa Flip && push!(flips, node)
         for child in unique(children(node))
             get!(c.num_uncompiled_parents, child, 0)
@@ -40,18 +53,26 @@ function BDDCompiler(roots)
     # Compile flips so variable order matches instantiation order, and save
     # levels.
     sort!(flips; by=f -> f.global_id)
-    for f in flips
+    for f in unique(flips)
+        haskey(c.cache, f) && continue
         n = new_var(c.mgr)
         c.cache[f] = n
         c.level_to_flip[level(n)] = f
-    end
-
-    c
+    end    
 end
 
 function compile(c::BDDCompiler, root::AnyBool)::CuddNode
+    compile(c, [root])[1]
+end
+
+function compile(c::BDDCompiler, roots::Vector{<:AnyBool})::Vector{CuddNode}
+    add_roots!(c, roots)
+    [compile_existing(c, root) for root in roots]
+end
+
+function compile_existing(c::BDDCompiler, root::AnyBool)::CuddNode
     haskey(c.cache, root) && return c.cache[root]
-    root ∉ c.roots && error("Can only compile roots passed into BDDCompiler")
+    root ∉ c.roots && error("Can only compile roots added to BDDCompiler")
 
     # TODO implement shortcuts for equivalence, etc.
     function mark_as_compiled(node)
