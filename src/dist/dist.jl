@@ -21,7 +21,6 @@ function Base.show(io::IO, x::Dist)
 end
 
 include("bool.jl")
-include("cond.jl")
 include("misc.jl")
 include("integer/uint.jl")
 include("integer/int.jl")

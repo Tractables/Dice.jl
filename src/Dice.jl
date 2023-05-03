@@ -15,10 +15,9 @@ macro dice_ite(code)
             @assert length(x.args) == 3 "@dice_ite macro only supports purely functional if-then-else"
             ite_guard = gensym(:ite)
             return :(begin $ite_guard = $(x.args[1])
-                    if (!Dice.indynamo() && ($(ite_guard) isa Dist{Bool} || $(ite_guard) isa Cond{<:Dist{Bool}}))
+                    if (!Dice.indynamo() && ($(ite_guard) isa Dist{Bool}))
                         ifelse($(ite_guard), $(x.args[2:3]...))
                     else
-                        $(ite_guard) isa Cond{Bool} && ($(ite_guard) = $(ite_guard).x)
                         (if $(ite_guard)
                             $(x.args[2])
                         else
@@ -31,7 +30,6 @@ macro dice_ite(code)
     end
 end
 
-include("monad.jl")
 include("dist/dist.jl")
 include("flip_groups.jl")
 include("inference/inference.jl")

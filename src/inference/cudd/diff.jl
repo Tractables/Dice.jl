@@ -50,32 +50,24 @@ function step_flip_probs!(
     nothing
 end
 
-
-function train_group_probs!(bools_to_maximize::Vector{<:Tuple{<:AnyBool, <:AnyBool}}, args...)
-    train_group_probs!(
-        Cond{<:AnyBool}[Cond{AnyBool}(b, evid) for (b, evid) in bools_to_maximize],
-        args...
-    )
-end
-
 function train_group_probs!(bools_to_maximize::Vector{<:AnyBool}, args...)
     train_group_probs!(
-        Cond{<:AnyBool}[EvidMonad.ret(b) for b in bools_to_maximize],
+        [(b, true) for b in bools_to_maximize],
         args...
     )
 end
 
 # Train group_to_psp to such that generate() approximates dataset's distribution
 function train_group_probs!(
-    cond_bools_to_maximize::Vector{<:Cond{<:AnyBool}},
+    cond_bools_to_maximize::Vector{<:Tuple{<:AnyBool, <:AnyBool}},
     epochs::Integer=1000,
     learning_rate::AbstractFloat=0.3,
 )
     # Compile to BDDs
     cond_bools_to_maximize = [
-        ((b.x & b.evid), b.evid)
-        for b in cond_bools_to_maximize
-    ]    
+        (x & evid, evid)
+        for (x, evid) in cond_bools_to_maximize
+    ]
     c = BDDCompiler(Iterators.flatten(cond_bools_to_maximize))
     cond_bdds_to_maximize = [
         (compile(c, conj), compile(c, obs))
