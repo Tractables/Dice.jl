@@ -55,20 +55,3 @@ for i in eachindex(continue_at_each_pos)
     end
 end
 pr(pos, evidence=pos > DistUInt32(1))  # Dict(2 => 0.7, 4 => 0.3)
-
-
-################################################################################
-# Evidence monad
-################################################################################
-
-# Cond{} and the EvidMonad automatically conjoins evidence bits
-function unif_at_most(upper_bound::DistUInt8)
-    x = uniform(DistUInt8, 0, 2^8)
-    Cond{DistUInt8}(x, x <= upper_bound)
-end
-
-upper_bound = @dice_ite if flip(.5) DistUInt8(3) else DistUInt8(6) end
-x = unif_at_most(upper_bound)
-y = unif_at_most(upper_bound)
-z = liftM(EvidMonad, +)(x, y)
-pr(z)
