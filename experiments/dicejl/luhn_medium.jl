@@ -44,4 +44,3 @@ function fun()
 end 
 
 x = fun()
-println((median(x).time)/10^9)

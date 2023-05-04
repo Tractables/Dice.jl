@@ -62,4 +62,4 @@ function fun()
 end 
 x = fun() 
 
-println((median(x).time)/10^9)
+# println((median(x).time)/10^9)
