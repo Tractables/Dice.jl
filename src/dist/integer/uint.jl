@@ -196,8 +196,8 @@ function drop_bits(::Type{DistUInt{W2}}, x::DistUInt{W1}) where {W1,W2}
     DistUInt{W2}(x.bits[W1-W2+1:end])
 end
 
-Base.zero(::Type{T}) where {T<:Dist{Int}} = T(0)
-Base.one(::Type{T}) where {T<:Dist{Int}} = T(1)
+Base.zero(::Type{T}) where {T<:Dist{<:Integer}} = T(0)
+Base.one(::Type{T}) where {T<:Dist{<:Integer}} = T(1)
 
 ##################################
 # inference

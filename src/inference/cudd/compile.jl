@@ -132,3 +132,19 @@ function enable_reordering(c::BDDCompiler, reordering_type::CUDD.Cudd_Reordering
     end
 end
 
+# Given `context`, a surrounding path condition, and a test
+# returns (path condition if test, path condition if !test)
+function split(c::BDDCompiler, context::CuddNode, test::AnyBool)::Tuple{CuddNode, CuddNode}
+    # TODO: Think about GC
+    testbdd = compile(c, test)
+    ifbdd = conjoin(c.mgr, context, testbdd)
+    if ifbdd === context
+        context, constant(c.mgr, false)
+    elseif !issat(c.mgr, ifbdd)
+        constant(c.mgr, false), context
+    else
+        nottestbdd = negate(c.mgr, testbdd)
+        elsebdd = conjoin(c.mgr, context, nottestbdd)
+        ifbdd, elsebdd
+    end
+end

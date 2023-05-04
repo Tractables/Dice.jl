@@ -10,7 +10,7 @@ const AnyBool = Union{Dist{Bool}, Bool}
 # TODO should become and atomic int when we care about multithreading
 global_flip_id::Int64 = one(Int64)
 
-struct Flip <: Dist{Bool}
+mutable struct Flip <: Dist{Bool}
     global_id::Int
     prob
     name

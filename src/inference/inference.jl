@@ -1,4 +1,4 @@
-export pr, condprobs, condprob, Cudd, CuddDebugInfo, ProbException, allobservations, JointQuery, returnvalue, expectation, variance
+export condprobs, condprob, Cudd, CuddDebugInfo, ProbException, allobservations, JointQuery, returnvalue, expectation, variance
 
 using DataStructures: DefaultDict
 
@@ -111,8 +111,34 @@ end
 # Inference backends
 ##################################
 
-include("cudd/core.jl")
-include("cudd/compile.jl")
-include("cudd/wmc.jl")
 include("cudd/dict_vec.jl")
-include("cudd/diff.jl")
+
+# Wraps CUDD
+# Notable exports:
+# - CuddNode
+# - low(::CuddNode), high(::CuddNode)
+# - level_traversal(::CuddNode)
+include("cudd/core.jl")
+
+# Manages context for compiling AnyBools to CuddNode
+# Notable exports:
+# - BDDCompiler(roots::Vector{AnyBool})
+# - compile(::BDDCompiler, AnyBool)
+include("cudd/compile.jl")
+
+# Manages context for finding logprobability of a CuddNode, and the gradient of
+# a node's logprobability w.r.t. all flip probabilities.
+# Notable exports:
+# - WMC(::BDDCompiler)
+# - logprob(::WMC, ::CuddNode)::Float64
+# - grad_logprob(::WMC, ::CuddNode)::Dict{Flip, Float64}
+include("cudd/wmc.jl")
+
+# Exposes functionality for inferring the distribution of AnyBool-based
+# data structures.
+# Notable exports:
+# - pr(::Dist, evidence=..., errors=...)
+include("cudd/pr.jl")
+
+
+include("cudd/train.jl")
