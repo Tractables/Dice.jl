@@ -66,7 +66,7 @@ function uniform_arith(::Type{DistUInt{W}}, start, stop) where W
         DInt(start) + uniform_arith(DInt, 0, stop-start)
     else
         digits = ndigits(stop, base=2)-1
-        pivot = BigInt(2)^digits
+        pivot = 2^digits
         pivotflip = flip(pivot/stop) # first in variable order
         before = uniform(DInt, digits)
         if pivot == stop
@@ -362,8 +362,8 @@ function Base.:~(x::DistUInt{W}) where W
     DistUInt{W}(.! x.bits) 
 end 
 
-function Base.iszero(x::DistUInt{W}) where W
-    prob_equals(x, DistUInt{W}(0))
+function Base.iszero(x::T) where T <: Dist{<:Number}
+    prob_equals(x, zero(T))
 end
 
 function Base.ifelse(cond::Dist{Bool}, then::DistUInt{W}, elze::DistUInt{W}) where W
