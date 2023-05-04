@@ -112,10 +112,10 @@ include("lib/dist_list.jl")
 
 # Consider this recursive function which generates lists up to a certain size
 function gen_list(size)
-    size == 0 && return DistNil()
+    size == 0 && return DistNil(DistUInt32)
 
     @dice_ite if flip_for("?")
-        DistNil()
+        DistNil(DistUInt32)
     else
         # The flips used in the uniform aren't tracked via flip_for, so we
         # don't learn their probabilities.
@@ -157,11 +157,11 @@ reset_flips!()
 # Suppose instead that we can have the flip probability change depend based on
 # the size in the subcall.
 function gen_list(size)
-    size == 0 && return DistNil()
+    size == 0 && return DistNil(DistUInt32)
     
     #                     vvvvv changed
     @dice_ite if flip_for(size)
-        DistNil()
+        DistNil(DistUInt32)
     else
         # The flips used in the uniform aren't tracked via flip_for, so we
         # don't learn their probabilities.
