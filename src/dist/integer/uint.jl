@@ -58,11 +58,6 @@ function uniform(::Type{DistUInt{W}}, start, stop; strategy = :arith) where W
     end
 end
 
-function pow2_minus_1(i::UInt)
-    before = UInt(2)^(i-one(UInt))
-    before - one(UInt) + before
-end
-
 "Construct a uniform random number by offsetting a 0-based uniform"
 function uniform_arith(::Type{DistUInt{W}}, start, stop) where W
     @assert BigInt(0) <= BigInt(start) < BigInt(stop) <= BigInt(2) ^ BigInt(W)
@@ -196,8 +191,8 @@ function drop_bits(::Type{DistUInt{W2}}, x::DistUInt{W1}) where {W1,W2}
     DistUInt{W2}(x.bits[W1-W2+1:end])
 end
 
-Base.zero(::Type{T}) where {T<:Dist{<:Integer}} = T(0)
-Base.one(::Type{T}) where {T<:Dist{<:Integer}} = T(1)
+Base.zero(::Type{T}) where {T<:Dist{<:Number}} = T(0)
+Base.one(::Type{T}) where {T<:Dist{<:Number}} = T(1)
 
 ##################################
 # inference
@@ -290,8 +285,8 @@ function Base.isless(x::DistUInt{W}, y::DistUInt{W}) where W
     end
 end
 
-Base.:(<=)(x::Dist{Int}, y::Dist{Int}) = !isless(y, x)
-Base.:(>=)(x::Dist{Int}, y::Dist{Int}) = !isless(x, y)
+Base.:(<=)(x::Dist{<:Number}, y::Dist{<:Number}) = !isless(y, x)
+Base.:(>=)(x::Dist{<:Number}, y::Dist{<:Number}) = !isless(x, y)
 
 function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
     z = Vector{AnyBool}(undef, W)
@@ -446,6 +441,7 @@ end
 # Uniform from 0 to hi, exclusive
 function unif_half(hi::DistUInt{W})::DistUInt{W} where W
     max_hi = maxvalue(hi)
+    max_hi > 60 && error("Likely to time out")
     prod = BigInt(1)
     for prime in primes_at_most(max_hi)
         prod *= prime ^ floor_log(prime, max_hi)

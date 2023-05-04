@@ -18,7 +18,7 @@ function step_flip_probs!(
         f.prob = sigmoid(_group_to_psp[group])
     end
 
-    # Find grad of probabilities w.r.t. each flip
+    # Find grad of logprobability w.r.t. each flip's probability
     w = WMC(c)
     grad = DefaultDict{Flip, Float64}(0.)
     for (bdd, obs_bdd) in cond_bdds_to_maximize
@@ -26,11 +26,14 @@ function step_flip_probs!(
         grad += grad_logprob(w, bdd) - grad_logprob(w, obs_bdd)
     end
 
-    # Convert to grad of pre-sigmoid probabilities w.r.t. each flip group
-    # have: δprob/δflip for all flip
-    # δpsp/δgroup = Σ_{f in g} δprob/δflip * sigmoid'(psp(group))
+    # Convert to grad of pre-sigmoid probabilities w.r.t. each group's
+    # pre-sigmoid probability. Let "f" denote a flip, "g" denote a group.
+    #
+    # δlogpr/δg.psp = Σ_{f∈g} δlogpr/δf.pr * δf.pr/δg.psp
+    #               = Σ_{f∈g} δlogpr/δf.pr * σ'(g.psp)        (as f.pr=σ(g.psp))
     psp_grad_wrt_groups = DefaultDict{Any, Float64}(0.)
     for (f, group) in _flip_to_group
+        haskey(grad, f) || continue
         dpdf = grad[f]
         psp_grad_wrt_groups[group] += dpdf * deriv_sigmoid(_group_to_psp[group])
     end

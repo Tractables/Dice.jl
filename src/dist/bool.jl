@@ -24,6 +24,15 @@ mutable struct Flip <: Dist{Bool}
     end
 end
 
+function Base.show(io::IO, f::Flip)
+    p = round(f.prob, digits=2)
+    if isnothing(f.name)
+        print(io, "$(typeof(f))($(f.global_id),$(p))")
+    else
+        print(io, "$(typeof(f))($(f.global_id),$(p),$(f.name))")
+    end
+end
+
 "Create a Bernoulli random variable with the given probability (a coin flip)"
 function flip(prob::Real; name = nothing)
     iszero(prob) && return false

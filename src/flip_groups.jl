@@ -11,7 +11,7 @@ _group_to_psp = Dict{Any, Float64}()
 # flip_for(x) and flip_for(y) are always separate flips, but if x == y, then
 # they share their probability.
 function flip_for(group)
-    f = flip(sigmoid(get!(_group_to_psp, group, 0.)))
+    f = flip(sigmoid(get!(_group_to_psp, group, 0.)), name="f_for($(group))")
     _flip_to_group[f] = group
     f
 end

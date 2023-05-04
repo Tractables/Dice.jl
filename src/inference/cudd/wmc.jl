@@ -17,6 +17,8 @@ mutable struct WMC
     end
 end
 
+logprob(w::WMC, x::AnyBool) = logprob(w, compile(w.c, x))
+
 function logprob(w::WMC, x::CuddNode)
     get!(w.cache, x) do
         f = w.c.level_to_flip[level(x)]
