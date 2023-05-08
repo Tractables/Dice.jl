@@ -4,19 +4,14 @@ export DistInductive, construct, prob_match, DistInductiveType
 
 abstract type DistInductiveType end
 
-# TODO: support prob_equals
-struct DistInductive{T}
+struct DistInductive{T <: DistInductiveType}
     constructor::DistUInt32
     arg_lists::Vector{Union{Vector,Nothing}}
 end
 
-# All DistInductive subtypes must have these fields:
-
-# And support this function:
-function param_lists end
-# function param_lists(t::Type{<:DistInductiveType})::Vector{Pair{String,Vector{Type}}}
-#     error("param_lists not implemented for $(t)")
-# end
+function param_lists(::Type{T})::Vector{Pair{String,Vector{Type}}} where T <: DistInductiveType
+    error("param_lists not implemented for $(T)")
+end
 
 function param_list_dict(t::Type{<:DistInductiveType})
     Dict(
@@ -48,18 +43,19 @@ function frombits(x::DistInductive{T}, world) where T
 end
 
 function Base.ifelse(cond::Dist{Bool}, then::DistInductive{T}, elze::DistInductive{T}) where T
+    arg_lists = [
+        if then_args === nothing
+            elze_args
+        elseif elze_args === nothing
+            then_args
+        else
+            ifelse(cond, then_args, elze_args)
+        end
+        for (then_args, elze_args) in zip(then.arg_lists, elze.arg_lists)
+    ]
     DistInductive{T}(
         ifelse(cond, then.constructor, elze.constructor),
-        [
-            if then_args === nothing
-                elze_args
-            elseif elze_args === nothing
-                then_args
-            else
-                ifelse(cond, then_args, elze_args)
-            end
-            for (then_args, elze_args) in zip(then.arg_lists, elze.arg_lists)
-        ]
+        arg_lists
     )
 end
 
@@ -96,6 +92,23 @@ function prob_match(x::DistInductive{T}, cases) where T
         else
             res = ifelse(prob_equals(DistUInt32(i), x.constructor), v, res)
         end
+    end
+    res
+end
+
+function prob_equals(x::DistInductive{T}, y::DistInductive{T}) where T
+    res = false
+    @assert length(x.arg_lists) == length(y.arg_lists)
+    for (i, (x_args, y_args)) in enumerate(zip(x.arg_lists, y.arg_lists))
+        if isnothing(x_args) || isnothing(y_args)
+            continue
+        end
+        @assert length(x_args) == length(y_args)
+        res |= (
+            prob_equals(x.constructor, DistUInt32(i))
+            & prob_equals(y.constructor, DistUInt32(i))
+            & reduce(&, [prob_equals(xa, ya) for (xa, ya) in zip(x_args, y_args)], init=true)
+        )
     end
     res
 end
