@@ -10,16 +10,20 @@ See [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice)
 
 Install Julia 1.7 or higher using [these instructions](https://julialang.org/downloads/platform/).
 
-Clone the repository and start julia in project mode for current folder:
+Clone the repository and start Julia in project mode for current folder:
 ```bash
 cd Dice.jl
 julia --project
 ```
 
-Install Dice and update dependencies (one can also use `precompile` or `build`):
-
+Press `]` to enter the pkg terminal. Update packages. 
 ```
-] up
+up
+```
+
+While still in the pkg terminal, (**important for M1 Macs**), add the patched version of CUDD.
+```
+add https://github.com/rtjoa/CUDD.jl.git#m1compat
 ```
 
 Press CTRL-C or backspace to exit from the pkg terminal and return to Julia REPL.
