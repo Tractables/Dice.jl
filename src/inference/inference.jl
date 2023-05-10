@@ -138,11 +138,11 @@ include("cudd/wmc.jl")
 # data structures.
 # Notable exports:
 # - pr(::Dist, evidence=..., errors=...)
-include("cudd/pr.jl")
+include("pr.jl")
 
 # Exposes functionality for changing the probabilities of flip_for's
 # to maximize a list of (possibly conditional) bools
 # Notable exports:
 # - train_group_probs!(::Vector{<:AnyBool}))
 # - train_group_probs!(::Vector{<:Tuple{<:AnyBool, <:AnyBool}})
-include("cudd/train.jl")
+include("train.jl")
