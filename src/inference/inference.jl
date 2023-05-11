@@ -1,6 +1,6 @@
 export condprobs, condprob, Cudd, CuddDebugInfo, ProbException, allobservations, JointQuery, returnvalue, expectation, variance
 
-using DataStructures: DefaultOrderedDict
+using DataStructures: DefaultDict, DefaultOrderedDict, OrderedDict
 
 ##################################
 # Core inference API implemented by backends
@@ -44,7 +44,7 @@ function pr(queries...; kwargs...)
         for (world, p) in worlds
             dist[frombits(query, world)] += p
         end
-        DefaultOrderedDict(0.0, sort(collect(dist); by=last, rev=true))  # by decreasing probability
+        DefaultOrderedDict(0., OrderedDict(sort(collect(dist); by=last, rev=true)))  # by decreasing probability
     end
     length(queries) == 1 ? ans[1] : ans
 end
