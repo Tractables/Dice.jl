@@ -86,6 +86,6 @@ function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}, errors, dots)
     for nup in values(w.c.num_uncompiled_parents)
         @assert nup == 0 "Dereferences are likely suboptimal because num_uncompiled_parents was initialized improperly."
     end
-    # By decreasing probability (more useful in the REPL)
-    OrderedDict(sort(collect(results); by=last, rev=true))
+
+    results
 end

@@ -44,7 +44,7 @@ function pr(queries...; kwargs...)
         for (world, p) in worlds
             dist[frombits(query, world)] += p
         end
-        dist
+        OrderedDict(sort(dist; by=last, rev=true))  # by decreasing probability
     end
     length(queries) == 1 ? ans[1] : ans
 end
