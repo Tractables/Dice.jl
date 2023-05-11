@@ -20,7 +20,7 @@ using Dice
             end
         )
     end
-    res = prob_match(probably_none, [
+    res = match(probably_none, [
         "Some" => (s) -> s + DistString("bar"),
         "None" => ()  -> DistString("impossible")
     ])

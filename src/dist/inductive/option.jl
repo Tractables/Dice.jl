@@ -1,7 +1,7 @@
 
 export DistOpt, DistNone, DistSome
 
-struct DistOpt{T} <: DistInductiveType end
+struct DistOpt{T} <: InductiveType end
 function param_lists(::Type{DistOpt{T}})::Vector{Pair{String,Vector{Type}}} where T
     [
         "None" => [],

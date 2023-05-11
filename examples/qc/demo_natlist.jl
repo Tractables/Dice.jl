@@ -24,7 +24,7 @@ INIT_SIZE = 5
 DATASET = [DistUInt32(x) for x in 0:INIT_SIZE]
 
 # Use Dice to build computation graph
-generated = len(gen_list(INIT_SIZE))
+generated = length(gen_list(INIT_SIZE))
 
 println("Distribution before training:")
 display(pr(generated))
@@ -39,7 +39,7 @@ display(get_group_probs())
 println()
 
 println("Distribution over lengths after training:")
-display(pr(len(gen_list(INIT_SIZE))))
+display(pr(length(gen_list(INIT_SIZE))))
 
 #==
 Distribution before training:

@@ -3,7 +3,7 @@
 using Dice
 include("lib/sample.jl")        # sample
 
-# Return a DistList
+# Return a List
 function gen_sorted_list(size, lo, hi)
     size == 0 && return DistNil(DistUInt32)
     
@@ -33,7 +33,7 @@ gen() = gen_sorted_list(
     DistUInt32(1),
     DistUInt32(INIT_SIZE),
 )
-list_len = len(gen())
+list_len = length(gen())
 
 println("Distribution before training:")
 display(pr(list_len))
@@ -48,7 +48,7 @@ display(get_group_probs())
 println()
 
 println("Distribution over lengths after training:")
-list_len = len(gen())
+list_len = length(gen())
 display(pr(list_len))
 println()
 

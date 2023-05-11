@@ -36,7 +36,7 @@ gen() = gen_sorted_list(
     DistUInt32(INIT_SIZE),
 )
 list, evid = gen()
-list_len = len(list)
+list_len = length(list)
 
 println("Distribution before training:")
 display(pr(list_len, evidence=evid))
@@ -55,7 +55,7 @@ println()
 
 println("Distribution over lengths after training:")
 list, evid = gen()
-list_len = len(list)
+list_len = length(list)
 display(pr(list_len, evidence=evid))
 println()
 

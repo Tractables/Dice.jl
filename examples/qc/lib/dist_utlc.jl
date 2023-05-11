@@ -1,13 +1,13 @@
 # Define DistUTLC
 import Dice: param_lists
 
-struct DistUTLC <: DistInductiveType end
+struct DistUTLC <: InductiveType end
 
 function param_lists(::Type{DistUTLC})::Vector{Pair{String,Vector{Type}}} where T <: Union{Dist, AnyBool}
     [
         "Var" => [DistString],
-        "App" => [DistInductive{DistUTLC}, DistInductive{DistUTLC}],
-        "Abs" => [DistString, DistInductive{DistUTLC}],
+        "App" => [DistI{DistUTLC}, DistI{DistUTLC}],
+        "Abs" => [DistString, DistI{DistUTLC}],
     ]
 end
 
@@ -15,8 +15,8 @@ DistVar(s)      = construct(DistUTLC, "Var", [s,])
 DistApp(e1, e2) = construct(DistUTLC, "App", [e1, e2])
 DistAbs(s, e)   = construct(DistUTLC, "Abs", [s, e])
 
-function ast_depth(l::DistInductive{DistUTLC})
-    prob_match(l, [
+function ast_depth(l::DistI{DistUTLC})
+    match(l, [
         "Var"    => (s)      -> DistUInt32(0),
         "App"    => (e1, e2) -> begin
             d1, d2 = ast_depth(e1), ast_depth(e2)

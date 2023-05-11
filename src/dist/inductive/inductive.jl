@@ -1,26 +1,27 @@
 # Distributions over inductively-defined types
 
-export DistInductive, construct, prob_match, DistInductiveType
+export DistI, construct, match, InductiveType
 
-abstract type DistInductiveType end
+abstract type InductiveType end
 
-struct DistInductive{T <: DistInductiveType}
+function param_lists(::Type{T})::Vector{Pair{String,Vector{Type}}} where T <: InductiveType
+    error("param_lists not implemented for $(T)")
+end
+
+function param_list_dict(T::Type{<:InductiveType})
+    Dict(
+        ctr => (i, params)
+        for (i, (ctr, params)) in enumerate(param_lists(T))
+    )
+end
+
+struct DistI{T<:InductiveType} <: Dist{Any}
     constructor::DistUInt32
     arg_lists::Vector{Union{Vector,Nothing}}
 end
 
-function param_lists(::Type{T})::Vector{Pair{String,Vector{Type}}} where T <: DistInductiveType
-    error("param_lists not implemented for $(T)")
-end
 
-function param_list_dict(t::Type{<:DistInductiveType})
-    Dict(
-        ctr => (i, params)
-        for (i, (ctr, params)) in enumerate(param_lists(t))
-    )
-end
-
-function tobits(x::DistInductive)
+function tobits(x::DistI)
     collect(
         Iterators.flatten([
             Iterators.flatten(
@@ -34,7 +35,7 @@ function tobits(x::DistInductive)
     )
 end
 
-function frombits(x::DistInductive{T}, world) where T
+function frombits(x::DistI{T}, world) where T
     constructor = frombits(x.constructor, world)
     dist_args = x.arg_lists[constructor]
     @assert dist_args !== nothing
@@ -42,7 +43,7 @@ function frombits(x::DistInductive{T}, world) where T
     (param_lists(T)[constructor][1], args)
 end
 
-function Base.ifelse(cond::Dist{Bool}, then::DistInductive{T}, elze::DistInductive{T}) where T
+function Base.ifelse(cond::Dist{Bool}, then::DistI{T}, elze::DistI{T}) where T
     arg_lists = [
         if then_args === nothing
             elze_args
@@ -53,14 +54,14 @@ function Base.ifelse(cond::Dist{Bool}, then::DistInductive{T}, elze::DistInducti
         end
         for (then_args, elze_args) in zip(then.arg_lists, elze.arg_lists)
     ]
-    DistInductive{T}(
+    DistI{T}(
         ifelse(cond, then.constructor, elze.constructor),
         arg_lists
     )
 end
 
 
-function construct(t::Type{<:DistInductiveType}, constructor::String, args::Vector)
+function construct(t::Type{<:InductiveType}, constructor::String, args::Vector)
     ctr_i, params = get(param_list_dict(t), constructor) do
         error("$(t) has no constructor $(constructor)")
     end
@@ -72,10 +73,10 @@ function construct(t::Type{<:DistInductiveType}, constructor::String, args::Vect
 
     arg_lists = Vector{Union{Vector,Nothing}}([nothing for _ in param_lists(t)])
     arg_lists[ctr_i] = args
-    DistInductive{t}(DistUInt32(ctr_i), arg_lists)
+    DistI{t}(DistUInt32(ctr_i), arg_lists)
 end
 
-function prob_match(x::DistInductive{T}, cases) where T
+function Base.match(x::DistI{T}, cases) where T
     pld = param_list_dict(T)
 
     branches = Set(map(first, cases))
@@ -96,7 +97,7 @@ function prob_match(x::DistInductive{T}, cases) where T
     res
 end
 
-function prob_equals(x::DistInductive{T}, y::DistInductive{T}) where T
+function prob_equals(x::DistI{T}, y::DistI{T}) where T
     res = false
     @assert length(x.arg_lists) == length(y.arg_lists)
     for (i, (x_args, y_args)) in enumerate(zip(x.arg_lists, y.arg_lists))

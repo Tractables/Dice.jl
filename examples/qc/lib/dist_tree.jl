@@ -1,21 +1,21 @@
-# Define DistTree
+# Define Tree
 import Dice: param_lists
 
-struct DistTree{T} <: DistInductiveType end
+struct Tree{T} <: InductiveType end
 
-function param_lists(::Type{DistTree{T}})::Vector{Pair{String,Vector{Type}}} where T <: Union{Dist, AnyBool}
+function param_lists(::Type{Tree{T}})::Vector{Pair{String,Vector{Type}}} where T <: Union{Dist, AnyBool}
     [
         "Leaf" => [],
-        "Branch" => [T, DistInductive{DistTree{T}}, DistInductive{DistTree{T}}],
+        "Branch" => [T, DistI{Tree{T}}, DistI{Tree{T}}],
     ]
 end
 
-DistLeaf(T)          = construct(DistTree{T}, "Leaf",   [])
-DistBranch(x::T, l::DistInductive{DistTree{T}}, r::DistInductive{DistTree{T}}) where T =
-    construct(DistTree{T}, "Branch", [x, l, r])
+DistLeaf(T)          = construct(Tree{T}, "Leaf",   [])
+DistBranch(x::T, l::DistI{Tree{T}}, r::DistI{Tree{T}}) where T =
+    construct(Tree{T}, "Branch", [x, l, r])
 
-function depth(l::DistInductive{DistTree{T}}) where T
-    prob_match(l, [
+function depth(l::DistI{Tree{T}}) where T
+    match(l, [
         "Leaf"    => ()      -> DistUInt32(0),
         "Branch"  => (x, l, r) -> begin
             dl, dr = depth(l), depth(r)
