@@ -2,9 +2,6 @@
 
 using Dice
 
-include("../util.jl")  # print_dict
-include("lib/dist_list.jl")  # DistNil, DistCons, len
-
 function gen_list(size)
     size == 0 && return DistNil(DistUInt32)
 
@@ -30,7 +27,7 @@ DATASET = [DistUInt32(x) for x in 0:INIT_SIZE]
 generated = len(gen_list(INIT_SIZE))
 
 println("Distribution before training:")
-print_dict(pr(generated))
+display(pr(generated))
 println()
 
 bools_to_maximize = AnyBool[prob_equals(generated, x) for x in DATASET]
@@ -38,11 +35,11 @@ train_group_probs!(bools_to_maximize)
 
 # Done!
 println("Learned flip probability for each size:")
-print_dict(get_group_probs())
+display(get_group_probs())
 println()
 
 println("Distribution over lengths after training:")
-print_dict(pr(len(gen_list(INIT_SIZE))))
+display(pr(len(gen_list(INIT_SIZE))))
 
 #==
 Distribution before training:

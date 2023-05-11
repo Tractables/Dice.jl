@@ -1,7 +1,6 @@
 # Demo of using BDD MLE to learn flip probs for a BST of uniform depth
 
 using Dice
-include("../util.jl")           # print_dict
 include("lib/dist_tree.jl")     # DistLeaf, DistBranch, depth
 include("lib/sample.jl")        # sample
 
@@ -37,7 +36,7 @@ gen() = gen_bst(
 tree_depth = depth(gen())
 
 println("Distribution before training:")
-print_dict(pr(tree_depth))
+display(pr(tree_depth))
 println()
 
 bools_to_maximize = [prob_equals(tree_depth, x) for x in DATASET]
@@ -45,12 +44,12 @@ train_group_probs!(bools_to_maximize)
 
 # Done!
 println("Learned flip probability for each size:")
-print_dict(get_group_probs())
+display(get_group_probs())
 println()
 
 println("Distribution over depths after training:")
 tree = gen()
-print_dict(pr(depth(tree)))
+display(pr(depth(tree)))
 println()
 
 println("A few sampled trees:")

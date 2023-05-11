@@ -107,9 +107,6 @@ reset_flips!()
 # Uniform list lengths
 ################################################################################
 
-# Load support for distributions over cons lists
-include("lib/dist_list.jl")
-
 # Consider this recursive function which generates lists up to a certain size
 function gen_list(size)
     size == 0 && return DistNil(DistUInt32)

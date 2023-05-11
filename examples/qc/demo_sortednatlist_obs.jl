@@ -1,8 +1,6 @@
 # Demo of using BDD MLE to learn flip probs for a sorted nat list of uniform length.
 
 using Dice
-include("../util.jl")           # print_dict
-include("lib/dist_list.jl")     # DistNil, DistCons, len
 include("lib/sample.jl")        # sample
 
 # Return a list, evid pair
@@ -41,7 +39,7 @@ list, evid = gen()
 list_len = len(list)
 
 println("Distribution before training:")
-print_dict(pr(list_len, evidence=evid))
+display(pr(list_len, evidence=evid))
 println()
 
 cond_bools_to_maximize = [
@@ -52,13 +50,13 @@ train_group_probs!(cond_bools_to_maximize)
 
 # Done!
 println("Learned flip probability for each size:")
-print_dict(get_group_probs())
+display(get_group_probs())
 println()
 
 println("Distribution over lengths after training:")
 list, evid = gen()
 list_len = len(list)
-print_dict(pr(list_len, evidence=evid))
+display(pr(list_len, evidence=evid))
 println()
 
 println("A few sampled lists:")

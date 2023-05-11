@@ -1,7 +1,6 @@
 # Using BDD MLE to learn flip probs for closed UTLC exprs of uniform AST depth
 
 using Dice
-include("../util.jl")           # print_dict
 include("lib/dist_utlc.jl")     # DistVar, DistApp, DistAbs, utlc_str
 include("lib/sample.jl")        # sample
 
@@ -51,7 +50,7 @@ gen() = gen_utlc(INIT_SIZE, DistVector{DistString}())
 e_depth = ast_depth(gen())
 
 println("Distribution before training:")
-print_dict(pr(e_depth))
+display(pr(e_depth))
 println()
 
 bools_to_maximize = [prob_equals(e_depth, x) for x in DATASET]
@@ -59,12 +58,12 @@ train_group_probs!(bools_to_maximize)
 
 # Done!
 println("Learned flip probability for each size:")
-print_dict(get_group_probs())
+display(get_group_probs())
 println()
 
 println("Distribution over depths after training:")
 e = gen()
-print_dict(pr(ast_depth(e)))
+display(pr(ast_depth(e)))
 println()
 
 println("A few sampled exprs:")
