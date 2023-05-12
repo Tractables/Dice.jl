@@ -25,6 +25,6 @@ frombits(x::Vector, world) =
     map(v -> frombits(v, world), x)
 
 Base.ifelse(cond::Dist{Bool}, then::Vector, elze::Vector) =
-    Vector(ifelse(cond, x, y) for (x, y) in zip(then,elze))
+    [ifelse(cond, x, y) for (x, y) in zip(then,elze)]
 
 

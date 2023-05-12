@@ -6,7 +6,7 @@ export DistFixedPoint, continuous
 # types, structs, and constructors
 ##################################
 
-struct DistFixedPoint{W, F} <: Dist{Int}
+struct DistFixedPoint{W, F} <: Dist{Number}
     # W: total number of bits, F: number of bits after the binary point
     number::DistInt{W}
     function DistFixedPoint{W, F}(b) where W where F

@@ -1,17 +1,16 @@
-export DistUInt, DistUInt8, DistUInt16, DistUInt32, 
-    uniform, uniform_arith, uniform_ite, triangle, discrete
+export DistUInt, DistUInt8, DistUInt16, DistUInt32, DistUInt64,
+    uniform, uniform_arith, uniform_ite, triangle, discrete, unif, unif_obs
 
 ##################################
 # types, structs, and constructors
 ##################################
 
 "An unsigned random W-bit integer"
-struct DistUInt{W} <: Dist{Int}
+struct DistUInt{W} <: Dist{BigInt}
     # first index is most significant bit
     bits::Vector{AnyBool}
     function DistUInt{W}(b::AbstractVector) where W
         @assert length(b) == W "Expected $W bits from type but got $(length(b)) bits instead"
-        @assert 0 < W <= 63 #julia int overflow messes this up?
         new{W}(b)
     end
 end
@@ -19,7 +18,7 @@ end
 DistUInt(bits::AbstractVector) = 
     DistUInt{length(bits)}(bits)
 
-function DistUInt{W}(i::Int) where W
+function DistUInt{W}(i::Integer) where W
     @assert i >= 0
     num_b = ndigits(i, base = 2)
     @assert num_b <= W "Int $i cannot be represented as a DistUInt{$W}"
@@ -31,9 +30,15 @@ function DistUInt{W}(i::Int) where W
     DistUInt{W}(bits)
 end
 
+function DistUInt(i::Integer)
+    W = ndigits(i, base=2)
+    DistUInt{W}(i)
+end
+
 const DistUInt8 = DistUInt{8}
 const DistUInt16 = DistUInt{16}
 const DistUInt32= DistUInt{32}
+const DistUInt64= DistUInt{64}
 
 
 "Construct a uniform random number"
@@ -55,7 +60,7 @@ end
 
 "Construct a uniform random number by offsetting a 0-based uniform"
 function uniform_arith(::Type{DistUInt{W}}, start, stop) where W
-    @assert 0 <= start < stop <= 2^W
+    @assert BigInt(0) <= BigInt(start) < BigInt(stop) <= BigInt(2) ^ BigInt(W)
     DInt = DistUInt{W}
     if start > 0
         DInt(start) + uniform_arith(DInt, 0, stop-start)
@@ -164,6 +169,10 @@ function discrete(::Type{DistUInt{W}}, probs) where W
     convert(DistUInt{W}, x)
 end
 
+function truncate_to_width(x::DistUInt{W1}, W2) where W1
+    DistUInt{W2}(x.bits[W1 - W2 + 1:W1])
+end
+
 function Base.convert(::Type{DistUInt{W2}}, x::DistUInt{W1}) where {W1,W2}
     if W1 <= W2
         DistUInt{W2}(vcat(fill(false, W2-W1), x.bits))
@@ -182,8 +191,8 @@ function drop_bits(::Type{DistUInt{W2}}, x::DistUInt{W1}) where {W1,W2}
     DistUInt{W2}(x.bits[W1-W2+1:end])
 end
 
-Base.zero(::Type{T}) where {T<:Dist{Int}} = T(0)
-Base.one(::Type{T}) where {T<:Dist{Int}} = T(1)
+Base.zero(::Type{T}) where {T<:Dist{<:Number}} = T(0)
+Base.one(::Type{T}) where {T<:Dist{<:Number}} = T(1)
 
 ##################################
 # inference
@@ -276,8 +285,8 @@ function Base.isless(x::DistUInt{W}, y::DistUInt{W}) where W
     end
 end
 
-Base.:(<=)(x::Dist{Int}, y::Dist{Int}) = !isless(y, x)
-Base.:(>=)(x::Dist{Int}, y::Dist{Int}) = !isless(x, y)
+Base.:(<=)(x::Dist{<:Number}, y::Dist{<:Number}) = !isless(y, x)
+Base.:(>=)(x::Dist{<:Number}, y::Dist{<:Number}) = !isless(x, y)
 
 function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
     z = Vector{AnyBool}(undef, W)
@@ -343,12 +352,18 @@ function Base.:%(x::DistUInt{W}, y::DistUInt{W}) where W
     x_proxy
 end 
 
+function rem_trunc(x::DistUInt{W1}, y::DistUInt{W2})::DistUInt{W2} where {W1, W2}
+    T = DistUInt{max(W1, W2)}
+    res = convert(T, x) % convert(T, y)
+    truncate_to_width(res, W2)
+end
+
 function Base.:~(x::DistUInt{W}) where W 
     DistUInt{W}(.! x.bits) 
 end 
 
-function Base.iszero(x::T) where T <: Dist{Int}
-    prob_equals(x, T(0))
+function Base.iszero(x::T) where T <: Dist{<:Number}
+    prob_equals(x, zero(T))
 end
 
 function Base.ifelse(cond::Dist{Bool}, then::DistUInt{W}, elze::DistUInt{W}) where W
@@ -359,3 +374,80 @@ function Base.ifelse(cond::Dist{Bool}, then::DistUInt{W}, elze::DistUInt{W}) whe
     DistUInt{W}(bits)
 end
   
+using Dice: tobits, frombits
+
+function maxvalue(x::DistUInt{W}) where W
+    c = BDDCompiler(x.bits)
+    v = 0
+    ctx = true
+    for i = 1:W
+        bit, bitvalue = x.bits[i], 2^(W-i)
+        if issat(c.mgr, compile(c, ctx & bit))
+            ctx &= bit
+            v += bitvalue
+        end
+    end
+    v
+end
+
+function minvalue(x::DistUInt{W}) where W
+    c = BDDCompiler(x.bits)
+    v = 0
+    ctx = true
+    for i = 1:W
+        bit, bitvalue = x.bits[i], 2^(W-i)
+        if issat(c.mgr, compile(c, ctx & !bit))
+            ctx &= !bit
+        else
+            v += bitvalue
+        end
+    end
+    v
+end
+
+function primes_at_most(n::Int)
+    isprime = [true for _ in 1:n]
+    for p in 2:trunc(Int, sqrt(n))
+        if isprime[p]
+            for i in p^2:p:n
+                isprime[i] = false
+            end
+        end
+    end
+    [i for i in 2:n if isprime[i]]
+end
+
+function floor_log(base, n)
+    v = 1
+    pow = 0
+    while v * base <= n
+        v *= base
+        pow += 1
+    end
+    pow
+end
+
+# Uniform from lo to hi, inclusive
+function unif(lo::DistUInt{W}, hi::DistUInt{W}) where W
+    lo + unif_half(hi + DistUInt32(1) - lo)
+end
+
+# (x, evid) where x is uniform from lo to hi, inclusive, given evid
+function unif_obs(lo::DistUInt{W}, hi::DistUInt{W}) where W
+    x = uniform(DistUInt{W}, minvalue(lo), maxvalue(hi) + 1)
+    x, (x >= lo) & (x <= hi)
+end
+
+# Uniform from 0 to hi, exclusive
+function unif_half(hi::DistUInt{W})::DistUInt{W} where W
+    max_hi = maxvalue(hi)
+    max_hi > 60 && error("Likely to time out")
+    prod = BigInt(1)
+    for prime in primes_at_most(max_hi)
+        prod *= prime ^ floor_log(prime, max_hi)
+    end
+    # prod = lcm([k for k in keys(pr(hi))])
+    u = uniform(DistUInt{ndigits(prod, base=2)}, 0, prod)
+    rem_trunc(u, hi)
+end
+

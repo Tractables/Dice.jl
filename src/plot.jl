@@ -1,3 +1,4 @@
+#==
 using Graphs
 using DirectedAcyclicGraphs
 using TikzGraphs
@@ -25,3 +26,4 @@ shortlabel(::DistNot) = "¬"
 
 TikzPictures.save(file, x::Dist) =
     TikzPictures.save(file, TikzGraphs.plot(x))
+==#

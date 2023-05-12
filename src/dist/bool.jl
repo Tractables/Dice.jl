@@ -1,5 +1,5 @@
 
-export flip, prob_equals, AnyBool, expectation, variance
+export flip, prob_equals, AnyBool, expectation, variance, foreach_node
 
 ##################################
 # types, structs, and constructors
@@ -10,7 +10,7 @@ const AnyBool = Union{Dist{Bool}, Bool}
 # TODO should become and atomic int when we care about multithreading
 global_flip_id::Int64 = one(Int64)
 
-struct Flip <: Dist{Bool}
+mutable struct Flip <: Dist{Bool}
     global_id::Int
     prob
     name
@@ -18,9 +18,18 @@ struct Flip <: Dist{Bool}
     Flip(p::Real, name) = begin
         @assert !isone(p) "Use `true` for deterministic flips"
         @assert !iszero(p) "Use `false` for deterministic flips"
-        @assert 0 < p < 1 "Probabilities are between 0 and 1"
+        @assert isnothing(p) || 0 < p < 1 "Probabilities are between 0 and 1"
         global global_flip_id
         new(global_flip_id += 1, p, name)
+    end
+end
+
+function Base.show(io::IO, f::Flip)
+    p = round(f.prob, digits=2)
+    if isnothing(f.name)
+        print(io, "$(typeof(f))($(f.global_id),$(p))")
+    else
+        print(io, "$(typeof(f))($(f.global_id),$(p),$(f.name))")
     end
 end
 
@@ -138,6 +147,18 @@ end
 
 "Test whether at least two of three arguments are true"
 atleast_two(x,y,z) = (x & y) | ((x | y) & z)
+
+function foreach_node(f, roots)
+    seen = Set{Dist{Bool}}()
+    for root in roots
+        root isa Bool && continue
+        foreach(root) do node
+            node ∈ seen && return
+            push!(seen, node)
+            f(node)
+        end
+    end
+end
 
 ##################################
 # inference
