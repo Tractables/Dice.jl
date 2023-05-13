@@ -1,6 +1,6 @@
 using Distributions
 
-export DistFixedPoint, continuous
+export DistFixedPoint, continuous, exponential
 
 ##################################
 # types, structs, and constructors
@@ -229,4 +229,12 @@ function continuous(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistri
                 ans)  
     end
     return ans
+end
+
+###########################
+# LExBit
+###########################
+
+function exponential(t::Type{DistFixedPoint{W, F}}, beta::Float64) where W where F
+    DistFixedPoint{W, F}(vcat([false for i in 1:W-F], [flip(exp(beta/2^i)/(1+exp(beta/2^i))) for i in 1:F]))
 end
