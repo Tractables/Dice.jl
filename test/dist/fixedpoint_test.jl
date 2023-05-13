@@ -2,6 +2,8 @@ using Test
 using Dice
 using Dice: Flip, ifelse, num_ir_nodes
 using Distributions
+using Plots
+using Revise
 
 @testset "DistFixedPoint inference" begin
     x = DistFixedPoint{4, 2}([true, false, true, false]) # -1.5
@@ -291,5 +293,13 @@ end
         end
     end
 
+end
+
+@testset "DistFixedPoint exponential" begin
+    x = exponential(DistFixedPoint{5, 3}, 1.0)
+    pr(x)[0.125] ≈ exp(0.125)*(exp(1/8) - 1)/(exp(1) - 1)
+    
+    x = exponential(DistFixedPoint{10, 9}, 1.0)
+    pr(x)[0.125] ≈ exp(0.125)*(exp(1/2^9) - 1)/(exp(1) - 1)  
 end
  
