@@ -137,9 +137,13 @@ end
     end 
 
     kl_vector = [0.0, 0.0, 0.0, 0.0]
+    kl_vector2 = [0.0, 0.0, 0.0, 0.0]
     map(pieces) do piece
         y = continuous(DistFixedPoint{5, 2}, Normal(1, 1), piece, -1.0, 3.0)
         p = pr(y)
+
+        z = continuous(DistFixedPoint{5, 2}, Normal(1, 1), piece, -1.0, 3.0, exp=true)
+        p_z = pr(z)
 
         # Symmetric gaussian around mean
         for i=1:0.25:2.75
@@ -153,8 +157,15 @@ end
         p = map(a -> a[2], sort([(k, v) for (k, v) in p]))
         kl_vector[Int(log2(piece))+1] = kl_divergence(p, q)
 
+        p_z = map(a -> a[2], sort([(k, v) for (k, v) in p_z]))
+        kl_vector2[Int(log2(piece))+1] = kl_divergence(p_z, q)
     end
+
+    @show kl_vector
+    @show kl_vector2
+
     @test issorted(kl_vector, rev=true)
+    @test issorted(kl_vector2, rev = true)
     
     # Exactness for maximum number of pieces
     y = continuous(DistFixedPoint{5, 2}, Normal(1, 1), 8, -1.0, 3.0)
@@ -163,6 +174,7 @@ end
     @test p2 ≈ q
 
     #TODO: write tests for continuous distribution other than gaussian
+    #TODO: Write tests for exponential pieces
 end
 
 @testset "DistFixedPoint multiply" begin
@@ -296,10 +308,20 @@ end
 end
 
 @testset "DistFixedPoint exponential" begin
-    x = exponential(DistFixedPoint{5, 3}, 1.0)
-    pr(x)[0.125] ≈ exp(0.125)*(exp(1/8) - 1)/(exp(1) - 1)
+    x = unit_exponential(DistFixedPoint{5, 3}, 1.0)
+    @test pr(x)[0.125] ≈ exp(0.125)*(exp(1/8) - 1)/(exp(1) - 1)
     
-    x = exponential(DistFixedPoint{10, 9}, 1.0)
-    pr(x)[0.125] ≈ exp(0.125)*(exp(1/2^9) - 1)/(exp(1) - 1)  
+    x = unit_exponential(DistFixedPoint{10, 9}, -1.0)
+    @test pr(x)[0.125] ≈ exp(-0.125)*(exp(-1/2^9) - 1)/(exp(-1) - 1) 
+    
+    x = exponential(DistFixedPoint{6, 3}, 1.0, 0.0, 2.0)
+    pr(x)
+    y = unit_exponential(DistFixedPoint{6, 4}, 2.0)
+    pr(y)
+    @test sum([pr(x)[i] == pr(y)[i/2] for i in 0:0.125:1.875]) == 16 
+
+    x = exponential(DistFixedPoint{6, 3}, 1.0, -1.0, 1.0)
+    pr(x)
+    @test sum([pr(x)[i] == pr(y)[(i+1)/2] for i in -1:0.125:0.875]) == 16
 end
  
