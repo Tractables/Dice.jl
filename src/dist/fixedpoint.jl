@@ -1,6 +1,6 @@
 using Distributions
 
-export DistFixedPoint, continuous, exponential
+export DistFixedPoint, continuous, unit_exponential, exponential
 
 ##################################
 # types, structs, and constructors
@@ -140,7 +140,7 @@ end
 # continuous distributions
 #################################
   
-function continuous(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistribution, pieces::Int, start::Float64, stop::Float64) where {W, F}
+function continuous_linear(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistribution, pieces::Int, start::Float64, stop::Float64) where {W, F}
 
     # basic checks
     @assert start >= -(2^(W - F - 1))
@@ -235,6 +235,98 @@ end
 # LExBit
 ###########################
 
-function exponential(t::Type{DistFixedPoint{W, F}}, beta::Float64) where W where F
+function unit_exponential(t::Type{DistFixedPoint{W, F}}, beta::Float64) where W where F
     DistFixedPoint{W, F}(vcat([false for i in 1:W-F], [flip(exp(beta/2^i)/(1+exp(beta/2^i))) for i in 1:F]))
+end
+
+function exponential(t::Type{DistFixedPoint{W, F}}, beta::Float64, start::Float64, stop::Float64) where W where F   
+    range = stop - start
+    @assert ispow2(range)
+
+    new_beta = beta*range
+
+    bits = Int(log2(range)) + F
+    # for i in 1:bits
+    #     @show exp(new_beta/2^i)/(1+exp(new_beta/2^i))
+    # end
+    bit_vector = vcat([false for i in 1:W - bits], [flip(exp(new_beta/2^i)/(1+exp(new_beta/2^i))) for i in 1:bits])
+
+    DistFixedPoint{W, F}(bit_vector) + DistFixedPoint{W, F}(start)
+end
+
+function beta(d::ContinuousUnivariateDistribution, start::Float64, stop::Float64, interval_sz::Float64)
+    prob_start = cdf(d, start + interval_sz) - cdf(d, start)
+    prob_end = cdf(d, stop) - cdf(d, stop - interval_sz)
+    result = log(prob_end / prob_start) / (stop - start - interval_sz)
+    result
+end
+
+function continuous_exp(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistribution, pieces::Int, start::Float64, stop::Float64) where {W, F}
+
+    # basic checks
+    @assert start >= -(2^(W - F - 1))
+    @assert stop <= (2^(W - F - 1))
+    @assert start < stop
+    a = Int(log2((stop - start)*2^F))
+    @assert a isa Int 
+    @assert ispow2(pieces) "Number of pieces must be a power of two"
+    piece_bits = Int(log2(pieces))
+    if piece_bits == 0
+        piece_bits = 1
+    end
+    @assert typeof(piece_bits) == Int
+
+    # preliminaries
+    d = truncated(d, start, stop)
+    whole_bits = a
+    point = F
+    interval_sz = (2^whole_bits/pieces)
+    bits = Int(log2(interval_sz))
+    areas = Vector(undef, pieces)
+    total_area = 0
+
+    beta_vec = Vector(undef, pieces)
+    start_pts = Vector(undef, pieces)
+    stop_pts = Vector(undef, pieces)
+
+    
+
+    # Figuring out end points
+    for i=1:pieces
+        p1 = start + (i-1)*interval_sz/2^point 
+        p3 = start + (i)*interval_sz/2^point 
+
+        beta_vec[i] = beta(d, p1, p3, 2.0^(-F))
+
+        areas[i] = (cdf.(d, p3) - cdf.(d, p1))
+        # @show p1, p2, p3, p4, areas[i]
+        start_pts[i] = p1
+        stop_pts[i] = p3
+
+        total_area += areas[i]
+    end
+
+    # @show beta_vec
+
+    rel_prob = areas/total_area
+
+    b = discrete(DistUInt{piece_bits}, rel_prob)
+
+    ans = DistFixedPoint{W, F}((2^(W-1)-1)/2^F)
+
+    for i=pieces:-1:1
+        ans = ifelse( prob_equals(b, DistUInt{piece_bits}(i-1)), 
+                exponential(DistFixedPoint{W, F}, beta_vec[i], start_pts[i], stop_pts[i]),
+                ans)  
+    end
+    return ans
+end
+
+function continuous(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistribution, pieces::Int, start::Float64, stop::Float64; exp::Bool=false) where {W, F}
+    c = if exp
+        continuous_exp(DistFixedPoint{W, F}, d, pieces, start, stop)
+    else 
+        continuous_linear(DistFixedPoint{W, F}, d, pieces, start, stop)
+    end
+    return c
 end
