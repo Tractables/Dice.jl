@@ -1,6 +1,7 @@
 using Dice
 using Distributions
 using Plots
+using Revise
 using BenchmarkTools
 
 pieces = [2^i for i in 1:9]

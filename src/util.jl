@@ -6,15 +6,15 @@ export gaussian_observe, gaussian_observe_enumerate, parametrised_flip, print_tr
 # Gaussian observation methods
 ##################################
 
-function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::Float64, std::Float64, datapt::DistFixedPoint{W, F}) where W where F
+function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::Float64, std::Float64, datapt::DistFixedPoint{W, F}; exp=false) where W where F
     @assert std > 0
-    g = continuous(DistFixedPoint{W, F}, Normal(mean, std), pieces, start, stop)
+    g = continuous(DistFixedPoint{W, F}, Normal(mean, std), pieces, start, stop, exp=exp)
     observe(g == datapt)
 end
 
-function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::DistFixedPoint{W, F}, std::Float64, datapt::DistFixedPoint{W, F}; add=true) where W where F
+function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::DistFixedPoint{W, F}, std::Float64, datapt::DistFixedPoint{W, F}; add=true, exp=false) where W where F
     @assert std > 0
-    g = continuous(DistFixedPoint{W, F}, Normal(0.0, std), pieces, start, stop)
+    g = continuous(DistFixedPoint{W, F}, Normal(0.0, std), pieces, start, stop, exp=exp)
     
     if add
         observe(g + mean == datapt)
@@ -23,12 +23,12 @@ function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Floa
     end
 end
 
-function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::Float64, std::DistFixedPoint{W, F}, datapt::DistFixedPoint{W, F}; mult=true) where W where F
+function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::Float64, std::DistFixedPoint{W, F}, datapt::DistFixedPoint{W, F}; mult=true, exp=false) where W where F
     #TODO: implement isless for fixedpoint to support the following check
     # isneg = DistFixedPoint{W, F}(0.0) < std
     # isneg && error("Standard deviation <= 0")
 
-    g = continuous(DistFixedPoint{W, F}, Normal(mean, 1.0), pieces, start, stop)
+    g = continuous(DistFixedPoint{W, F}, Normal(mean, 1.0), pieces, start, stop, exp=exp)
     if mult
         observe(g*std == datapt)
     else
@@ -36,12 +36,12 @@ function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Floa
     end
 end
 
-function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::DistFixedPoint{W, F}, std::DistFixedPoint{W, F}, datapt::DistFixedPoint{W, F}; mult=true) where W where F
+function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::DistFixedPoint{W, F}, std::DistFixedPoint{W, F}, datapt::DistFixedPoint{W, F}; mult=true, exp=false) where W where F
     #TODO: implement isless for fixedpoint to support the following check
     # isneg = DistFixedPoint{W, F}(0.0) < std
     # isneg && error("Standard deviation <= 0")
 
-    g = continuous(DistFixedPoint{W, F}, Normal(0.0, 1.0), pieces, start, stop)
+    g = continuous(DistFixedPoint{W, F}, Normal(0.0, 1.0), pieces, start, stop, exp=exp)
     if mult
         observe(g*std + mean == datapt)
     else

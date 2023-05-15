@@ -156,6 +156,7 @@ function continuous_linear(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariat
     @assert typeof(piece_bits) == Int
 
     # preliminaries
+    @show start, stop
     d = truncated(d, start, stop)
     whole_bits = a
     point = F
