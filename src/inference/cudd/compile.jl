@@ -2,7 +2,7 @@
 # CUDD Compilation
 ##################################
 
-export BDDCompiler, compile, enable_reordering
+export BDDCompiler, compile, enable_reordering, num_nodes
 
 mutable struct BDDCompiler
     mgr::CuddMgr
@@ -147,4 +147,15 @@ function split(c::BDDCompiler, context::CuddNode, test::AnyBool)::Tuple{CuddNode
         elsebdd = conjoin(c.mgr, context, nottestbdd)
         ifbdd, elsebdd
     end
+end
+
+num_nodes(x; as_add=true) = begin
+    c = BDDCompiler()
+    bdd = compile(c, tobits(x))
+    num_nodes(c, bdd; as_add)
+end
+
+num_nodes(c::BDDCompiler, xs::Vector{<:Ptr}; as_add=true) = begin
+    as_add && (xs = map(x -> rref(Cudd_BddToAdd(c.mgr, x)), xs))
+    Cudd_SharingSize(xs, length(xs))
 end
