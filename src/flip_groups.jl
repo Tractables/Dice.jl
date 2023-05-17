@@ -8,10 +8,17 @@ _flip_to_group = Dict{Dice.Flip, Any}()
 # Prob group to psp ("pre-sigmoid probability")
 _group_to_psp = Dict{Any, Float64}()
 
+inverse_sigmoid(x) = log(x / (1 - x))
+
 # flip_for(x) and flip_for(y) are always separate flips, but if x == y, then
 # they share their probability.
-function flip_for(group)
-    f = flip(sigmoid(get!(_group_to_psp, group, 0.)), name="f_for($(group))")
+function flip_for(group, init_pr=0.5)
+    # pr = if haskey(_group_to_psp, group) sigmoid
+    f = flip(
+        sigmoid(
+            get!(_group_to_psp, group, inverse_sigmoid(init_pr))
+        ),
+        name="f_for($(group))")
     _flip_to_group[f] = group
     f
 end
