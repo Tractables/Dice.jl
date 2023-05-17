@@ -116,8 +116,8 @@ end
 @testset "DistFixedPoint continuous" begin
     pieces = [1, 2, 4, 8]
     function kl_divergence(p, q)
-        @assert sum(p) ≈ 1.0
-        @assert sum(q) ≈ 1.0
+        @test sum(p) ≈ 1.0
+        @test sum(q) ≈ 1.0
         ans = 0
         for i=1:length(p)
             if p[i] > 0
