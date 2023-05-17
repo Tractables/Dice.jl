@@ -69,12 +69,22 @@ function parametrised_flip(p::DistFixedPoint{W, F}) where W where F
     uniform(DistFixedPoint{W, F}, 0.0, 1.0) < p
 end
 
-function print_tree(t; indent_per_level=4)
+# Print a tree represented as a tuple of the form:
+#   tree ::= (node, children::Vector{tree})
+# If a non-tuple x is encountered, it is treated as the leaf (x, [])
+function print_tree(t::Tuple; indent_per_level=4, io::IO=stdout)
     @assert indent_per_level >= 1
-    print_tree_helper(t, [], 0, false, indent_per_level)
+    print_tree_helper(t, Integer[], 0, false, indent_per_level, io)
 end
 
-function print_tree_helper(t, pipes, level, last_child, indent_per_level)
+function print_tree_helper(
+    t,
+    pipes::Vector{<:Integer},
+    level::Integer,
+    last_child::Bool,
+    indent_per_level::Integer,
+    io::IO
+)
     if !(t isa Tuple)
         t = (t, [])
     end
@@ -90,11 +100,11 @@ function print_tree_helper(t, pipes, level, last_child, indent_per_level)
         for i in (last(pipes)+1):(padding_size-1)
             padding[i] = '─'
         end
-        print(join(padding))
+        print(io, join(padding))
     end
 
     # Print value
-    println(t[1])
+    println(io, t[1])
     
     # Consume last pipe if we are last child, always create new pipe below us
     inherited_pipes = copy(pipes)
@@ -109,7 +119,8 @@ function print_tree_helper(t, pipes, level, last_child, indent_per_level)
             inherited_pipes,
             level + 1,
             i == length(t[2]),
-            indent_per_level
+            indent_per_level,
+            io
         )
     end
 end
