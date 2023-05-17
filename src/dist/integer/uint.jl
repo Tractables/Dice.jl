@@ -61,7 +61,7 @@ end
 
 "Construct a uniform random number by offsetting a 0-based uniform"
 function uniform_arith(::Type{DistUInt{W}}, start, stop) where W
-    @assert BigInt(0) <= BigInt(start) < BigInt(stop) <= BigInt(2) ^ BigInt(W)
+    @assert BigInt(0) <= BigInt(start) < BigInt(stop) <= BigInt(2) ^ BigInt(W) "Failed 0 <= $(start) < $(stop) <= 2^$(W)"
     DInt = DistUInt{W}
     if start > 0
         DInt(start) + uniform_arith(DInt, 0, stop-start)
