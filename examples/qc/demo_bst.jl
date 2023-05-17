@@ -6,11 +6,9 @@ include("lib/sample.jl")        # sample
 
 # Return tree
 function gen_bst(size, lo, hi)
-    size == 0 && return DistLeaf(DistUInt32)
-
     # Try changing the parameter to flip_for to a constant, which would force
     # all sizes to use the same probability.
-    @dice_ite if flip_for(size)
+    @dice_ite if size == 0 || flip_for(size)
         DistLeaf(DistUInt32)
     else
         # The flips used in the uniform aren't tracked via flip_for, so we
