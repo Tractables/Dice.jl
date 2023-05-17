@@ -12,12 +12,20 @@ using Dice
     bools_to_maximize = [prob_equals(b, x) for x in dataset]
     train_group_probs!(bools_to_maximize)
     @test get_group_prob("?") ≈ 1/3
+    
+    reset_flips!()
 
     x = flip_for("a") & flip_for("b") & !flip_for("c")
     train_group_probs!([x])
     @test get_group_prob("a") > .99
     @test get_group_prob("b") > .99
     @test get_group_prob("c") < .01
+
+    d = get_group_probs()
+    @test length(d) == 3
+    for k in ["a", "b", "c"]
+        @test get_group_prob(k) == d[k]
+    end
 end
 
 @testset "MLE iterations deterministic" begin
