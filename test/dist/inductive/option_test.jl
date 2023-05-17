@@ -29,3 +29,39 @@ using Dice
     @test pr(matches(probably_none, "None"))[true] ≈ 9/10
     @test pr(matches(probably_none, "Some"))[true] ≈ 1/10
 end
+
+
+@testset "Right thunks called" begin
+    none_str = DistNone(DistString)
+    some_str = DistSome(DistString("hi"))
+
+    error_none1(x) = match(x, [
+        "None" => ()  -> error()
+        "Some" => (_) -> DistUInt(5)
+    ])
+    error_none2(x) = match(x, [
+        "Some" => (_) -> DistUInt(5)
+        "None" => ()  -> error()
+    ])
+
+    error_some1(x) = match(x, [
+        "Some" => (_) -> error()
+        "None" => ()  -> DistUInt(5)
+    ])
+    error_some2(x) = match(x, [
+        "None" => ()  -> DistUInt(5)
+        "Some" => (_) -> error()
+    ])
+    
+    @test_throws ErrorException error_none1(none_str)
+    @test_throws ErrorException error_none2(none_str)
+
+    @test_throws ErrorException error_some1(some_str)
+    @test_throws ErrorException error_some2(some_str)
+
+    @test pr(error_none1(some_str)) == Dict(5 => 1.)
+    @test pr(error_none2(some_str)) == Dict(5 => 1.)
+
+    @test pr(error_some1(none_str)) == Dict(5 => 1.)
+    @test pr(error_some2(none_str)) == Dict(5 => 1.)
+end
