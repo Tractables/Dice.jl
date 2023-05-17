@@ -440,13 +440,13 @@ end
 
 # Uniform from 0 to hi, exclusive
 function unif_half(hi::DistUInt{W})::DistUInt{W} where W
-    max_hi = maxvalue(hi)
-    max_hi > 60 && error("Likely to time out")
-    prod = BigInt(1)
-    for prime in primes_at_most(max_hi)
-        prod *= prime ^ floor_log(prime, max_hi)
-    end
-    # prod = lcm([k for k in keys(pr(hi))])
+    # max_hi = maxvalue(hi)
+    # max_hi > 60 && error("Likely to time out")
+    # prod = BigInt(1)
+    # for prime in primes_at_most(max_hi)
+    #     prod *= prime ^ floor_log(prime, max_hi)
+    # end
+    prod = lcm([BigInt(x) for x in keys(pr(hi))])
     u = uniform(DistUInt{ndigits(prod, base=2)}, 0, prod)
     rem_trunc(u, hi)
 end
