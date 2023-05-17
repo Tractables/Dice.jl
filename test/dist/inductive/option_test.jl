@@ -26,6 +26,6 @@ using Dice
     ])
     evid = !prob_equals(res, DistString("impossible"))
     @test pr(res, evidence=evid)["foobar"] ≈ 2/3
-    @test pr(matches(probably_none, "None")) ≈ 9/10
-    @test pr(matches(probably_none, "Some")) ≈ 1/10
+    @test pr(matches(probably_none, "None"))[true] ≈ 9/10
+    @test pr(matches(probably_none, "Some"))[true] ≈ 1/10
 end
