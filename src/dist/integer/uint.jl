@@ -1,5 +1,6 @@
 export DistUInt, DistUInt8, DistUInt16, DistUInt32, DistUInt64,
-    uniform, uniform_arith, uniform_ite, triangle, discrete, unif, unif_obs
+    uniform, uniform_arith, uniform_ite, triangle, discrete, unif, unif_obs,
+    flip_reciprocal
 
 ##################################
 # types, structs, and constructors
@@ -446,8 +447,9 @@ function unif_half(hi::DistUInt{W})::DistUInt{W} where W
     # for prime in primes_at_most(max_hi)
     #     prod *= prime ^ floor_log(prime, max_hi)
     # end
-    prod = lcm([BigInt(x) for x in keys(pr(hi))])
+    prod = lcm([BigInt(x) for x in keys(pr(hi)) if x != 0]) # TODO: this should be given path condition too
     u = uniform(DistUInt{ndigits(prod, base=2)}, 0, prod)
     rem_trunc(u, hi)
 end
 
+flip_reciprocal(x) = prob_equals(DistUInt32(0), Dice.unif_half(x))

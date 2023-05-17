@@ -1,5 +1,5 @@
 # Define List
-export List, DistNil, DistCons, prob_append, concat
+export List, DistNil, DistCons, prob_append, concat, one_of
 
 struct List{T} <: InductiveType end
 
@@ -38,4 +38,15 @@ end
 
 function prob_append(l::DistI{List{T}}, x::T) where T
     concat(l, DistCons(x, DistNil(T)))
+end
+
+function one_of(l::DistI{List{T}})::DistI{Opt{T}} where T <: Dist
+    match(l, [
+        "Nil" => () -> DistNone(T),
+        "Cons" => (x, xs) -> @dice_ite if flip_reciprocal(length(l))
+            DistSome(x)
+        else
+            one_of(xs)
+        end
+    ])
 end
