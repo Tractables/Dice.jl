@@ -7,7 +7,7 @@ using Dice
     @test_throws MethodError prob_equals(none_int, none_string)
 
     dist = pr(prob_equals(none_int, DistNone(DistUInt32)))
-    @assert dist[true] == 1
+    @test dist[true] == 1
 
     probably_none = @dice_ite if flip(9/10)
         DistNone(DistString)
@@ -26,4 +26,6 @@ using Dice
     ])
     evid = !prob_equals(res, DistString("impossible"))
     @test pr(res, evidence=evid)["foobar"] ≈ 2/3
+    @test pr(matches(probably_none, "None")) ≈ 9/10
+    @test pr(matches(probably_none, "Some")) ≈ 1/10
 end
