@@ -406,32 +406,12 @@ function minvalue(x::DistUInt{W}) where W
     v
 end
 
-function primes_at_most(n::Int)
-    isprime = [true for _ in 1:n]
-    for p in 2:trunc(Int, sqrt(n))
-        if isprime[p]
-            for i in p^2:p:n
-                isprime[i] = false
-            end
-        end
-    end
-    [i for i in 2:n if isprime[i]]
-end
-
-function floor_log(base, n)
-    v = 1
-    pow = 0
-    while v * base <= n
-        v *= base
-        pow += 1
-    end
-    pow
-end
-
 # Uniform from lo to hi, inclusive
 function unif(lo::DistUInt{W}, hi::DistUInt{W}) where W
     lo + unif_half(hi + DistUInt32(1) - lo)
 end
+
+flip_reciprocal(x) = prob_equals(DistUInt32(0), unif_half(x))
 
 # (x, evid) where x is uniform from lo to hi, inclusive, given evid
 function unif_obs(lo::DistUInt{W}, hi::DistUInt{W}) where W
@@ -447,9 +427,31 @@ function unif_half(hi::DistUInt{W})::DistUInt{W} where W
     # for prime in primes_at_most(max_hi)
     #     prod *= prime ^ floor_log(prime, max_hi)
     # end
-    prod = lcm([BigInt(x) for x in keys(pr(hi)) if x != 0]) # TODO: this should be given path condition too
+
+    # note: # could use path cond too
+    prod = lcm([BigInt(x) for x in keys(pr(hi)) if x != 0])
     u = uniform(DistUInt{ndigits(prod, base=2)}, 0, prod)
     rem_trunc(u, hi)
 end
 
-flip_reciprocal(x) = prob_equals(DistUInt32(0), Dice.unif_half(x))
+# function primes_at_most(n::Int)
+#     isprime = [true for _ in 1:n]
+#     for p in 2:trunc(Int, sqrt(n))
+#         if isprime[p]
+#             for i in p^2:p:n
+#                 isprime[i] = false
+#             end
+#         end
+#     end
+#     [i for i in 2:n if isprime[i]]
+# end
+
+# function floor_log(base, n)
+#     v = 1
+#     pow = 0
+#     while v * base <= n
+#         v *= base
+#         pow += 1
+#     end
+#     pow
+# end
