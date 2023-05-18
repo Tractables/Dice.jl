@@ -45,6 +45,15 @@ function frombits(x::DistUIntOH{W}, world) where W
     v
 end
 
+function expectation(x::DistUIntOH{W}; kwargs...) where W
+    ans = 0
+    a = pr(x.bits...; kwargs...)
+    for i=1:W
+        ans += (i-1)*a[i][true]
+    end
+    ans
+end
+
 ##################################
 # methods
 ##################################

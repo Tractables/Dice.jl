@@ -159,16 +159,16 @@ end
 #     @test p[3] ≈ 0.5
 # end
 
-# @testset "DistUIntOH expectation" begin
-#     y = DistUIntOH{4}([true, false, true, false])
-#     @test expectation(y) == 10.0
-#     @test expectation(@dice y) == 10.0
+@testset "DistUIntOH expectation" begin
+    y = DistUIntOH{4}([false, false, true, false])
+    @test expectation(y) == 2.0
+    @test expectation(@dice y) == 2.0
 
-#     y = DistUIntOH{2}([flip(0.1), flip(0.1)])
-#     p = pr(y)
-#     mean = reduce(+, [(key*value) for (key, value) in p])
-#     @test expectation(y) ≈ mean
-# end
+    y = uniform(DistUIntOH{8}, 0, 7)
+    p = pr(y)
+    mean = reduce(+, [(key*value) for (key, value) in p])
+    @test expectation(y) ≈ mean
+end
 
 @testset "DistUIntOH uniform" begin
 
