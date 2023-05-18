@@ -1,0 +1,10 @@
+altermu2,mu[1],0.009531318300000008
+normal_mixture,theta,0.4285696642857143
+normal_mixture,mu[1],18.69364277557161
+normal_mixture,mu[2],17.693654491704116
+normal_mixture,theta,0.4285696642857143
+normal_mixture,mu[1],18.69364277557161
+normal_mixture,mu[2],17.693654491704116
+normal_mixture,theta,0.4285696642857143
+normal_mixture,mu[1],18.69364277557161
+normal_mixture,mu[2],17.693654491704116
