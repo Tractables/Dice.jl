@@ -6,7 +6,6 @@ export DistUIntOH, discrete
 
 "An unsigned random W-bit integer"
 struct DistUIntOH{W} <: Dist{Int}
-    # first index is most significant bit
     bits::Vector{AnyBool}
     function DistUIntOH{W}(b) where W
         @assert length(b) == W

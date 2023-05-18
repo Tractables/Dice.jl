@@ -1,192 +1,196 @@
-
-export DistInt, DistInt8, DistInt16, DistInt32, DistInt64, DistInt128
+export DistIntOH, discrete
 
 ##################################
 # types, structs, and constructors
 ##################################
 
-struct DistInt{W} <: Dist{Int}
-    number::DistUInt{W}
+"An unsigned random W-bit integer"
+struct DistIntOH{S,W} <: Dist{Int}
+    # S is start, W is width
+    bits::Vector{AnyBool}
+    function DistIntOH{S,W}(b) where W where S
+        @assert length(b) == W
+        new{S,W}(b)
+    end
 end
 
-function DistInt{W}(b::AbstractVector) where W
-    DistInt{W}(DistUInt{W}(b))
+DistIntOH(s, bits::AbstractVector) = 
+    DistIntOH{s,length(bits)}(bits)
+
+function DistIntOH{S,W}(i::Int) where W where S
+    @assert i >= S
+    @assert i < S+W "Int $i cannot be represented as a DistIntOH{$S,$W}"
+    bits = Vector{AnyBool}(undef, W)
+    for idx = 1:W
+        bits[idx] = ((idx-1+S) == i)
+    end
+    DistIntOH{S,W}(bits)
 end
 
-function DistInt{W}(i::Int) where W
-    @assert i < 2^(W-1)
-    @assert i >= -(2^(W-1))
-    new_i = ifelse(i >= 0, i, i + 2^W)
-    DistInt{W}(DistUInt{W}(new_i))
-end
-
+# const DistIntOH8 = DistIntOH{8}
 
 ##################################
 # inference
 ##################################
 
-tobits(x::DistInt) = tobits(x.number)
+tobits(x::DistIntOH) = 
+    filter(y -> y isa Dist{Bool}, x.bits)
 
-function frombits(x::DistInt{W}, world) where W
-    v = frombits(x.number.bits[1], world) ? -2^(W-1) : 0
-    for i = 2:W
-        if frombits(x.number.bits[i], world)
-            v += 2^(W-i)
+function frombits(x::DistIntOH{S,W}, world) where W where S
+    v = 0
+    for i = 1:W
+        if frombits(x.bits[i], world)
+            v += i-1+S
         end
     end
     v
 end
 
-# function expectation(x::DistInt{W}; kwargs...) where W
-#     prs = pr(x.number.bits...; kwargs...)
-#     ans = -(2^(W-1)) * prs[1][true]
-#     start = 2^(W-2)
-#     for i=2:W
-#         ans += start * prs[i][true]
-#         start /= 2
-#     end
-#     ans
-# end
-
-
 ##################################
 # methods
 ##################################
 
-bitwidth(::DistInt{W}) where W = W
+bitwidth(::DistIntOH{S,W}) where W where S = W
 
-function uniform(::Type{DistInt{W}}, n = W) where W
-    DistInt{W}(uniform(DistUInt{W}, n).bits)
+function uniform(::Type{DistIntOH{S,W}}, n = W) where W where S
+    @assert W >= n >= 0
+    return uniform(DistIntOH{S,W}, S, S+n)
 end
 
-function uniform(::Type{DistInt{W}}, start::Int, stop::Int; ite::Bool=false) where W
-    @assert start >= -(2^(W - 1))
-    @assert stop <= (2^(W - 1))
-    @assert start < stop
-    ans = DistInt{W+1}(uniform(DistUInt{W+1}, 0, stop - start; ite=ite)) + DistInt{W+1}(start)
-    return convert(ans, DistInt{W})
+function uniform(::Type{DistIntOH{S,W}}, start::Int, stop::Int)::DistIntOH{S,W} where W where S
+    @assert start >= S
+    @assert stop <= S+W
+    @assert stop > start
+
+    p = 1/(stop-start)
+    ps = vcat(zeros(start-S), fill(p, stop-start), zeros(S+W-stop))
+    discrete(DistIntOH{S,W}, ps)
 end
 
-# Generates a triangle on positive part of the support
-function triangle(t::Type{DistInt{W}}, b::Int) where W
-    @assert b < W
-    DistInt(triangle(DistUInt{W}, b))
+
+function discrete(::Type{DistIntOH{S,W}}, p::Vector{Float64}) where W where S
+    @assert sum(p) ≈ 1
+
+    l = length(p)
+    p_proxy = vcat(p, zeros(W-l))
+
+    flips = []
+    int_vector = []
+    cur_z = 1
+    for i in 1:W
+        f_i = if cur_z <= 0 flip(0) else flip(p_proxy[i]/cur_z > 1 ? 1 : p_proxy[i]/cur_z) end 
+        b_i = reduce(&, map(!, flips); init=true) & f_i
+        cur_z = cur_z - p_proxy[i]
+        push!(flips, f_i)
+        push!(int_vector, b_i)
+    end 
+    if W == 0 DistIntOH{S,W}(0) else DistIntOH{S,W}(int_vector) end
 end
 
 ##################################
 # casting
 ##################################
 
-function Base.convert(x::DistInt{W1}, t::Type{DistInt{W2}}) where W1 where W2
-    if W1 <= W2
-        DistInt{W2}(vcat(fill(x.number.bits[1], W2 - W1), x.number.bits))
-    else
-        #TODO: throw error if msb is not irrelevant
-        DistInt{W2}(x.number.bits[W1 - W2 + 1:W1])
-    end
-end
-
+# function Base.convert(x::DistIntOH{W1}, t::Type{DistIntOH{W2}}) where W1 where W2
+#     if W1 <= W2
+#         DistIntOH{W2}(vcat(fill(false, W2 - W1), x.bits))
+#     else
+#         err = reduce(&, x.bits[1:W1 - W2])
+#         err && error("throwing away bits")
+#         DistIntOH{W2}(x.bits[W1 - W2 + 1:W1])
+#     end
+# end
 
 # ##################################
 # # other method overloading
 # ##################################
 
-function prob_equals(x::DistInt{W}, y::DistInt{W}) where W
-    prob_equals(x.number, y.number)
+function prob_equals(x::DistIntOH{S,W}, y::DistIntOH{S,W}) where W where S
+    mapreduce(prob_equals, &, x.bits, y.bits)
 end
 
-function Base.isless(x::DistInt{W}, y::DistInt{W}) where W
-    ifelse(x.number.bits[1] & !y.number.bits[1], 
-        true, 
-    ifelse(!x.number.bits[1] & y.number.bits[1], 
-            false, 
-            isless(DistUInt{W-1}(x.number.bits[2:W]), DistUInt{W-1}(y.number.bits[2:W])))
-    )
+function binop_helper(x::DistIntOH{S,W}, y::DistIntOH{S,W}, op) where W where S
+    segments = []
+    for i in 1:W
+        for j in 1:W
+            check = (x.bits[i] & y.bits[j])
+            ret = DistIntOH{S,W}(op(i-1+S, j-1+S))
+            push!(segments, (check, ret))
+        end 
+    end 
+    len = length(segments)
+    foldr(((x, y), z)->ifelse(x, y, z), segments[1:len-1],init=segments[len][2])   
+end 
+
+function Base.isless(x::DistIntOH{S,W}, y::DistIntOH{S,W}) where W where S
+    conds = []
+    for i in 1:W
+        before_cond = reduce(|, x.bits[1:i-1], init=false)
+        after_cond = reduce(|, y.bits[i:W], init=false)
+        push!(conds, before_cond & after_cond)
+    end 
+    reduce(|, conds)
 end
 
-Base.:(<=)(x::DistInt{W}, y::DistInt{W}) where W = !isless(y, x)
-Base.:(>=)(x::DistInt{W}, y::DistInt{W}) where W = !isless(x, y)
 
-function Base.ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where W
-    DistInt{W}(ifelse(cond, then.number, elze.number))
+Base.:(<=)(x::DistIntOH{S,W}, y::DistIntOH{S,W}) where W where S = !isless(y, x)
+Base.:(>=)(x::DistIntOH{S,W}, y::DistIntOH{S,W}) where W where S = !isless(x, y)
+
+
+function mod_equiv(s, w, n) 
+    k = n % w
+    if k < s 
+        k + w
+    elseif k >= s + w 
+        k - w
+    else 
+        k 
+    end 
+end 
+
+
+function Base.:(+)(p1::DistIntOH{S,W}, p2::DistIntOH{S,W}) where W where S
+    binop_helper(p1, p2, (a,b)->mod_equiv(S, W, a+b))
 end
 
-function Base.:(+)(x::DistInt{W}, y::DistInt{W}) where W
-    ans = convert(x.number, DistUInt{W+1}) + convert(y.number, DistUInt{W+1})
-    # a sufficient condition for avoiding overflow is that the first two bits are all the same in both operands
-    cannot_overflow = prob_equals(y.number.bits[1], y.number.bits[2]) & prob_equals(x.number.bits[1], x.number.bits[2])
-    # this sufficient condition is more easily proven true than the exact one, test it first
-    overflow = !cannot_overflow & ((!x.number.bits[1] & !y.number.bits[1] & ans.bits[2]) | (x.number.bits[1] & y.number.bits[1] & !ans.bits[2]))
-    overflow && error("integer overflow or underflow")
-    DistInt{W}(ans.bits[2:W+1])
+function Base.:(-)(p1::DistIntOH{S,W}, p2::DistIntOH{S,W}) where W where S
+    binop_helper(p1, p2, (a,b)->mod_equiv(S, W, a-b))
 end
 
-function Base.:(-)(x::DistInt{W}, y::DistInt{W}) where W
-    ans = DistUInt{W+1}(vcat([true], x.number.bits)) - DistUInt{W+1}(vcat([false], y.number.bits))
-    borrow = (!x.number.bits[1] & y.number.bits[1] & ans.bits[2]) | (x.number.bits[1] & !y.number.bits[1] & !ans.bits[2])
-    borrow && error("integer overflow or underflow")
-    DistInt{W}(ans.bits[2:W+1])
-end
+function Base.:(*)(p1::DistIntOH{S,W}, p2::DistIntOH{S,W}) where W where S
+    binop_helper(p1, p2, (a,b)->mod_equiv(S, W, a*b))
+end 
 
-function Base.:(*)(x::DistInt{W}, y::DistInt{W}) where W
-    p1 = convert(x, DistInt{2*W}).number
-    p2 = convert(y, DistInt{2*W}).number
-    P = DistUInt{2*W}(0)
-    shifted_bits = p1.bits
-    for i = 2*W:-1:1
-        if (i != 2*W)
-            shifted_bits = vcat(shifted_bits[2:2*W], false)
+function Base.:/(p1::DistIntOH{S,W}, p2::DistIntOH{S,W}) where W where S #p1/p2
+    is_zero = prob_equals(p2, DistIntOH{S,W}(0))
+    is_zero && error("division by zero")
+
+    function safe_div(a, b)
+        if b == 0
+            return 0
         end
-        added = ifelse(p2.bits[i], DistUInt{2*W}(shifted_bits), DistUInt{2*W}(0))
-        P = convert(P, DistUInt{2*W+2}) + convert(added, DistUInt{2*W+2})
-        P = convert(P, DistUInt{2*W})
+        return a ÷ b
+    end 
+    binop_helper(p1, p2, (a, b) -> mod_equiv(S, W, safe_div(a, b)))
+end 
+
+function Base.:%(p1::DistIntOH{S,W}, p2::DistIntOH{S,W}) where W where S #p1/p2
+    is_zero = prob_equals(p2, DistIntOH{S,W}(0))
+    is_zero && error("division by zero")
+
+    function safe_mod(a, b)
+        if b == 0
+            return 0
+        end
+        return a % b
+    end 
+    binop_helper(p1, p2, (a, b) -> mod_equiv(S, W, safe_mod(a, b)))
+end 
+
+function Base.ifelse(cond::Dist{Bool}, then::DistIntOH{S,W}, elze::DistIntOH{S,W}) where W where S
+    (then == elze) && return then
+    bits = map(then.bits, elze.bits) do tb, eb
+        ifelse(cond, tb, eb)
     end
-    P_ans = convert(DistInt{2*W}(P), DistInt{W})
-    P_overflow = DistInt{W}(P.bits[1:W])
-    overflow = (!prob_equals(P_overflow, DistInt{W}(-1)) & !prob_equals(P_ans, DistInt{W}(-1))) | (!prob_equals(P_overflow, DistInt{W}(0)) & !prob_equals(P_ans, DistInt{W}(0)))
-    overflow = prob_equals(P_overflow, DistInt{W}(-1)) | prob_equals(P_overflow, DistInt{W}(0))
-    !overflow && error("integer overflow")
-    overflow = !prob_equals(x, DistInt{W}(0)) & !prob_equals(y, DistInt{W}(0)) & ((!xor(p1.bits[W+1], p2.bits[W+1]) & P.bits[W+1]) | (xor(p1.bits[W+1], p2.bits[W+1]) & !P.bits[W+1]))
-    overflow && error("integer overflow")
-    return P_ans
-end
-
-function Base.:(/)(x::DistInt{W}, y::DistInt{W}) where W
-    overflow = prob_equals(x, DistInt{W}(-2^(W-1))) & prob_equals(y, DistInt{W}(-1))
-    overflow && error("integer overflow")
-
-    is_zero = prob_equals(y, DistInt{W}(0))
-    is_zero && error("division by zero")
-
-    xp = if x.number.bits[1] DistUInt{W}(1) + DistUInt{W}([!xb for xb in x.number.bits]) else x.number end
-    xp = convert(xp, DistUInt{W+1})
-    yp = if y.number.bits[1] DistUInt{W}(1) + DistUInt{W}([!yb for yb in y.number.bits]) else y.number end
-    yp = convert(yp, DistUInt{W+1})
-    ans = xp / yp
-
-    isneg = xor(x.number.bits[1], y.number.bits[1]) & !prob_equals(ans, DistUInt{W+1}(0))
-
-    ans = if isneg DistUInt{W+1}(1) + DistUInt{W+1}([!ansb for ansb in ans.bits]) else ans end
-    ans = DistInt{W}(ans.bits[2:W+1])
-    return ans
-end
-
-function Base.:(%)(x::DistInt{W}, y::DistInt{W}) where W
-    # overflow = prob_equals(x, DistInt{W}(-2^(W-1))) & prob_equals(y, DistInt{W}(-1))
-    # overflow && error("integer overflow")
-
-    is_zero = prob_equals(y, DistInt{W}(0))
-    is_zero && error("division by zero")
-
-    xp = if x.number.bits[1] DistUInt{W}(1) + DistUInt{W}([!xb for xb in x.number.bits]) else x.number end
-    xp = convert(xp, DistUInt{W+1})
-    yp = if y.number.bits[1] DistUInt{W}(1) + DistUInt{W}([!yb for yb in y.number.bits]) else y.number end
-    yp = convert(yp, DistUInt{W+1})
-    ans = xp % yp
-
-    isneg = x.number.bits[1] & !prob_equals(ans, DistUInt{W+1}(0))
-
-    ans = if isneg DistUInt{W+1}(1) + DistUInt{W+1}([!ansb for ansb in ans.bits]) else ans end
-    ans = DistInt{W}(ans.bits[2:W+1])
-    return ans
+    DistIntOH{S,W}(bits)
 end
