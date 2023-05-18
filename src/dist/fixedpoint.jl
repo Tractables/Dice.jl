@@ -1,6 +1,6 @@
 using Distributions
 
-export DistFixedPoint, continuous, unit_exponential, exponential
+export DistFixedPoint, continuous, unit_exponential, exponential, laplace
 
 ##################################
 # types, structs, and constructors
@@ -323,7 +323,7 @@ function continuous_exp(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDi
     return ans
 end
 
-function continuous(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistribution, pieces::Int, start::Float64, stop::Float64; exp::Bool=false) where {W, F}
+function continuous(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistribution, pieces::Int, start::Float64, stop::Float64, exp::Bool=false) where {W, F}
     c = if exp
         continuous_exp(DistFixedPoint{W, F}, d, pieces, start, stop)
     else 
@@ -331,3 +331,17 @@ function continuous(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistri
     end
     return c
 end
+
+# https://en.wikipedia.org/wiki/Laplace_distribution
+function laplace(t::Type{DistFixedPoint{W, F}}, mean::Float64, scale::Float64, start::Float64, stop::Float64) where {W, F}
+    @assert scale > 0
+
+    beta1 = -1/scale
+    e1 = exponential(DistFixedPoint{W, F}, beta1, mean, stop)
+
+    beta2 = 1/scale
+    e2 = exponential(DistFixedPoint{W, F}, beta2, start, mean)
+
+    ifelse(flip(0.5), e1, e2)
+end
+    

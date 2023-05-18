@@ -23,7 +23,7 @@ d = truncated(Normal(0, 1), -8.0, 8.0)
 lower = -8.0
 q = Vector{Float64}(undef, 2^10)
 for i=1:2^10
-    q[i] = cdf(d, lower + 1/2^6) - cdf(d, lower)
+    q[i] = (cdf(d, lower + 1/2^6) - cdf(d, lower))
     lower += 1/2^6
 end 
 sum(q)
@@ -39,7 +39,7 @@ map(pieces) do piece
     y = continuous(DistFixedPoint{13, 6}, Normal(0, 1), piece, -8.0, 8.0)
     p_linear = pr(y)
 
-    z = continuous(DistFixedPoint{13, 6}, Normal(0, 1), piece, -8.0, 8.0, exp=true)
+    z = continuous(DistFixedPoint{13, 6}, Normal(0, 1), piece, -8.0, 8.0, true)
     p_exp = pr(z)
 
     p_linear = map(a -> a[2], sort([(k, v) for (k, v) in p_linear]))
@@ -63,22 +63,23 @@ end
 @show time_linear
 @show time_exp
 
-plot(time_linear, kld_linear, xaxis=:log, yaxis=:log, marker=:dot, label="linear", xlabel="time", ylabel="KLD", title="Accuracy-Time plot")
+plot(time_linear, kld_linear, xaxis=:log, yaxis=:log, marker=:dot, label="linear", xlabel="time", ylabel="KLD", title="Accuracy-Time plot", annot=pieces)
 plot!(time_exp, kld_exp, xaxis=:log, yaxis=:log, marker=:dot, label="exponential")
 savefig("continuous_experiments/linear_vs_exponential.png")
 
 # Plot gaussian
-y = continuous(DistFixedPoint{13, 6}, Normal(0, 1), 16, -8.0, 8.0)
+y = continuous(DistFixedPoint{13, 6}, Normal(0, 1), 4, -8.0, 8.0)
 p_linear = pr(y)
-p_linear = map(a -> a[2], sort([(k, v) for (k, v) in p_linear]))
+p_linear = map(a -> log(a[2]), sort([(k, v) for (k, v) in p_linear]))
 
-z = continuous(DistFixedPoint{13, 6}, Normal(0, 1), 16, -8.0, 8.0, exp=true)
+z = continuous(DistFixedPoint{13, 6}, Normal(0, 1), 4, -8.0, 8.0, true)
 p_exp = pr(z)
-p_exp = map(a -> a[2], sort([(k, v) for (k, v) in p_exp]))
+p_exp = map(a -> log(a[2]), sort([(k, v) for (k, v) in p_exp]))
 
 plot(p_exp, label="exponential")
 plot!(p_linear, label="linear")
 plot!(q, label="true")
 savefig("continuous_experiments/visualizing_approx.png")
 
+q
 

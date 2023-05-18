@@ -324,4 +324,13 @@ end
     pr(x)
     @test sum([pr(x)[i] == pr(y)[(i+1)/2] for i in -1:0.125:0.875]) == 16
 end
- 
+
+@testset "DistFixedPoint laplace" begin
+    x = laplace(DistFixedPoint{10, 3}, 0.0, 1.0, -8.0, 8.0)
+    y = exponential(DistFixedPoint{10, 3}, -1.0, 0.0, 8.0)
+    @test pr(x)[1]*2 ≈ pr(y)[1]
+
+    actual_dist = Truncated(Laplace(0.0, 1.0), -8.0, 8.0)
+    @test pr(x)[0] ≈ cdf(actual_dist, 0.125) - cdf(actual_dist, 0.0)
+end
+

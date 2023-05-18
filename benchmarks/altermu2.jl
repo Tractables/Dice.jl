@@ -3,9 +3,9 @@
 using Dice, Distributions
 using Revise
 
-precision = 5
+precision = 0
 DFiP = DistFixedPoint{6+precision, precision}
-num_pieces = 64
+num_pieces = 256
 truncation = (-8.0, 8.0)
 add_arg = false
 exp_arg = false
@@ -30,4 +30,5 @@ code = @dice begin
     mu1
 end;
 
+gt = 0.1550617483
 @time expectation(code)
