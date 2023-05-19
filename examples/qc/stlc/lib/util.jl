@@ -98,3 +98,43 @@ function opt_stlc_str(ast)
         error("Bad node $(name)")
     end
 end
+
+function save_metric_dist(filename, metric_name, dist)
+    open(filename, "w") do file
+        println(file, "$(metric_name)\tprobability")
+        for i in key_range(dist)
+            println(file, "$(i)\t$(dist[i])")
+        end
+    end
+    println("Saved to $(filename).")
+end
+
+key_range(d) = minimum(keys(d)):maximum(keys(d))
+
+function preview_distribution(e; full_dist)
+    if full_dist
+        println("Getting distribution of all exprs")
+        @time dist = pr(e)
+        for (k, pr) in dist
+            println("pr: $(pr)")
+            println(opt_stlc_str(k))
+            println()
+        end
+    else
+        println("A few sampled exprs:")
+        for _ in 1:20
+            expr = sample(e)
+            println(opt_stlc_str(expr))
+        end
+    end
+end
+
+function save_samples(filename, e, n_samples=200)
+    open(filename, "w") do file
+        for _ in 1:n_samples
+            expr = sample(e)
+            println(file, opt_stlc_str(expr))
+            typecheck_opt(expr)
+        end
+    end
+end

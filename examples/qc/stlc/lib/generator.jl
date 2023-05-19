@@ -1,17 +1,9 @@
-using Dice
-include("lib/dist_stlc.jl")
-include("lib/stlc_util.jl")
+# Based on
+# https://github.com/jwshi21/etna/blob/main/bench-suite/Coq/STLC/Methods/BespokeGenerator.v
 
-############################
-# Config
-############################
-
-INIT_SIZE = 1
-# DistNat = DistUInt32  # Binary encoding
-DistNat = DistI{Nat}  # Peano/inductive encoding
-METRIC = num_apps
-
-############################
+# Encoding: DistUInt32 for binary; DistI{Nat} for Peano
+# Shouldn't affect results
+DistNat = DistUInt32
 
 Ctx = DistI{List{DistI{Typ}}}
 
@@ -43,20 +35,17 @@ function gen_zero(env::Ctx, tau::DistI{Typ})
     ])
 end
 
-# TODO: how is Arbitrary derived for type in BespokeGenerator.v?
-function gen_type(size)
-    @dice_ite if size == 0 || flip_for("gen_type_tbool")
+function gen_type(sz)
+    @dice_ite if sz == 0 || flip_for("$(sz)gen_type_tbool")
         DistTBool()
     else
-        DistTFun(gen_type(size - 1), gen_type(size - 1))
+        DistTFun(gen_type(sz - 1), gen_type(sz - 1))
     end
 end
 
-gen_type() = gen_type(1)
-
-function gen_expr(env::Ctx, tau::DistI{Typ}, sz::DistNat)::DistI{Opt{DistI{Expr}}}
+function gen_expr(env::Ctx, tau::DistI{Typ}, sz::DistNat, gen_typ_sz::Integer)::DistI{Opt{DistI{Expr}}}
     match(sz, [
-        "Zero" => () -> backtrack_for("zero", [
+        "Zero" => () -> backtrack_for("$(sz)zero", [
             one_of(
                 map(DistI{Expr})(
                     DistVar,
@@ -65,7 +54,7 @@ function gen_expr(env::Ctx, tau::DistI{Typ}, sz::DistNat)::DistI{Opt{DistI{Expr}
             ),
             gen_zero(env, tau)
         ]),
-        "Succ" => sz′ -> backtrack_for("succ", [
+        "Succ" => sz′ -> backtrack_for("$(sz)succ", [
             # Var
             one_of(
                 map(DistI{Expr})(
@@ -75,9 +64,9 @@ function gen_expr(env::Ctx, tau::DistI{Typ}, sz::DistNat)::DistI{Opt{DistI{Expr}
             ),
             # App
             begin
-                T1 = gen_type()
-                bind_opt(gen_expr(env, DistTFun(T1, tau), sz′)) do e1
-                    bind_opt(gen_expr(env, T1, sz′)) do e2
+                T1 = gen_type(gen_typ_sz)
+                bind_opt(gen_expr(env, DistTFun(T1, tau), sz′, gen_typ_sz)) do e1
+                    bind_opt(gen_expr(env, T1, sz′, gen_typ_sz)) do e2
                         DistSome(DistApp(e1, e2))
                     end
                 end
@@ -86,45 +75,10 @@ function gen_expr(env::Ctx, tau::DistI{Typ}, sz::DistNat)::DistI{Opt{DistI{Expr}
             match(tau, [
                 "TBool" => () -> DistSome(DistBoolean(flip(0.5))),
                 "TFun" => (T1, T2) ->
-                    bind_opt(gen_expr(DistCons(T1, env), T2, sz′)) do e
+                    bind_opt(gen_expr(DistCons(T1, env), T2, sz′, gen_typ_sz)) do e
                         DistSome(DistAbs(T1, e))
                     end
             ]),
         ]),
     ])
-end
-
-
-println("== Config ==")
-@show INIT_SIZE
-@show DistNat
-println()
-
-println("gen_expr()")
-@time e = gen_expr(DistNil(DistI{Typ}), gen_type(), DistNat(INIT_SIZE))
-println()
-
-println("pr($(METRIC)(e))")
-@time metric_dist = pr(METRIC(e))
-println(metric_dist)
-println()
-
-pr_none = pr(matches(e, "None"))[true]
-println("Probability of none: $(pr_none)")
-println()
-
-if INIT_SIZE <= 2
-    println("Getting distribution of all exprs")
-    @time dist = pr(e)
-    for (k, pr) in dist
-        println("pr: $(pr)")
-        println(opt_stlc_str(k))
-        println()
-    end
-else
-    println("A few sampled exprs:")
-    for _ in 1:10
-        expr = sample(e)
-        println(opt_stlc_str(expr))
-    end
 end

@@ -75,36 +75,103 @@ function ty_str(ty, free=true)
     end
 end
 
-function var_to_str(i)
+function var_str(i)
     i += 1  # 1-idx
-    vars = ["x", "y", "z"]
+    vars = ["x", "y", "z", "w"]
     if i <= length(vars)
         vars[i]
     else
-        string('a' + i - length(vars))
+        string('a' + i - length(vars) - 1)
     end
 end
 
-function stlc_str(ast, p=free, depth=0)
+function stlc_str(ast, depth=0, p=free)
     name, children = ast
     if name == "Var"
         i, = children
         i isa Integer || (i = nat_ast_to_int(i))
-        var_to_str(i)
+        # i is the number of steps from the *top* of the env, see gen_var
+        var_depth = depth - i - 1
+        var_str(var_depth)
     elseif name == "Boolean"
         v, = children
         string(v)
     elseif name == "Abs"
         ty, e = children
-        parens(p > free, "λ$(var_to_str(depth + 1)):$(ty_str(ty)). $(stlc_str(e, free, depth + 1))")
+        parens(p > free, "λ$(var_str(depth)):$(ty_str(ty)). $(stlc_str(e, depth + 1, free))")
     elseif name == "App"
         e1, e2 = children
         parens(
             p > fun,
-            "$(stlc_str(e1, fun, depth)) $(stlc_str(e2, arg, depth))"
+            "$(stlc_str(e1, depth, fun)) $(stlc_str(e2, depth, arg))"
         )
     else
         error("Bad node $(name)")
     end
 end
 
+# ironic abuse of types
+function error_ty(ty)
+    ty isa AbstractString
+end
+
+function get_error(ty)
+    ty
+end
+
+function typecheck_opt(ast)
+    name, children = ast
+    if name == "Some"
+        e, = children
+        ty = typecheck(e)
+        if error_ty(ty)
+            println("Failed to typecheck $(stlc_str(e))")
+            println(get_error(ty))
+            println()
+        end
+    elseif name == "None"
+        # do nothing
+    else
+        error("Bad node $(name)")
+    end
+end
+
+typecheck(ast) = typecheck(ast, Dict())
+
+function typecheck(ast, gamma, depth=0)
+    name, children = ast
+    if name == "Var"
+        i, = children
+        i isa Integer || (i = nat_ast_to_int(i))
+        var_depth = depth - i - 1
+        if !haskey(gamma, var_depth)
+            return "Unknown var $(var_str(var_depth))"
+        end
+        gamma[var_depth]
+    elseif name == "Boolean"
+        ("TBool", [])
+    elseif name == "Abs"
+        t_in, e = children
+        gamma′ = copy(gamma)
+        gamma′[depth] = t_in
+        t_out = typecheck(e, gamma′, depth + 1)
+        error_ty(t_out) && return t_out
+        ("TFun", [t_in, t_out])
+    elseif name == "App"
+        e1, e2 = children
+        t1 = typecheck(e1, gamma, depth)
+        error_ty(t1) && return t1
+        if t1[1] != "TFun"
+            return "\"$(stlc_str(e1, depth))\" typechecked to $(ty_str(t1)), expected function"
+        end
+        t2 = typecheck(e2, gamma, depth)
+        error_ty(t2) && return t2
+        t1_in, t1_out = t1[2]
+        if t1_in != t2
+            return "Expected \"$(stlc_str(e2, depth))\" to be $(ty_str(t1_in)), got $(ty_str(t2))"
+        end
+        t1_out
+    else
+        error("Bad node $(name)")
+    end
+end
