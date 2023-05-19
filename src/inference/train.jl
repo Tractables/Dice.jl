@@ -14,9 +14,6 @@ function step_flip_probs!(
     # Set flip probs according to groups
     global _flip_to_group
     global _group_to_psp
-    for (f, group) in _flip_to_group
-        f.prob = sigmoid(_group_to_psp[group])
-    end
 
     # Find grad of logprobability w.r.t. each flip's probability
     w = WMC(c)
@@ -38,7 +35,7 @@ function step_flip_probs!(
         psp_grad_wrt_groups[group] += dpdf * deriv_sigmoid(_group_to_psp[group])
     end
     _group_to_psp += learning_rate * psp_grad_wrt_groups
-    nothing
+    propagate_group_probs!()
 end
 
 function train_group_probs!(bools_to_maximize::Vector{<:AnyBool}, args...)
@@ -51,8 +48,8 @@ end
 # Train group_to_psp to such that generate() approximates dataset's distribution
 function train_group_probs!(
     cond_bools_to_maximize::Vector{<:Tuple{<:AnyBool, <:AnyBool}},
-    epochs::Integer=1000,
-    learning_rate::AbstractFloat=0.3,
+    epochs::Integer=2000,
+    learning_rate::AbstractFloat=0.05,
 )
     # Compile to BDDs
     cond_bools_to_maximize = [
