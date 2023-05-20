@@ -106,7 +106,7 @@ function save_metric_dist(filename, metric_name, dist)
             println(file, "$(i)\t$(dist[i])")
         end
     end
-    println("Saved to $(filename).")
+    println("Saved $(metric_name) dist to $(filename).")
 end
 
 key_range(d) = minimum(keys(d)):maximum(keys(d))
@@ -137,4 +137,10 @@ function save_samples(filename, e, n_samples=200)
             typecheck_opt(expr)
         end
     end
+    println("Saved samples to $(filename).")
+end
+
+function flush_println()
+    println()
+    flush(stdout)
 end
