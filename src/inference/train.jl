@@ -1,14 +1,26 @@
-export step_flip_probs, train_group_probs!
+export step_flip_probs, train_group_probs!, BoolToMax
+
+struct BoolToMax
+    bool::AnyBool
+    evid::AnyBool
+    weight::Real
+    BoolToMax(bool, evid, weight) = new(bool & evid, evid, weight)
+end
+
+function BoolToMax(bool; evidence=true, weight=1)
+    BoolToMax(bool, evidence, weight)
+end
 
 # Find the log-probabilities and the log-probability gradient of a BDD
 
 sigmoid(x) = 1 / (1 + exp(-x))
 deriv_sigmoid(x) = sigmoid(x) * (1 - sigmoid(x))
 
+
 # Step flip probs in direction of gradient to maximize likelihood of BDDS
 function step_flip_probs!(
     c::BDDCompiler,
-    cond_bdds_to_maximize::Vector{Tuple{CuddNode, CuddNode}},
+    bdds_to_max::Vector{<:Tuple{CuddNode, CuddNode, <:Real}},
     learning_rate::AbstractFloat
 )
     # Set flip probs according to groups
@@ -18,9 +30,9 @@ function step_flip_probs!(
     # Find grad of logprobability w.r.t. each flip's probability
     w = WMC(c)
     grad = DefaultDict{Flip, Float64}(0.)
-    for (bdd, obs_bdd) in cond_bdds_to_maximize
+    for (bdd, obs_bdd, weight) in bdds_to_max
         isconstant(bdd) && continue
-        grad += grad_logprob(w, bdd) - grad_logprob(w, obs_bdd)
+        grad += weight * (grad_logprob(w, bdd) - grad_logprob(w, obs_bdd))
     end
 
     # Convert to grad of pre-sigmoid probabilities w.r.t. each group's
@@ -38,31 +50,31 @@ function step_flip_probs!(
     propagate_group_probs!()
 end
 
-function train_group_probs!(bools_to_maximize::Vector{<:AnyBool}, args...)
+function train_group_probs!(
+    bools_to_max::Vector{<:AnyBool},
+    args...
+)
     train_group_probs!(
-        [(b, true) for b in bools_to_maximize],
+        [BoolToMax(b, true, 1) for b in bools_to_max],
         args...
     )
 end
 
+
 # Train group_to_psp to such that generate() approximates dataset's distribution
 function train_group_probs!(
-    cond_bools_to_maximize::Vector{<:Tuple{<:AnyBool, <:AnyBool}},
+    bools_to_max::Vector{BoolToMax},
     epochs::Integer=2000,
-    learning_rate::AbstractFloat=0.05,
+    learning_rate::AbstractFloat=0.003,
 )
     # Compile to BDDs
-    cond_bools_to_maximize = [
-        (x & evid, evid)
-        for (x, evid) in cond_bools_to_maximize
-    ]
-    c = BDDCompiler(Iterators.flatten(cond_bools_to_maximize))
-    cond_bdds_to_maximize = [
-        (compile(c, conj), compile(c, obs))
-        for (conj, obs) in cond_bools_to_maximize
+    c = BDDCompiler(Iterators.flatten(map(x -> [x.bool, x.evid], bools_to_max)))
+    bdds_to_max = [
+        (compile(c, x.bool), compile(c, x.evid), x.weight)
+        for x in bools_to_max
     ]
     for _ in 1:epochs
-        step_flip_probs!(c, cond_bdds_to_maximize, learning_rate)
+        step_flip_probs!(c, bdds_to_max, learning_rate)
     end
     nothing
 end
