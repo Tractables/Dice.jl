@@ -1,19 +1,18 @@
 # Treat dict as a vector, not necessarily indexed by natural numbers
-# TODO: don't pirate!
 
-DictVec = AbstractDict{<:Any, <:AbstractFloat}
+DictVec = AbstractDict{<:Any, <:Real}
 
-Base.:(+)(x::DictVec, y::DictVec) =
+add_dicts(x::DictVec, y::DictVec) =
     Dict(
-        k => get(x, k, 0.) + get(y, k, 0.)
+        k => get(x, k, 0) + get(y, k, 0)
         for k in union(keys(x), keys(y))
     )
 
-Base.:(-)(x::DictVec, y::DictVec) =
+sub_dicts(x::DictVec, y::DictVec) =
     Dict(
-        k => get(x, k, 0.) - get(y, k, 0.)
+        k => get(x, k, 0) - get(y, k, 0)
         for k in union(keys(x), keys(y))
     )
 
-Base.:(*)(c::Real, x::DictVec) =
+scale_dict(c::Real, x::DictVec) =
     Dict(k => c * v for (k, v) in x)

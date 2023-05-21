@@ -32,7 +32,8 @@ function step_flip_probs!(
     grad = DefaultDict{Flip, Float64}(0.)
     for (bdd, obs_bdd, weight) in bdds_to_max
         isconstant(bdd) && continue
-        grad += weight * (grad_logprob(w, bdd) - grad_logprob(w, obs_bdd))
+        gradhere = sub_dicts(grad_logprob(w, bdd), grad_logprob(w, obs_bdd))
+        grad = add_dicts(grad, scale_dict(weight, gradhere))
     end
 
     # Convert to grad of pre-sigmoid probabilities w.r.t. each group's
@@ -46,7 +47,7 @@ function step_flip_probs!(
         dpdf = grad[f]
         psp_grad_wrt_groups[group] += dpdf * deriv_sigmoid(_group_to_psp[group])
     end
-    _group_to_psp += learning_rate * psp_grad_wrt_groups
+    _group_to_psp = add_dicts(_group_to_psp, scale_dict(learning_rate, psp_grad_wrt_groups))
     propagate_group_probs!()
 end
 
