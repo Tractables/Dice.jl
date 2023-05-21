@@ -1,7 +1,7 @@
 export sample
 using DirectedAcyclicGraphs: foldup
 
-function sample(x, evidence=true)
+function sample(x; evidence=true)
     while true
         vcache = Dict()
         fl(n::Flip) = begin
