@@ -111,8 +111,6 @@ end
 # Inference backends
 ##################################
 
-include("cudd/dict_vec.jl")
-
 # Wraps CUDD
 # Notable exports:
 # - CuddNode

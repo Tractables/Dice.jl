@@ -16,6 +16,15 @@ end
 sigmoid(x) = 1 / (1 + exp(-x))
 deriv_sigmoid(x) = sigmoid(x) * (1 - sigmoid(x))
 
+function add_scaled_dict!(
+    x::AbstractDict{<:Any, <:Real},
+    y::AbstractDict{<:Any, <:Real},
+    s::Real
+)
+    for (k, v) in y
+        x[k] += v * s
+    end
+end
 
 # Step flip probs in direction of gradient to maximize likelihood of BDDS
 function step_flip_probs!(
@@ -32,8 +41,9 @@ function step_flip_probs!(
     grad = DefaultDict{Flip, Float64}(0.)
     for (bdd, obs_bdd, weight) in bdds_to_max
         isconstant(bdd) && continue
-        gradhere = sub_dicts(grad_logprob(w, bdd), grad_logprob(w, obs_bdd))
-        grad = add_dicts(grad, scale_dict(weight, gradhere))
+        grad_here = grad_logprob(w, bdd)
+        add_scaled_dict!(grad_here, grad_logprob(w, obs_bdd), -1)
+        add_scaled_dict!(grad, grad_here, weight)
     end
 
     # Convert to grad of pre-sigmoid probabilities w.r.t. each group's
@@ -47,7 +57,7 @@ function step_flip_probs!(
         dpdf = grad[f]
         psp_grad_wrt_groups[group] += dpdf * deriv_sigmoid(_group_to_psp[group])
     end
-    _group_to_psp = add_dicts(_group_to_psp, scale_dict(learning_rate, psp_grad_wrt_groups))
+    add_scaled_dict!(_group_to_psp, psp_grad_wrt_groups, learning_rate)
     propagate_group_probs!()
 end
 
