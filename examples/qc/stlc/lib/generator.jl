@@ -35,9 +35,9 @@ function gen_zero(env::Ctx, tau::DistI{Typ})
     ])
 end
 
-function gen_type(sz, by_sz)
-    for_prefix = if by_sz "$(sz)_" else "" end
-    @dice_ite if sz == 0 || flip_for(for_prefix * "gen_type_tbool")
+function gen_type(sz, by_sz, for_prefix="")
+    group = for_prefix * if by_sz "tysz$(sz)_" else "" end * "gen_type_tbool"
+    @dice_ite if sz == 0 || flip_for(group)
         DistTBool()
     else
         DistTFun(gen_type(sz - 1, by_sz), gen_type(sz - 1, by_sz))
@@ -49,7 +49,7 @@ function gen_bool()
 end
 
 function gen_expr(env::Ctx, tau::DistI{Typ}, sz::Integer, gen_typ_sz::Integer, by_sz)::DistI{Opt{DistI{Expr}}}
-    for_prefix = if by_sz "$(sz)_" else "" end
+    for_prefix = if by_sz "sz$(sz)_" else "" end
     if sz == 0
         backtrack_for(for_prefix * "zero", [
             one_of(
@@ -72,7 +72,7 @@ function gen_expr(env::Ctx, tau::DistI{Typ}, sz::Integer, gen_typ_sz::Integer, b
             ),
             # App
             begin
-                T1 = gen_type(gen_typ_sz, by_sz)
+                T1 = gen_type(gen_typ_sz, by_sz, for_prefix)
                 bind_opt(gen_expr(env, DistTFun(T1, tau), sz′, gen_typ_sz, by_sz)) do e1
                     bind_opt(gen_expr(env, T1, sz′, gen_typ_sz, by_sz)) do e2
                         DistSome(DistApp(e1, e2))

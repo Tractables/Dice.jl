@@ -63,16 +63,21 @@ println("Saving samples...")
 save_samples(joinpath(OUT_DIR, OUT_PREFIX * "_terms_before.txt"), e)
 flush_println()
 
+bools_to_max = [
+    BoolToMax(prob_equals(metric, DistUInt32(i)), weight=if LINEAR i else 1 end)
+    for i in key_range(metric_dist)
+]
+
+initial_logprob = total_logprob(bools_to_max)
+println("Initial logprob: $(initial_logprob)")
+flush_println()
 
 ############################
 # Train
 ############################
 
 println("Training...")
-bools_to_max = [
-    BoolToMax(prob_equals(metric, DistUInt32(i)), weight=if LINEAR i else 1 end)
-    for i in key_range(metric_dist)
-]
+
 @time train_group_probs!(bools_to_max)
 flush_println()
 
@@ -80,6 +85,12 @@ flush_println()
 ############################
 # After
 ############################
+
+final_logprob = total_logprob(bools_to_max)
+println("Final logprob: $(final_logprob)")
+approx_improvement = round(exp(final_logprob - initial_logprob), digits=2)
+println("Drawing the target dataset is $(approx_improvement)x more likely")
+flush_println()
 
 println("Learned group probs:")
 display(get_group_probs())
