@@ -1,0 +1,101 @@
+== Config ==
+INIT_SIZE = 5
+GEN_TYP_SIZE = 1
+PARAMETERIZE_FLIP_GROUPS_BY_SZ = true
+DistNat = DistUInt32
+
+Building num_apps(gen_expr(...)) computation graph...
+ 12.541046 seconds (51.92 M allocations: 2.582 GiB, 4.71% gc time, 92.23% compilation time)
+
+Initial group probs:
+Dict{String, Float64} with 32 entries:
+  "sz1_tysz1_gen_type_tbool" => 0.5
+  "sz4_succ_val_var_app" => 0.5
+  "sz5_succ_var_app_val" => 0.5
+  "sz4_succ_var" => 0.333333
+  "sz2_succ_app_var_val" => 0.5
+  "sz3_succ_var_app_val" => 0.5
+  "sz4_succ_app_var_val" => 0.5
+  "sz5_succ_val_var_app" => 0.5
+  "tysz1_gen_type_tbool" => 0.5
+  "sz2_succ_app" => 0.5
+  "sz5_succ_app_var_val" => 0.5
+  "sz2_tysz1_gen_type_tbool" => 0.5
+  "sz3_tysz1_gen_type_tbool" => 0.5
+  "sz1_succ_app_var_val" => 0.5
+  "sz5_tysz1_gen_type_tbool" => 0.5
+  "sz5_succ_var" => 0.333333
+  "sz2_succ_var" => 0.333333
+  "sz1_succ_var" => 0.333333
+  "sz1_succ_app" => 0.5
+  "sz2_succ_val_var_app" => 0.5
+  "sz2_succ_var_app_val" => 0.5
+  "sz4_tysz1_gen_type_tbool" => 0.5
+  "sz3_succ_app" => 0.5
+  "sz3_succ_app_var_val" => 0.5
+  "sz4_succ_var_app_val" => 0.5
+  "sz5_succ_app" => 0.5
+  "sz4_succ_app" => 0.5
+  "sz0_zero_var_" => 0.5
+  "sz1_succ_var_app_val" => 0.5
+  "sz3_succ_var" => 0.333333
+  "sz3_succ_val_var_app" => 0.5
+  "sz1_succ_val_var_app" => 0.5
+
+Inferring initial distribution...
+  5.332572 seconds (35.96 M allocations: 1.330 GiB, 11.87% gc time, 0.55% compilation time)
+Saved num_apps dist to examples/qc/stlc/output/num_apps/uniform/sz=5,tysz=1/param_by_sz=true_before.csv.
+
+Saving samples...
+Saved samples to examples/qc/stlc/output/num_apps/uniform/sz=5,tysz=1/param_by_sz=true_terms_before.txt.
+
+Initial logprob: -226.70509420205877
+
+Training...
+5797.244864 seconds (116.28 G allocations: 2.307 TiB, 8.13% gc time, 0.01% compilation time)
+
+Final logprob: -114.09517564948911
+Drawing the target dataset is 8.051304184905711e48x more likely
+
+Learned group probs:
+Dict{String, Float64} with 32 entries:
+  "sz1_tysz1_gen_type_tbool" => 0.5
+  "sz4_succ_val_var_app" => 0.5
+  "sz5_succ_var_app_val" => 0.857746
+  "sz4_succ_var" => 0.170337
+  "sz2_succ_app_var_val" => 0.5
+  "sz3_succ_var_app_val" => 0.848367
+  "sz4_succ_app_var_val" => 0.5
+  "sz5_succ_val_var_app" => 0.5
+  "tysz1_gen_type_tbool" => 0.196709
+  "sz2_succ_app" => 0.89135
+  "sz5_succ_app_var_val" => 0.5
+  "sz2_tysz1_gen_type_tbool" => 0.724769
+  "sz3_tysz1_gen_type_tbool" => 0.709038
+  "sz1_succ_app_var_val" => 0.5
+  "sz5_tysz1_gen_type_tbool" => 0.632466
+  "sz5_succ_var" => 0.194787
+  "sz2_succ_var" => 0.662041
+  "sz1_succ_var" => 0.726177
+  "sz1_succ_app" => 0.951283
+  "sz2_succ_val_var_app" => 0.5
+  "sz2_succ_var_app_val" => 0.829497
+  "sz4_tysz1_gen_type_tbool" => 0.570379
+  "sz3_succ_app" => 0.844461
+  "sz3_succ_app_var_val" => 0.5
+  "sz4_succ_var_app_val" => 0.454981
+  "sz5_succ_app" => 0.954143
+  "sz4_succ_app" => 0.631696
+  "sz0_zero_var_" => 0.5
+  "sz1_succ_var_app_val" => 0.924867
+  "sz3_succ_var" => 0.426249
+  "sz3_succ_val_var_app" => 0.5
+  "sz1_succ_val_var_app" => 0.5
+
+Inferring trained distribution...
+  5.241642 seconds (35.93 M allocations: 1.328 GiB, 10.00% gc time)
+Saved num_apps dist to examples/qc/stlc/output/num_apps/uniform/sz=5,tysz=1/param_by_sz=true_after.csv.
+
+Saving samples...
+Saved samples to examples/qc/stlc/output/num_apps/uniform/sz=5,tysz=1/param_by_sz=true_terms_after.txt.
+

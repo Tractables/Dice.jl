@@ -1,0 +1,51 @@
+== Config ==
+INIT_SIZE = 5
+GEN_TYP_SIZE = 1
+PARAMETERIZE_FLIP_GROUPS_BY_SZ = false
+DistNat = DistUInt32
+
+Building num_apps(gen_expr(...)) computation graph...
+ 12.280512 seconds (51.92 M allocations: 2.582 GiB, 4.59% gc time, 93.74% compilation time)
+
+Initial group probs:
+Dict{String, Float64} with 7 entries:
+  "succ_var" => 0.333333
+  "gen_type_tbool" => 0.5
+  "succ_app" => 0.5
+  "succ_app_var_val" => 0.5
+  "zero_var_" => 0.5
+  "succ_val_var_app" => 0.5
+  "succ_var_app_val" => 0.5
+
+Inferring initial distribution...
+  5.523113 seconds (35.96 M allocations: 1.330 GiB, 11.43% gc time, 0.53% compilation time)
+Saved num_apps dist to examples/qc/stlc/output/num_apps/uniform/sz=5,tysz=1/param_by_sz=false_before.csv.
+
+Saving samples...
+Saved samples to examples/qc/stlc/output/num_apps/uniform/sz=5,tysz=1/param_by_sz=false_terms_before.txt.
+
+Initial logprob: -226.70509420205877
+
+Training...
+4376.899046 seconds (116.28 G allocations: 2.308 TiB, 10.45% gc time, 0.01% compilation time)
+
+Final logprob: -122.13583994411412
+Drawing the target dataset is 2.5932841219040394e45x more likely
+
+Learned group probs:
+Dict{String, Float64} with 7 entries:
+  "succ_var" => 0.715214
+  "gen_type_tbool" => 0.553086
+  "succ_app" => 0.837165
+  "succ_app_var_val" => 0.5
+  "zero_var_" => 0.5
+  "succ_val_var_app" => 0.5
+  "succ_var_app_val" => 0.820317
+
+Inferring trained distribution...
+  5.039596 seconds (35.92 M allocations: 1.328 GiB, 10.29% gc time)
+Saved num_apps dist to examples/qc/stlc/output/num_apps/uniform/sz=5,tysz=1/param_by_sz=false_after.csv.
+
+Saving samples...
+Saved samples to examples/qc/stlc/output/num_apps/uniform/sz=5,tysz=1/param_by_sz=false_terms_after.txt.
+
