@@ -1,4 +1,4 @@
-export step_flip_probs, train_group_probs!, BoolToMax
+export step_flip_probs, train_group_probs!, BoolToMax, total_logprob
 
 struct BoolToMax
     bool::AnyBool
@@ -88,4 +88,14 @@ function train_group_probs!(
         step_flip_probs!(c, bdds_to_max, learning_rate)
     end
     nothing
+end
+
+function total_logprob(bools_to_max::Vector{BoolToMax})
+    w = WMC(
+        BDDCompiler(Iterators.flatten(map(x -> [x.bool, x.evid], bools_to_max)))
+    )
+    sum(
+        logprob(w, b.bool) - logprob(w, b.evid)
+        for b in bools_to_max
+    )
 end
