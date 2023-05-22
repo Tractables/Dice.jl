@@ -99,14 +99,16 @@ function opt_stlc_str(ast)
     end
 end
 
-function save_metric_dist(filename, metric_name, dist)
+function save_metric_dist(filename, metric_name, dist; io=stdout)
     open(filename, "w") do file
         println(file, "$(metric_name)\tprobability")
         for i in key_range(dist)
             println(file, "$(i)\t$(dist[i])")
+
+            println(io, "$(i)\t$(dist[i])")
         end
     end
-    println("Saved $(metric_name) dist to $(filename).")
+    println(io, "Saved $(metric_name) dist to $(filename).")
 end
 
 key_range(d) = minimum(keys(d)):maximum(keys(d))
@@ -129,7 +131,7 @@ function preview_distribution(e; full_dist)
     end
 end
 
-function save_samples(filename, e, n_samples=200)
+function save_samples(filename, e; n_samples=200, io=stdout)
     open(filename, "w") do file
         for _ in 1:n_samples
             expr = sample(e)
@@ -137,10 +139,10 @@ function save_samples(filename, e, n_samples=200)
             typecheck_opt(expr)
         end
     end
-    println("Saved samples to $(filename).")
+    println(io, "Saved samples to $(filename).")
 end
 
-function flush_println()
-    println()
-    flush(stdout)
+function println_flush(io, args...)
+    println(io, args...)
+    flush(io)
 end

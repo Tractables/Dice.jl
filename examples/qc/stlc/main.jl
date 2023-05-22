@@ -1,3 +1,4 @@
+using Dates
 using Dice
 include("lib/dist.jl")
 include("lib/util.jl")
@@ -10,30 +11,47 @@ include("lib/generator.jl")
 METRIC = num_apps  # term_size or num_apps
 INIT_SIZE = 3
 GEN_TYP_SIZE = 2
+LINEAR = false  # by default, the desired distribution is uniform.
+
 PARAMETERIZE_FLIP_GROUPS_BY_SZ = true
-LINEAR = false  # by default, the desired distribution is uniform. 
+EPOCHS = 4000
+
+LOG_TO_FILE = true
 
 ############################
 
 dist_desc = if LINEAR "linear" else "uniform" end
+
+# Corresponds to "problem" - generator we are trying to train & desired dist.
+# Data within a directory would get plotted on the same graph
 OUT_DIR = "examples/qc/stlc/output/$(METRIC)/$(dist_desc)/sz=$(INIT_SIZE),tysz=$(GEN_TYP_SIZE)"
-OUT_PREFIX = "param_by_sz=$(PARAMETERIZE_FLIP_GROUPS_BY_SZ)"
+
+# Hyperparams
+OUT_FILE_TAG = "param_by_sz=$(PARAMETERIZE_FLIP_GROUPS_BY_SZ),epochs=$(EPOCHS)"
 
 ############################
 # Intro
 ############################
 
 mkpath(OUT_DIR)
+io = if LOG_TO_FILE
+    open(joinpath(OUT_DIR, "log_" * OUT_FILE_TAG * ".log"), "w")
+else
+    stdout
+end
 
-println("== Config ==")
-@show INIT_SIZE
-@show GEN_TYP_SIZE
-@show PARAMETERIZE_FLIP_GROUPS_BY_SZ
-@show DistNat
-flush_println()
+println(io, now())
 
-println("Building $(METRIC)(gen_expr(...)) computation graph...")
-@time begin
+println(io, "== Config ==")
+println(io, "INIT_SIZE: $(INIT_SIZE)")
+println(io, "GEN_TYP_SIZE: $(GEN_TYP_SIZE)")
+println(io, "PARAMETERIZE_FLIP_GROUPS_BY_SZ: $(PARAMETERIZE_FLIP_GROUPS_BY_SZ)")
+println(io, "EPOCHS: $(EPOCHS)")
+println(io, "DistNat: $(DistNat)")
+println(io)
+
+println_flush(io, "Building $(METRIC)(gen_expr(...)) computation graph...")
+time_build = @elapsed begin
     e = gen_expr(
         DistNil(DistI{Typ}),
         gen_type(GEN_TYP_SIZE, PARAMETERIZE_FLIP_GROUPS_BY_SZ),
@@ -43,25 +61,28 @@ println("Building $(METRIC)(gen_expr(...)) computation graph...")
     )
     metric = METRIC(e)
 end
-flush_println()
+println(io, "  $(time_build) seconds")
+println(io)
 
 
 ############################
 # Before
 ############################
 
-println("Initial group probs:")
-display(get_group_probs())
-flush_println()
+println(io, "Initial group probs:")
+show(io, get_group_probs())
+println(io)
 
-println("Inferring initial distribution...")
-@time metric_dist = pr(metric)
-save_metric_dist(joinpath(OUT_DIR, OUT_PREFIX * "_before.csv"), METRIC, metric_dist)
-flush_println()
+println_flush(io, "Inferring initial distribution...")
+time_infer_init = @elapsed metric_dist = pr(metric)
+println(io, "  $(time_infer_init) seconds")
+save_metric_dist(joinpath(OUT_DIR, "dist_before.csv"), METRIC, metric_dist; io=io)
+println(io)
 
-println("Saving samples...")
-save_samples(joinpath(OUT_DIR, OUT_PREFIX * "_terms_before.txt"), e)
-flush_println()
+println_flush(io, "Saving samples...")
+time_sample_init = @elapsed save_samples(joinpath(OUT_DIR, "terms_before.txt"), e; io=io)
+println(io, "  $(time_sample_init) seconds")
+println(io)
 
 bools_to_max = [
     BoolToMax(prob_equals(metric, DistUInt32(i)), weight=if LINEAR i else 1 end)
@@ -69,17 +90,17 @@ bools_to_max = [
 ]
 
 initial_logprob = total_logprob(bools_to_max)
-println("Initial logprob: $(initial_logprob)")
-flush_println()
+println(io, "Initial logprob: $(initial_logprob)")
+println(io)
 
 ############################
 # Train
 ############################
 
-println("Training...")
-
-@time train_group_probs!(bools_to_max)
-flush_println()
+println_flush(io, "Training...")
+time_train = @elapsed train_group_probs!(bools_to_max, EPOCHS)
+println(io, "  $(time_train) seconds")
+println(io)
 
 
 ############################
@@ -87,20 +108,21 @@ flush_println()
 ############################
 
 final_logprob = total_logprob(bools_to_max)
-println("Final logprob: $(final_logprob)")
+println(io, "Final logprob: $(final_logprob)")
 approx_improvement = round(exp(final_logprob - initial_logprob), digits=2)
-println("Drawing the target dataset is $(approx_improvement)x more likely")
-flush_println()
+println(io, "Drawing the target dataset is $(approx_improvement)x more likely")
+println(io)
 
-println("Learned group probs:")
-display(get_group_probs())
-flush_println()
+println(io, "Learned group probs:")
+show(io, get_group_probs())
+println(io)
 
-println("Inferring trained distribution...")
-@time metric_dist_after = pr(metric)
-save_metric_dist(joinpath(OUT_DIR, OUT_PREFIX * "_after.csv"), METRIC, metric_dist_after)
-flush_println()
+println(io, "Inferring trained distribution...")
+time_infer_final = @elapsed metric_dist_after = pr(metric)
+save_metric_dist(joinpath(OUT_DIR, "dist_trained_" * OUT_FILE_TAG * ".csv"), METRIC, metric_dist_after; io=io)
+println(io)
 
-println("Saving samples...")
-save_samples(joinpath(OUT_DIR, OUT_PREFIX * "_terms_after.txt"), e)
-flush_println()
+println(io, "Saving samples...")
+time_sample_final = @elapsed save_samples(joinpath(OUT_DIR, "terms_trained_" * OUT_FILE_TAG * ".txt"), e; io=io)
+println(io, "  $(time_sample_final) seconds")
+println(io)
