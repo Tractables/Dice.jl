@@ -3,7 +3,7 @@ import Dice: param_lists
 
 struct DistUTLC <: InductiveType end
 
-function param_lists(::Type{DistUTLC})::Vector{Pair{String,Vector{Type}}} where T <: Union{Dist, AnyBool}
+function param_lists(::Type{DistUTLC})::Vector{Pair{String,Vector{Type}}}
     [
         "Var" => [DistString],
         "App" => [DistI{DistUTLC}, DistI{DistUTLC}],

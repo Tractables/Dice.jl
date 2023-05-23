@@ -1,7 +1,6 @@
 # Demo of using BDD MLE to learn flip probs for a sorted nat list of uniform length.
 
 using Dice
-include("lib/sample.jl")        # sample
 
 # Return a List
 function gen_sorted_list(size, lo, hi)
@@ -28,19 +27,19 @@ INIT_SIZE = 5
 DATASET = [DistUInt32(x) for x in 0:INIT_SIZE]
 
 # Use Dice to build computation graph
-gen() = gen_sorted_list(
+list = gen_sorted_list(
     INIT_SIZE,
     DistUInt32(1),
     DistUInt32(INIT_SIZE),
 )
-list_len = length(gen())
+list_len = length(list)
 
 println("Distribution before training:")
 display(pr(list_len))
 println()
 
 bools_to_maximize = [prob_equals(list_len, x) for x in DATASET]
-train_group_probs!(bools_to_maximize)
+train_group_probs!(bools_to_maximize, 1000, 0.3)  # epochs and lr
 
 # Done!
 println("Learned flip probability for each size:")
@@ -48,14 +47,12 @@ display(get_group_probs())
 println()
 
 println("Distribution over lengths after training:")
-list_len = length(gen())
 display(pr(list_len))
 println()
 
 println("A few sampled lists:")
-l = gen()
 for _ in 1:3
-    print_tree(sample((l, true)))
+    print_tree(sample(list))
     println()
 end
 
