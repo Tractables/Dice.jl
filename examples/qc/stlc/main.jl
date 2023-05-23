@@ -1,4 +1,8 @@
-using Dates
+# Train an STLC generator to have some property (term size or num apps) match a
+# specific distribution (linear or uniform).
+#
+# Saves the distributions and sampled terms before and after training.
+
 using Dice
 include("lib/dist.jl")
 include("lib/util.jl")
@@ -33,22 +37,31 @@ OUT_FILE_TAG = "param_by_sz=$(PARAMETERIZE_FLIP_GROUPS_BY_SZ),epochs=$(EPOCHS)"
 # Intro
 ############################
 
+LOG_PATH = joinpath(OUT_DIR, "log_" * OUT_FILE_TAG * ".log")
+
 mkpath(OUT_DIR)
 io = if LOG_TO_FILE
-    open(joinpath(OUT_DIR, "log_" * OUT_FILE_TAG * ".log"), "w")
+    open(LOG_PATH, "w")
 else
     stdout
 end
 
-println(io, now())
-
-println(io, "== Config ==")
-println(io, "INIT_SIZE: $(INIT_SIZE)")
-println(io, "GEN_TYP_SIZE: $(GEN_TYP_SIZE)")
-println(io, "PARAMETERIZE_FLIP_GROUPS_BY_SZ: $(PARAMETERIZE_FLIP_GROUPS_BY_SZ)")
-println(io, "EPOCHS: $(EPOCHS)")
-println(io, "DistNat: $(DistNat)")
-println(io)
+using Dates
+t = now()
+for io′ in Set([io, stdout])
+    println(io′, t)
+    println(io′, "== Config ==")
+    println(io′, "INIT_SIZE: $(INIT_SIZE)")
+    println(io′, "GEN_TYP_SIZE: $(GEN_TYP_SIZE)")
+    println(io′, "PARAMETERIZE_FLIP_GROUPS_BY_SZ: $(PARAMETERIZE_FLIP_GROUPS_BY_SZ)")
+    println(io′, "EPOCHS: $(EPOCHS)")
+    println(io′, "DistNat: $(DistNat)")
+    println(io′)
+end
+if LOG_TO_FILE
+    println("Logging to $(LOG_PATH)")
+    println()
+end
 
 println_flush(io, "Building $(METRIC)(gen_expr(...)) computation graph...")
 time_build = @elapsed begin
