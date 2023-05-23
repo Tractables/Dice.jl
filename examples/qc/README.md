@@ -13,5 +13,7 @@ The following related programs are included. The expected output of each is in a
 - Generator for closed untyped lambda calculus expressions ([`demo_utlc.jl`](demo_utlc.jl))
   - Given a generator for UTLC exprs with a hole dependent on size, chooses probabilities such that the AST has near uniform depth
   - 50 example generated expressions are visible at [`samples/utlc.txt`](samples/utlc.txt).
+- Generator for well-typed, simply-typed lambda calculus expressions ([`stlc`](stlc))
+  - Configure and run [`stlc/main.jl`](stlc/main.jl)
 
 Beware that the programs expected to run on this version of Dice.jl are the examples listed above and the tests. Other examples are known to be broken.

@@ -1,0 +1,1 @@
+See the QuickChick-related README at [`../README.md`](../README.md).
