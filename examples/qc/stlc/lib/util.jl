@@ -104,8 +104,6 @@ function save_metric_dist(filename, metric_name, dist; io=stdout)
         println(file, "$(metric_name)\tprobability")
         for i in key_range(dist)
             println(file, "$(i)\t$(dist[i])")
-
-            println(io, "$(i)\t$(dist[i])")
         end
     end
     println(io, "Saved $(metric_name) dist to $(filename).")
