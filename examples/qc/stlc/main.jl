@@ -12,13 +12,17 @@ include("lib/generator.jl")
 # Config
 ############################
 
+# Specify generator, initial & target distributions
 METRIC = num_apps  # term_size or num_apps
-INIT_SIZE = 3
-GEN_TYP_SIZE = 2
-LINEAR = false  # by default, the desired distribution is uniform.
+INIT_SIZE = 3      # size passed to top call of gen_expr
+GEN_TYP_SIZE = 2   # size passed to all calls of gen_type
+LINEAR = false     # by default, the desired distribution is uniform.
 
-PARAMETERIZE_FLIP_GROUPS_BY_SZ = true
-EPOCHS = 4000
+# Hyperparams
+PARAMETERIZE_FLIP_GROUPS_BY_SZ = true  # whether flips at the same code location
+                                       # but different sizes can have different
+                                       # probabilities
+EPOCHS = 2000  # epochs to train for
 
 LOG_TO_FILE = true
 
