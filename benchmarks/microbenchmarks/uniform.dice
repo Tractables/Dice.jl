@@ -1,0 +1,15 @@
+let a = uniform(
+//~py f"  {num_bits+1}, {0}, {2**num_bits}"
+) in
+let b = uniform(
+//~py f"  {num_bits+1}, {0}, {2**num_bits}"
+) in
+//~begin less
+a < b
+//~end
+//~begin equals
+a == b
+//~end
+//~begin sum
+a + b
+//~end
