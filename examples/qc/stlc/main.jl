@@ -14,7 +14,7 @@ include("lib/generator.jl")
 
 # Specify generator, initial & target distributions
 METRIC = num_apps  # term_size or num_apps
-INIT_SIZE = 3      # size passed to top call of gen_expr
+INIT_SIZE = 5      # size passed to top call of gen_expr
 GEN_TYP_SIZE = 2   # size passed to all calls of gen_type
 LINEAR = false     # by default, the desired distribution is uniform.
 
