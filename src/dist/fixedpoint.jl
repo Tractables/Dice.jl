@@ -1,6 +1,6 @@
 using Distributions
 
-export DistFixedPoint, continuous, unit_exponential, exponential, laplace
+export DistFixedPoint, continuous, unit_exponential, exponential, laplace, unit_gamma_one, unit_concave
 
 ##################################
 # types, structs, and constructors
@@ -250,6 +250,9 @@ function exponential(t::Type{DistFixedPoint{W, F}}, beta::Float64, start::Float6
     # for i in 1:bits
     #     @show exp(new_beta/2^i)/(1+exp(new_beta/2^i))
     # end
+    # @show beta
+    # @show new_beta
+    # @show [exp(new_beta/2^i)/(1+exp(new_beta/2^i)) for i in 1:bits]
     bit_vector = vcat([false for i in 1:W - bits], [flip(exp(new_beta/2^i)/(1+exp(new_beta/2^i))) for i in 1:bits])
 
     DistFixedPoint{W, F}(bit_vector) + DistFixedPoint{W, F}(start)
@@ -257,8 +260,17 @@ end
 
 function beta(d::ContinuousUnivariateDistribution, start::Float64, stop::Float64, interval_sz::Float64)
     prob_start = cdf(d, start + interval_sz) - cdf(d, start)
+    if prob_start == 0.0
+        prob_start = eps(0.0)
+    end
     prob_end = cdf(d, stop) - cdf(d, stop - interval_sz)
-    result = log(prob_end / prob_start) / (stop - start - interval_sz)
+    result = (log(prob_end) - log(prob_start)) / (stop - start - interval_sz)
+
+    if result ≈ Inf
+        @show prob_start
+        @show prob_end
+        @show start, stop, interval_sz
+    end
     result
 end
 
@@ -298,6 +310,9 @@ function continuous_exp(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDi
         p3 = start + (i)*interval_sz/2^point 
 
         beta_vec[i] = beta(d, p1, p3, 2.0^(-F))
+        # if (beta_vec[i] in [Inf, -Inf]) | isnan(beta_vec[i])
+        #     beta_vec[i] = 0.0
+        # end
 
         areas[i] = (cdf.(d, p3) - cdf.(d, p1))
         # @show p1, p2, p3, p4, areas[i]
@@ -306,6 +321,7 @@ function continuous_exp(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDi
 
         total_area += areas[i]
     end
+
 
     # @show beta_vec
 
@@ -344,4 +360,28 @@ function laplace(t::Type{DistFixedPoint{W, F}}, mean::Float64, scale::Float64, s
 
     ifelse(flip(0.5), e1, e2)
 end
-    
+
+#TODO: write tests for the following function
+function unit_gamma_one(t::Type{DistFixedPoint{W, F}}, beta::Float64) where {W, F}
+    DFiP = DistFixedPoint{W, F}
+    Y = unit_exponential(DFiP, beta)
+    Z = unit_exponential(DFiP, beta)
+    U = uniform(DFiP, 0.0, 1.0)
+    observe(U < Y)
+
+    t = (exp(beta*2.0^(-F))*(beta*2.0^(-F) - 1) + 1)*(1 - exp(beta)) / ((1 - exp(beta*2.0^(-F)))*(exp(beta) * (beta - 1) + 1))
+    # flip_parameter = beta*(2.0^(-F)*beta - 1) / (beta*(2.0^(-F)*beta - 1) + beta*2.0^(-F)*exp(beta*2.0^(-F)) - exp(beta*2.0^(-F)) + 1)
+
+    final = ifelse(flip(t), Z, Y)
+    final
+end
+
+# TODO: Write tests for the following function
+function unit_concave(t::Type{DistFixedPoint{W, F}}, beta::Float64) where {W, F}
+    @assert beta <= 0
+    DFiP = DistFixedPoint{W, F}
+    Y = uniform(DFiP, 0.0, 1.0)
+    X = unit_exponential(DFiP, beta)
+    observe((X < Y)| prob_equals(X, Y))
+    Y
+end
