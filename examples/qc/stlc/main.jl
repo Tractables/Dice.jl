@@ -26,13 +26,15 @@ EPOCHS = 2000  # epochs to train for
 
 LOG_TO_FILE = true
 
+TAG = "byflonly"
+
 ############################
 
 dist_desc = if LINEAR "linear" else "uniform" end
 
 # Corresponds to "problem" - generator we are trying to train & desired dist.
 # Data within a directory would get plotted on the same graph
-OUT_DIR = "examples/qc/stlc/output/$(METRIC)/$(dist_desc)/sz=$(INIT_SIZE),tysz=$(GEN_TYP_SIZE)"
+OUT_DIR = "examples/qc/stlc/output/$(TAG)/$(METRIC)/$(dist_desc)/sz=$(INIT_SIZE),tysz=$(GEN_TYP_SIZE)"
 
 # Hyperparams
 OUT_FILE_TAG = "param_by_sz=$(PARAMETERIZE_FLIP_GROUPS_BY_SZ),epochs=$(EPOCHS)"
@@ -60,6 +62,7 @@ for io′ in Set([io, stdout])
     println(io′, "PARAMETERIZE_FLIP_GROUPS_BY_SZ: $(PARAMETERIZE_FLIP_GROUPS_BY_SZ)")
     println(io′, "EPOCHS: $(EPOCHS)")
     println(io′, "DistNat: $(DistNat)")
+    println(io′, "TAG: $(TAG)")
     println(io′)
 end
 if LOG_TO_FILE

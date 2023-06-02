@@ -35,8 +35,8 @@ function gen_zero(env::Ctx, tau::DistI{Typ})
     ])
 end
 
-function gen_type(sz, by_sz, for_prefix="")
-    group = for_prefix * if by_sz "tysz$(sz)_" else "" end * "gen_type_tbool"
+function gen_type(sz, by_sz)
+    group = if by_sz "tysz$(sz)_" else "" end * "gen_type_tbool"
     @dice_ite if sz == 0 || flip_for(group)
         DistTBool()
     else
@@ -72,7 +72,7 @@ function gen_expr(env::Ctx, tau::DistI{Typ}, sz::Integer, gen_typ_sz::Integer, b
             ),
             # App
             begin
-                T1 = gen_type(gen_typ_sz, by_sz, for_prefix)
+                T1 = gen_type(gen_typ_sz, by_sz)
                 bind_opt(gen_expr(env, DistTFun(T1, tau), sz′, gen_typ_sz, by_sz)) do e1
                     bind_opt(gen_expr(env, T1, sz′, gen_typ_sz, by_sz)) do e2
                         DistSome(DistApp(e1, e2))
