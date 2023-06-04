@@ -333,12 +333,68 @@ end
     actual_dist = Truncated(Laplace(0.0, 1.0), -8.0, 8.0)
     @test pr(x)[0] ≈ cdf(actual_dist, 0.125) - cdf(actual_dist, 0.0)
 
-    # x = @dice unit_gamma_one(DistFixedPoint{8, 5}, -3.0)
-    # a = pr(x)
-    # plot(a)
+    # Tests for Gamma distribution (α = 1)
+    x = @dice unit_gamma(DistFixedPoint{5, 3}, 0, -1.0)
+    a = pr(x)
 
-    # x = @dice unit_concave(DistFixedPoint{8, 5}, -3.0)
-    # a = pr(x)
-    # plot(a)
+    d = Truncated(Gamma(1, 1), 0.0, 1.0)
+    @test a[0] ≈ (cdf(d, 0.125) - cdf(d, 0))
+
+    x = @dice unit_gamma(DistFixedPoint{5, 3}, 0, -3.0)
+    a = pr(x)
+
+    d = Truncated(Gamma(1, 1/3), 0.0, 1.0)
+    @test a[0] ≈ (cdf(d, 0.125) - cdf(d, 0))
+
+    # Tests for Gamma distribution for (α = 2)
+    x = @dice unit_gamma(DistFixedPoint{5, 3}, 1, -1.0)
+    a = pr(x)
+    d = Truncated(Gamma(2, 1), 0.0, 1.0)
+    @test a[0] ≈ cdf(d, 0.125) - cdf(d, 0)
+
+    x = @dice unit_gamma(DistFixedPoint{5, 3}, 1, -3.0)
+    a = pr(x)
+    d = Truncated(Gamma(2, 1/3), 0.0, 1.0)
+    @test a[0] ≈ cdf(d, 0.125) - cdf(d, 0)
+
+    #Tests for shift_point_gamma
+    x = @dice shift_point_gamma(DistFixedPoint{5, 3}, 1, 1.0)
+    a = pr(x)
+    @test a[0.125]/a[0] ≈ 2exp(0.125)
+
+    x = @dice shift_point_gamma(DistFixedPoint{5, 3}, 2, -2.0)
+    a = pr(x)
+    @test a[0.125]/a[0] ≈ 4exp(-0.25)
+
+    # Building Gamma(3, 1)
+
+
+    
+    x = @dice unit_gamma(DistFixedPoint{5, 3}, 2, -2.0)
+    a = pr(x)[0.125]
+    d = Truncated(Gamma(3, 0.5), 0.0, 1.0)
+    @test a ≈ cdf(d, 0.25) - cdf(d, 0.125)
+
+    num_nodes(x.returnvalue)
+    num_nodes(x.observations)
+    
+    
+    
+
+
+    p11 = pr(@dice begin
+        a11 = unit_gamma(DistFixedPoint{5, 3}, 1, -1.0)
+        a12 = uniform(DistFixedPoint{5, 3}, 0.0, 1.0)
+        a12 < a11
+    end)
+
+    pr(@dice unit_exponential(DistFixedPoint{5, 3}, -1.0))
+
+
+    #Tests for Gamma distribution for (α = 3)
+
+    #TODO test for beta = 0
+    #TODO test for positive beta
+    #TODO test for alpha > 2
 # end
 

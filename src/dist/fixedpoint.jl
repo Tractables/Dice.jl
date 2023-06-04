@@ -1,6 +1,6 @@
 using Distributions
 
-export DistFixedPoint, continuous, unit_exponential, exponential, laplace, unit_gamma_one, unit_concave
+export DistFixedPoint, continuous, unit_exponential, exponential, laplace, unit_gamma, shift_point_gamma
 
 ##################################
 # types, structs, and constructors
@@ -361,27 +361,136 @@ function laplace(t::Type{DistFixedPoint{W, F}}, mean::Float64, scale::Float64, s
     ifelse(flip(0.5), e1, e2)
 end
 
-#TODO: write tests for the following function
-function unit_gamma_one(t::Type{DistFixedPoint{W, F}}, beta::Float64) where {W, F}
+#Helper function that returns exponentials 
+
+function shift_point_gamma(::Type{DistFixedPoint{W, F}}, alpha::Int, beta::Float64) where {W, F}
     DFiP = DistFixedPoint{W, F}
-    Y = unit_exponential(DFiP, beta)
-    Z = unit_exponential(DFiP, beta)
-    U = uniform(DFiP, 0.0, 1.0)
-    observe(U < Y)
-
-    t = (exp(beta*2.0^(-F))*(beta*2.0^(-F) - 1) + 1)*(1 - exp(beta)) / ((1 - exp(beta*2.0^(-F)))*(exp(beta) * (beta - 1) + 1))
-    # flip_parameter = beta*(2.0^(-F)*beta - 1) / (beta*(2.0^(-F)*beta - 1) + beta*2.0^(-F)*exp(beta*2.0^(-F)) - exp(beta*2.0^(-F)) + 1)
-
-    final = ifelse(flip(t), Z, Y)
-    final
+    if alpha == 0
+        unit_exponential(DFiP, beta)
+    else
+        x1 = shift_point_gamma(DFiP, alpha - 1, beta)
+        x2 = uniform(DFiP, 0.0, 1.0)
+        observe(ifelse(flip(1/(1 + 2.0^(-F))), x2 < x1, true))
+        x1
+    end
 end
 
-# TODO: Write tests for the following function
-function unit_concave(t::Type{DistFixedPoint{W, F}}, beta::Float64) where {W, F}
-    @assert beta <= 0
-    DFiP = DistFixedPoint{W, F}
-    Y = uniform(DFiP, 0.0, 1.0)
-    X = unit_exponential(DFiP, beta)
-    observe((X < Y)| prob_equals(X, Y))
-    Y
+#https://www.wolframalpha.com/input?i=sum+%28a*epsilon%29%5E2+e%5E%28beta+*+epsilon+*+a%29+from+a%3D0+to+a%3D2%5Eb-1
+function sum_qgp(β::Float64, ϵ::Float64)
+    ans = (1/ϵ - 1)^2 * exp(β*ϵ*(2 + 1/ϵ))
+    ans += (1/ϵ^2)*exp(β)
+    ans += (2/ϵ - 2/ϵ^2 + 1)*exp(β * (1 + ϵ))
+    ans -= exp(β*ϵ)
+    ans -= exp(2*β*ϵ)
+    ans *= ϵ^2
+    ans /= (exp(β * ϵ) - 1)^3
+    ans
 end
+
+#https://www.wolframalpha.com/input?i=sum+%28a*epsilon%29+*+e%5E%28beta+*+epsilon+*+a%29+from+a%3D0+to+a%3D2%5Eb-1
+function sum_agp(β::Float64, ϵ::Float64)
+    ans = (1/ϵ - 1)*exp(β*(1 + ϵ))
+    ans -= exp(β)/ϵ
+    ans += exp(β*ϵ)
+    ans *= ϵ
+    ans /= (exp(β*ϵ) - 1)^2
+    ans
+end
+
+#https://www.wolframalpha.com/input?i=sum+e%5E%28beta+*+epsilon+*+a%29+from+a%3D0+to+a%3D2%5Eb-1
+function sum_gp(β::Float64, ϵ::Float64)
+    ans = (exp(β) - 1) / (exp(β*ϵ) - 1)
+    ans
+end
+
+function n_unit_exponentials(::Type{DistFixedPoint{W, F}}, betas::Vector{Float64}) where {W, F}
+    DFiP = DistFixedPoint{W, F}
+    l = length(betas)
+    ans = Vector(undef, l)
+    for i in 1:l
+        ans[i] = Vector(undef, W)
+    end
+    for i in 1:W-F
+        for j in 1:l
+            ans[j][i] = false
+        end
+    end
+    for i in 1:F
+        for j in 1:l
+            ans[j][i + W - F] = flip(exp(betas[j]/2^i)/(1+exp(betas[j]/2^i)))
+        end
+    end
+    [DFiP(i) for i in ans] 
+end
+
+function unit_gamma(t::Type{DistFixedPoint{W, F}}, alpha::Int, beta::Float64; vec_arg=[]) where {W, F}
+    DFiP = DistFixedPoint{W, F}
+    if alpha == 0
+        unit_exponential(DFiP, beta)
+    elseif alpha == 1
+        if (length(vec_arg) != 0)
+            (Y, Z, U) = vec_arg
+        else
+            (Y, Z, U) = n_unit_exponentials(DFiP, [beta, beta, 0.0])
+        end
+        observe(U < Y)
+
+        t = (exp(beta*2.0^(-F))*(beta*2.0^(-F) - 1) + 1)*(1 - exp(beta)) / ((1 - exp(beta*2.0^(-F)))*(exp(beta) * (beta - 1) + 1))
+
+        final = ifelse(flip(t), Z, Y)
+        final
+    elseif alpha == 2
+        if (length(vec_arg) != 0)
+            vec_expo = vec_arg
+        else
+            vec_expo = n_unit_exponentials(DFiP, [beta, beta, 0.0, 0.0, beta, 0.0, beta])
+        end
+        
+        # Constructing [Y] | [X] < [Y]
+        x1 = unit_gamma(DFiP, alpha-1, beta, vec_arg=vec_expo[1:3])
+        x2 = vec_expo[4]
+        observe(x2 < x1)
+
+        # Constructing a*exp(βa)
+        x3 = vec_expo[5]
+        x4 = vec_expo[6]
+        observe(x4 < x3)
+
+        # Constructing exp(βa)
+        x6 = vec_expo[7]
+
+        ϵ = 1/2^F
+        β = beta
+
+        z1 = sum_agp(β, ϵ)
+        z2 = sum_gp(β, ϵ)
+
+        p11 = sum_qgp(β, ϵ) *  (exp(β*ϵ) - 1)/β
+        p11 += z1 * (ϵ*exp(β*ϵ)/β - exp(β*ϵ)/β^2 + 1/β^2)
+        p12 = exp(beta)/beta - 2*exp(beta)/beta^2 + 2*exp(beta)/beta^3 - 2/beta^3
+        p1 = p11/p12
+
+        p21 = ϵ * exp(β*ϵ) / β - exp(β * ϵ) /β^2 + 1/β^2
+        p22 = ϵ^2 * exp(β * ϵ) / β - 2*ϵ*exp(β * ϵ) / β^2 + 2*exp(β * ϵ) / β^3 - 2/β^3
+        p2 = (p21*z1) / ((p21*z1 + p22*z2))
+ 
+        ifelse(flip(p1),
+                    x1,
+                    (ifelse(flip(p2),
+                                x3,
+                                x6)))
+    else 
+        unit_exponential(DFiP, beta)
+    end
+
+end
+
+# # TODO: Write tests for the following function
+# function unit_concave(t::Type{DistFixedPoint{W, F}}, beta::Float64) where {W, F}
+#     @assert beta <= 0
+#     DFiP = DistFixedPoint{W, F}
+#     Y = uniform(DFiP, 0.0, 1.0)
+#     X = unit_exponential(DFiP, beta)
+#     observe((X < Y)| prob_equals(X, Y))
+#     Y
+# end
