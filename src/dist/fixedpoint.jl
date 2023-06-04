@@ -1,6 +1,8 @@
 using Distributions
+using SymPy
+@vars varint
 
-export DistFixedPoint, continuous, unit_exponential, exponential, laplace, unit_gamma, shift_point_gamma
+export DistFixedPoint, continuous, unit_exponential, exponential, laplace, unit_gamma, shift_point_gamma, sum_pgp
 
 ##################################
 # types, structs, and constructors
@@ -403,6 +405,22 @@ function sum_gp(β::Float64, ϵ::Float64)
     ans
 end
 
+function sum_pgp(β::Float64, ϵ::Float64, p::Int)
+    if p == 0
+        sum_gp(β, ϵ)
+    elseif p == 1
+        sum_agp(β, ϵ)
+    elseif p == 2
+        sum_qgp(β, ϵ)
+    else
+        sum = 0
+        for i = 0:ϵ:1-ϵ
+            sum += i^p * exp(β*i)
+        end
+        sum
+    end
+end
+
 function n_unit_exponentials(::Type{DistFixedPoint{W, F}}, betas::Vector{Float64}) where {W, F}
     DFiP = DistFixedPoint{W, F}
     l = length(betas)
@@ -423,8 +441,27 @@ function n_unit_exponentials(::Type{DistFixedPoint{W, F}}, betas::Vector{Float64
     [DFiP(i) for i in ans] 
 end
 
-function unit_gamma(t::Type{DistFixedPoint{W, F}}, alpha::Int, beta::Float64; vec_arg=[]) where {W, F}
+function exponential_for_gamma(α::Int, β::Float64)::Vector{Float64}
+    if α == 0
+        []
+    elseif α == 1
+        [β, β, 0.0]
+    else
+        v = []
+        for i in 1:α
+            v = vcat(vcat([β], zeros(i-1)), v)
+        end
+
+        vcat(vcat(exponential_for_gamma(α-1, β), [0.0]), v)
+    end
+end
+
+
+
+
+function unit_gamma(t::Type{DistFixedPoint{W, F}}, alpha::Int, beta::Float64; vec_arg=[], constants = [], discrete_bdd=[]) where {W, F}
     DFiP = DistFixedPoint{W, F}
+    @show DFiP
     if alpha == 0
         unit_exponential(DFiP, beta)
     elseif alpha == 1
@@ -436,10 +473,10 @@ function unit_gamma(t::Type{DistFixedPoint{W, F}}, alpha::Int, beta::Float64; ve
         observe(U < Y)
 
         t = (exp(beta*2.0^(-F))*(beta*2.0^(-F) - 1) + 1)*(1 - exp(beta)) / ((1 - exp(beta*2.0^(-F)))*(exp(beta) * (beta - 1) + 1))
-
+        @show 1-t
         final = ifelse(flip(t), Z, Y)
         final
-    elseif alpha == 2
+    elseif alpha == -1
         if (length(vec_arg) != 0)
             vec_expo = vec_arg
         else
@@ -447,7 +484,7 @@ function unit_gamma(t::Type{DistFixedPoint{W, F}}, alpha::Int, beta::Float64; ve
         end
         
         # Constructing [Y] | [X] < [Y]
-        x1 = unit_gamma(DFiP, alpha-1, beta, vec_arg=vec_expo[1:3])
+        x1 = unit_gamma(DFiP, alpha-1, beta, vec_arg=vec_expo[1:3], constants=constants[2 + α:length(constants)])
         x2 = vec_expo[4]
         observe(x2 < x1)
 
@@ -459,20 +496,37 @@ function unit_gamma(t::Type{DistFixedPoint{W, F}}, alpha::Int, beta::Float64; ve
         # Constructing exp(βa)
         x6 = vec_expo[7]
 
-        ϵ = 1/2^F
-        β = beta
+        # ϵ = 1/2^F
+        # β = beta
 
-        z1 = sum_agp(β, ϵ)
-        z2 = sum_gp(β, ϵ)
+        # z1 = sum_agp(β, ϵ)
+        # z2 = sum_gp(β, ϵ)
 
-        p11 = sum_qgp(β, ϵ) *  (exp(β*ϵ) - 1)/β
-        p11 += z1 * (ϵ*exp(β*ϵ)/β - exp(β*ϵ)/β^2 + 1/β^2)
-        p12 = exp(beta)/beta - 2*exp(beta)/beta^2 + 2*exp(beta)/beta^3 - 2/beta^3
-        p1 = p11/p12
+        # p11 = sum_qgp(β, ϵ) *  (exp(β*ϵ) - 1)/β
+        # p11 += z1 * (ϵ*exp(β*ϵ)/β - exp(β*ϵ)/β^2 + 1/β^2)
 
-        p21 = ϵ * exp(β*ϵ) / β - exp(β * ϵ) /β^2 + 1/β^2
-        p22 = ϵ^2 * exp(β * ϵ) / β - 2*ϵ*exp(β * ϵ) / β^2 + 2*exp(β * ϵ) / β^3 - 2/β^3
-        p2 = (p21*z1) / ((p21*z1 + p22*z2))
+        # @show sum_qgp(β, ϵ) *  (exp(β*ϵ) - 1)/β
+        # @show p11
+
+        # @show (exp(β*ϵ) - 1)/β, (ϵ*exp(β*ϵ)/β - exp(β*ϵ)/β^2 + 1/β^2)
+        # # p12 = f()
+        # # @show typeof(p12)
+        # p12 = constants[1]
+        # # p12 = exp(beta)/beta - 2*exp(beta)/beta^2 + 2*exp(beta)/beta^3 - 2/beta^3
+        # @show p12
+
+        # p1 = p11/p12
+        # @show p1
+
+        # p21 = ϵ * exp(β*ϵ) / β - exp(β * ϵ) /β^2 + 1/β^2
+        # p22 = ϵ^2 * exp(β * ϵ) / β - 2*ϵ*exp(β * ϵ) / β^2 + 2*exp(β * ϵ) / β^3 - 2/β^3
+        # p2 = (p21*z1) / ((p21*z1 + p22*z2))
+        # @show p21*z1, p22*z2
+
+        # @show p21, p22
+
+        p1 = constants[1]
+        p2 = constants[2]/(constants[2] + constants[3])
  
         ifelse(flip(p1),
                     x1,
@@ -480,11 +534,68 @@ function unit_gamma(t::Type{DistFixedPoint{W, F}}, alpha::Int, beta::Float64; ve
                                 x3,
                                 x6)))
     else 
-        unit_exponential(DFiP, beta)
+        @show discrete_bdd
+        α = alpha
+        β = beta
+        @show α, constants
+        if (length(vec_arg) != 0)
+            vec_expo = vec_arg
+        else
+            
+
+            discrete_bdd = Vector(undef, α)
+            count = 0
+            for i in α:-1:1
+                @show i
+                l = discrete(DistUInt{max(Int(ceil(log(i))), 1)}, normalize(constants[count + 2:count+i+1]))
+                count = count+i+1
+
+                discrete_bdd[α - i + 1] = l
+            end
+            vec_expo = n_unit_exponentials(DFiP, exponential_for_gamma(α, β))
+        end
+
+        @show "y1"
+
+        seq = Int(α*(α^2 + 5)/6)
+        x1 = unit_gamma(DFiP, alpha-1, beta, vec_arg=vec_expo[1:seq], constants=constants[α + 2:length(constants)], discrete_bdd=discrete_bdd[2:α])
+        x2 = vec_expo[seq + 1]
+        observe(x2 < x1)
+        @show "y2"
+
+        discrete_dist_vec = Vector(undef, α)
+        count = seq+2
+        for i in 1:α 
+            x = vec_expo[count]
+            count+=1
+            for j in 1:α - i
+                observe(vec_expo[count] < x)
+                count+=1
+            end
+            discrete_dist_vec[i] = x
+        end
+        @show "y3"
+        @show constants, 2, seq
+        # l = discrete(DistUInt{Int(ceil(log(α)))}, normalize(constants[2:α+1]))
+        l = discrete_bdd[1]
+        t = DFiP(0.0)
+        for i in 1:α
+            @show Int(ceil(log(α)))
+            @show typeof(l)
+            t = ifelse(prob_equals(l, DistUInt{Int(ceil(log(α)))}(i-1)), discrete_dist_vec[i], t)
+        end
+        @show "y4"
+        ifelse(flip(constants[1]), x1, t)
+
+        # unit_exponential(DFiP, beta)
     end
 
 end
 
+function normalize(v)
+    l = sum(v)
+    [i/l for i in v]    
+end
 # # TODO: Write tests for the following function
 # function unit_concave(t::Type{DistFixedPoint{W, F}}, beta::Float64) where {W, F}
 #     @assert beta <= 0

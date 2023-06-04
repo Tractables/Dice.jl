@@ -4,6 +4,7 @@ using Dice: Flip, ifelse, num_ir_nodes
 using Distributions
 using Plots
 using Revise
+using SymPy
 
 @testset "DistFixedPoint inference" begin
     x = DistFixedPoint{4, 2}([true, false, true, false]) # -1.5
@@ -325,7 +326,7 @@ end
     @test sum([pr(x)[i] == pr(y)[(i+1)/2] for i in -1:0.125:0.875]) == 16
 end
 
-# @testset "DistFixedPoint laplace, unit_gamma_one" begin
+@testset "DistFixedPoint laplace, unit_gamma_one" begin
     x = laplace(DistFixedPoint{10, 3}, 0.0, 1.0, -8.0, 8.0)
     y = exponential(DistFixedPoint{10, 3}, -1.0, 0.0, 8.0)
     @test pr(x)[1]*2 ≈ pr(y)[1]
@@ -369,32 +370,46 @@ end
     # Building Gamma(3, 1)
 
 
+
+
+
+    @vars varint, v2
+    function constants(α::Int, β::Float64, ϵ::Float64)
+        if α == 0
+            []
+        else
+            c1 = Float64(sympy.Poly(integrate(varint^α*exp(β*varint), (varint, 0, 1)), varint).coeffs().evalf()[1])
+            c2 = [Float64(i) for i in sympy.Poly(simplify(v2*integrate(varint^(α-1)*exp(β*varint), (varint, v2, v2 + ϵ))/exp(β*v2)), v2).coeffs()]
+            p1 = 0
+            for i in eachindex(c2)
+                p1 += sum_pgp(β, ϵ, length(c2) + 1 - i) * c2[i]
+            end
+            p1 /= c1
     
-    x = @dice unit_gamma(DistFixedPoint{5, 3}, 2, -2.0)
-    a = pr(x)[0.125]
-    d = Truncated(Gamma(3, 0.5), 0.0, 1.0)
-    @test a ≈ cdf(d, 0.25) - cdf(d, 0.125)
+            c2 = [Float64(i) for i in sympy.Poly(simplify(v2*integrate(varint^(α-1) * (varint - v2) *exp(β*varint), (varint, v2, v2 + ϵ))/exp(β*v2)), v2).coeffs()]
+            p2 = Vector(undef, α)
+            for i in eachindex(c2)
+                p2[i] = sum_pgp(β, ϵ, length(c2) - i) * c2[i]
+            end
+            vcat([p1], p2, constants(α-1, β, ϵ))
+        end
+    end
 
-    num_nodes(x.returnvalue)
-    num_nodes(x.observations)
+    cons = constants(1, -2.0, 0.0625)
+    x = @dice unit_gamma(DistFixedPoint{8, 4}, 1, -2.0, constants = cons)
+    a = pr(x)[0.0]
+    d = Truncated(Gamma(2, 0.5), 0.0, 1.0)
+    @test a ≈ cdf(d, 0.0625) - cdf(d, 0.0)
     
+
     
-    
 
 
-    p11 = pr(@dice begin
-        a11 = unit_gamma(DistFixedPoint{5, 3}, 1, -1.0)
-        a12 = uniform(DistFixedPoint{5, 3}, 0.0, 1.0)
-        a12 < a11
-    end)
-
-    pr(@dice unit_exponential(DistFixedPoint{5, 3}, -1.0))
 
 
-    #Tests for Gamma distribution for (α = 3)
 
     #TODO test for beta = 0
     #TODO test for positive beta
-    #TODO test for alpha > 2
-# end
+
+end
 
