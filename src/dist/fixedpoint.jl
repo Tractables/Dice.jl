@@ -1,6 +1,7 @@
 using Distributions
 using SymPy
 @vars varint
+@vars v2
 
 export DistFixedPoint, continuous, unit_exponential, exponential, laplace, unit_gamma, shift_point_gamma, sum_pgp
 
@@ -456,12 +457,34 @@ function exponential_for_gamma(α::Int, β::Float64)::Vector{Float64}
     end
 end
 
+function gamma_constants(α::Int, β::Float64, ϵ::Float64)
+    @vars varint
+    @vars v2
+    if α == 0
+        []
+    else
+        c1 = Float64(sympy.Poly(integrate(varint^α*exp(β*varint), (varint, 0, 1)), varint).coeffs().evalf()[1])
+        c2 = [Float64(i) for i in sympy.Poly(simplify(v2*integrate(varint^(α-1)*exp(β*varint), (varint, v2, v2 + ϵ))/exp(β*v2)), v2).coeffs()]
+        p1 = 0
+        for i in eachindex(c2)
+            p1 += sum_pgp(β, ϵ, length(c2) + 1 - i) * c2[i]
+        end
+        p1 /= c1
+
+        c2 = [Float64(i) for i in sympy.Poly(simplify(v2*integrate(varint^(α-1) * (varint - v2) *exp(β*varint), (varint, v2, v2 + ϵ))/exp(β*v2)), v2).coeffs()]
+        p2 = Vector(undef, α)
+        for i in eachindex(c2)
+            p2[i] = sum_pgp(β, ϵ, length(c2) - i) * c2[i]
+        end
+        vcat([p1], p2, gamma_constants(α-1, β, ϵ))
+    end
+end
+
 
 
 
 function unit_gamma(t::Type{DistFixedPoint{W, F}}, alpha::Int, beta::Float64; vec_arg=[], constants = [], discrete_bdd=[]) where {W, F}
     DFiP = DistFixedPoint{W, F}
-    @show DFiP
     if alpha == 0
         unit_exponential(DFiP, beta)
     elseif alpha == 1
@@ -473,95 +496,33 @@ function unit_gamma(t::Type{DistFixedPoint{W, F}}, alpha::Int, beta::Float64; ve
         observe(U < Y)
 
         t = (exp(beta*2.0^(-F))*(beta*2.0^(-F) - 1) + 1)*(1 - exp(beta)) / ((1 - exp(beta*2.0^(-F)))*(exp(beta) * (beta - 1) + 1))
-        @show 1-t
+        
         final = ifelse(flip(t), Z, Y)
         final
-    elseif alpha == -1
-        if (length(vec_arg) != 0)
-            vec_expo = vec_arg
-        else
-            vec_expo = n_unit_exponentials(DFiP, [beta, beta, 0.0, 0.0, beta, 0.0, beta])
-        end
-        
-        # Constructing [Y] | [X] < [Y]
-        x1 = unit_gamma(DFiP, alpha-1, beta, vec_arg=vec_expo[1:3], constants=constants[2 + α:length(constants)])
-        x2 = vec_expo[4]
-        observe(x2 < x1)
-
-        # Constructing a*exp(βa)
-        x3 = vec_expo[5]
-        x4 = vec_expo[6]
-        observe(x4 < x3)
-
-        # Constructing exp(βa)
-        x6 = vec_expo[7]
-
-        # ϵ = 1/2^F
-        # β = beta
-
-        # z1 = sum_agp(β, ϵ)
-        # z2 = sum_gp(β, ϵ)
-
-        # p11 = sum_qgp(β, ϵ) *  (exp(β*ϵ) - 1)/β
-        # p11 += z1 * (ϵ*exp(β*ϵ)/β - exp(β*ϵ)/β^2 + 1/β^2)
-
-        # @show sum_qgp(β, ϵ) *  (exp(β*ϵ) - 1)/β
-        # @show p11
-
-        # @show (exp(β*ϵ) - 1)/β, (ϵ*exp(β*ϵ)/β - exp(β*ϵ)/β^2 + 1/β^2)
-        # # p12 = f()
-        # # @show typeof(p12)
-        # p12 = constants[1]
-        # # p12 = exp(beta)/beta - 2*exp(beta)/beta^2 + 2*exp(beta)/beta^3 - 2/beta^3
-        # @show p12
-
-        # p1 = p11/p12
-        # @show p1
-
-        # p21 = ϵ * exp(β*ϵ) / β - exp(β * ϵ) /β^2 + 1/β^2
-        # p22 = ϵ^2 * exp(β * ϵ) / β - 2*ϵ*exp(β * ϵ) / β^2 + 2*exp(β * ϵ) / β^3 - 2/β^3
-        # p2 = (p21*z1) / ((p21*z1 + p22*z2))
-        # @show p21*z1, p22*z2
-
-        # @show p21, p22
-
-        p1 = constants[1]
-        p2 = constants[2]/(constants[2] + constants[3])
- 
-        ifelse(flip(p1),
-                    x1,
-                    (ifelse(flip(p2),
-                                x3,
-                                x6)))
     else 
-        @show discrete_bdd
         α = alpha
         β = beta
-        @show α, constants
         if (length(vec_arg) != 0)
             vec_expo = vec_arg
-        else
             
-
+        else
             discrete_bdd = Vector(undef, α)
+            constants = gamma_constants(alpha, beta, 1/2^F)
             count = 0
             for i in α:-1:1
-                @show i
                 l = discrete(DistUInt{max(Int(ceil(log(i))), 1)}, normalize(constants[count + 2:count+i+1]))
                 count = count+i+1
 
                 discrete_bdd[α - i + 1] = l
             end
             vec_expo = n_unit_exponentials(DFiP, exponential_for_gamma(α, β))
+            
         end
-
-        @show "y1"
 
         seq = Int(α*(α^2 + 5)/6)
         x1 = unit_gamma(DFiP, alpha-1, beta, vec_arg=vec_expo[1:seq], constants=constants[α + 2:length(constants)], discrete_bdd=discrete_bdd[2:α])
         x2 = vec_expo[seq + 1]
         observe(x2 < x1)
-        @show "y2"
 
         discrete_dist_vec = Vector(undef, α)
         count = seq+2
@@ -574,20 +535,15 @@ function unit_gamma(t::Type{DistFixedPoint{W, F}}, alpha::Int, beta::Float64; ve
             end
             discrete_dist_vec[i] = x
         end
-        @show "y3"
-        @show constants, 2, seq
+
         # l = discrete(DistUInt{Int(ceil(log(α)))}, normalize(constants[2:α+1]))
         l = discrete_bdd[1]
         t = DFiP(0.0)
         for i in 1:α
-            @show Int(ceil(log(α)))
-            @show typeof(l)
             t = ifelse(prob_equals(l, DistUInt{Int(ceil(log(α)))}(i-1)), discrete_dist_vec[i], t)
         end
-        @show "y4"
+        
         ifelse(flip(constants[1]), x1, t)
-
-        # unit_exponential(DFiP, beta)
     end
 
 end

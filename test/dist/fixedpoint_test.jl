@@ -5,6 +5,7 @@ using Distributions
 using Plots
 using Revise
 using SymPy
+using BenchmarkTools
 
 @testset "DistFixedPoint inference" begin
     x = DistFixedPoint{4, 2}([true, false, true, false]) # -1.5
@@ -367,47 +368,11 @@ end
     a = pr(x)
     @test a[0.125]/a[0] ≈ 4exp(-0.25)
 
-    # Building Gamma(3, 1)
-
-
-
-
-
-    @vars varint, v2
-    function constants(α::Int, β::Float64, ϵ::Float64)
-        if α == 0
-            []
-        else
-            c1 = Float64(sympy.Poly(integrate(varint^α*exp(β*varint), (varint, 0, 1)), varint).coeffs().evalf()[1])
-            c2 = [Float64(i) for i in sympy.Poly(simplify(v2*integrate(varint^(α-1)*exp(β*varint), (varint, v2, v2 + ϵ))/exp(β*v2)), v2).coeffs()]
-            p1 = 0
-            for i in eachindex(c2)
-                p1 += sum_pgp(β, ϵ, length(c2) + 1 - i) * c2[i]
-            end
-            p1 /= c1
-    
-            c2 = [Float64(i) for i in sympy.Poly(simplify(v2*integrate(varint^(α-1) * (varint - v2) *exp(β*varint), (varint, v2, v2 + ϵ))/exp(β*v2)), v2).coeffs()]
-            p2 = Vector(undef, α)
-            for i in eachindex(c2)
-                p2[i] = sum_pgp(β, ϵ, length(c2) - i) * c2[i]
-            end
-            vcat([p1], p2, constants(α-1, β, ϵ))
-        end
-    end
-
-    cons = constants(1, -2.0, 0.0625)
-    x = @dice unit_gamma(DistFixedPoint{8, 4}, 1, -2.0, constants = cons)
+    # Building Gamma(3, 0.5)
+    x = (@dice unit_gamma(DistFixedPoint{4, 3}, 2, -2.0, constants = []))
     a = pr(x)[0.0]
-    d = Truncated(Gamma(2, 0.5), 0.0, 1.0)
-    @test a ≈ cdf(d, 0.0625) - cdf(d, 0.0)
-    
-
-    
-
-
-
-
-
+    d = Truncated(Gamma(3, 0.5), 0.0, 1.0)
+    @test a ≈ cdf(d, 0.125) - cdf(d, 0.0)
     #TODO test for beta = 0
     #TODO test for positive beta
 
