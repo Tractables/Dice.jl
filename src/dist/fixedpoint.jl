@@ -472,10 +472,14 @@ function gamma_constants(α::Int, β::Float64, ϵ::Float64)
         p1 /= c1
 
         c2 = [Float64(i) for i in sympy.Poly(simplify(v2*integrate(varint^(α-1) * (varint - v2) *exp(β*varint), (varint, v2, v2 + ϵ))/exp(β*v2)), v2).coeffs()]
+        # @show c2
+        # @show sympy.Poly(simplify(v2*integrate(varint^(α-1) * (varint - v2) *exp(β*varint), (varint, v2, v2 + ϵ))/exp(β*v2)), v2)
         p2 = Vector(undef, α)
         for i in eachindex(c2)
             p2[i] = sum_pgp(β, ϵ, length(c2) - i) * c2[i]
         end
+        # @show p2
+        
         vcat([p1], p2, gamma_constants(α-1, β, ϵ))
     end
 end
@@ -510,6 +514,7 @@ function unit_gamma(t::Type{DistFixedPoint{W, F}}, alpha::Int, beta::Float64; ve
             constants = gamma_constants(alpha, beta, 1/2^F)
             count = 0
             for i in α:-1:1
+                @show constants
                 l = discrete(DistUInt{max(Int(ceil(log(i))), 1)}, normalize(constants[count + 2:count+i+1]))
                 count = count+i+1
 
