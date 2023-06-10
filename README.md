@@ -6,7 +6,7 @@
 A Julia prototype implementation of the Dice probabilistic programming language.
 See [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice)
 
-# ---
+# Arithmetic
 
 This is the repository and branch for "Scaling Integer Arithmetic in Probabilistic Programs" (link to come).
 
