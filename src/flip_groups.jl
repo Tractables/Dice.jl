@@ -2,13 +2,7 @@
 
 export flip_for, get_group_probs, reset_flips!, get_group_prob, propagate_group_probs!
 
-# Map flip to group of flips that much share a probability
-_flip_to_group = Dict{Dice.Flip, Any}()
 
-# Prob group to psp ("pre-sigmoid probability")
-_group_to_psp = Dict{Any, Float64}()
-
-inverse_sigmoid(x) = log(x / (1 - x))
 
 # flip_for(x) and flip_for(y) are always separate flips, but if x == y, then
 # they share their probability.
