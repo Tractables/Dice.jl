@@ -2,7 +2,6 @@
 using DirectedAcyclicGraphs
 using DataStructures: DefaultDict
 
-inverse_sigmoid(x) = log(x / (1 - x))
 
 abstract type ADNode <: DAG end
 
@@ -79,21 +78,23 @@ function compute(roots::Vector{ADNode})
     values
 end
 
-function diff(root_diffs::Dict{ADNode, Float}, values)
+function diff(root_diffs::Dict{ADNode, Float})
+    values = compute(collect(keys(root_diffs)))
     derivs = DefaultDict{ADNode, Float64}(0.)
     merge!(deriv, root_diffs)
     f(::Constant) = nothing
     f(::Parameter) = nothing
-    function f(x::Add)
-        f.x += derivs[x]
-        f.y += derivs[x]
+    function f(n::Add)
+        derivs[n.x] += derivs[n]
+        derivs[n.y] += derivs[n]
     end
-    function f(x::Mul)
-        f.x += derivs[x] * derivs[x.y]
-        f.y += derivs[x] * derivs[x.x]
+    function f(n::Mul)
+        derivs[n.x] += derivs[n] * values[n.y]
+        derivs[n.y] += derivs[n] * values[n.x]
     end
-    function f(x::Exp)
-        f.x += derivs[x] * 
+    function f(n::Exp)
+        deriv[n.x] += derivs[n] * values[n.y] * values[n.x] ^ (values[n.y] -1)
+        deriv[n.y] += derivs[n] * log(values[n.y]) * values[n.x] ^ values[n.y]
     end
     foreach_down(f, keys(root_diffs))
     deriv
