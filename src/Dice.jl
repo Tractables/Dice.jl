@@ -31,6 +31,7 @@ macro dice_ite(code)
 end
 
 include("dist/dist.jl")
+include("autodiff.jl")
 include("inference/inference.jl")
 include("flip_groups.jl")
 include("analysis/analysis.jl")

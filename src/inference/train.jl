@@ -85,6 +85,7 @@ function train_group_probs!(
         for x in bools_to_max
     ]
     for _ in 1:epochs
+        @show get_group_probs()
         step_flip_probs!(c, bdds_to_max, learning_rate)
     end
     nothing
