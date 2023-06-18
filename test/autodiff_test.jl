@@ -40,7 +40,6 @@ end
     clear_params!()
 
     
-    sigmoid(x) = 1 / (1 + exp(-x))
     psp = add_param!("psp", 0) # pre-sigmoid probability
     p = sigmoid(psp)
     # maximize logpr of flip(p) & flip(p) & !flip(p)

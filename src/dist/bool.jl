@@ -16,9 +16,11 @@ mutable struct Flip <: Dist{Bool}
     name
     
     Flip(p, name) = begin
-        @assert isnothing(p) || !isone(p) "Use `true` for deterministic flips"
-        @assert isnothing(p) || !iszero(p) "Use `false` for deterministic flips"
-        @assert isnothing(p) || 0 < p < 1 "Probabilities are between 0 and 1"
+        if p isa Real
+            @assert !isone(p) "Use `true` for deterministic flips"
+            @assert !iszero(p) "Use `false` for deterministic flips"
+            @assert 0 < p < 1 "Probabilities are between 0 and 1"
+        end
         global global_flip_id
         new(global_flip_id += 1, p, name)
     end
@@ -34,8 +36,8 @@ function Base.show(io::IO, f::Flip)
 end
 
 "Create a Bernoulli random variable with the given probability (a coin flip)"
-function flip(prob; name = nothing)
-    if !isnothing(prob)
+function flip(prob::Union{Real, ADNode}; name = nothing)
+    if prob isa Real
         iszero(prob) && return false
         isone(prob) && return true
     end

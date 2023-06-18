@@ -120,7 +120,7 @@ function compute(roots)
     vals
 end
 
-function differentiate(root_derivs::Dict{<:ADNode, <:Real})
+function differentiate(root_derivs::AbstractDict{<:ADNode, <:Real})
     vals = compute(collect(keys(root_derivs)))
     derivs = DefaultDict{ADNode, Real}(0)
     merge!(derivs, root_derivs)

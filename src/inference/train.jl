@@ -28,41 +28,46 @@ function step_params!(
     bdds_to_max::Vector{<:Tuple{CuddNode, CuddNode, <:Real}},
     learning_rate::AbstractFloat
 )
-    global _flip_to_adnode
     global _parameter_to_value
+    adnodes = Set([
+        f.prob
+        for f in values(c.level_to_flip)
+        if f.prob isa ADNode
+    ])
+    vals = compute(adnodes)
 
     # Find grad of logprobability w.r.t. each flip's probability
     w = WMC(c)
     grad = DefaultDict{Flip, Float64}(0.)
     for (bdd, obs_bdd, weight) in bdds_to_max
         isconstant(bdd) && continue
-        grad_here = grad_logprob(w, bdd)
-        add_scaled_dict!(grad_here, grad_logprob(w, obs_bdd), -1)
+        grad_here = grad_logprob(w, bdd, vals)
+        add_scaled_dict!(grad_here, grad_logprob(w, obs_bdd, vals), -1)
         add_scaled_dict!(grad, grad_here, weight)
     end
 
-    derivs = differentiate(
-        Dict(
-            get_flip_adnode(f) => d
-            for (f, d) in grad
-            if is_parameterized(f)
-        )
-    )
+    root_derivs = DefaultDict{ADNode, Real}(0.)
+    for (f, d) in grad
+        if f.prob isa ADNode
+            root_derivs[f.prob] += d
+        end
+    end
+
+    derivs = differentiate(root_derivs)
     for (adnode, d) in derivs
         if adnode isa Parameter
             _parameter_to_value[adnode] += d * learning_rate
-            println(adnode, ' ', d)
+            # println(adnode, ' ', d)
         end
     end
-    refresh_parameterized_flips!()
 end
 
 function train_params!(
-    bools_to_max::Vector{<:AnyBool},
+    bools_to_max::Vector{<:AnyBool};
     args...
 )
     train_params!(
-        [BoolToMax(b, true, 1) for b in bools_to_max],
+        [BoolToMax(b, true, 1) for b in bools_to_max];
         args...
     )
 end
@@ -70,7 +75,7 @@ end
 
 # Train group_to_psp to such that generate() approximates dataset's distribution
 function train_params!(
-    bools_to_max::Vector{BoolToMax},
+    bools_to_max::Vector{BoolToMax};
     epochs::Integer=2000,
     learning_rate::AbstractFloat=0.003,
 )
@@ -80,8 +85,6 @@ function train_params!(
         (compile(c, x.bool), compile(c, x.evid), x.weight)
         for x in bools_to_max
     ]
-
-    refresh_parameterized_flips!()
     for _ in 1:epochs
         step_params!(c, bdds_to_max, learning_rate)
     end
