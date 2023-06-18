@@ -3,16 +3,19 @@
 ################################################################################
 # Maximizing expression probabilities
 ################################################################################
-
+using Revise
 using Dice
 
 # What value for ? maximizes the probability of the following expression?
 #   flip(?) & flip(?) & !flip(?)
 
 # Let's check!
-x = flip_for("?") & flip_for("?") & !flip_for("?")
-train_group_probs!([x])
-get_group_probs()  # ? => 0.666667
+psp = add_param!("psp", 0)
+p = sigmoid(psp)
+x = flip(p) & flip(p) & !flip(p)
+train_params!([x])
+compute(p)[p]  # ? => 0.666667
+clear_params!()
 
 # What just happened?
 # - `flip_for(group)` registers a flip that we want to learn the probability of.
