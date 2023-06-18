@@ -1,43 +1,29 @@
-# Flips whose probability is shared via global dicts
+# Flips whose probabilities are parameterized by ADNodes
 
-export flip_for, get_group_probs, reset_flips!, get_group_prob, propagate_group_probs!
+export get_parameterized_flips, get_flip_adnode,
+    refresh_parameterized_flips!, clear_flips_and_params!, is_parameterized
 
 # Map flip to group of flips that much share a probability
-_flip_to_group = Dict{Dice.Flip, Any}()
- 
-# Prob group to psp ("pre-sigmoid probability")
-_group_to_psp = Dict{Any, Float64}()
+_flip_to_adnode = Dict{Dice.Flip, ADNode}()
 
-inverse_sigmoid(x) = log(x / (1 - x))
-
-# flip_for(x) and flip_for(y) are always separate flips, but if x == y, then
-# they share their probability.
-function flip_for(group, init_pr=0.5)
-    # pr = if haskey(_group_to_psp, group) sigmoid
-    f = flip(
-        sigmoid(
-            get!(_group_to_psp, group, inverse_sigmoid(init_pr))
-        ),
-        name="f_for($(group))")
-    _flip_to_group[f] = group
+function flip(p::ADNode)
+    f = flip(nothing)
+    _flip_to_adnode[f] = p
     f
 end
 
-function get_group_probs()
-	Dict(group => sigmoid(psp) for (group, psp) in _group_to_psp)
-end
+get_parameterized_flips() = keys(_flip_to_adnode)
+get_flip_adnode(f) = _flip_to_adnode[f]
+is_parameterized(f) = haskey(_flip_to_adnode, f)
 
-function get_group_prob(group)
-    sigmoid(_group_to_psp[group])
-end
-
-function reset_flips!()
-    global _flip_to_group = Dict{Dice.Flip, Any}()
-    global _group_to_psp = Dict{Any, Float64}()
-end
-
-function propagate_group_probs!()
-    for (f, group) in _flip_to_group
-        f.prob = sigmoid(_group_to_psp[group])
+function refresh_parameterized_flips!()
+    vals = compute(values(_flip_to_adnode))
+    for (f, adnode) in _flip_to_adnode
+        f.prob = vals[adnode]
     end
+end
+
+function clear_flips_and_params!()
+    clear_params!()
+    empty!(_flip_to_adnode)
 end

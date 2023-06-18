@@ -4,14 +4,14 @@ using Test
 @testset "test autodiff" begin
     x = add_param!("x", 5)
     e = x^2
-    values = compute([e])
+    vals = compute([e])
     derivs = differentiate(Dict(e => π))
     @test derivs[x] ≈ 10 * π
     clear_params!()
 
     x = add_param!("x", 5)
     e = 1/x
-    values = compute([e])
+    vals = compute([e])
     derivs = differentiate(Dict(e => π))
     @test derivs[x] ≈ -1/25 * π
     clear_params!()
@@ -23,9 +23,9 @@ end
     for _ in 1:100
         step_maximize!([e], 0.1)
     end
-    values = compute([e])
-    @test values[e] ≈ 7
-    @test values[x] ≈ 5
+    vals = compute([e])
+    @test vals[e] ≈ 7
+    @test vals[x] ≈ 5
     clear_params!()
 
     x = add_param!("x", 7)
@@ -34,9 +34,9 @@ end
     for i in 1:100
         step_maximize!([e], 0.01)
     end
-    values = compute([e])
-    @test abs(values[e]) < 0.001
-    @test values[x] * values[y] ≈ 5
+    vals = compute([e])
+    @test abs(vals[e]) < 0.001
+    @test vals[x] * vals[y] ≈ 5
     clear_params!()
 
     
@@ -48,7 +48,7 @@ end
     for i in 1:500
         step_maximize!([e], 0.1)
     end
-    values = compute([e])
-    @test values[p] ≈ 2/3
+    vals = compute([e])
+    @test vals[p] ≈ 2/3
     clear_params!()
 end

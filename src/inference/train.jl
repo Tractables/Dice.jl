@@ -1,4 +1,4 @@
-export step_flip_probs, train_group_probs!, BoolToMax, total_logprob
+export step_params!, train_params!, BoolToMax, total_logprob
 
 struct BoolToMax
     bool::AnyBool
@@ -12,10 +12,6 @@ function BoolToMax(bool; evidence=true, weight=1)
 end
 
 # Find the log-probabilities and the log-probability gradient of a BDD
-
-sigmoid(x) = 1 / (1 + exp(-x))
-deriv_sigmoid(x) = sigmoid(x) * (1 - sigmoid(x))
-
 function add_scaled_dict!(
     x::AbstractDict{<:Any, <:Real},
     y::AbstractDict{<:Any, <:Real},
@@ -27,14 +23,13 @@ function add_scaled_dict!(
 end
 
 # Step flip probs in direction of gradient to maximize likelihood of BDDS
-function step_flip_probs!(
+function step_params!(
     c::BDDCompiler,
     bdds_to_max::Vector{<:Tuple{CuddNode, CuddNode, <:Real}},
     learning_rate::AbstractFloat
 )
-    # Set flip probs according to groups
-    global _flip_to_group
-    global _group_to_psp
+    global _flip_to_adnode
+    global _parameter_to_value
 
     # Find grad of logprobability w.r.t. each flip's probability
     w = WMC(c)
@@ -46,26 +41,27 @@ function step_flip_probs!(
         add_scaled_dict!(grad, grad_here, weight)
     end
 
-    # Convert to grad of pre-sigmoid probabilities w.r.t. each group's
-    # pre-sigmoid probability. Let "f" denote a flip, "g" denote a group.
-    #
-    # δlogpr/δg.psp = Σ_{f∈g} δlogpr/δf.pr * δf.pr/δg.psp
-    #               = Σ_{f∈g} δlogpr/δf.pr * σ'(g.psp)        (as f.pr=σ(g.psp))
-    psp_grad_wrt_groups = DefaultDict{Any, Float64}(0.)
-    for (f, group) in _flip_to_group
-        haskey(grad, f) || continue
-        dpdf = grad[f]
-        psp_grad_wrt_groups[group] += dpdf * deriv_sigmoid(_group_to_psp[group])
+    derivs = differentiate(
+        Dict(
+            get_flip_adnode(f) => d
+            for (f, d) in grad
+            if is_parameterized(f)
+        )
+    )
+    for (adnode, d) in derivs
+        if adnode isa Parameter
+            _parameter_to_value[adnode] += d * learning_rate
+            println(adnode, ' ', d)
+        end
     end
-    add_scaled_dict!(_group_to_psp, psp_grad_wrt_groups, learning_rate)
-    propagate_group_probs!()
+    refresh_parameterized_flips!()
 end
 
-function train_group_probs!(
+function train_params!(
     bools_to_max::Vector{<:AnyBool},
     args...
 )
-    train_group_probs!(
+    train_params!(
         [BoolToMax(b, true, 1) for b in bools_to_max],
         args...
     )
@@ -73,7 +69,7 @@ end
 
 
 # Train group_to_psp to such that generate() approximates dataset's distribution
-function train_group_probs!(
+function train_params!(
     bools_to_max::Vector{BoolToMax},
     epochs::Integer=2000,
     learning_rate::AbstractFloat=0.003,
@@ -84,9 +80,10 @@ function train_group_probs!(
         (compile(c, x.bool), compile(c, x.evid), x.weight)
         for x in bools_to_max
     ]
+
+    refresh_parameterized_flips!()
     for _ in 1:epochs
-        @show get_group_probs()
-        step_flip_probs!(c, bdds_to_max, learning_rate)
+        step_params!(c, bdds_to_max, learning_rate)
     end
     nothing
 end

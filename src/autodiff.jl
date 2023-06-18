@@ -1,4 +1,5 @@
-export add_param!, clear_params!, value, compute, differentiate, step_maximize!
+export add_param!, clear_params!, value, compute, differentiate, step_maximize!,
+    set_param!, sigmoid, inverse_sigmoid
 
 using DirectedAcyclicGraphs
 import DirectedAcyclicGraphs: NodeType
@@ -18,6 +19,10 @@ function add_param!(s, value)
     @assert !haskey(_parameter_to_value, param)
     _parameter_to_value[param] = value
     param
+end
+
+function set_param_value!(param, value)
+    _parameter_to_value[param] = value
 end
 
 function clear_params!()
@@ -97,8 +102,8 @@ NodeType(::Type{Log}) = Inner()
 children(x::Log) = [x.x]
 Base.log(x::ADNode) = Log(x)
 
-function compute(roots::Vector{<:ADNode})
-    values = Dict{ADNode, Real}()
+function compute(roots)
+    vals = Dict{ADNode, Real}()
 
     fl(x::Parameter) = _parameter_to_value[x]
     fl(x::Constant) = x.value
@@ -110,13 +115,13 @@ function compute(roots::Vector{<:ADNode})
     # fi(x::Exp, call) = exp(call(x.x))
 
     for root in roots
-        haskey(values, root) || foldup(root, fl, fi, Real, values)
+        haskey(vals, root) || foldup(root, fl, fi, Real, vals)
     end
-    values
+    vals
 end
 
 function differentiate(root_derivs::Dict{<:ADNode, <:Real})
-    values = compute(collect(keys(root_derivs)))
+    vals = compute(collect(keys(root_derivs)))
     derivs = DefaultDict{ADNode, Real}(0)
     merge!(derivs, root_derivs)
     f(::Constant) = nothing
@@ -126,24 +131,24 @@ function differentiate(root_derivs::Dict{<:ADNode, <:Real})
         derivs[n.y] += derivs[n]
     end
     function f(n::Mul)
-        derivs[n.x] += derivs[n] * values[n.y]
-        derivs[n.y] += derivs[n] * values[n.x]
+        derivs[n.x] += derivs[n] * vals[n.y]
+        derivs[n.y] += derivs[n] * vals[n.x]
     end
     # function f(n::Div)
-    #     derivs[n.x] += derivs[n] / values[n.y]
-    #     derivs[n.y] -= derivs[n] * values[n.x] / values[n.y] ^ 2
+    #     derivs[n.x] += derivs[n] / vals[n.y]
+    #     derivs[n.y] -= derivs[n] * vals[n.x] / vals[n.y] ^ 2
     # end
     function f(n::Pow)
-        derivs[n.x] += derivs[n] * values[n.y] * values[n.x] ^ (values[n.y] - 1)
+        derivs[n.x] += derivs[n] * vals[n.y] * vals[n.x] ^ (vals[n.y] - 1)
         if !(n.y isa Constant)
-            derivs[n.y] += derivs[n] * log(values[n.x]) * values[n.x] ^ values[n.y]
+            derivs[n.y] += derivs[n] * log(vals[n.x]) * vals[n.x] ^ vals[n.y]
         end
     end
     function f(n::Log)
-        derivs[n.x] += derivs[n] / values[n.x]
+        derivs[n.x] += derivs[n] / vals[n.x]
     end
     # function f(n::Exp)
-    #     derivs[n.x] += derivs[n] * exp(values[n.x])
+    #     derivs[n.x] += derivs[n] * exp(vals[n.x])
     # end
     foreach_down(f, keys(root_derivs))
     derivs
@@ -186,3 +191,8 @@ function step_maximize!(roots, learning_rate)
         end
     end
 end
+
+
+sigmoid(x) = 1 / (1 + exp(-x))
+deriv_sigmoid(x) = sigmoid(x) * (1 - sigmoid(x))
+inverse_sigmoid(x) = log(x / (1 - x))
