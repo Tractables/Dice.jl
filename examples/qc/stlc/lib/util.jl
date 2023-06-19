@@ -5,26 +5,33 @@ end
 function shuffle_for(name, xs)
     # Hand-build shuffle for lengths 2 and 3
     @dice_ite if length(xs) == 2
-        if flip_for("$(name)_var_")
+        pr_var2 = register_weight!("$(name)_pr_var2")
+        if flip(pr_var2)
             [xs[1], xs[2]]
         else
             [xs[2], xs[1]]
         end
     elseif length(xs) == 3
-        if flip_for("$(name)_var", 1/3)
-            if flip_for("$(name)_var_app_val")
+        var = register_weight!("$(name)_var")
+        app = register_weight!("$(name)_app")
+        val = register_weight!("$(name)_abs")
+        if flip(var / (var + app + val))
+            # var is first
+            if flip(app / (app + val))
                 [xs[1], xs[2], xs[3]]  # var app val
             else
                 [xs[1], xs[3], xs[2]]  # var val app
             end
-        elseif flip_for("$(name)_app")
-            if flip_for("$(name)_app_var_val")
+        elseif flip(app / (app + val))
+            # app is first
+            if flip(var / (var + val))
                 [xs[2], xs[1], xs[3]]  # app var val
             else
                 [xs[2], xs[3], xs[1]]  # app val var
             end
         else
-            if flip_for("$(name)_val_var_app")
+            # val is first
+            if flip(var / (var + app))
                 [xs[3], xs[1], xs[2]]  # val var app
             else
                 [xs[3], xs[2], xs[1]]  # val app var

@@ -44,6 +44,7 @@ OUT_FILE_TAG = "param_by_sz=$(PARAMETERIZE_FLIP_GROUPS_BY_SZ),epochs=$(EPOCHS)"
 ############################
 
 LOG_PATH = joinpath(OUT_DIR, "log_" * OUT_FILE_TAG * ".log")
+LEARNING_CURVE_PATH = joinpath(OUT_DIR, "learning_curve_" * OUT_FILE_TAG * ".csv")
 
 mkpath(OUT_DIR)
 io = if LOG_TO_FILE
@@ -70,6 +71,11 @@ if LOG_TO_FILE
     println()
 end
 
+adnodes_of_interest = Dict{String, ADNode}()
+function register_weight!(s, init=0.5)
+    adnodes_of_interest[s] = add_unit_interval_param!(s, init)
+end
+
 println_flush(io, "Building $(METRIC)(gen_expr(...)) computation graph...")
 time_build = @elapsed begin
     e = gen_expr(
@@ -89,8 +95,9 @@ println(io)
 # Before
 ############################
 
-println(io, "Initial group probs:")
-show(io, get_group_probs())
+println(io, "Initial adnodes_of_interest:")
+vals = Dict{ADNode, Real}()
+show(io, Dict(s => compute(adnode, vals) for (s, adnode) in adnodes_of_interest))
 println(io)
 
 println_flush(io, "Inferring initial distribution...")
@@ -118,10 +125,15 @@ println(io)
 ############################
 
 println_flush(io, "Training...")
-time_train = @elapsed train_group_probs!(bools_to_max, EPOCHS)
+time_train = @elapsed learning_curve = train_params!(bools_to_max; epochs=EPOCHS)
 println(io, "  $(time_train) seconds")
 println(io)
 
+open(LEARNING_CURVE_PATH, "w") do file
+    for (epoch, logpr) in zip(0:EPOCHS, learning_curve)
+        println(file, "$(epoch)\t$(logpr)")
+    end
+end
 
 ############################
 # After
@@ -133,8 +145,9 @@ approx_improvement = round(exp(final_logprob - initial_logprob), digits=2)
 println(io, "Drawing the target dataset is $(approx_improvement)x more likely")
 println(io)
 
-println(io, "Learned group probs:")
-show(io, get_group_probs())
+println(io, "Learned adnodes_of_interest:")
+vals = Dict{ADNode, Real}()
+show(io, Dict(s => compute(adnode, vals) for (s, adnode) in adnodes_of_interest))
 println(io)
 
 println(io, "Inferring trained distribution...")

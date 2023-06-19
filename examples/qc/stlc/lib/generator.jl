@@ -37,7 +37,7 @@ end
 
 function gen_type(sz, by_sz)
     group = if by_sz "tysz$(sz)_" else "" end * "gen_type_tbool"
-    @dice_ite if sz == 0 || flip_for(group)
+    @dice_ite if sz == 0 || flip(register_weight!(group))
         DistTBool()
     else
         DistTFun(gen_type(sz - 1, by_sz), gen_type(sz - 1, by_sz))
