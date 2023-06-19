@@ -2,16 +2,17 @@ export sample
 using DirectedAcyclicGraphs: foldup
 
 function sample(x; evidence=true)
+    vals = Dict{ADNode, Real}()
     while true
         vcache = Dict()
         fl(n::Flip) = begin
             if !haskey(vcache, n)
-                prob = if haskey(_flip_to_group, n)
-                    sigmoid(_group_to_psp[_flip_to_group[n]])
+                p = if n.prob isa ADNode
+                    compute(n.prob, vals)
                 else
                     n.prob
                 end
-                vcache[n] = rand() < prob
+                vcache[n] = rand() < p
             end
             vcache[n]
         end

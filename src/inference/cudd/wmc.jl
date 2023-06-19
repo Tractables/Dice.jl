@@ -23,7 +23,7 @@ function logprob(w::WMC, x::CuddNode, vals=nothing)
     get!(w.cache, x) do
         f = w.c.level_to_flip[level(x)]
         p = if f.prob isa ADNode
-            vals[f.prob]
+            compute(f.prob, vals)
         else
             f.prob
         end
@@ -50,7 +50,7 @@ function grad_logprob(w::WMC, x::CuddNode, vals=nothing)::Dict{Flip, Float64}
         f = w.c.level_to_flip[i]
         fhi, flo = logprob(w, hi, vals), logprob(w, lo, vals)
         p = if f.prob isa ADNode
-            vals[f.prob]
+            compute(f.prob, vals)
         else
             f.prob
         end

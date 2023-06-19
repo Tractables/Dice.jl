@@ -1,8 +1,8 @@
 export add_param!, clear_params!, value, compute, differentiate, step_maximize!,
-    set_param!, sigmoid, inverse_sigmoid
+    set_param!, sigmoid, add_unit_interval_param!, ADNode
 
 using DirectedAcyclicGraphs
-import DirectedAcyclicGraphs: NodeType
+import DirectedAcyclicGraphs: NodeType, DAG, children
 using DataStructures: DefaultDict
 
 abstract type ADNode <: DAG end
@@ -14,11 +14,27 @@ NodeType(::Type{Parameter}) = Leaf()
 
 _parameter_to_value = Dict{Parameter, Real}()
 
-function add_param!(s, value)
+function add_param!(s, init_val, get_if_exists=true)
     param = Parameter(s)
+    if get_if_exists && haskey(_parameter_to_value, param)
+        return param
+    end
     @assert !haskey(_parameter_to_value, param)
-    _parameter_to_value[param] = value
+    _parameter_to_value[param] = init_val
     param
+end
+
+
+sigmoid(x) = 1 / (1 + exp(-x))
+# deriv_sigmoid(x) = sigmoid(x) * (1 - sigmoid(x))
+inverse_sigmoid(x) = log(x / (1 - x))
+
+function add_unit_interval_param!(s, init_val=0.5, get_if_exists=true)
+    @assert 0 < init_val < 1
+    before_sigmoid = add_param!(
+        "$(s)_before_sigmoid", inverse_sigmoid(init_val), get_if_exists
+    )
+    sigmoid(before_sigmoid)
 end
 
 function set_param_value!(param, value)
@@ -102,8 +118,8 @@ NodeType(::Type{Log}) = Inner()
 children(x::Log) = [x.x]
 Base.log(x::ADNode) = Log(x)
 
-function compute(roots)
-    vals = Dict{ADNode, Real}()
+function compute(root, vals=nothing)
+    isnothing(vals) && (vals = Dict{ADNode, Real}())
 
     fl(x::Parameter) = _parameter_to_value[x]
     fl(x::Constant) = x.value
@@ -114,14 +130,15 @@ function compute(roots)
     fi(x::Log, call) = log(call(x.x))
     # fi(x::Exp, call) = exp(call(x.x))
 
-    for root in roots
-        haskey(vals, root) || foldup(root, fl, fi, Real, vals)
-    end
-    vals
+    foldup(root, fl, fi, Real, vals)
 end
 
 function differentiate(root_derivs::AbstractDict{<:ADNode, <:Real})
-    vals = compute(collect(keys(root_derivs)))
+    vals = Dict{ADNode, Real}()
+    for root in keys(root_derivs)
+        compute(root, vals)
+    end
+    
     derivs = DefaultDict{ADNode, Real}(0)
     merge!(derivs, root_derivs)
     f(::Constant) = nothing
@@ -191,8 +208,3 @@ function step_maximize!(roots, learning_rate)
         end
     end
 end
-
-
-sigmoid(x) = 1 / (1 + exp(-x))
-deriv_sigmoid(x) = sigmoid(x) * (1 - sigmoid(x))
-inverse_sigmoid(x) = log(x / (1 - x))

@@ -29,15 +29,15 @@ function step_params!(
     learning_rate::AbstractFloat
 )
     global _parameter_to_value
-    adnodes = Set([
-        f.prob
-        for f in values(c.level_to_flip)
-        if f.prob isa ADNode
-    ])
-    vals = compute(adnodes)
+    w = WMC(c)
+
+    vals = Dict{ADNode, Real}()
+    antiloss = sum(
+        weight * (logprob(w, bdd, vals) - logprob(w, obs_bdd, vals))
+        for (bdd, obs_bdd, weight) in bdds_to_max
+    )
 
     # Find grad of logprobability w.r.t. each flip's probability
-    w = WMC(c)
     grad = DefaultDict{Flip, Float64}(0.)
     for (bdd, obs_bdd, weight) in bdds_to_max
         isconstant(bdd) && continue
@@ -53,13 +53,15 @@ function step_params!(
         end
     end
 
+    # Do update
     derivs = differentiate(root_derivs)
     for (adnode, d) in derivs
         if adnode isa Parameter
             _parameter_to_value[adnode] += d * learning_rate
-            # println(adnode, ' ', d)
         end
     end
+
+    antiloss
 end
 
 function train_params!(
@@ -85,10 +87,28 @@ function train_params!(
         (compile(c, x.bool), compile(c, x.evid), x.weight)
         for x in bools_to_max
     ]
+
+    antilosses = []
     for _ in 1:epochs
-        step_params!(c, bdds_to_max, learning_rate)
+        push!(
+            antilosses,
+            step_params!(c, bdds_to_max, learning_rate)
+        )
     end
-    nothing
+    push!(antilosses, total_logprob(c, bdds_to_max))
+    antilosses
+end
+
+function total_logprob(
+    c::BDDCompiler,
+    bdds_to_max::Vector{<:Tuple{CuddNode, CuddNode, <:Real}},
+)
+    vals = Dict{ADNode, Real}()
+    w = WMC(c)
+    sum(
+        weight * (logprob(w, bdd, vals) - logprob(w, obs_bdd, vals))
+        for (bdd, obs_bdd, weight) in bdds_to_max
+    )
 end
 
 function total_logprob(bools_to_max::Vector{BoolToMax})
@@ -96,7 +116,7 @@ function total_logprob(bools_to_max::Vector{BoolToMax})
         BDDCompiler(Iterators.flatten(map(x -> [x.bool, x.evid], bools_to_max)))
     )
     sum(
-        logprob(w, b.bool) - logprob(w, b.evid)
+        b.weight * (logprob(w, b.bool) - logprob(w, b.evid))
         for b in bools_to_max
     )
 end
