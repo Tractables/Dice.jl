@@ -26,7 +26,7 @@ EPOCHS = 2000  # epochs to train for
 
 LOG_TO_FILE = true
 
-TAG = "byflonly"
+TAG = "v1"
 
 ############################
 
