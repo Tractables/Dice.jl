@@ -54,7 +54,7 @@ end
 
 map(pieces) do piece
     linear = median(@benchmark p_linear = pr(continuous(DistFixedPoint{13, 6}, Normal(0, 1), $piece, -8.0, 8.0))).time
-    expo = median(@benchmark p_exp = pr(continuous(DistFixedPoint{13, 6}, Normal(0, 1), $piece, -8.0, 8.0, exp=true))).time
+    expo = median(@benchmark p_exp = pr(continuous(DistFixedPoint{13, 6}, Normal(0, 1), $piece, -8.0, 8.0, true))).time
 
     time_linear[Int(log2(piece))] = linear
     time_exp[Int(log2(piece))] = expo
@@ -63,8 +63,8 @@ end
 @show time_linear
 @show time_exp
 
-plot(time_linear, kld_linear, xaxis=:log, yaxis=:log, marker=:dot, label="linear", xlabel="time", ylabel="KLD", title="Accuracy-Time plot", annot=pieces)
-plot!(time_exp, kld_exp, xaxis=:log, yaxis=:log, marker=:dot, label="exponential")
+# plot(time_linear, kld_linear, xaxis=:log, yaxis=:log, marker=:dot, label="linear", xlabel="time", ylabel="KLD", title="Accuracy-Time plot", annot=pieces)
+plot(pieces, kld_exp, xaxis=:log, yaxis=:log, marker=:dot, legend=false, xlabel="Number of pieces", ylabel="KL divergence", xguidefontsize=20, yguidefontsize=20)
 savefig("continuous_experiments/linear_vs_exponential.png")
 
 # Plot gaussian

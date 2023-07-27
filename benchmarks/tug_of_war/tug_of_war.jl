@@ -38,3 +38,23 @@ io = open(string("./benchmarks/tug_of_war/results.txt"), "a")
 @show bits, pieces, p[1.0], t.time
 writedlm(io, [bits pieces p[1.0] t.time], ",")  
 close(io)
+
+# int<2> f[4] ~ bernoulli(1/3);
+# data int[4] match;
+
+# for (n in 1:5) {
+#     if (f[n] > 1) {
+#             match[n] = ((alice_skill - 2) > (bob_skill - 2));
+#     }
+#     else {
+#             match[n] = (alice_skill > bob_skill);
+#     }
+# }
+
+# int<2> f_final ~ bernoulli(1/3);
+# int match_final;
+# if (f_final > 1) {
+#         match_final = ((alice_skill - 2) > (bob_skill - 2));
+# } else {
+#         match_final = (alice_skill > bob_skill);
+# }

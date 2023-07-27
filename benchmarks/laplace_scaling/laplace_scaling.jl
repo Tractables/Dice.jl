@@ -5,6 +5,17 @@ using DelimitedFiles
 using BenchmarkTools
 using Plots
 
+
+bits = 0
+DFiP = DistFixedPoint{4 + bits, bits}
+s = 3.0
+distrib = laplace(DFiP, 0.0, s, -8.0, 8.0)
+# plot(pr(distrib))
+pr(prob_equals(distrib, DFiP(3*2^(-60))))
+
+exponential(DFiP, -3.0, 0.0, 8.0)
+
+
 # bits = 10
 # pieces = 1024
 # scale = 0.015625

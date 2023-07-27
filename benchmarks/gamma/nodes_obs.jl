@@ -21,5 +21,5 @@ for j in 1:3
     savefig("nodes_obs_"*string(j)*".png")
 end
 
-plot([i for i in 1:14], obs_bdd, yaxis=:log, labels=["yexp(y)" "y^2exp(y)" "y^3exp(y)"], legend=:topleft, xlabel="Bits", ylabel="BDD size", title="Size of observation BDDs")
-savefig("obs_bdd.png")
+plot([i for i in 1:14], obs_bdd, yaxis=:log, labels=["gamma(2, 1)" "gamma(3, 1)" "gamma(4, 1)"], legend=:topleft, xlabel="Bits", ylabel="BDD size", title="Size of observation BDDs", line = (:solid), label=false, linewidth=5, xguidefontsize=30, xtickfontsize=15, yguidefontsize=30, ytickfontsize=15)
+savefig("linear_scaling.pdf")

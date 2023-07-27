@@ -514,7 +514,7 @@ function unit_gamma(t::Type{DistFixedPoint{W, F}}, alpha::Int, beta::Float64; ve
             constants = gamma_constants(alpha, beta, 1/2^F)
             count = 0
             for i in α:-1:1
-                @show constants
+                # @show constants
                 l = discrete(DistUInt{max(Int(ceil(log(i))), 1)}, normalize(constants[count + 2:count+i+1]))
                 count = count+i+1
 

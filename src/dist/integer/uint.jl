@@ -19,6 +19,8 @@ DistUInt(bits::AbstractVector) =
     DistUInt{length(bits)}(bits)
 
 function DistUInt{W}(i::Integer) where W
+    # @show i
+    if i < 0 i = 0 end
     @assert i >= 0
     num_b = ndigits(i, base = 2)
     @assert num_b <= W "Int $i cannot be represented as a DistUInt{$W}"

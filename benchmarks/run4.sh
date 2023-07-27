@@ -4,6 +4,8 @@ do
     ul=$(($i + $4))
     for (( j=0; j<=$ul; j++))
     do
-	    timeout 9000s julia --project benchmarks/$3/$3.jl $i $((2**$j)) $5
+	    timeout 2000s julia --project benchmarks/$3/$3.jl $i $((2**$j)) $5
     done
 done
+
+# ./run4.sh 0 20 or 7 5 
