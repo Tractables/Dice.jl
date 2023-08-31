@@ -5,6 +5,7 @@ module Dice
 ##################################
 
 using MacroTools: prewalk, postwalk
+using PrecompileTools
 
 export @dice_ite
 
@@ -37,5 +38,13 @@ include("analysis/analysis.jl")
 include("dsl.jl")
 include("plot.jl")
 include("util.jl")
+
+# add precompile statements here - keep it lightweight for main features
+@compile_workload begin
+    code = @dice begin 
+        if flip(0.5) true else flip(0.1) end 
+    end
+    pr(code)
+end
 
 end # module
