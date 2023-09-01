@@ -24,7 +24,7 @@ compute(p)  # ~ 2/3
 # probabilities. For example, `x` could have been equivalently defined as:
 #   x = flip(p) & flip(p) & flip(1 - p)
 
-clear_params!()  # call before adding the params of the next "program"
+clear_vars!()  # call before adding the params of the next "program"
 
 # (For the curious) What's happening under the hood?
 # - TODO: discuss `ADNode`s, `compute`
@@ -47,7 +47,7 @@ compute(a)  # 0.9999666784828445
 compute(b)  # 0.9999666784828445
 compute(c)  # 3.332151715556398e-5
 
-clear_params!()
+clear_vars!()
 
 
 ################################################################################
@@ -69,7 +69,7 @@ compute(p) # ~ 1/3
 
 # We can also check how close we are by performing normal Dice inference.
 # Let's back up:
-clear_params!()
+clear_vars!()
 p = add_unit_interval_param!("p")
 b = @dice_ite if flip(p) true else flip(0.5) end
 
@@ -81,7 +81,7 @@ train_params!([prob_equals(b, x) for x in dataset]; learning_rate=0.1)
 # The program is true 2/3 of the time, as desired!
 pr(b)  # true  => 0.666667
 
-clear_params!()
+clear_vars!()
 p = add_unit_interval_param!("p")
 # As before, we can also constrain multiple flips to have the same probability
 #                                  vvvvvvv changed
@@ -90,7 +90,7 @@ train_params!([prob_equals(b, x) for x in dataset]; learning_rate=0.1)
 compute(p) # 0.42264973081037427
 pr(b)  # true => 0.666667
 
-clear_params!()
+clear_vars!()
 
 # Here's an example for ints. Lets say we build an int whose bits are flips such
 # that it has a uniform distribution over 0, 2, 4, ..., 14.
@@ -100,7 +100,7 @@ dataset = [DistUInt{4}(even) for even in 0:2:14]
 bools_to_maximize = [prob_equals(n, x) for x in dataset]
 train_params!(bools_to_maximize; learning_rate=0.1)
 [compute(prob) for prob in probs] # 0.5, 0.5, 0.5, 0.000626043181613181
-clear_params!()
+clear_vars!()
 
 ################################################################################
 ###################### TODO: update the rest of this file ######################

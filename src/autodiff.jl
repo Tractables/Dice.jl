@@ -1,4 +1,4 @@
-export add_param!, clear_params!, value, compute, differentiate, step_maximize!,
+export var!, clear_vars!, value, compute, differentiate, step_maximize!,
     set_param!, sigmoid, add_unit_interval_param!, ADNode
 
 using DirectedAcyclicGraphs
@@ -14,7 +14,7 @@ NodeType(::Type{Parameter}) = Leaf()
 
 _parameter_to_value = Dict{Parameter, Real}()
 
-function add_param!(s, init_val, get_if_exists=true)
+function var!(s, init_val, get_if_exists=true)
     param = Parameter(s)
     if get_if_exists && haskey(_parameter_to_value, param)
         return param
@@ -31,7 +31,7 @@ inverse_sigmoid(x) = log(x / (1 - x))
 
 function add_unit_interval_param!(s, init_val=0.5, get_if_exists=true)
     @assert 0 < init_val < 1
-    before_sigmoid = add_param!(
+    before_sigmoid = var!(
         "$(s)_before_sigmoid", inverse_sigmoid(init_val), get_if_exists
     )
     sigmoid(before_sigmoid)
@@ -41,7 +41,7 @@ function set_param_value!(param, value)
     _parameter_to_value[param] = value
 end
 
-function clear_params!()
+function clear_vars!()
     empty!(_parameter_to_value)
 end
 
