@@ -83,4 +83,12 @@ end
     dist = pr(cg)
     @test sum(values(dist)) ≈ 1
     @test dist[to_ast(["hi"])] ≈ 1
+
+    foo_bar = to_dist_list(["foo", "bar"])
+    cg = one_of(ifelse(flip(2/3), DistNil(DistString), foo_bar))
+    dist = pr(cg)
+    @test sum(values(dist)) == 1
+    @test dist[("None", [])] ≈ 2/3
+    @test dist[("Some", ["foo"])] ≈ 1/6
+    @test dist[("Some", ["bar"])] ≈ 1/6
 end
