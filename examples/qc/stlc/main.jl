@@ -73,7 +73,7 @@ end
 
 adnodes_of_interest = Dict{String, ADNode}()
 function register_weight!(s, init=0.5)
-    adnodes_of_interest[s] = add_unit_interval_param!(s, init)
+    adnodes_of_interest[s] = add_unit_interval_var!(s, init)
 end
 
 println_flush(io, "Building $(METRIC)(gen_expr(...)) computation graph...")

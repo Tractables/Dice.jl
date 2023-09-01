@@ -10,13 +10,13 @@ using Dice
 #   flip(?) & flip(?) & !flip(?)
 
 # Let's check!
-p = add_unit_interval_param!("p")
+p = add_unit_interval_var!("p")
 x = flip(p) & flip(p) & !flip(p)
 train_vars!([x])
 compute(p)  # ~ 2/3
 
 # What just happened?
-# - `add_unit_interval_param!()` registers a value in (0,1) to learn (init. 0.5)
+# - `add_unit_interval_var!()` registers a value in (0,1) to learn (init. 0.5)
 # - `train_vars!(bools)` performs maximum likelihood estimation to train
 #   the parameter to maximize the product of the probabilities of the bools
 
@@ -28,13 +28,13 @@ clear_vars!()  # call before adding the params of the next "program"
 
 # (For the curious) What's happening under the hood?
 # - TODO: discuss `ADNode`s, `compute`
-# - TODO: discuss how `add_unit_interval_param!`` wraps a param in `sigmoid`
+# - TODO: discuss how `add_unit_interval_var!`` wraps a param in `sigmoid`
 
 # If the flips above can have different groups, each can take on a
 # different probability.
-a = add_unit_interval_param!("a")
-b = add_unit_interval_param!("b")
-c = add_unit_interval_param!("c")
+a = add_unit_interval_var!("a")
+b = add_unit_interval_var!("b")
+c = add_unit_interval_var!("c")
 x = flip(a) & flip(b) & !flip(c)
 train_vars!([x])
 compute(a)  # 0.8419880024053406
@@ -56,7 +56,7 @@ clear_vars!()
 
 # Consider the following probabilistic program with holes. What probability
 # will cause x to be true 2/3 of the time?
-p = add_unit_interval_param!("p")
+p = add_unit_interval_var!("p")
 b = @dice_ite if flip(p) true else flip(0.5) end
 
 # We can match this dataset...
@@ -70,7 +70,7 @@ compute(p) # ~ 1/3
 # We can also check how close we are by performing normal Dice inference.
 # Let's back up:
 clear_vars!()
-p = add_unit_interval_param!("p")
+p = add_unit_interval_var!("p")
 b = @dice_ite if flip(p) true else flip(0.5) end
 
 # By default, unit interval params have a value of 0.5
@@ -82,7 +82,7 @@ train_vars!([prob_equals(b, x) for x in dataset]; learning_rate=0.1)
 pr(b)  # true  => 0.666667
 
 clear_vars!()
-p = add_unit_interval_param!("p")
+p = add_unit_interval_var!("p")
 # As before, we can also constrain multiple flips to have the same probability
 #                                  vvvvvvv changed
 b = @dice_ite if flip(p) true else flip(p) end
@@ -94,7 +94,7 @@ clear_vars!()
 
 # Here's an example for ints. Lets say we build an int whose bits are flips such
 # that it has a uniform distribution over 0, 2, 4, ..., 14.
-probs = [add_unit_interval_param!("b$(i)") for i in 1:4]
+probs = [add_unit_interval_var!("b$(i)") for i in 1:4]
 n = DistUInt{4}([flip(prob) for prob in probs])
 dataset = [DistUInt{4}(even) for even in 0:2:14]
 bools_to_maximize = [prob_equals(n, x) for x in dataset]
