@@ -1,5 +1,5 @@
 export var!, clear_vars!, value, compute, differentiate, step_maximize!,
-    set_param!, sigmoid, add_unit_interval_param!, ADNode
+    set_var!, sigmoid, add_unit_interval_var!, ADNode
 
 using DirectedAcyclicGraphs
 import DirectedAcyclicGraphs: NodeType, DAG, children
@@ -7,21 +7,21 @@ using DataStructures: DefaultDict
 
 abstract type ADNode <: DAG end
 
-struct Parameter <: ADNode
+struct Variable <: ADNode
     name::String
 end
-NodeType(::Type{Parameter}) = Leaf()
+NodeType(::Type{Variable}) = Leaf()
 
-_parameter_to_value = Dict{Parameter, Real}()
+_variable_to_value = Dict{Variable, Real}()
 
 function var!(s, init_val, get_if_exists=true)
-    param = Parameter(s)
-    if get_if_exists && haskey(_parameter_to_value, param)
-        return param
+    var = Variable(s)
+    if get_if_exists && haskey(_variable_to_value, var)
+        return var
     end
-    @assert !haskey(_parameter_to_value, param)
-    _parameter_to_value[param] = init_val
-    param
+    @assert !haskey(_variable_to_value, var)
+    _variable_to_value[var] = init_val
+    var
 end
 
 
@@ -29,7 +29,7 @@ sigmoid(x) = 1 / (1 + exp(-x))
 # deriv_sigmoid(x) = sigmoid(x) * (1 - sigmoid(x))
 inverse_sigmoid(x) = log(x / (1 - x))
 
-function add_unit_interval_param!(s, init_val=0.5, get_if_exists=true)
+function add_unit_interval_var!(s, init_val=0.5, get_if_exists=true)
     @assert 0 < init_val < 1
     before_sigmoid = var!(
         "$(s)_before_sigmoid", inverse_sigmoid(init_val), get_if_exists
@@ -37,12 +37,12 @@ function add_unit_interval_param!(s, init_val=0.5, get_if_exists=true)
     sigmoid(before_sigmoid)
 end
 
-function set_param_value!(param, value)
-    _parameter_to_value[param] = value
+function set_var_value!(var, value)
+    _variable_to_value[var] = value
 end
 
 function clear_vars!()
-    empty!(_parameter_to_value)
+    empty!(_variable_to_value)
 end
 
 struct Constant <: ADNode
@@ -50,7 +50,7 @@ struct Constant <: ADNode
 end
 NodeType(::Type{Constant}) = Leaf()
 
-Base.show(io::IO, x::Parameter) =  print(io, "Parameter($(x.name))")
+Base.show(io::IO, x::Variable) =  print(io, "Variable($(x.name))")
 Base.show(io::IO, x::Constant) = print(io, "Constant($(x.value))")
 
 struct Add <: ADNode
@@ -121,7 +121,7 @@ Base.log(x::ADNode) = Log(x)
 function compute(root, vals=nothing)
     isnothing(vals) && (vals = Dict{ADNode, Real}())
 
-    fl(x::Parameter) = _parameter_to_value[x]
+    fl(x::Variable) = _variable_to_value[x]
     fl(x::Constant) = x.value
     fi(x::Add, call) = call(x.x) + call(x.y)
     fi(x::Mul, call) = call(x.x) * call(x.y)
@@ -142,7 +142,7 @@ function differentiate(root_derivs::AbstractDict{<:ADNode, <:Real})
     derivs = DefaultDict{ADNode, Real}(0)
     merge!(derivs, root_derivs)
     f(::Constant) = nothing
-    f(::Parameter) = nothing
+    f(::Variable) = nothing
     function f(n::Add)
         derivs[n.x] += derivs[n]
         derivs[n.y] += derivs[n]
@@ -194,7 +194,7 @@ function foreach_down(f::Function, roots)
     end
 end
 
-value(x::Parameter) = _parameter_to_value[x]
+value(x::Variable) = _variable_to_value[x]
 
 function step_maximize!(roots, learning_rate)
     root_derivs = Dict(
@@ -203,8 +203,8 @@ function step_maximize!(roots, learning_rate)
     )
     derivs = differentiate(root_derivs)
     for (n, d) in derivs
-        if n isa Parameter
-            _parameter_to_value[n] += d * learning_rate
+        if n isa Variable
+            _variable_to_value[n] += d * learning_rate
         end
     end
 end

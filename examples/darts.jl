@@ -21,7 +21,7 @@ all_colors_receive_own_dart = all(
 )
 
 pr(all_colors_receive_own_dart) # 0.182
-train_params!([all_colors_receive_own_dart]; epochs=1000, learning_rate=0.3)
+train_vars!([all_colors_receive_own_dart]; epochs=1000, learning_rate=0.3)
 
 # We've increased the chance of success!
 pr(all_colors_receive_own_dart) # 0.234

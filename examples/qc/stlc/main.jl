@@ -125,7 +125,7 @@ println(io)
 ############################
 
 println_flush(io, "Training...")
-time_train = @elapsed learning_curve = train_params!(bools_to_max; epochs=EPOCHS)
+time_train = @elapsed learning_curve = train_vars!(bools_to_max; epochs=EPOCHS)
 println(io, "  $(time_train) seconds")
 println(io)
 

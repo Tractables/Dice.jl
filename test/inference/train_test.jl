@@ -5,14 +5,14 @@ using Dice
     # Basic test
     prob = add_unit_interval_param!("?")
     x = flip(prob) & flip(prob) & !flip(prob)
-    train_params!([x]; epochs=1000, learning_rate=0.3)
+    train_vars!([x]; epochs=1000, learning_rate=0.3)
     @test compute(prob) ≈ 2/3
     clear_vars!()
 
     # Try 1 - prob instead of negating the third flip
     prob = add_unit_interval_param!("?")
     x = flip(prob) & flip(prob) & flip(1 - prob)
-    train_params!([x]; epochs=1000, learning_rate=0.3)
+    train_vars!([x]; epochs=1000, learning_rate=0.3)
     @test compute(prob) ≈ 2/3
     clear_vars!()
 
@@ -21,7 +21,7 @@ using Dice
     b = @dice_ite if flip(prob) true else flip(0.5) end
     dataset = [true, true, false]
     bools_to_maximize = [prob_equals(b, x) for x in dataset]
-    train_params!(bools_to_maximize; epochs=1000, learning_rate=0.3)
+    train_vars!(bools_to_maximize; epochs=1000, learning_rate=0.3)
     @test compute(prob) ≈ 1/3
     clear_vars!()
 
@@ -30,7 +30,7 @@ using Dice
     b = add_unit_interval_param!("b")
     c = add_unit_interval_param!("c")
     x = flip(a) & flip(b) & !flip(c)
-    train_params!([x]; epochs=1000, learning_rate=0.3)
+    train_vars!([x]; epochs=1000, learning_rate=0.3)
     @test compute(a) > .99
     @test compute(b) > .99
     @test compute(c) < .01
@@ -43,15 +43,15 @@ end
     # Train for 200 epochs
     prob = add_unit_interval_param!("?")
     b = @dice_ite if flip(prob) true else flip(prob) end
-    train_params!([prob_equals(b, x) for x in dataset]; epochs=200)
+    train_vars!([prob_equals(b, x) for x in dataset]; epochs=200)
     p1 = pr(b)[true]
     clear_vars!()
     
     # Train for 100 epochs, twice
     prob = add_unit_interval_param!("?")
     b = @dice_ite if flip(prob) true else flip(prob) end
-    train_params!([prob_equals(b, x) for x in dataset]; epochs=100)
-    train_params!([prob_equals(b, x) for x in dataset]; epochs=100)
+    train_vars!([prob_equals(b, x) for x in dataset]; epochs=100)
+    train_vars!([prob_equals(b, x) for x in dataset]; epochs=100)
     p2 = pr(b)[true]
     clear_vars!()
 

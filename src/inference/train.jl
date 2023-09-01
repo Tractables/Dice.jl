@@ -1,4 +1,4 @@
-export step_params!, train_params!, BoolToMax, total_logprob
+export step_vars!, train_vars!, BoolToMax, total_logprob
 
 struct BoolToMax
     bool::AnyBool
@@ -23,12 +23,12 @@ function add_scaled_dict!(
 end
 
 # Step flip probs in direction of gradient to maximize likelihood of BDDS
-function step_params!(
+function step_vars!(
     c::BDDCompiler,
     bdds_to_max::Vector{<:Tuple{CuddNode, CuddNode, <:Real}},
     learning_rate::AbstractFloat
 )
-    global _parameter_to_value
+    global _variable_to_value
     w = WMC(c)
 
     vals = Dict{ADNode, Real}()
@@ -56,19 +56,19 @@ function step_params!(
     # Do update
     derivs = differentiate(root_derivs)
     for (adnode, d) in derivs
-        if adnode isa Parameter
-            _parameter_to_value[adnode] += d * learning_rate
+        if adnode isa Variable
+            _variable_to_value[adnode] += d * learning_rate
         end
     end
 
     antiloss
 end
 
-function train_params!(
+function train_vars!(
     bools_to_max::Vector{<:AnyBool};
     args...
 )
-    train_params!(
+    train_vars!(
         [BoolToMax(b, true, 1) for b in bools_to_max];
         args...
     )
@@ -76,7 +76,7 @@ end
 
 
 # Train group_to_psp to such that generate() approximates dataset's distribution
-function train_params!(
+function train_vars!(
     bools_to_max::Vector{BoolToMax};
     epochs::Integer=2000,
     learning_rate::AbstractFloat=0.003,
@@ -92,7 +92,7 @@ function train_params!(
     for _ in 1:epochs
         push!(
             antilosses,
-            step_params!(c, bdds_to_max, learning_rate)
+            step_vars!(c, bdds_to_max, learning_rate)
         )
     end
     push!(antilosses, total_logprob(c, bdds_to_max))

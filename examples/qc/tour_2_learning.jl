@@ -12,12 +12,12 @@ using Dice
 # Let's check!
 p = add_unit_interval_param!("p")
 x = flip(p) & flip(p) & !flip(p)
-train_params!([x])
+train_vars!([x])
 compute(p)  # ~ 2/3
 
 # What just happened?
 # - `add_unit_interval_param!()` registers a value in (0,1) to learn (init. 0.5)
-# - `train_params!(bools)` performs maximum likelihood estimation to train
+# - `train_vars!(bools)` performs maximum likelihood estimation to train
 #   the parameter to maximize the product of the probabilities of the bools
 
 # We can also perform computation on params before using them for flip
@@ -36,13 +36,13 @@ a = add_unit_interval_param!("a")
 b = add_unit_interval_param!("b")
 c = add_unit_interval_param!("c")
 x = flip(a) & flip(b) & !flip(c)
-train_params!([x])
+train_vars!([x])
 compute(a)  # 0.8419880024053406
 compute(b)  # 0.8419880024053406
 compute(c)  # 0.1580119975946594
 
 # We can also keep training to get closer to 1, 1, 0.
-train_params!([x]; epochs=10000, learning_rate=3.0)
+train_vars!([x]; epochs=10000, learning_rate=3.0)
 compute(a)  # 0.9999666784828445
 compute(b)  # 0.9999666784828445
 compute(c)  # 3.332151715556398e-5
@@ -64,7 +64,7 @@ dataset = [true, true, false]
 
 # ...by maximizing these distributions over bools:
 bools_to_maximize = [prob_equals(b, x) for x in dataset]
-train_params!(bools_to_maximize; learning_rate=0.1)
+train_vars!(bools_to_maximize; learning_rate=0.1)
 compute(p) # ~ 1/3
 
 # We can also check how close we are by performing normal Dice inference.
@@ -76,7 +76,7 @@ b = @dice_ite if flip(p) true else flip(0.5) end
 # By default, unit interval params have a value of 0.5
 pr(b)  # true => 0.75
 
-train_params!([prob_equals(b, x) for x in dataset]; learning_rate=0.1)
+train_vars!([prob_equals(b, x) for x in dataset]; learning_rate=0.1)
 
 # The program is true 2/3 of the time, as desired!
 pr(b)  # true  => 0.666667
@@ -86,7 +86,7 @@ p = add_unit_interval_param!("p")
 # As before, we can also constrain multiple flips to have the same probability
 #                                  vvvvvvv changed
 b = @dice_ite if flip(p) true else flip(p) end
-train_params!([prob_equals(b, x) for x in dataset]; learning_rate=0.1)
+train_vars!([prob_equals(b, x) for x in dataset]; learning_rate=0.1)
 compute(p) # 0.42264973081037427
 pr(b)  # true => 0.666667
 
@@ -98,7 +98,7 @@ probs = [add_unit_interval_param!("b$(i)") for i in 1:4]
 n = DistUInt{4}([flip(prob) for prob in probs])
 dataset = [DistUInt{4}(even) for even in 0:2:14]
 bools_to_maximize = [prob_equals(n, x) for x in dataset]
-train_params!(bools_to_maximize; learning_rate=0.1)
+train_vars!(bools_to_maximize; learning_rate=0.1)
 [compute(prob) for prob in probs] # 0.5, 0.5, 0.5, 0.000626043181613181
 clear_vars!()
 
