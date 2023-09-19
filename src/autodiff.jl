@@ -49,6 +49,7 @@ struct Constant <: ADNode
     value::Real
 end
 NodeType(::Type{Constant}) = Leaf()
+Base.zero(::ADNode) = Constant(0)
 
 Base.show(io::IO, x::Variable) =  print(io, "Variable($(x.name))")
 Base.show(io::IO, x::Constant) = print(io, "Constant($(x.value))")
