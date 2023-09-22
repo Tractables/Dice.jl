@@ -27,7 +27,8 @@ mutable struct Flip <: Dist{Bool}
 end
 
 function Base.show(io::IO, f::Flip)
-    p = round(f.prob, digits=2)
+    p = f.prob
+    p = if p isa AbstractFloat round(p, digits=2) else p end
     if isnothing(f.name)
         print(io, "$(typeof(f))($(f.global_id),$(p))")
     else
