@@ -31,7 +31,7 @@ function step_vars!(
     global _variable_to_value
     w = WMC(c)
 
-    vals = Dict{ADNode, Real}()
+    vals = Dict{ADNode, ADNodeCompatible}()
     antiloss = sum(
         weight * (logprob(w, bdd, vals) - logprob(w, obs_bdd, vals))
         for (bdd, obs_bdd, weight) in bdds_to_max
@@ -46,7 +46,7 @@ function step_vars!(
         add_scaled_dict!(grad, grad_here, weight)
     end
 
-    root_derivs = DefaultDict{ADNode, Real}(0.)
+    root_derivs = DefaultDict{ADNode, ADNodeCompatible}(0.)
     for (f, d) in grad
         if f.prob isa ADNode
             root_derivs[f.prob] += d
@@ -56,8 +56,8 @@ function step_vars!(
     # Do update
     derivs = differentiate(root_derivs)
     for (adnode, d) in derivs
-        if adnode isa Variable
-            _variable_to_value[adnode] += d * learning_rate
+        if adnode isa Var
+            _variable_to_value[adnode.name] += d * learning_rate
         end
     end
 
@@ -103,7 +103,7 @@ function total_logprob(
     c::BDDCompiler,
     bdds_to_max::Vector{<:Tuple{CuddNode, CuddNode, <:Real}},
 )
-    vals = Dict{ADNode, Real}()
+    vals = Dict{ADNode, ADNodeCompatible}()
     w = WMC(c)
     sum(
         weight * (logprob(w, bdd, vals) - logprob(w, obs_bdd, vals))
