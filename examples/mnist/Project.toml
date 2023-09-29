@@ -1,0 +1,4 @@
+[deps]
+CUDD = "345a2cc7-28d8-58b2-abdf-cff77ea7d7f1"
+Dice = "94eeadfc-1ba6-40b7-9ed8-dee71557d525"
+MLDatasets = "eb30cadb-4394-5ae3-aed4-317e484a6458"
