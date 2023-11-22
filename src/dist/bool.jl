@@ -1,5 +1,5 @@
 
-export flip, prob_equals, AnyBool, expectation, variance, flip_prob!
+export flip, prob_equals, AnyBool, expectation, variance, foreach_node, flip_prob!
 
 ##################################
 # types, structs, and constructors
@@ -21,6 +21,15 @@ mutable struct Flip <: Dist{Bool}
         @assert isnan(p) || 0 < p < 1 "Probabilities are between 0 and 1 (or undefined as NaN)"
         global global_flip_id
         new(global_flip_id += 1, p, name)
+    end
+end
+
+function Base.show(io::IO, f::Flip)
+    p = round(f.prob, digits=2)
+    if isnothing(f.name)
+        print(io, "$(typeof(f))($(f.global_id),$(p))")
+    else
+        print(io, "$(typeof(f))($(f.global_id),$(p),$(f.name))")
     end
 end
 
@@ -148,6 +157,18 @@ end
 
 "Test whether at least two of three arguments are true"
 atleast_two(x,y,z) = (x & y) | ((x | y) & z)
+
+function foreach_node(f, roots)
+    seen = Set{Dist{Bool}}()
+    for root in roots
+        root isa Bool && continue
+        foreach(root) do node
+            node ∈ seen && return
+            push!(seen, node)
+            f(node)
+        end
+    end
+end
 
 ##################################
 # inference

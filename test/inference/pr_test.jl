@@ -87,14 +87,14 @@ end
     # changing the reordering type is doing something.
 
     pr(x, algo=Cudd(debug_info_ref=debug_info_ref))
-    @assert debug_info_ref[].num_nodes == 196604
+    @test debug_info_ref[].num_nodes == 196604
 
     pr(x, algo=Cudd(CUDD.CUDD_REORDER_NONE, debug_info_ref))
-    @assert debug_info_ref[].num_nodes == 196604
+    @test debug_info_ref[].num_nodes == 196604
 
     pr(x, algo=Cudd(CUDD.CUDD_REORDER_SIFT, debug_info_ref))
-    @assert debug_info_ref[].num_nodes == 160
+    @test debug_info_ref[].num_nodes == 160
 
     pr(x, algo=Cudd(CUDD.CUDD_REORDER_WINDOW2, debug_info_ref))
-    @assert debug_info_ref[].num_nodes == 129820
+    @test debug_info_ref[].num_nodes == 129820
 end

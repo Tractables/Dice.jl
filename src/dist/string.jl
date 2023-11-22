@@ -45,30 +45,12 @@ end
 Base.:+(s::DistString, c::Char) =
     s + DistChar(c)
 
-# Divide-and-conquer getindex
-function Base.getindex(d::DistString, idx::DistUInt32)
-    (idx < DistUInt32(1) || idx > d.len) && error("String out of bounds access")
-    function helper(i, v)
-        if i > length(idx.bits)
-            d.chars[v]
-        else
-            if idx.bits[i]
-                helper(i+1, v+2^(length(idx.bits) - i))
-            else
-                helper(i+1, v)
-            end
-        end
-    end
-    return helper(1, 0)
-end
-
-function Base.getindex(s::DistString, idx::Int)
-    (idx < 1 || DistUInt32(idx) > s.len) && error("String out of bounds access")
-    s.chars[idx]
+function Base.getindex(d::DistString, idx)
+    prob_getindex(DistVector(d.chars, d.len), idx)
 end
 
 function prob_setindex(s::DistString, idx::DistUInt32, c::DistChar)
-    (idx < DistUInt32(1) || idx > s.len) && error("String out of bounds access")
+    errorcheck() & (idx < DistUInt32(1) || idx > s.len) && error("String out of bounds access")
     chars = collect(s.chars)
     for i = 1:length(s.chars)
         chars[i] = ifelse(prob_equals(idx, DistUInt32(i)), c, s.chars[i])
@@ -77,7 +59,7 @@ function prob_setindex(s::DistString, idx::DistUInt32, c::DistChar)
 end
 
 function prob_setindex(s::DistString, idx::Int, c::DistChar)
-    (idx < 1 || DistUInt32(idx) > s.len) && error("String out of bounds access")
+    errorcheck() & (idx < 1 || DistUInt32(idx) > s.len) && error("String out of bounds access")
     chars = collect(s.chars)
     chars[idx] = c
     DistString(chars, s.len)
@@ -91,8 +73,8 @@ function Base.:+(s::DistString, t::DistString)
     len = s.len + t.len
     chars = Vector(undef, length(s.chars) + length(t.chars))
     for i = 1:length(chars)
-        chars[i] = if DistUInt32(i) <= s.len
-            s[i]
+        chars[i] = @dice_ite if DistUInt32(i) <= s.len
+            s[DistUInt32(i)]
         else
             if DistUInt32(i) <= s.len + t.len
                 t[DistUInt32(i) - s.len]

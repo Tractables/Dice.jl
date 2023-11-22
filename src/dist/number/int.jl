@@ -6,7 +6,7 @@ export DistInt, DistInt8, DistInt16, DistInt32, unsigned_abs
 ##################################
 
 "A signed random W-bit integer in two's complement"
-struct DistInt{W} <: Dist{Int}
+struct DistInt{W} <: Dist{Integer}
     number::DistUInt{W}
 end
 

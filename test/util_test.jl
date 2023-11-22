@@ -61,3 +61,46 @@ end
     @test reverse(l) == sort(l)
 
 end
+
+@testset "print_tree" begin
+    io = IOBuffer()
+
+    leaf = ("Leaf", [])
+    print_tree(leaf, io=io)
+    @test String(take!(io)) == "Leaf\n"
+
+    tree =
+        ("Branch", [
+            1,
+            ("Branch", [
+                2,
+                ("Branch", [
+                    3,
+                    ("Leaf", []),
+                    ("Leaf", [])
+                ]),
+                ("Branch", [
+                    4,
+                    ("Leaf", []),
+                    ("Leaf", [])
+                ])
+            ]),
+            ("Leaf", [])
+        ])
+    print_tree(tree, io=io)
+    @test String(take!(io)) == """
+        Branch
+        ├── 1
+        ├── Branch
+        │   ├── 2
+        │   ├── Branch
+        │   │   ├── 3
+        │   │   ├── Leaf
+        │   │   └── Leaf
+        │   └── Branch
+        │       ├── 4
+        │       ├── Leaf
+        │       └── Leaf
+        └── Leaf
+        """
+end
