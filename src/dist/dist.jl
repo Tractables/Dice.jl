@@ -22,9 +22,9 @@ end
 
 include("bool.jl")
 include("misc.jl")
-include("integer/uint.jl")
-include("integer/int.jl")
-include("fixedpoint.jl")
+include("number/uint.jl")
+include("number/int.jl")
+include("number/fix.jl")
 include("char.jl")
 include("string.jl")
 include("enum.jl")

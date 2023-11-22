@@ -20,7 +20,7 @@ model {
 precision = 1
 num_pieces = 16
 
-DFiP = DistFixedPoint{20+precision, precision}
+DFiP = DistFix{20+precision, precision}
 
 ys = DFiP.([12.137416259163952, 26.6903103048018, 38.5878897957254, 30.4930667829189, 39.2801876119107,
             20.4174324499166, 25.7777563431966, 11.5919826316299, 37.3521894576722, 42.3729512347165,
@@ -37,7 +37,7 @@ code = @dice begin
   sigma = uniform(DFiP, 0.0, 64.0)
 
   for y in ys
-    unitgaussian = continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
+    unitgaussian = bitblast(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
     gaussian = sigma * unitgaussian + beta
     observe(gaussian == y)
   end

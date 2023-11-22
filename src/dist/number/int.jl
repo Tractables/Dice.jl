@@ -25,7 +25,7 @@ const DistInt16 = DistInt{16}
 const DistInt32= DistInt{32}
 
 function uniform(::Type{DistInt{W}}, n = W) where W
-    DistInt{W}(uniform(DistUInt{W}, n).bits)
+    DistInt{W}(uniform(DistUInt{W}, n))
 end
 
 function uniform(::Type{DistInt{W}}, start::Int, stop::Int; kwargs...) where W
@@ -122,6 +122,14 @@ function Base.ifelse(cond::Dist{Bool}, then::DistInt{W}, elze::DistInt{W}) where
     DistInt{W}(ifelse(cond, then.number, elze.number))
 end
 
+function Base.:(<<)(x::DistInt{W}, n) where W
+    DistInt{W}(x.number << n)
+end
+
+function Base.:(>>)(x::DistInt{W}, n) where W
+    DistInt{W}(x.number >> n)
+end
+
 "Compute the absolute value of a `DistInt{W}` as a `DistUInt{W}`"
 function unsigned_abs(x::DistInt{W}) where W
     xp = ifelse(signbit(x), ~x.number, x.number)
@@ -132,8 +140,8 @@ end
 Base.signbit(x::DistInt) = 
     x.number.bits[1]
 
-function drop_bits(::Type{DistInt{W}}, x::DistInt) where W
-    DistInt{W}(drop_bits(DistUInt{W}, x.number))
+function drop_bits(::Type{DistInt{W}}, x::DistInt; last=false) where W
+    DistInt{W}(drop_bits(DistUInt{W}, x.number; last))
 end
 
 function Base.:(+)(x::DistInt{W}, y::DistInt{W}) where W
@@ -179,7 +187,7 @@ function Base.:(/)(x::DistInt{W}, y::DistInt{W}) where W
         iszero(y) && error("division by zero")
         prob_equals(x, DistInt{W}(-2^(W-1))) & prob_equals(y, DistInt{W}(-1)) && error("integer overflow")
     end
-    uz =  unsigned_abs(x) /  unsigned_abs(y)
+    uz = unsigned_abs(x) / unsigned_abs(y)
     z = convert(DistInt{W+1}, uz) # increase bit width to represent abs of min value
     z = ifelse(xor(signbit(x), signbit(y)), -z, z)
     convert(DistInt{W}, z)

@@ -61,7 +61,7 @@ end
 
 "Construct a uniform random number by offsetting a 0-based uniform"
 function uniform_arith(::Type{DistUInt{W}}, start, stop) where W
-    @assert BigInt(0) <= BigInt(start) < BigInt(stop) <= BigInt(2) ^ BigInt(W) "Failed 0 <= $(start) < $(stop) <= 2^$(W)"
+    @assert 0 <= start < stop <= 2 ^ W # don't make this BigInt or the dynamo will fail
     DInt = DistUInt{W}
     if start > 0
         DInt(start) + uniform_arith(DInt, 0, stop-start)
@@ -187,9 +187,10 @@ function Base.convert(::Type{DistUInt{W2}}, x::DistUInt{W1}) where {W1,W2}
 end
 
 "Reduce bit width by dropping the leading bits, whatever they are"
-function drop_bits(::Type{DistUInt{W2}}, x::DistUInt{W1}) where {W1,W2}
+function drop_bits(::Type{DistUInt{W2}}, x::DistUInt{W1}; last=false) where {W1,W2}
     @assert W2 <= W1
-    DistUInt{W2}(x.bits[W1-W2+1:end])
+    bits = last ? x.bits[1:W2] : x.bits[W1-W2+1:end]
+    DistUInt{W2}(bits)
 end
 
 Base.zero(::Type{T}) where {T<:Dist{<:Number}} = T(0)
@@ -318,8 +319,8 @@ function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W
 end
 
 function Base.:(<<)(x::DistUInt{W}, n) where W
-    @assert 0 <= n <= W
-    DistUInt{W}(vcat(x.bits[n+1:end], falses(n)))
+    @assert 0 <= n
+    DistUInt{W}(vcat(x.bits[n+1:end], falses(min(n,W))))
 end
 
 function Base.:(*)(x::DistUInt{W}, y::DistUInt{W}) where W

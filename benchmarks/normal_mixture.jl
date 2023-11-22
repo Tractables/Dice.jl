@@ -3,7 +3,7 @@ using Pkg; Pkg.activate(@__DIR__)
 using Dice, Distributions
 
 precision = 2
-DFiP = DistFixedPoint{9+precision, precision}
+DFiP = DistFix{9+precision, precision}
 num_pieces = 8
 truncation = (-8.0, 8.0)
 mult_arg = false
@@ -13,12 +13,12 @@ ys = DFiP.([10.0787617156523, -9.51866467444093, 9.73922587306449, 11.5662681883
 code = @dice begin
   
   theta = uniform(DFiP, 0.0, 1.0)
-  mu1 = continuous(DFiP, Normal(-10, 1), num_pieces, -18.0, -2.0)
-  mu2 = continuous(DFiP, Normal(10, 1), num_pieces, 2.0, 18.0)
+  mu1 = bitblast(DFiP, Normal(-10, 1), num_pieces, -18.0, -2.0)
+  mu2 = bitblast(DFiP, Normal(10, 1), num_pieces, 2.0, 18.0)
 
   for y in ys
-    c1 = continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
-    c2 = continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
+    c1 = bitblast(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
+    c2 = bitblast(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
     a = if uniform(DFiP, 0.0, 1.0) < theta mu1 + c1 else mu2 + c2 end
     observe(a == y)
   end
