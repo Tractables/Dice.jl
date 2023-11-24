@@ -1,4 +1,5 @@
-export condprobs, condprob, Cudd, CuddDebugInfo, ProbException, allobservations, JointQuery, returnvalue, expectation, variance
+export condprobs, condprob, Cudd, CuddDebugInfo, ProbException, allobservations, JointQuery, 
+    returnvalue, expectation, variance, kldivergence, tvdistance, entropy
 
 using DataStructures: DefaultDict, DefaultOrderedDict, OrderedDict
 
@@ -44,9 +45,35 @@ function pr(queries...; kwargs...)
         for (world, p) in worlds
             dist[frombits(query, world)] += p
         end
-        DefaultOrderedDict(0., OrderedDict(sort(collect(dist); by=last, rev=true)))  # by decreasing probability
+        DefaultOrderedDict(0., OrderedDict(sort(collect(dist); 
+                                by= t -> (-t[2], t[1]))))  # by decreasing probability
     end
     length(queries) == 1 ? ans[1] : ans
+end
+
+"""Compute the entropy of a random variable"""
+function entropy(p)
+    -sum(pr(p)) do (_, prob)
+        prob * log(prob)
+    end
+end
+
+"""Compute the KL-divergence between two random variables"""
+function kldivergence(p, q)
+    prp = pr(p)
+    prq = pr(q)
+    sum(prp) do (value, prob)
+        prob * (log(prob) - log(prq[value]))
+    end
+end
+
+"""Compute the total variation distance between two random variables"""
+function tvdistance(p, q)
+    prp = pr(p)
+    prq = pr(q)
+    0.5 * sum(keys(prp) ∪ keys(prq)) do value
+        abs(prp[value] - prq[value])
+    end
 end
 
 ##################################
