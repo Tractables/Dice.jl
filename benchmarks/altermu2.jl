@@ -3,9 +3,9 @@
 using Dice, Distributions
 using Revise
 
-precision = 0
-DFiP = DistFixedPoint{6+precision, precision}
-num_pieces = 256
+precision = 5
+DFiP = DistFix{6+precision, precision}
+num_pieces = 64
 truncation = (-8.0, 8.0)
 add_arg = false
 exp_arg = false

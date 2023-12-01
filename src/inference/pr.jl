@@ -22,13 +22,16 @@ function get_world_probs(w::WMC, query::JointQuery, evidence::AnyBool)
     evid_bdd = compile(w.c, evidence)
     evid_logp = logprob(w, evid_bdd)
 
+    # get values of adnodes
+    vals = Dict{ADNode, Real}()
+
     # TODO should query bits be made unique to save time?    
     states = Pair{LinkedList, Float64}[]
 
     function rec(context::CuddNode, state, rembits)
         issat(w.c.mgr, context) || return
         if isempty(rembits)
-            p = exp(logprob(w, context) - evid_logp)
+            p = exp(logprob(w, context, vals) - evid_logp)
             push!(states, state => p)
         else
             head = rembits[1]

@@ -1,5 +1,5 @@
 
-export flip, prob_equals, AnyBool, expectation, variance, foreach_node
+export flip, prob_equals, AnyBool, expectation, variance, foreach_node, flip_prob!
 
 ##################################
 # types, structs, and constructors
@@ -11,16 +11,18 @@ const AnyBool = Union{Dist{Bool}, Bool}
 global_flip_id::Int64 = one(Int64)
 
 mutable struct Flip <: Dist{Bool}
-    global_id::Int
+    const global_id::Int
     prob
-    name
+    const name
     
-    Flip(p::Real, name) = begin
-        @assert !isone(p) "Use `true` for deterministic flips"
-        @assert !iszero(p) "Use `false` for deterministic flips"
-        @assert isnothing(p) || 0 < p < 1 "Probabilities are between 0 and 1"
+    Flip(prob, name) = begin
+        if prob isa Real
+            @assert !isone(prob) "Use `true` for deterministic flips"
+            @assert !iszero(prob) "Use `false` for deterministic flips"
+            @assert isnan(prob) || 0 < prob < 1 "Probabilities are between 0 and 1 (or undefined as NaN)"
+        end
         global global_flip_id
-        new(global_flip_id += 1, p, name)
+        new(global_flip_id += 1, prob, name)
     end
 end
 
@@ -34,10 +36,22 @@ function Base.show(io::IO, f::Flip)
 end
 
 "Create a Bernoulli random variable with the given probability (a coin flip)"
-function flip(prob::Real; name = nothing)
+function flip(prob = NaN16; name = nothing)
+    if prob isa Real
+        iszero(prob) && return false
+        isone(prob) && return true
+    end
+    Flip(prob, name)
+end
+
+"Set the probability of a flip that has not been assigned a probability yet"
+function flip_prob!(f::Flip, prob::Real)
+    @assert isnan(f.prob)
     iszero(prob) && return false
     isone(prob) && return true
-    Flip(prob, name)
+    @assert isnan(prob) || 0 < prob < 1 "Probabilities are between 0 and 1 (or undefined as NaN), not $prob"
+    f.prob = prob
+    f
 end
 
 abstract type DistBoolOp <: Dist{Bool} end

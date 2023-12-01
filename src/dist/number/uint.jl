@@ -1,5 +1,6 @@
 export DistUInt, DistUInt8, DistUInt16, DistUInt32, DistUInt64,
-    uniform, uniform_arith, uniform_ite, triangle, discrete, unif, unif_obs
+    uniform, uniform_arith, uniform_ite, triangle, discrete, unif, unif_obs,
+    flip_reciprocal
 
 ##################################
 # types, structs, and constructors
@@ -62,7 +63,7 @@ end
 
 "Construct a uniform random number by offsetting a 0-based uniform"
 function uniform_arith(::Type{DistUInt{W}}, start, stop) where W
-    @assert BigInt(0) <= BigInt(start) < BigInt(stop) <= BigInt(2) ^ BigInt(W)
+    @assert 0 <= start < stop <= 2 ^ W # don't make this BigInt or the dynamo will fail
     DInt = DistUInt{W}
     if start > 0
         DInt(start) + uniform_arith(DInt, 0, stop-start)
@@ -188,9 +189,10 @@ function Base.convert(::Type{DistUInt{W2}}, x::DistUInt{W1}) where {W1,W2}
 end
 
 "Reduce bit width by dropping the leading bits, whatever they are"
-function drop_bits(::Type{DistUInt{W2}}, x::DistUInt{W1}) where {W1,W2}
+function drop_bits(::Type{DistUInt{W2}}, x::DistUInt{W1}; last=false) where {W1,W2}
     @assert W2 <= W1
-    DistUInt{W2}(x.bits[W1-W2+1:end])
+    bits = last ? x.bits[1:W2] : x.bits[W1-W2+1:end]
+    DistUInt{W2}(bits)
 end
 
 Base.zero(::Type{T}) where {T<:Dist{<:Number}} = T(0)
@@ -319,8 +321,8 @@ function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W
 end
 
 function Base.:(<<)(x::DistUInt{W}, n) where W
-    @assert 0 <= n <= W
-    DistUInt{W}(vcat(x.bits[n+1:end], falses(n)))
+    @assert 0 <= n
+    DistUInt{W}(vcat(x.bits[n+1:end], falses(min(n,W))))
 end
 
 function Base.:(*)(x::DistUInt{W}, y::DistUInt{W}) where W
@@ -407,32 +409,12 @@ function minvalue(x::DistUInt{W}) where W
     v
 end
 
-function primes_at_most(n::Int)
-    isprime = [true for _ in 1:n]
-    for p in 2:trunc(Int, sqrt(n))
-        if isprime[p]
-            for i in p^2:p:n
-                isprime[i] = false
-            end
-        end
-    end
-    [i for i in 2:n if isprime[i]]
-end
-
-function floor_log(base, n)
-    v = 1
-    pow = 0
-    while v * base <= n
-        v *= base
-        pow += 1
-    end
-    pow
-end
-
 # Uniform from lo to hi, inclusive
 function unif(lo::DistUInt{W}, hi::DistUInt{W}) where W
     lo + unif_half(hi + DistUInt32(1) - lo)
 end
+
+flip_reciprocal(x) = prob_equals(DistUInt32(0), unif_half(x))
 
 # (x, evid) where x is uniform from lo to hi, inclusive, given evid
 function unif_obs(lo::DistUInt{W}, hi::DistUInt{W}) where W
@@ -442,14 +424,37 @@ end
 
 # Uniform from 0 to hi, exclusive
 function unif_half(hi::DistUInt{W})::DistUInt{W} where W
-    max_hi = maxvalue(hi)
-    max_hi > 60 && error("Likely to time out")
-    prod = BigInt(1)
-    for prime in primes_at_most(max_hi)
-        prod *= prime ^ floor_log(prime, max_hi)
-    end
-    # prod = lcm([k for k in keys(pr(hi))])
+    # max_hi = maxvalue(hi)
+    # max_hi > 60 && error("Likely to time out")
+    # prod = BigInt(1)
+    # for prime in primes_at_most(max_hi)
+    #     prod *= prime ^ floor_log(prime, max_hi)
+    # end
+
+    # note: # could use path cond too
+    prod = lcm([BigInt(x) for x in keys(pr(hi)) if x != 0])
     u = uniform(DistUInt{ndigits(prod, base=2)}, 0, prod)
     rem_trunc(u, hi)
 end
 
+# function primes_at_most(n::Int)
+#     isprime = [true for _ in 1:n]
+#     for p in 2:trunc(Int, sqrt(n))
+#         if isprime[p]
+#             for i in p^2:p:n
+#                 isprime[i] = false
+#             end
+#         end
+#     end
+#     [i for i in 2:n if isprime[i]]
+# end
+
+# function floor_log(base, n)
+#     v = 1
+#     pow = 0
+#     while v * base <= n
+#         v *= base
+#         pow += 1
+#     end
+#     pow
+# end

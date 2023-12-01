@@ -2,7 +2,7 @@ using Pkg; Pkg.activate(@__DIR__)
 using Dice, Distributions
 
 precision = 0
-DFiP = DistFixedPoint{10+precision, precision}
+DFiP = DistFix{10+precision, precision}
 num_pieces = 2
 truncation = (-8.0, 8.0)
 add_arg = false
@@ -17,8 +17,8 @@ code = @dice begin
     for datapt in data
         x += v
         v += a
-        a += continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
-        o = x + continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
+        a += bitblast(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
+        o = x + bitblast(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
         observe(o == datapt)
     end
     x

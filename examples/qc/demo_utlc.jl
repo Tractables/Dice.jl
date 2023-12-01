@@ -2,7 +2,6 @@
 
 using Dice
 include("lib/dist_utlc.jl")     # DistVar, DistApp, DistAbs, utlc_str
-include("lib/sample.jl")        # sample
 
 function gen_name()
     @dice_ite if flip(1/3)
@@ -45,16 +44,15 @@ INIT_SIZE = 4
 DATASET = [DistUInt32(x) for x in 0:INIT_SIZE]
 
 # Use Dice to build computation graph
-gen() = gen_utlc(INIT_SIZE, DistVector{DistString}())
-
-e_depth = ast_depth(gen())
+e = gen_utlc(INIT_SIZE, DistVector{DistString}())
+e_depth = ast_depth(e)
 
 println("Distribution before training:")
 display(pr(e_depth))
 println()
 
 bools_to_maximize = [prob_equals(e_depth, x) for x in DATASET]
-train_group_probs!(bools_to_maximize)
+train_group_probs!(bools_to_maximize, 1000, 0.3)  # epochs and lr
 
 # Done!
 println("Learned flip probability for each size:")
@@ -62,13 +60,12 @@ display(get_group_probs())
 println()
 
 println("Distribution over depths after training:")
-e = gen()
-display(pr(ast_depth(e)))
+display(pr(e_depth))
 println()
 
 println("A few sampled exprs:")
 for _ in 1:10
-    expr = sample((e, true))
+    expr = sample(e)
     println(utlc_str(expr))
     # println(print_tree(expr))  # concrete AST
 end

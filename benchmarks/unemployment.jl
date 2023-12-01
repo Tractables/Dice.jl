@@ -18,7 +18,7 @@ model {
 =#
 
 precision = 2
-DFiP = DistFixedPoint{9+precision, precision}
+DFiP = DistFix{9+precision, precision}
 num_pieces = 8
 truncation = (-8.0, 8.0)
 mult_arg = false
@@ -43,8 +43,8 @@ y_lags = DFiP.([4.3838241041638, 3.93442675489932, 7.57050890065729, 4.536830340
 
 code = @dice begin
   
-  beta1 = continuous(DFiP, Normal(1, 1), num_pieces, -7.0, 9.0)
-  beta2 = continuous(DFiP, Normal(1, 1), num_pieces, -7.0, 9.0)
+  beta1 = bitblast(DFiP, Normal(1, 1), num_pieces, -7.0, 9.0)
+  beta2 = bitblast(DFiP, Normal(1, 1), num_pieces, -7.0, 9.0)
   sigma = uniform(DFiP, 0.0, 15.99999)
 
   for (y, y_lag) in zip(ys, y_lags)

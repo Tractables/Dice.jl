@@ -6,15 +6,15 @@ export gaussian_observe, gaussian_observe_enumerate, parametrised_flip, print_tr
 # Gaussian observation methods
 ##################################
 
-function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::Float64, std::Float64, datapt::DistFixedPoint{W, F}; exp=false) where W where F
+function gaussian_observe(::Type{DistFix{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::Float64, std::Float64, datapt::DistFix{W, F}; exp=false) where W where F
     @assert std > 0
-    g = continuous(DistFixedPoint{W, F}, Normal(mean, std), pieces, start, stop, exp)
+    g = bitblast(DistFix{W, F}, Normal(mean, std), pieces, start, stop, exp)
     observe(g == datapt)
 end
 
-function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::DistFixedPoint{W, F}, std::Float64, datapt::DistFixedPoint{W, F}; add=true, exp=false) where W where F
+function gaussian_observe(::Type{DistFix{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::DistFix{W, F}, std::Float64, datapt::DistFix{W, F}; add=true, exp=false) where W where F
     @assert std > 0
-    g = continuous(DistFixedPoint{W, F}, Normal(0.0, std), pieces, start, stop, exp)
+    g = bitblast(DistFix{W, F}, Normal(0.0, std), pieces, start, stop, exp)
     
     if add
         observe(g + mean == datapt)
@@ -23,12 +23,12 @@ function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Floa
     end
 end
 
-function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::Float64, std::DistFixedPoint{W, F}, datapt::DistFixedPoint{W, F}; mult=true, exp=false) where W where F
+function gaussian_observe(::Type{DistFix{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::Float64, std::DistFix{W, F}, datapt::DistFix{W, F}; mult=true, exp=false) where W where F
     #TODO: implement isless for fixedpoint to support the following check
-    # isneg = DistFixedPoint{W, F}(0.0) < std
+    # isneg = DistFix{W, F}(0.0) < std
     # isneg && error("Standard deviation <= 0")
 
-    g = continuous(DistFixedPoint{W, F}, Normal(mean, 1.0), pieces, start, stop, exp)
+    g = bitblast(DistFix{W, F}, Normal(mean, 1.0), pieces, start, stop, exp)
     if mult
         observe(g*std == datapt)
     else
@@ -36,12 +36,12 @@ function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Floa
     end
 end
 
-function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::DistFixedPoint{W, F}, std::DistFixedPoint{W, F}, datapt::DistFixedPoint{W, F}; mult=true, exp=false) where W where F
+function gaussian_observe(::Type{DistFix{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::DistFix{W, F}, std::DistFix{W, F}, datapt::DistFix{W, F}; mult=true, exp=false) where W where F
     #TODO: implement isless for fixedpoint to support the following check
-    # isneg = DistFixedPoint{W, F}(0.0) < std
+    # isneg = DistFix{W, F}(0.0) < std
     # isneg && error("Standard deviation <= 0")
 
-    g = continuous(DistFixedPoint{W, F}, Normal(0.0, 1.0), pieces, start, stop, exp)
+    g = bitblast(DistFix{W, F}, Normal(0.0, 1.0), pieces, start, stop, exp)
     if mult
         observe(g*std + mean == datapt)
     else
@@ -50,11 +50,11 @@ function gaussian_observe(::Type{DistFixedPoint{W, F}}, pieces::Int, start::Floa
 end
 
 # This API is for combining all the observations
-function gaussian_observe_enumerate(::Type{DistFixedPoint{W, F}}, data, mu, sigma) where W where F
+function gaussian_observe_enumerate(::Type{DistFix{W, F}}, data, mu, sigma) where W where F
     for i = -2^(W-F-1):1/2^F:2^(W-F-1) - 1/2^F
         for j =  1/2^F:1/2^F:2^(W-F-1) - 1/2^F
             flip_prob = reduce(*, [pdf(Normal(i, j), datapt)/(10^5) for datapt in data])
-            a = prob_equals(mu, DistFixedPoint{W, F}(i)) & prob_equals(sigma, DistFixedPoint{W, F}(j))
+            a = prob_equals(mu, DistFix{W, F}(i)) & prob_equals(sigma, DistFix{W, F}(j))
             # TODO: Verify the observed expression
             observe(!a | (a & flip(flip_prob)))
         end
@@ -62,19 +62,28 @@ function gaussian_observe_enumerate(::Type{DistFixedPoint{W, F}}, data, mu, sigm
 end
 
 #We might want to inline this to interleave bits of p and new uniform
-function parametrised_flip(p::DistFixedPoint{W, F}) where W where F
-    invalid = (p < DistFixedPoint{W, F}(0.0)) | (DistFixedPoint{W, F}(1.0) < p)
+function parametrised_flip(p::DistFix{W, F}) where W where F
+    invalid = (p < DistFix{W, F}(0.0)) | (DistFix{W, F}(1.0) < p)
     invalid && error("flip probability outside interval [0, 1]")
-
-    uniform(DistFixedPoint{W, F}, 0.0, 1.0) < p
+    uniform(DistFix{W, F}, 0.0, 1.0) < p
 end
 
-function print_tree(t; indent_per_level=4)
+# Print a tree represented as a tuple of the form:
+#   tree ::= (node, children::Vector{tree})
+# If a non-tuple x is encountered, it is treated as the leaf (x, [])
+function print_tree(t::Tuple; indent_per_level=4, io::IO=stdout)
     @assert indent_per_level >= 1
-    print_tree_helper(t, [], 0, false, indent_per_level)
+    print_tree_helper(t, Integer[], 0, false, indent_per_level, io)
 end
 
-function print_tree_helper(t, pipes, level, last_child, indent_per_level)
+function print_tree_helper(
+    t,
+    pipes::Vector{<:Integer},
+    level::Integer,
+    last_child::Bool,
+    indent_per_level::Integer,
+    io::IO
+)
     if !(t isa Tuple)
         t = (t, [])
     end
@@ -90,11 +99,11 @@ function print_tree_helper(t, pipes, level, last_child, indent_per_level)
         for i in (last(pipes)+1):(padding_size-1)
             padding[i] = '─'
         end
-        print(join(padding))
+        print(io, join(padding))
     end
 
     # Print value
-    println(t[1])
+    println(io, t[1])
     
     # Consume last pipe if we are last child, always create new pipe below us
     inherited_pipes = copy(pipes)
@@ -109,7 +118,8 @@ function print_tree_helper(t, pipes, level, last_child, indent_per_level)
             inherited_pipes,
             level + 1,
             i == length(t[2]),
-            indent_per_level
+            indent_per_level,
+            io
         )
     end
 end

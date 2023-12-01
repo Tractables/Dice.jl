@@ -2,7 +2,7 @@ using Pkg; Pkg.activate(@__DIR__)
 using Dice, Distributions
 
 precision = 2
-DFiP = DistFixedPoint{11+precision, precision}
+DFiP = DistFix{11+precision, precision}
 num_pieces = 2
 truncation = (-8.0, 8.0)
 add_arg = false
@@ -16,12 +16,12 @@ os = [1,0,1,1,0,0]
 noise = 0.1
 
 code = @dice begin
-    w1 = continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
-    w2 = continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
-    w3 = continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
+    w1 = bitblast(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
+    w2 = bitblast(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
+    w3 = bitblast(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
     for (f1, f2, f3, o) in zip(fs1, fs2, fs3, os)
         mean = f1*w1 + f2*w2 + f3*w3
-        c1 = continuous(DFiP, Normal(0, 0.1), num_pieces, -1.0, 1.0)
+        c1 = bitblast(DFiP, Normal(0, 0.1), num_pieces, -1.0, 1.0)
         if o == 1
             observe(mean + c1 > DFiP(0.0))
         else

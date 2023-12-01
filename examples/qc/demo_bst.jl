@@ -2,15 +2,12 @@
 
 using Dice
 include("lib/dist_tree.jl")     # DistLeaf, DistBranch, depth
-include("lib/sample.jl")        # sample
 
 # Return tree
 function gen_bst(size, lo, hi)
-    size == 0 && return DistLeaf(DistUInt32)
-
     # Try changing the parameter to flip_for to a constant, which would force
     # all sizes to use the same probability.
-    @dice_ite if flip_for(size)
+    @dice_ite if size == 0 || flip_for(size)
         DistLeaf(DistUInt32)
     else
         # The flips used in the uniform aren't tracked via flip_for, so we
@@ -28,19 +25,19 @@ INIT_SIZE = 3
 DATASET = [DistUInt32(x) for x in 0:INIT_SIZE]
 
 # Use Dice to build computation graph
-gen() = gen_bst(
+tree = gen_bst(
     INIT_SIZE,
     DistUInt32(1),
     DistUInt32(2 * INIT_SIZE),
 )
-tree_depth = depth(gen())
+tree_depth = depth(tree)
 
 println("Distribution before training:")
 display(pr(tree_depth))
 println()
 
 bools_to_maximize = [prob_equals(tree_depth, x) for x in DATASET]
-train_group_probs!(bools_to_maximize)
+train_group_probs!(bools_to_maximize, 1000, 0.3)  # epochs and lr
 
 # Done!
 println("Learned flip probability for each size:")
@@ -48,13 +45,12 @@ display(get_group_probs())
 println()
 
 println("Distribution over depths after training:")
-tree = gen()
-display(pr(depth(tree)))
+display(pr(tree_depth))
 println()
 
 println("A few sampled trees:")
 for _ in 1:3
-    print_tree(sample((tree, true)))
+    print_tree(sample(tree))
     println()
 end
 

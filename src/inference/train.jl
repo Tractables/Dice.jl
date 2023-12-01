@@ -1,71 +1,122 @@
-export step_flip_probs, train_group_probs!
+export step_vars!, train_vars!, BoolToMax, total_logprob
 
-# Find the log-probabilities and the log-probability gradient of a BDD
-
-sigmoid(x) = 1 / (1 + exp(-x))
-deriv_sigmoid(x) = sigmoid(x) * (1 - sigmoid(x))
-
-# Step flip probs in direction of gradient to maximize likelihood of BDDS
-function step_flip_probs!(
-    c::BDDCompiler,
-    cond_bdds_to_maximize::Vector{Tuple{CuddNode, CuddNode}},
-    learning_rate::AbstractFloat
-)
-    # Set flip probs according to groups
-    global _flip_to_group
-    global _group_to_psp
-    for (f, group) in _flip_to_group
-        f.prob = sigmoid(_group_to_psp[group])
-    end
-
-    # Find grad of logprobability w.r.t. each flip's probability
-    w = WMC(c)
-    grad = DefaultDict{Flip, Float64}(0.)
-    for (bdd, obs_bdd) in cond_bdds_to_maximize
-        isconstant(bdd) && continue
-        grad += grad_logprob(w, bdd) - grad_logprob(w, obs_bdd)
-    end
-
-    # Convert to grad of pre-sigmoid probabilities w.r.t. each group's
-    # pre-sigmoid probability. Let "f" denote a flip, "g" denote a group.
-    #
-    # δlogpr/δg.psp = Σ_{f∈g} δlogpr/δf.pr * δf.pr/δg.psp
-    #               = Σ_{f∈g} δlogpr/δf.pr * σ'(g.psp)        (as f.pr=σ(g.psp))
-    psp_grad_wrt_groups = DefaultDict{Any, Float64}(0.)
-    for (f, group) in _flip_to_group
-        haskey(grad, f) || continue
-        dpdf = grad[f]
-        psp_grad_wrt_groups[group] += dpdf * deriv_sigmoid(_group_to_psp[group])
-    end
-    _group_to_psp += learning_rate * psp_grad_wrt_groups
-    nothing
+struct BoolToMax
+    bool::AnyBool
+    evid::AnyBool
+    weight::Real
+    BoolToMax(bool, evid, weight) = new(bool & evid, evid, weight)
 end
 
-function train_group_probs!(bools_to_maximize::Vector{<:AnyBool}, args...)
-    train_group_probs!(
-        [(b, true) for b in bools_to_maximize],
+function BoolToMax(bool; evidence=true, weight=1)
+    BoolToMax(bool, evidence, weight)
+end
+
+# Find the log-probabilities and the log-probability gradient of a BDD
+function add_scaled_dict!(
+    x::AbstractDict{<:Any, <:Real},
+    y::AbstractDict{<:Any, <:Real},
+    s::Real
+)
+    for (k, v) in y
+        x[k] += v * s
+    end
+end
+
+# Step flip probs in direction of gradient to maximize likelihood of BDDS
+function step_vars!(
+    c::BDDCompiler,
+    bdds_to_max::Vector{<:Tuple{CuddNode, CuddNode, <:Real}},
+    learning_rate::AbstractFloat
+)
+    global _variable_to_value
+    w = WMC(c)
+
+    vals = Dict{ADNode, Real}()
+    antiloss = sum(
+        weight * (logprob(w, bdd, vals) - logprob(w, obs_bdd, vals))
+        for (bdd, obs_bdd, weight) in bdds_to_max
+    )
+
+    # Find grad of logprobability w.r.t. each flip's probability
+    grad = DefaultDict{Flip, Float64}(0.)
+    for (bdd, obs_bdd, weight) in bdds_to_max
+        isconstant(bdd) && continue
+        grad_here = grad_logprob(w, bdd, vals)
+        add_scaled_dict!(grad_here, grad_logprob(w, obs_bdd, vals), -1)
+        add_scaled_dict!(grad, grad_here, weight)
+    end
+
+    root_derivs = DefaultDict{ADNode, Real}(0.)
+    for (f, d) in grad
+        if f.prob isa ADNode
+            root_derivs[f.prob] += d
+        end
+    end
+
+    # Do update
+    derivs = differentiate(root_derivs)
+    for (adnode, d) in derivs
+        if adnode isa Variable
+            _variable_to_value[adnode] += d * learning_rate
+        end
+    end
+
+    antiloss
+end
+
+function train_vars!(
+    bools_to_max::Vector{<:AnyBool};
+    args...
+)
+    train_vars!(
+        [BoolToMax(b, true, 1) for b in bools_to_max];
         args...
     )
 end
 
+
 # Train group_to_psp to such that generate() approximates dataset's distribution
-function train_group_probs!(
-    cond_bools_to_maximize::Vector{<:Tuple{<:AnyBool, <:AnyBool}},
-    epochs::Integer=1000,
-    learning_rate::AbstractFloat=0.3,
+function train_vars!(
+    bools_to_max::Vector{BoolToMax};
+    epochs::Integer=2000,
+    learning_rate::AbstractFloat=0.003,
 )
     # Compile to BDDs
-    cond_bools_to_maximize = [
-        (x & evid, evid)
-        for (x, evid) in cond_bools_to_maximize
+    c = BDDCompiler(Iterators.flatten(map(x -> [x.bool, x.evid], bools_to_max)))
+    bdds_to_max = [
+        (compile(c, x.bool), compile(c, x.evid), x.weight)
+        for x in bools_to_max
     ]
-    c = BDDCompiler(Iterators.flatten(cond_bools_to_maximize))
-    cond_bdds_to_maximize = [
-        (compile(c, conj), compile(c, obs))
-        for (conj, obs) in cond_bools_to_maximize
-    ]
+
+    antilosses = []
     for _ in 1:epochs
-        step_flip_probs!(c, cond_bdds_to_maximize, learning_rate)
+        push!(
+            antilosses,
+            step_vars!(c, bdds_to_max, learning_rate)
+        )
     end
-    nothing
+    push!(antilosses, total_logprob(c, bdds_to_max))
+    antilosses
+end
+
+function total_logprob(
+    c::BDDCompiler,
+    bdds_to_max::Vector{<:Tuple{CuddNode, CuddNode, <:Real}},
+)
+    vals = Dict{ADNode, Real}()
+    w = WMC(c)
+    sum(
+        weight * (logprob(w, bdd, vals) - logprob(w, obs_bdd, vals))
+        for (bdd, obs_bdd, weight) in bdds_to_max
+    )
+end
+
+function total_logprob(bools_to_max::Vector{BoolToMax})
+    w = WMC(
+        BDDCompiler(Iterators.flatten(map(x -> [x.bool, x.evid], bools_to_max)))
+    )
+    sum(
+        b.weight * (logprob(w, b.bool) - logprob(w, b.evid))
+        for b in bools_to_max
+    )
 end

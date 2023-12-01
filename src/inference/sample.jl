@@ -1,37 +1,37 @@
+export sample
 using DirectedAcyclicGraphs: foldup
-using Dice: frombits, tobits
 
-function sample(tup)
-    x, evid = tup
+function sample(x; evidence=true)
+    vals = Dict{ADNode, Real}()
     while true
         vcache = Dict()
-        fl(n::Dice.Flip) = begin
+        fl(n::Flip) = begin
             if !haskey(vcache, n)
-                prob = if haskey(Dice._flip_to_group, n)
-                    Dice.sigmoid(Dice._group_to_psp[Dice._flip_to_group[n]])
+                p = if n.prob isa ADNode
+                    compute(n.prob, vals)
                 else
                     n.prob
                 end
-                vcache[n] = rand() < prob
+                vcache[n] = rand() < p
             end
             vcache[n]
         end
 
-        fi(n::Dice.DistAnd, call) = begin
+        fi(n::DistAnd, call) = begin
             if !haskey(vcache, n)
                 vcache[n] = call(n.x) && call(n.y)
             end
             vcache[n]
         end
 
-        fi(n::Dice.DistOr, call) = begin
+        fi(n::DistOr, call) = begin
             if !haskey(vcache, n)
                 vcache[n] = call(n.x) || call(n.y)
             end
             vcache[n]
         end
 
-        fi(n::Dice.DistNot, call) = begin
+        fi(n::DistNot, call) = begin
             if !haskey(vcache, n)
                 vcache[n] = !call(n.x)
             end
@@ -39,12 +39,12 @@ function sample(tup)
         end
 
         vcache = Dict()
-        evid_computed = if evid isa Bool
-            evid
+        evidence_computed = if evidence isa Bool
+            evidence
         else
-            foldup(evid, fl, fi, Bool)
+            foldup(evidence, fl, fi, Bool)
         end
-        evid_computed || continue
+        evidence_computed || continue
         for bit in tobits(x)
             bit isa Bool && continue
             foldup(bit, fl, fi, Bool)

@@ -150,7 +150,7 @@ end
 # end
 
 function prob_setindex(s::DistVector, idx::DistUInt32, c::Any)
-    (idx < DistUInt32(1) || idx > s.len) && error("Vector out of bounds access")
+    errorcheck() & (idx < DistUInt32(1) || idx > s.len) && error("Vector out of bounds access")
     contents = collect(s.contents)
     for i = 1:length(s.contents)
         contents[i] = ifelse(prob_equals(idx, DistUInt32(i)), c, s.contents[i])
@@ -159,7 +159,7 @@ function prob_setindex(s::DistVector, idx::DistUInt32, c::Any)
 end
 
 function prob_setindex(s::DistVector, idx::Int, c::Any)
-    (idx < 1 || DistUInt32(idx) > s.len) && error("Vector out of bounds access")
+    errorcheck() & (idx < 1 || DistUInt32(idx) > s.len) && error("Vector out of bounds access")
     contents = collect(s.contents)
     contents[idx] = c
     DistVector(contents, s.len)
@@ -187,16 +187,17 @@ function prob_extend(s::DistVector{T}, t::DistVector{T}) where T <: Any
 end
 
 function prob_startswith(u::DistVector, v::DistVector)
-    if u.len < v.len
-        return false
+    @dice_ite if u.len < v.len
+        false
+    else
+        reduce(
+            &,
+            [
+                (DistUInt32(i) > v.len) | prob_equals(u.contents[i], v.contents[i])
+                for i in 1:length(v.contents)
+            ]
+        )
     end
-    reduce(
-        &,
-        [
-            (DistUInt32(i) > v.len) | prob_equals(u.contents[i], v.contents[i])
-            for i in 1:length(v.contents)
-        ]
-    )
 end
 
 tobits(s::DistVector) =

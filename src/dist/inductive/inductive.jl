@@ -1,6 +1,6 @@
 # Distributions over inductively-defined types
 
-export DistI, construct, match, InductiveType
+export InductiveType, DistI, construct, match, matches
 
 abstract type InductiveType end
 
@@ -95,6 +95,15 @@ function Base.match(x::DistI{T}, cases) where T
         end
     end
     res
+end
+
+function matches(x::DistI{T}, ctr) where T
+    pld = param_list_dict(T)
+    @assert haskey(pld, ctr)
+    match(x, [
+        k => (args...) -> k == ctr
+        for k in keys(pld)
+    ])
 end
 
 function prob_equals(x::DistI{T}, y::DistI{T}) where T
