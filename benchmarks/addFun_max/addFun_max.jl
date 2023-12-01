@@ -10,7 +10,7 @@ bits = 18
 pieces = 2048
 p = pr(@dice uniform(DistUInt{3}))
 
-DFiP = DistFixedPoint{5+bits, bits}
+DFiP = DistFix{5+bits, bits}
 
 t = @benchmark expectation(@dice begin
                 x = continuous(DFiP, Normal(0, 1), pieces, -8.0, 8.0)

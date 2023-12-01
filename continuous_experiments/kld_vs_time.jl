@@ -36,10 +36,10 @@ time_exp = Vector(undef, 9)
 
 map(pieces) do piece
     @show piece
-    y = continuous(DistFixedPoint{13, 6}, Normal(0, 1), piece, -8.0, 8.0)
+    y = continuous(DistFix{13, 6}, Normal(0, 1), piece, -8.0, 8.0)
     p_linear = pr(y)
 
-    z = continuous(DistFixedPoint{13, 6}, Normal(0, 1), piece, -8.0, 8.0, true)
+    z = continuous(DistFix{13, 6}, Normal(0, 1), piece, -8.0, 8.0, true)
     p_exp = pr(z)
 
     p_linear = map(a -> a[2], sort([(k, v) for (k, v) in p_linear]))
@@ -53,8 +53,8 @@ end
 @show kld_exp
 
 map(pieces) do piece
-    linear = median(@benchmark p_linear = pr(continuous(DistFixedPoint{13, 6}, Normal(0, 1), $piece, -8.0, 8.0))).time
-    expo = median(@benchmark p_exp = pr(continuous(DistFixedPoint{13, 6}, Normal(0, 1), $piece, -8.0, 8.0, true))).time
+    linear = median(@benchmark p_linear = pr(continuous(DistFix{13, 6}, Normal(0, 1), $piece, -8.0, 8.0))).time
+    expo = median(@benchmark p_exp = pr(continuous(DistFix{13, 6}, Normal(0, 1), $piece, -8.0, 8.0, true))).time
 
     time_linear[Int(log2(piece))] = linear
     time_exp[Int(log2(piece))] = expo
@@ -68,11 +68,11 @@ plot(pieces, kld_exp, xaxis=:log, yaxis=:log, marker=:dot, legend=false, xlabel=
 savefig("continuous_experiments/linear_vs_exponential.png")
 
 # Plot gaussian
-y = continuous(DistFixedPoint{13, 6}, Normal(0, 1), 4, -8.0, 8.0)
+y = continuous(DistFix{13, 6}, Normal(0, 1), 4, -8.0, 8.0)
 p_linear = pr(y)
 p_linear = map(a -> log(a[2]), sort([(k, v) for (k, v) in p_linear]))
 
-z = continuous(DistFixedPoint{13, 6}, Normal(0, 1), 4, -8.0, 8.0, true)
+z = continuous(DistFix{13, 6}, Normal(0, 1), 4, -8.0, 8.0, true)
 p_exp = pr(z)
 p_exp = map(a -> log(a[2]), sort([(k, v) for (k, v) in p_exp]))
 

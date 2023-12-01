@@ -4,7 +4,7 @@ using BenchmarkTools
 
 io = open(string("./benchmarks/gamma/bit.txt"), "a")
 for i in 1:15
-    DFiP = DistFixedPoint{i+1, i}
+    DFiP = DistFix{i+1, i}
     t = @dice unit_gamma(DFiP, 2, -2.0)
     n = num_nodes(reduce(&, t.observations))
     @show i, n
@@ -14,7 +14,7 @@ end
 
 io = open(string("./benchmarks/gamma/bit3.txt"), "a")
 for i in 1:15
-    DFiP = DistFixedPoint{i+1, i}
+    DFiP = DistFix{i+1, i}
     t = @btime expectation(@dice unit_gamma($DFiP, 3, -2.0))
     @show t
     writedlm(io, [i t], ",")  
@@ -22,7 +22,7 @@ end
 close(io)
 
 io = open(string("./benchmarks/gamma/alpha.txt"), "a")
-DFiP = DistFixedPoint{5, 4}
+DFiP = DistFix{5, 4}
 for i in 1:10
     t = @timed expectation(@dice unit_gamma(DFiP, i, -2.0))
     @show t.time
@@ -54,7 +54,7 @@ pr(u2 < u1)
 
 io = open(string("./benchmarks/gamma/and2.txt"), "a")
 for i in 1:15
-    DFiP = DistFixedPoint{i+1, i}
+    DFiP = DistFix{i+1, i}
     t = @dice unit_gamma(DFiP, 2, -2.0)
     l = @timed(pr(reduce(&, t.observations)))
     @show l.time
@@ -64,7 +64,7 @@ close(io)
 
 io = open(string("./benchmarks/gamma/and3.txt"), "a")
 for i in 1:15
-    DFiP = DistFixedPoint{i+1, i}
+    DFiP = DistFix{i+1, i}
     t = @dice unit_gamma(DFiP, 3, -2.0)
     l = @timed(pr(reduce(&, t.observations)))
     @show l.time

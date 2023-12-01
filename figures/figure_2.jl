@@ -3,7 +3,7 @@ using Plots
 
 
 function plot_gaussian(bits::Int, pieces::Int)
-    DFiP = DistFixedPoint{4 + bits, bits}
+    DFiP = DistFix{4 + bits, bits}
     code = @dice begin 
                 a = continuous(DFiP, Normal(0, 1), pieces, -8.0, 8.0, true)
                 a

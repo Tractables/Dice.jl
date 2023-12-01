@@ -4,7 +4,7 @@ using BenchmarkTools
 using Plots
 
 
-DFiP = DistFixedPoint{23, 22}
+DFiP = DistFix{23, 22}
 
 for n_vars =10:10:100
     @show n_vars
@@ -26,7 +26,7 @@ plot(p)
 
 for bits =2:23
     @show bits
-    DFiP = DistFixedPoint{bits, bits - 1}
+    DFiP = DistFix{bits, bits - 1}
     p = @dice begin
                 z = [flip(0.5) for i in 1:30]
                 y = reduce(&, z)

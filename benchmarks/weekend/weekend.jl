@@ -8,7 +8,7 @@ num_pieces = parse(Int64, ARGS[2])
 
 p = pr(@dice uniform(DistUInt{3}))
 
-DFiP = DistFixedPoint{4+precision, precision}
+DFiP = DistFix{4+precision, precision}
 
 t = @timed pr(@dice begin
 

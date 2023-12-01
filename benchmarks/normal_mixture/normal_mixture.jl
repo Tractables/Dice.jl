@@ -9,7 +9,7 @@ flag = parse(Int64, ARGS[3])
 
 p = pr(@dice uniform(DistUInt{3}))
 
-DFiP = DistFixedPoint{6+precision, precision}
+DFiP = DistFix{6+precision, precision}
 truncation = (-8.0, 8.0)
 mult_arg = true
 

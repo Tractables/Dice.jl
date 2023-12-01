@@ -10,7 +10,7 @@ pieces = parse(Int64, ARGS[2])
 
 p = pr(@dice uniform(DistUInt{3}))
 
-DFiP = DistFixedPoint{bits + 5, bits}
+DFiP = DistFix{bits + 5, bits}
 
 t = @timed pr(@dice begin 
             d1 = continuous(DFiP, 4*Beta(8, 2), pieces, 0.0, 4.0, true)

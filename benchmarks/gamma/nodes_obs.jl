@@ -8,7 +8,7 @@ for j in 1:3
     cur = Vector(undef, 13)
     io = open(string("./benchmarks/gamma/nodes_obs_"*string(j)*".txt"), "a")
     for i in 2:14
-        DFiP = DistFixedPoint{i+1, i}
+        DFiP = DistFix{i+1, i}
         t = @dice unit_gamma(DFiP, j, -2.0)
         n = num_nodes(reduce(&, t.observations) & reduce(&, t.returnvalue.number.number.bits[3:i+1]) & !t.returnvalue.number.number.bits[2])
         @show i, n

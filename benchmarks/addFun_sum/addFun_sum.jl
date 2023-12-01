@@ -8,7 +8,7 @@ pieces = parse(Int64, ARGS[2])
 
 p = pr(@dice uniform(DistUInt{3}))
 
-DFiP = DistFixedPoint{5+bits, bits}
+DFiP = DistFix{5+bits, bits}
 indices = [1, 0, 1]
 
 t = @timed expectation(@dice begin

@@ -7,7 +7,7 @@ using Plots
 
 
 bits = 10
-DFiP = DistFixedPoint{4 + bits, bits}
+DFiP = DistFix{4 + bits, bits}
 
 s = Vector(undef, 8)
 for i in 0:7

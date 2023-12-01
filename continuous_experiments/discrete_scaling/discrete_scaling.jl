@@ -1,4 +1,4 @@
 using Dice
 using Distributions
 
-DFiP = DistFixedPoint{10, 4}
+DFiP = DistFix{10, 4}

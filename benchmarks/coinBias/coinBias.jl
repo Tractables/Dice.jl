@@ -8,7 +8,7 @@ p = pr(@dice uniform(DistUInt{3}))
 bits = parse(Int64, ARGS[1])
 pieces = parse(Int64, ARGS[2])
 
-DFiP = DistFixedPoint{bits+2, bits}
+DFiP = DistFix{bits+2, bits}
 
 y = [1, 1, 0, 1, 0]
 

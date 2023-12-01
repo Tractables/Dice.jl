@@ -8,7 +8,7 @@ flag = parse(Int64, ARGS[3])
 
 p = pr(@dice uniform(DistUInt{3}))
 
-DFiP = DistFixedPoint{8+bits, bits}
+DFiP = DistFix{8+bits, bits}
 
 ys = [1, -1, 1, -1, -1, -1, 1, 1, 1, 1, 1, -1, 1, -1, -1, -1, 1, 1, 1, 1]
 xs = DFiP.([6, 8, -1, 0, 5, 1.2, -2, 9.8, 4, 12, 1, 10, 1, 2.2, -6, 9.8, 1, 1, 1, 1])

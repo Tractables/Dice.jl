@@ -144,7 +144,7 @@ end
         y = bitblast(DistFix{5, 2}, Normal(1, 1), piece, -1.0, 3.0)
         p = pr(y)
 
-        z = continuous(DistFixedPoint{5, 2}, Normal(1, 1), piece, -1.0, 3.0, exp=true)
+        z = bitblast_exponential(DistFix{5, 2}, Normal(1, 1), piece, -1.0, 3.0)
         p_z = pr(z)
 
         # Symmetric gaussian around mean
@@ -321,67 +321,67 @@ end
 
 end
 
-@testset "DistFixedPoint exponential" begin
-    x = unit_exponential(DistFixedPoint{5, 3}, 1.0)
+@testset "DistFix exponential" begin
+    x = unit_exponential(DistFix{5, 3}, 1.0)
     @test pr(x)[0.125] ≈ exp(0.125)*(exp(1/8) - 1)/(exp(1) - 1)
     
-    x = unit_exponential(DistFixedPoint{10, 9}, -1.0)
+    x = unit_exponential(DistFix{10, 9}, -1.0)
     @test pr(x)[0.125] ≈ exp(-0.125)*(exp(-1/2^9) - 1)/(exp(-1) - 1) 
     
-    x = exponential(DistFixedPoint{6, 3}, 1.0, 0.0, 2.0)
+    x = exponential(DistFix{6, 3}, 1.0, 0.0, 2.0)
     pr(x)
-    y = unit_exponential(DistFixedPoint{6, 4}, 2.0)
+    y = unit_exponential(DistFix{6, 4}, 2.0)
     pr(y)
     @test sum([pr(x)[i] == pr(y)[i/2] for i in 0:0.125:1.875]) == 16 
 
-    x = exponential(DistFixedPoint{6, 3}, 1.0, -1.0, 1.0)
+    x = exponential(DistFix{6, 3}, 1.0, -1.0, 1.0)
     pr(x)
     @test sum([pr(x)[i] == pr(y)[(i+1)/2] for i in -1:0.125:0.875]) == 16
 end
 
-@testset "DistFixedPoint laplace, unit_gamma_one" begin
-    x = laplace(DistFixedPoint{10, 3}, 0.0, 1.0, -8.0, 8.0)
-    y = exponential(DistFixedPoint{10, 3}, -1.0, 0.0, 8.0)
+@testset "DistFix laplace, unit_gamma_one" begin
+    x = laplace(DistFix{10, 3}, 0.0, 1.0, -8.0, 8.0)
+    y = exponential(DistFix{10, 3}, -1.0, 0.0, 8.0)
     @test pr(x)[1]*2 ≈ pr(y)[1]
 
     actual_dist = Truncated(Laplace(0.0, 1.0), -8.0, 8.0)
     @test pr(x)[0] ≈ cdf(actual_dist, 0.125) - cdf(actual_dist, 0.0)
 
     # Tests for Gamma distribution (α = 1)
-    x = @dice unit_gamma(DistFixedPoint{5, 3}, 0, -1.0)
+    x = @dice unit_gamma(DistFix{5, 3}, 0, -1.0)
     a = pr(x)
 
     d = Truncated(Gamma(1, 1), 0.0, 1.0)
     @test a[0] ≈ (cdf(d, 0.125) - cdf(d, 0))
 
-    x = @dice unit_gamma(DistFixedPoint{5, 3}, 0, -3.0)
+    x = @dice unit_gamma(DistFix{5, 3}, 0, -3.0)
     a = pr(x)
 
     d = Truncated(Gamma(1, 1/3), 0.0, 1.0)
     @test a[0] ≈ (cdf(d, 0.125) - cdf(d, 0))
 
     # Tests for Gamma distribution for (α = 2)
-    x = @dice unit_gamma(DistFixedPoint{5, 3}, 1, -1.0)
+    x = @dice unit_gamma(DistFix{5, 3}, 1, -1.0)
     a = pr(x)
     d = Truncated(Gamma(2, 1), 0.0, 1.0)
     @test a[0] ≈ cdf(d, 0.125) - cdf(d, 0)
 
-    x = @dice unit_gamma(DistFixedPoint{5, 3}, 1, -3.0)
+    x = @dice unit_gamma(DistFix{5, 3}, 1, -3.0)
     a = pr(x)
     d = Truncated(Gamma(2, 1/3), 0.0, 1.0)
     @test a[0] ≈ cdf(d, 0.125) - cdf(d, 0)
 
     #Tests for shift_point_gamma
-    x = @dice shift_point_gamma(DistFixedPoint{5, 3}, 1, 1.0)
+    x = @dice shift_point_gamma(DistFix{5, 3}, 1, 1.0)
     a = pr(x)
     @test a[0.125]/a[0] ≈ 2exp(0.125)
 
-    x = @dice shift_point_gamma(DistFixedPoint{5, 3}, 2, -2.0)
+    x = @dice shift_point_gamma(DistFix{5, 3}, 2, -2.0)
     a = pr(x)
     @test a[0.125]/a[0] ≈ 4exp(-0.25)
 
     # Building Gamma(3, 0.5)
-    x = (@dice unit_gamma(DistFixedPoint{4, 3}, 2, -2.0, constants = []))
+    x = (@dice unit_gamma(DistFix{4, 3}, 2, -2.0, constants = []))
     a = pr(x)[0.0]
     d = Truncated(Gamma(3, 0.5), 0.0, 1.0)
     @test a ≈ cdf(d, 0.125) - cdf(d, 0.0)

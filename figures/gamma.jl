@@ -1,7 +1,7 @@
 using Dice
 using Plots
 
-code = @dice unit_gamma(DistFixedPoint{15, 14}, 1, -7.0)
+code = @dice unit_gamma(DistFix{15, 14}, 1, -7.0)
 a = pr(code)
 plot(a)
 

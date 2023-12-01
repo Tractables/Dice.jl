@@ -8,7 +8,7 @@ pieces = parse(Int64, ARGS[2])
 p = pr(@dice uniform(DistUInt{3}))
 
 t = @timed pr(@dice begin
-    DFiP = DistFixedPoint{bits + 5, bits}
+    DFiP = DistFix{bits + 5, bits}
 
             alice_skill = continuous(DFiP, Normal(5, 1), pieces, -3.0, 13.0, true)
             bob_skill = continuous(DFiP, Normal(5, 1), pieces, -3.0, 13.0, true)

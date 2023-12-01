@@ -3,41 +3,41 @@ using SymPy
 @vars varint
 @vars v2
 
-export DistFixedPoint, continuous, unit_exponential, exponential, laplace, unit_gamma, shift_point_gamma, sum_pgp, reverse_exponential
+export DistFix, continuous, unit_exponential, exponential, laplace, unit_gamma, shift_point_gamma, sum_pgp, reverse_exponential
 
 ##################################
 # types, structs, and constructors
 ##################################
 
-struct DistFixedPoint{W, F} <: Dist{Number}
+struct DistFix{W, F} <: Dist{Number}
     # W: total number of bits, F: number of bits after the binary point
     number::DistInt{W}
-    function DistFixedPoint{W, F}(b) where W where F
+    function DistFix{W, F}(b) where W where F
         @assert W >= F
         new{W, F}(b)
     end
 
 end
 
-function DistFixedPoint{W, F}(b::Vector) where W where F
-    DistFixedPoint{W, F}(DistInt{W}(b))
+function DistFix{W, F}(b::Vector) where W where F
+    DistFix{W, F}(DistInt{W}(b))
 end
 
-function DistFixedPoint{W, F}(i::Float64) where W where F
+function DistFix{W, F}(i::Float64) where W where F
     # new_i = Int(round(if i >= -(2.0)^(-F-1) i*2^F else i*2^F + 2^W end)) # for a centered notation of probabilities
     @assert i >= -2^(W-F-1)
     @assert i < 2^(W-F-1)
     new_i = Int(floor(if i >= 0 i*2^F else i*2^F + 2^W end))
-    DistFixedPoint{W, F}(DistInt{W}(DistUInt{W}(new_i)))
+    DistFix{W, F}(DistInt{W}(DistUInt{W}(new_i)))
 end
 
 # ##################################
 # # inference
 # ##################################
 
-tobits(x::DistFixedPoint) = tobits(x.number)
+tobits(x::DistFix) = tobits(x.number)
 
-function frombits(x::DistFixedPoint{W, F}, world) where W where F
+function frombits(x::DistFix{W, F}, world) where W where F
     frombits(x.number, world)/2^F
 end
 
@@ -45,11 +45,11 @@ end
 # # moments
 # ##################################
 
-function expectation(x::DistFixedPoint{W, F}; kwargs...) where W where F
+function expectation(x::DistFix{W, F}; kwargs...) where W where F
     expectation(x.number; kwargs...)/2^F
 end
 
-function variance(x::DistFixedPoint{W, F}; kwargs...) where W where F
+function variance(x::DistFix{W, F}; kwargs...) where W where F
     variance(x.number; kwargs...)/2^(2*F)
 end
     
@@ -58,39 +58,39 @@ end
 # # methods
 # ##################################
 
-bitwidth(::DistFixedPoint{W, F}) where W where F = W
+bitwidth(::DistFix{W, F}) where W where F = W
 
-function uniform(::Type{DistFixedPoint{W, F}}, n = W) where W where F
-    DistFixedPoint{W, F}(DistInt{W}(uniform(DistUInt{W}, n).bits))
+function uniform(::Type{DistFix{W, F}}, n = W) where W where F
+    DistFix{W, F}(DistInt{W}(uniform(DistUInt{W}, n).bits))
 end
 
-function uniform(t::Type{DistFixedPoint{W, F}}, start::Float64, stop::Float64; kwargs...) where W where F
+function uniform(t::Type{DistFix{W, F}}, start::Float64, stop::Float64; kwargs...) where W where F
     @assert start >= -(2^(W - F - 1))
     @assert stop <= (2^(W - F - 1))
     @assert start < stop
     a = Int(round((stop - start)*2^F))
-    return DistFixedPoint{W, F}(uniform(DistInt{W}, 0, a; kwargs...)) + DistFixedPoint{W, F}(start)
+    return DistFix{W, F}(uniform(DistInt{W}, 0, a; kwargs...)) + DistFix{W, F}(start)
  end
  
 
-function triangle(t::Type{DistFixedPoint{W, F}}, b::Int) where W where F
+function triangle(t::Type{DistFix{W, F}}, b::Int) where W where F
     @assert b <= W
-    DistFixedPoint{W, F}(triangle(DistInt{W}, b))
+    DistFix{W, F}(triangle(DistInt{W}, b))
 end
 
 ##################################
 # casting
 ##################################
 
-function Base.convert(::Type{DistFixedPoint{W2, F2}}, x::DistFixedPoint{W1, F1}) where W1 where W2 where F1 where F2
+function Base.convert(::Type{DistFix{W2, F2}}, x::DistFix{W1, F1}) where W1 where W2 where F1 where F2
     #TODO: check if cases are exhaustive
     if (F1 == F2)
-        DistFixedPoint{W2, F2}(convert(DistInt{W2}, x.number))
+        DistFix{W2, F2}(convert(DistInt{W2}, x.number))
     elseif (W1 - F1 == W2 - F2)
         if (F2 > F1)
-            DistFixedPoint{W2, F2}(vcat(x.number.number.bits, fill(false, F2 - F1)))
+            DistFix{W2, F2}(vcat(x.number.number.bits, fill(false, F2 - F1)))
         else
-            DistFixedPoint{W2, F2}(x.number.number.bits[1:W2])
+            DistFix{W2, F2}(x.number.number.bits[1:W2])
         end
     end
 end
@@ -99,51 +99,51 @@ end
 # other method overloading
 ##################################
 
-function prob_equals(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where W where F
+function prob_equals(x::DistFix{W, F}, y::DistFix{W, F}) where W where F
     prob_equals(x.number, y.number)
 end
 
-function Base.isless(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where W where F
+function Base.isless(x::DistFix{W, F}, y::DistFix{W, F}) where W where F
     isless(x.number, y.number)
 end
 
-function Base.ifelse(cond::Dist{Bool}, then::DistFixedPoint{W, F}, elze::DistFixedPoint{W, F}) where W where F
-    DistFixedPoint{W, F}(ifelse(cond, then.number, elze.number))
+function Base.ifelse(cond::Dist{Bool}, then::DistFix{W, F}, elze::DistFix{W, F}) where W where F
+    DistFix{W, F}(ifelse(cond, then.number, elze.number))
 end
 
-function Base.:(+)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F}
-    DistFixedPoint{W, F}(x.number + y.number)
+function Base.:(+)(x::DistFix{W, F}, y::DistFix{W, F}) where {W, F}
+    DistFix{W, F}(x.number + y.number)
 end
 
-function Base.:(-)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F}
-    DistFixedPoint{W, F}(x.number - y.number)
+function Base.:(-)(x::DistFix{W, F}, y::DistFix{W, F}) where {W, F}
+    DistFix{W, F}(x.number - y.number)
 end
 
-function Base.:(*)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F}
-    x1 = convert(DistFixedPoint{W+F, F}, x)
-    y1 = convert(DistFixedPoint{W+F, F}, y)
+function Base.:(*)(x::DistFix{W, F}, y::DistFix{W, F}) where {W, F}
+    x1 = convert(DistFix{W+F, F}, x)
+    y1 = convert(DistFix{W+F, F}, y)
     prodint = x1.number * y1.number
-    prodfip = DistFixedPoint{W+F, 2F}(prodint)
-    convert(DistFixedPoint{W, F}, prodfip)
+    prodfip = DistFix{W+F, 2F}(prodint)
+    convert(DistFix{W, F}, prodfip)
 end
 
-function Base.:(/)(x::DistFixedPoint{W, F}, y::DistFixedPoint{W, F}) where {W, F}
-    xp = convert(DistFixedPoint{W+F, 2*F}, x)
-    yp = convert(DistFixedPoint{W+F, F}, y)
+function Base.:(/)(x::DistFix{W, F}, y::DistFix{W, F}) where {W, F}
+    xp = convert(DistFix{W+F, 2*F}, x)
+    yp = convert(DistFix{W+F, F}, y)
     ans = xp.number / yp.number
 
     n_overflow = DistInt{F+1}(ans.number.bits[1:F+1])
     overflow = !prob_equals(n_overflow, DistInt{F+1}(-1)) & !iszero(n_overflow)
     errorcheck() & overflow && error("integer overflow")
 
-    DistFixedPoint{W, F}(ans.number.bits[F+1:W+F])
+    DistFix{W, F}(ans.number.bits[F+1:W+F])
 end
 
 #################################
 # continuous distributions
 #################################
   
-function continuous_linear(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistribution, pieces::Int, start::Float64, stop::Float64) where {W, F}
+function continuous_linear(t::Type{DistFix{W, F}}, d::ContinuousUnivariateDistribution, pieces::Int, start::Float64, stop::Float64) where {W, F}
 
     # basic checks
     @assert start >= -(2^(W - F - 1))
@@ -215,18 +215,18 @@ function continuous_linear(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariat
         end  
     end
 
-    unif = uniform(DistFixedPoint{W, F}, bits)
-    tria = triangle(DistFixedPoint{W, F}, bits)
-    ans = DistFixedPoint{W, F}((2^(W-1)-1)/2^F)
+    unif = uniform(DistFix{W, F}, bits)
+    tria = triangle(DistFix{W, F}, bits)
+    ans = DistFix{W, F}((2^(W-1)-1)/2^F)
 
     for i=pieces:-1:1
         ans = ifelse( prob_equals(b, DistUInt{piece_bits}(i-1)), 
                 (if l_vector[i]
                     (ifelse(piece_flips[i], 
-                        (DistFixedPoint{W, F}((i - 1)*2^bits/2^F + start) + unif), 
-                        (DistFixedPoint{W, F}((i*2^bits - 1)/2^F + start) - tria)))
+                        (DistFix{W, F}((i - 1)*2^bits/2^F + start) + unif), 
+                        (DistFix{W, F}((i*2^bits - 1)/2^F + start) - tria)))
                 else
-                    (DistFixedPoint{W, F}((i - 1)*2^bits/2^F + start) + 
+                    (DistFix{W, F}((i - 1)*2^bits/2^F + start) + 
                         ifelse(piece_flips[i], unif, tria))
                     
                 end),
@@ -239,11 +239,11 @@ end
 # LExBit
 ###########################
 
-function unit_exponential(t::Type{DistFixedPoint{W, F}}, beta::Float64) where W where F
-    DistFixedPoint{W, F}(vcat([false for i in 1:W-F], [flip(exp(beta/2^i)/(1+exp(beta/2^i))) for i in 1:F]))
+function unit_exponential(t::Type{DistFix{W, F}}, beta::Float64) where W where F
+    DistFix{W, F}(vcat([false for i in 1:W-F], [flip(exp(beta/2^i)/(1+exp(beta/2^i))) for i in 1:F]))
 end
 
-function exponential(t::Type{DistFixedPoint{W, F}}, beta::Float64, start::Float64, stop::Float64) where W where F   
+function exponential(t::Type{DistFix{W, F}}, beta::Float64, start::Float64, stop::Float64) where W where F   
     range = stop - start
     @assert ispow2(range)
 
@@ -259,10 +259,10 @@ function exponential(t::Type{DistFixedPoint{W, F}}, beta::Float64, start::Float6
     
     bit_vector = vcat([false for i in 1:W - bits], [flip(exp(new_beta/2^i)/(1+exp(new_beta/2^i))) for i in 1:bits])
 
-    DistFixedPoint{W, F}(bit_vector) + DistFixedPoint{W, F}(start)
+    DistFix{W, F}(bit_vector) + DistFix{W, F}(start)
 end
 
-function reverse_exponential(t::Type{DistFixedPoint{W, F}}, beta::Float64, start::Float64, stop::Float64) where W where F   
+function reverse_exponential(t::Type{DistFix{W, F}}, beta::Float64, start::Float64, stop::Float64) where W where F   
     range = stop - start
     @assert ispow2(range)
 
@@ -278,7 +278,7 @@ function reverse_exponential(t::Type{DistFixedPoint{W, F}}, beta::Float64, start
     vec = [flip(exp(new_beta/2^i)/(1+exp(new_beta/2^i))) for i in bits:-1:1]
     bit_vector = vcat([false for i in 1:W - bits], reverse(vec))
 
-    DistFixedPoint{W, F}(bit_vector) + DistFixedPoint{W, F}(start)
+    DistFix{W, F}(bit_vector) + DistFix{W, F}(start)
 end
 
 function beta(d::ContinuousUnivariateDistribution, start::Float64, stop::Float64, interval_sz::Float64)
@@ -297,7 +297,7 @@ function beta(d::ContinuousUnivariateDistribution, start::Float64, stop::Float64
     result
 end
 
-function continuous_exp(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistribution, pieces::Int, start::Float64, stop::Float64) where {W, F}
+function continuous_exp(t::Type{DistFix{W, F}}, d::ContinuousUnivariateDistribution, pieces::Int, start::Float64, stop::Float64) where {W, F}
 
     # basic checks
     @assert start >= -(2^(W - F - 1))
@@ -352,42 +352,42 @@ function continuous_exp(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDi
 
     b = discrete(DistUInt{piece_bits}, rel_prob)
 
-    ans = DistFixedPoint{W, F}((2^(W-1)-1)/2^F)
+    ans = DistFix{W, F}((2^(W-1)-1)/2^F)
 
     for i=pieces:-1:1
         ans = ifelse( prob_equals(b, DistUInt{piece_bits}(i-1)), 
-                exponential(DistFixedPoint{W, F}, beta_vec[i], start_pts[i], stop_pts[i]),
+                exponential(DistFix{W, F}, beta_vec[i], start_pts[i], stop_pts[i]),
                 ans)  
     end
     return ans
 end
 
-function continuous(t::Type{DistFixedPoint{W, F}}, d::ContinuousUnivariateDistribution, pieces::Int, start::Float64, stop::Float64, exp::Bool=false) where {W, F}
+function continuous(t::Type{DistFix{W, F}}, d::ContinuousUnivariateDistribution, pieces::Int, start::Float64, stop::Float64, exp::Bool=false) where {W, F}
     c = if exp
-        continuous_exp(DistFixedPoint{W, F}, d, pieces, start, stop)
+        continuous_exp(DistFix{W, F}, d, pieces, start, stop)
     else 
-        continuous_linear(DistFixedPoint{W, F}, d, pieces, start, stop)
+        continuous_linear(DistFix{W, F}, d, pieces, start, stop)
     end
     return c
 end
 
 # https://en.wikipedia.org/wiki/Laplace_distribution
-function laplace(t::Type{DistFixedPoint{W, F}}, mean::Float64, scale::Float64, start::Float64, stop::Float64) where {W, F}
+function laplace(t::Type{DistFix{W, F}}, mean::Float64, scale::Float64, start::Float64, stop::Float64) where {W, F}
     @assert scale > 0
 
     beta1 = -1/scale
-    e1 = exponential(DistFixedPoint{W, F}, beta1, mean, stop)
+    e1 = exponential(DistFix{W, F}, beta1, mean, stop)
 
     beta2 = 1/scale
-    e2 = exponential(DistFixedPoint{W, F}, beta2, start, mean)
+    e2 = exponential(DistFix{W, F}, beta2, start, mean)
 
     ifelse(flip(0.5), e1, e2)
 end
 
 #Helper function that returns exponentials 
 
-function shift_point_gamma(::Type{DistFixedPoint{W, F}}, alpha::Int, beta::Float64) where {W, F}
-    DFiP = DistFixedPoint{W, F}
+function shift_point_gamma(::Type{DistFix{W, F}}, alpha::Int, beta::Float64) where {W, F}
+    DFiP = DistFix{W, F}
     if alpha == 0
         unit_exponential(DFiP, beta)
     else
@@ -442,8 +442,8 @@ function sum_pgp(β::Float64, ϵ::Float64, p::Int)
     end
 end
 
-function n_unit_exponentials(::Type{DistFixedPoint{W, F}}, betas::Vector{Float64}) where {W, F}
-    DFiP = DistFixedPoint{W, F}
+function n_unit_exponentials(::Type{DistFix{W, F}}, betas::Vector{Float64}) where {W, F}
+    DFiP = DistFix{W, F}
     l = length(betas)
     ans = Vector(undef, l)
     for i in 1:l
@@ -507,8 +507,8 @@ end
 
 
 
-function unit_gamma(t::Type{DistFixedPoint{W, F}}, alpha::Int, beta::Float64; vec_arg=[], constants = [], discrete_bdd=[], constant_flips=[], f=[]) where {W, F}
-    DFiP = DistFixedPoint{W, F}
+function unit_gamma(t::Type{DistFix{W, F}}, alpha::Int, beta::Float64; vec_arg=[], constants = [], discrete_bdd=[], constant_flips=[], f=[]) where {W, F}
+    DFiP = DistFix{W, F}
     if alpha == 0
         unit_exponential(DFiP, beta)
     elseif alpha == 1
@@ -593,9 +593,9 @@ function normalize(v)
     [i/l for i in v]    
 end
 # # TODO: Write tests for the following function
-# function unit_concave(t::Type{DistFixedPoint{W, F}}, beta::Float64) where {W, F}
+# function unit_concave(t::Type{DistFix{W, F}}, beta::Float64) where {W, F}
 #     @assert beta <= 0
-#     DFiP = DistFixedPoint{W, F}
+#     DFiP = DistFix{W, F}
 #     Y = uniform(DFiP, 0.0, 1.0)
 #     X = unit_exponential(DFiP, beta)
 #     observe((X < Y)| prob_equals(X, Y))

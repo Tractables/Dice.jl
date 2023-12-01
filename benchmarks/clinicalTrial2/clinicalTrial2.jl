@@ -8,7 +8,7 @@ bits = parse(Int64, ARGS[1])
 # bits = 3
 p = pr(@dice uniform(DistUInt{3}))
 
-DFiP = DistFixedPoint{2+bits, bits}
+DFiP = DistFix{2+bits, bits}
 
 controlGroup = [false, false, true, false, false]
 treatedGroup = [true, false, true, true, true]

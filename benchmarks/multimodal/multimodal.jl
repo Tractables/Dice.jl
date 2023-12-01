@@ -7,7 +7,7 @@ using Plots
 
 bits = 6
 pieces = 256
-DFiP = DistFixedPoint{7 + bits, bits}
+DFiP = DistFix{7 + bits, bits}
 
 mu1 = uniform(DFiP, -16.0, 16.0)
 mu2 = uniform(DFiP, -16.0, 16.0)

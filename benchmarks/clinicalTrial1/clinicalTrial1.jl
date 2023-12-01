@@ -11,7 +11,7 @@ dataTreatedGroup = [ifelse(a == 1, true, false) for a in dataTreatedGroup]
 bits = parse(Int64, ARGS[1])
 p = pr(@dice uniform(DistUInt{3}))
 
-DFiP = DistFixedPoint{2+bits, bits}
+DFiP = DistFix{2+bits, bits}
 
 t = @timed pr(@dice begin
             isEffective = flip(0.5)

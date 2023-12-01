@@ -8,7 +8,7 @@ pieces = parse(Int64, ARGS[2])
 
 p = pr(@dice uniform(DistUInt{3}))
 
-DFiP = DistFixedPoint{8+bits, bits}
+DFiP = DistFix{8+bits, bits}
 
 t = @timed expectation(@dice begin
             engines = continuous(DFiP, Normal(5, 1), pieces, 0.0, 64.0)

@@ -13,7 +13,7 @@ bits = parse(Int64, ARGS[1])
 pieces = parse(Int64, ARGS[2])
 n_vars = parse(Int64, ARGS[3])
 
-DFiP = DistFixedPoint{5 + bits, bits}
+DFiP = DistFix{5 + bits, bits}
 
 z = Vector(undef, n_vars)
 y = Vector(undef, n_vars)

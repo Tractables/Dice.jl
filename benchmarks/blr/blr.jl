@@ -14,7 +14,7 @@ bits = parse(Int64, ARGS[1])
 pieces = parse(Int64, ARGS[2])
 scale = parse(Float64, ARGS[3])
 
-DFiP = DistFixedPoint{7+ bits, bits}
+DFiP = DistFix{7+ bits, bits}
 
 w1 = laplace(DFiP, 0.0, scale, -8.0, 8.0)
 w2 = laplace(DFiP, 0.0, scale, -8.0, 8.0)

@@ -11,10 +11,10 @@ p = pr(@dice uniform(DistUInt{3}); ignore_errors=true)
     a = 3
     b = a
     t = @timed pr(@dice begin
-                x = uniform(DistFixedPoint{b+2, b}, 1/2^b, 1.0 + 1/2^b)
-                y = uniform(DistFixedPoint{b+2, b}, 1/2^b, 1.0 + 1/2^b)
-                x = DistFixedPoint{b+2, 1}(x.number)
-                y = DistFixedPoint{b+2, 1}(y.number)
+                x = uniform(DistFix{b+2, b}, 1/2^b, 1.0 + 1/2^b)
+                y = uniform(DistFix{b+2, b}, 1/2^b, 1.0 + 1/2^b)
+                x = DistFix{b+2, 1}(x.number)
+                y = DistFix{b+2, 1}(y.number)
                 t = round(x/y)
                 # !t.number.number.bits[2]
                 !t.number.number.bits[b+1]        

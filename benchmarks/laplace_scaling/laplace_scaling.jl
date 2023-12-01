@@ -7,7 +7,7 @@ using Plots
 
 
 bits = 0
-DFiP = DistFixedPoint{4 + bits, bits}
+DFiP = DistFix{4 + bits, bits}
 s = 3.0
 distrib = laplace(DFiP, 0.0, s, -8.0, 8.0)
 # plot(pr(distrib))
@@ -24,7 +24,7 @@ bits = parse(Int64, ARGS[1])
 pieces = parse(Int64, ARGS[2])
 scale = parse(Float64, ARGS[3])
 
-DFiP = DistFixedPoint{7 + bits, bits}
+DFiP = DistFix{7 + bits, bits}
 
 a = ifelse(flip(0.5),
                 laplace(DFiP, 0.0, scale, -8.0, 8.0), 

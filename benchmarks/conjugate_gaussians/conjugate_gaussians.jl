@@ -12,7 +12,7 @@ pieces = 2048
 
 p = pr(@dice uniform(DistUInt{3}))
 
-DFiP = DistFixedPoint{6 + bits, bits}
+DFiP = DistFix{6 + bits, bits}
 
 data = DFiP.([8.0, 9.0])
 add_arg = true
