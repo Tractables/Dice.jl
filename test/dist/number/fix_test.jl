@@ -117,7 +117,7 @@ end
     @test all(values(p) .≈ 1/2^2)
 end
 
-@testset "DistFix continuous" begin
+@testset "DistFix bitblast" begin
     pieces = [1, 2, 4, 8]
     function kl_divergence(p, q)
         @test sum(p) ≈ 1.0

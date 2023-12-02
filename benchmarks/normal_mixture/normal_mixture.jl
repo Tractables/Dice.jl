@@ -18,12 +18,12 @@ ys = DFiP.([10.0787617156523, -9.51866467444093, 9.73922587306449, 11.5662681883
 t = @timed expectation(@dice begin
   
   theta = uniform(DFiP, 0.0, 1.0)
-  mu1 = continuous(DFiP, Normal(-10, 1), num_pieces, -18.0, -2.0, true)
-  mu2 = continuous(DFiP, Normal(10, 1), num_pieces, 2.0, 18.0, true)
+  mu1 = bitblast_exponential(DFiP, Normal(-10, 1), num_pieces, -18.0, -2.0)
+  mu2 = bitblast_exponential(DFiP, Normal(10, 1), num_pieces, 2.0, 18.0)
 
   for y in ys
-    c1 = continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0, true)
-    c2 = continuous(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0, true)
+    c1 = bitblast_exponential(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
+    c2 = bitblast_exponential(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
     a = ifelse(parametrised_flip(theta), mu1 + c1, mu2 + c2)
     observe(a == y)
   end

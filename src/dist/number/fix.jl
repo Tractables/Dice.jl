@@ -158,7 +158,7 @@ function bitblast(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution,
 
     isdecreasing = Vector(undef, numpieces)
     for i=numpieces:-1:1
-        iszero(linear_piece_probs[i]) && assert(iszero(piece_probs[i])) && continue
+        iszero(linear_piece_probs[i]) && iszero(piece_probs[i]) && continue
         a = border_probs[i][1]/linear_piece_probs[i]
         isdecreasing[i] = a > 1/2^bits_per_piece
         if isdecreasing[i]
@@ -225,7 +225,7 @@ function bitblast2(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution,
 
     isdecreasing = Vector(undef, numpieces)
     for i=numpieces:-1:1
-        iszero(linear_piece_probs[i]) && assert(iszero(piece_probs[i])) && continue
+        iszero(linear_piece_probs[i]) && iszero(piece_probs[i]) && continue
         a = border_probs[i][1]/linear_piece_probs[i]
         isdecreasing[i] = a > 1/2^bits_per_piece
         if isdecreasing[i]

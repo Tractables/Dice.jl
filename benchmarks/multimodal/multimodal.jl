@@ -17,8 +17,8 @@ datapt = [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, -5.0, -5.0, -5.0]
 code = @dice begin
             for data in datapt
                 y = ifelse(flip(2/3),
-                                continuous(DFiP, Normal(0, 1), pieces, -8.0, 8.0, true) + mu1,
-                                continuous(DFiP, Normal(0, 1), pieces, -8.0, 8.0, true) + mu2)
+                                bitblast_exponential(DFiP, Normal(0, 1), pieces, -8.0, 8.0) + mu1,
+                                bitblast_exponential(DFiP, Normal(0, 1), pieces, -8.0, 8.0) + mu2)
                 observe(prob_equals(y, DFiP(data)))
                 # if flip(2/3) 
                 #             gaussian_observe(DFiP, pieces, -8.0, 8.0, mu1, 1.0, DFiP(data), add=true, exp=true)

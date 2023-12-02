@@ -28,9 +28,9 @@ t = @timed expectation(@dice begin
                                     discrete(DistUInt{2}, [1/3, 1/3, 1/3])))
         end
 
-        mu1 = continuous(DFiP, Normal(0, 1), pieces, -8.0, 8.0, true)
-        mu2 = continuous(DFiP, Normal(0, 1), pieces, -8.0, 8.0, true)
-        mu3 = continuous(DFiP, Normal(0, 1), pieces, -8.0, 8.0, true)
+        mu1 = bitblast_exponential(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
+        mu2 = bitblast_exponential(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
+        mu3 = bitblast_exponential(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
 
         for i in 1:n_vars
             a = ifelse(prob_equals(z[i], DistUInt{2}(0)),

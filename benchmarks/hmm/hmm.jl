@@ -20,23 +20,23 @@ z = Vector(undef, n_vars)
 y = Vector(undef, n_vars)
 z[1] = parametrised_flip(theta1)
 y[1] = ifelse(z[1], 
-            continuous(DFiP, Normal(-1, 1), pieces, -9.0, 7.0, true),
-            continuous(DFiP, Normal(1, 1), pieces, -7.0, 9.0, true))
+            bitblast_exponential(DFiP, Normal(-1, 1), pieces, -9.0, 7.0),
+            bitblast_exponential(DFiP, Normal(1, 1), pieces, -7.0, 9.0))
 
 for i in 2:(n_vars-1)
     z[i] = ifelse(z[i-1], flip(0.5), flip(0.5))
     y[i] = ifelse(z[i], 
-                continuous(DFiP, Normal(-1, 1), pieces, -9.0, 7.0, true),
-                continuous(DFiP, Normal(1, 1), pieces, -7.0, 9.0, true))
+                bitblast_exponential(DFiP, Normal(-1, 1), pieces, -9.0, 7.0),
+                bitblast_exponential(DFiP, Normal(1, 1), pieces, -7.0, 9.0))
 end
 
 z[n_vars] = ifelse(z[n_vars-1], flip(0.5), flip(0.5))
 d1 = ifelse(z[n_vars], 
-            continuous(DFiP, Normal(-1, 1), pieces, -9.0, 7.0, true),
-            continuous(DFiP, Normal(1, 1), pieces, -7.0, 9.0, true))
+            bitblast_exponential(DFiP, Normal(-1, 1), pieces, -9.0, 7.0),
+            bitblast_exponential(DFiP, Normal(1, 1), pieces, -7.0, 9.0))
 d2 = ifelse(z[n_vars], 
-            continuous(DFiP, Normal(-1, 1), pieces, -9.0, 7.0, true),
-            continuous(DFiP, Normal(1, 1), pieces, -7.0, 9.0, true))
+            bitblast_exponential(DFiP, Normal(-1, 1), pieces, -9.0, 7.0),
+            bitblast_exponential(DFiP, Normal(1, 1), pieces, -7.0, 9.0))
 
 t = @timed expectation(@dice begin
             observe(prob_equals(d1, DFiP(-1.5)))

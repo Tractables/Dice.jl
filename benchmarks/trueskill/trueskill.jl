@@ -11,11 +11,11 @@ p = pr(@dice uniform(DistUInt{3}))
 t = @timed pr(@dice begin
     DFiP = DistFix{bits + 6, bits}
 
-            # alice_skill = continuous(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
-            # bob_skill = continuous(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
+            # alice_skill = bitblast(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
+            # bob_skill = bitblast(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
 
-            alice_skill = continuous(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
-            bob_skill = continuous(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
+            alice_skill = bitblast(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
+            bob_skill = bitblast(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
 
             # lazy_lag = DFiP(2.0)
 
@@ -23,7 +23,7 @@ t = @timed pr(@dice begin
 
             for i = 1:3
                 # match[i] = (ifelse(flip(1/3), alice_skill - lazy_lag, alice_skill) < (ifelse(flip(1/3), bob_skill - lazy_lag, bob_skill)))
-                match[i] = (continuous(DFiP, Normal(0, 2), pieces, -16.0, 16.0) + alice_skill) < (continuous(DFiP, Normal(0, 2), pieces, -16.0, 16.0) + bob_skill)
+                match[i] = (bitblast(DFiP, Normal(0, 2), pieces, -16.0, 16.0) + alice_skill) < (bitblast(DFiP, Normal(0, 2), pieces, -16.0, 16.0) + bob_skill)
                 # match[i] = alice_skill < bob_skill
             end
 

@@ -24,11 +24,11 @@ end
 y = reduce(|, z)
 
 d1 = ifelse(y, 
-            continuous(DFiP, Normal(-1, 1), pieces, -9.0, 7.0, true),
-            continuous(DFiP, Normal(1, 1), pieces, -7.0, 9.0, true))
+            bitblast_exponential(DFiP, Normal(-1, 1), pieces, -9.0, 7.0),
+            bitblast_exponential(DFiP, Normal(1, 1), pieces, -7.0, 9.0))
 d2 = ifelse(y, 
-            continuous(DFiP, Normal(-1, 1), pieces, -9.0, 7.0, true),
-            continuous(DFiP, Normal(1, 1), pieces, -7.0, 9.0, true))
+            bitblast_exponential(DFiP, Normal(-1, 1), pieces, -9.0, 7.0),
+            bitblast_exponential(DFiP, Normal(1, 1), pieces, -7.0, 9.0))
 
 t = @timed expectation(@dice begin
     observe(prob_equals(d1, DFiP(-1.5)))

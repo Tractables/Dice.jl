@@ -13,7 +13,7 @@ DFiP = DistFix{bits+2, bits}
 y = [1, 1, 0, 1, 0]
 
 t = @timed expectation(@dice begin
-        a = continuous(DFiP, Beta(2, 5), pieces, 0.0, 1.0, true)
+        a = bitblast_exponential(DFiP, Beta(2, 5), pieces, 0.0, 1.0)
         for i = 1:5
             b = parametrised_flip(a)
             observe((y[i]!=1) | b)

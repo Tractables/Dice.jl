@@ -14,7 +14,7 @@ indices = [1, 0, 1]
 t = @timed expectation(@dice begin
                 x = Vector(undef, 3)
                 for i=1:3
-                    x[i] = continuous(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
+                    x[i] = bitblast(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
                 end
                 sum = DFiP(0.0)
                 for i=1:3

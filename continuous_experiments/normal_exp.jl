@@ -13,7 +13,7 @@ end
 plot!(discrete_gauss)
 
 t = DistFix{10, 5}
-a = continuous(t, Normal(0, 1), 128, -8.0, 8.0)
+a = bitblast(t, Normal(0, 1), 128, -8.0, 8.0)
 b = pr(a)
 plot(b)
 

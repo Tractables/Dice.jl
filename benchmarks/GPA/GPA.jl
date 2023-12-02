@@ -13,8 +13,8 @@ p = pr(@dice uniform(DistUInt{3}))
 DFiP = DistFix{bits + 5, bits}
 
 t = @timed pr(@dice begin 
-            d1 = continuous(DFiP, 4*Beta(8, 2), pieces, 0.0, 4.0, true)
-            d2 = continuous(DFiP, 8*Beta(5, 5), pieces, 0.0, 8.0, true)
+            d1 = bitblast_exponential(DFiP, 4*Beta(8, 2), pieces, 0.0, 4.0)
+            d2 = bitblast_exponential(DFiP, 8*Beta(5, 5), pieces, 0.0, 8.0)
             gpa1 = if flip(0.95) d1 else 
                     if flip(0.15) DFiP(4.0) else
                         DFiP(0.0)

@@ -18,7 +18,7 @@ data = DFiP.([8.0, 9.0])
 add_arg = true
 
 t = expectation(@dice begin
-                a = continuous(DFiP, Normal(0, 1), pieces, -8.0, 8.0, true)
+                a = bitblast_exponential(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
                 for datapt in data
                     gaussian_observe(DFiP, pieces, -8.0, 8.0, a, 1.0, datapt, add=add_arg, exp=false)
                     @show datapt

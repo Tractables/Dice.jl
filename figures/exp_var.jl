@@ -9,7 +9,7 @@ io = open(string("./figures/exp_var.txt"), "a")
 for i = 16:20
     DFiP = DistFix{5+i, i}
     code = @dice begin
-        x = continuous(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
+        x = bitblast(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
         x
     end
     t = @benchmark expectation($code)
