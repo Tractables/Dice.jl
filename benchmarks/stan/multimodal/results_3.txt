@@ -1,0 +1,23 @@
+Inference for Stan model: multimodal_model
+1 chains: each with iter=(1000000); warmup=(0); thin=(1); 1000000 iterations saved.
+
+Warmup took 0.0090 seconds
+Sampling took 16 seconds
+
+                          Mean           MCSE         StdDev              5%             50%             95%          N_Eff        N_Eff/s          R_hat
+
+lp__            -1.3128615e+01  1.5071402e-03  1.0044075e+00  -1.5130100e+01  -1.2820000e+01  -1.2176800e+01  4.4413249e+05  2.7718436e+04  1.0000062e+00
+accept_stat__    9.2685928e-01  8.1714306e-05  9.0167950e-02   7.3919400e-01   9.6069300e-01   1.0000000e+00  1.2176100e+06  7.5991385e+04  1.0000058e+00
+stepsize__       8.0902800e-01            nan  2.6141324e-12   8.0902800e-01   8.0902800e-01   8.0902800e-01            nan            nan            nan
+treedepth__      2.0411320e+00  6.3912088e-04  6.2129586e-01   1.0000000e+00   2.0000000e+00   3.0000000e+00  9.4499803e+05  5.8977597e+04  1.0000037e+00
+n_leapfrog__     4.0233680e+00  2.0194727e-03  1.9956638e+00   1.0000000e+00   3.0000000e+00   7.0000000e+00  9.7655961e+05  6.0947364e+04  1.0000024e+00
+divergent__      0.0000000e+00            nan  0.0000000e+00   0.0000000e+00   0.0000000e+00   0.0000000e+00            nan            nan            nan
+energy__         1.4128541e+01  2.2237367e-03  1.4177289e+00   1.2481800e+01   1.3804500e+01   1.6873700e+01  4.0646171e+05  2.5367391e+04  1.0000134e+00
+
+mu1             -5.0006463e+00  6.7322997e-04  5.7804145e-01  -5.9519600e+00  -5.0006500e+00  -4.0510200e+00  7.3720979e+05  4.6009473e+04  9.9999926e-01
+mu2              5.0002860e+00  4.4233547e-04  4.0807678e-01   4.3297600e+00   5.0000800e+00   5.6716200e+00  8.5109931e+05  5.3117351e+04  9.9999907e-01
+
+Samples were drawn using hmc with nuts.
+For each parameter, N_Eff is a crude measure of effective sample size,
+and R_hat is the potential scale reduction factor on split chains (at 
+convergence, R_hat=1).

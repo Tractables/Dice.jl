@@ -1,0 +1,132 @@
+def main() { 
+    prior1 := beta(1, 1);
+    z1 := bernoulli(prior1);
+    prior2 := beta(1, 1);
+    z2 := bernoulli(prior2);
+    prior3 := beta(1, 1);
+    z3 := bernoulli(prior3);
+    prior4 := beta(1, 1);
+    z4 := bernoulli(prior4);
+    prior5 := beta(1, 1);
+    z5 := bernoulli(prior5);
+    prior6 := beta(1, 1);
+    z6 := bernoulli(prior6);
+    prior7 := beta(1, 1);
+    z7 := bernoulli(prior7);
+    prior8 := beta(1, 1);
+    z8 := bernoulli(prior8);
+    prior9 := beta(1, 1);
+    z9 := bernoulli(prior9);
+    prior10 := beta(1, 1);
+    z10 := bernoulli(prior10);
+    prior11 := beta(1, 1);
+    z11 := bernoulli(prior11);
+    prior12 := beta(1, 1);
+    z12 := bernoulli(prior12);
+    prior13 := beta(1, 1);
+    z13 := bernoulli(prior13);
+    prior14 := beta(1, 1);
+    z14 := bernoulli(prior14);
+    prior15 := beta(1, 1);
+    z15 := bernoulli(prior15);
+    prior16 := beta(1, 1);
+    z16 := bernoulli(prior16);
+    prior17 := beta(1, 1);
+    z17 := bernoulli(prior17);
+    prior18 := beta(1, 1);
+    z18 := bernoulli(prior18);
+    prior19 := beta(1, 1);
+    z19 := bernoulli(prior19);
+    prior20 := beta(1, 1);
+    z20 := bernoulli(prior20);
+    prior21 := beta(1, 1);
+    z21 := bernoulli(prior21);
+    prior22 := beta(1, 1);
+    z22 := bernoulli(prior22);
+    prior23 := beta(1, 1);
+    z23 := bernoulli(prior23);
+    prior24 := beta(1, 1);
+    z24 := bernoulli(prior24);
+    prior25 := beta(1, 1);
+    z25 := bernoulli(prior25);
+    prior26 := beta(1, 1);
+    z26 := bernoulli(prior26);
+    prior27 := beta(1, 1);
+    z27 := bernoulli(prior27);
+    prior28 := beta(1, 1);
+    z28 := bernoulli(prior28);
+    prior29 := beta(1, 1);
+    z29 := bernoulli(prior29);
+    prior30 := beta(1, 1);
+    z30 := bernoulli(prior30);
+    prior31 := beta(1, 1);
+    z31 := bernoulli(prior31);
+    prior32 := beta(1, 1);
+    z32 := bernoulli(prior32);
+    prior33 := beta(1, 1);
+    z33 := bernoulli(prior33);
+    prior34 := beta(1, 1);
+    z34 := bernoulli(prior34);
+    prior35 := beta(1, 1);
+    z35 := bernoulli(prior35);
+    prior36 := beta(1, 1);
+    z36 := bernoulli(prior36);
+    prior37 := beta(1, 1);
+    z37 := bernoulli(prior37);
+    prior38 := beta(1, 1);
+    z38 := bernoulli(prior38);
+    prior39 := beta(1, 1);
+    z39 := bernoulli(prior39);
+    prior40 := beta(1, 1);
+    z40 := bernoulli(prior40);
+    y := 
+z1 | 
+z2 | 
+z3 | 
+z4 | 
+z5 | 
+z6 | 
+z7 | 
+z8 | 
+z9 | 
+z10 | 
+z11 | 
+z12 | 
+z13 | 
+z14 | 
+z15 | 
+z16 | 
+z17 | 
+z18 | 
+z19 | 
+z20 | 
+z21 | 
+z22 | 
+z23 | 
+z24 | 
+z25 | 
+z26 | 
+z27 | 
+z28 | 
+z29 | 
+z30 | 
+z31 | 
+z32 | 
+z33 | 
+z34 | 
+z35 | 
+z36 | 
+z37 | 
+z38 | 
+z39 | 
+z40;
+
+            o1 := if y {gauss(80, 8)} else {gauss(135, 8)};
+    o2 := if y {gauss(80, 8)} else {gauss(135, 8)};
+    cobserve(o1,79);
+    cobserve(o2,136);
+    //cobserve(o3, -1.5);
+
+    return Expectation(prior1);
+}
+

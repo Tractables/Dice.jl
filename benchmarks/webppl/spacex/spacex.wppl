@@ -1,0 +1,18 @@
+var model = function() {
+  var e = gaussian({mu: 5, sigma: 1});
+  condition(e>0);
+  var fs = gaussian({mu: 10, sigma: 3});
+  condition(fs>0);
+  var cfs = e + fs;
+  var ss = gaussian({mu: 15, sigma: 3});
+  condition(ss>0);
+  var cr = cfs + ss;
+  
+  return cr;
+}
+
+var func1 = function() {
+	return Infer({method: argv.m, particles: argv.s, samples: argv.s}, model);
+}
+
+timeit( function() { return expectation(func1());})
