@@ -557,19 +557,14 @@ end
 
 
 
-function unit_gamma(t::Type{DistFix{W, F}}, alpha::Int, beta::Float64; vec_arg=[], constants = [], discrete_bdd=[], constant_flips=[], f=[]) where {W, F}
+function unit_gamma(t::Type{DistFix{W, F}}, alpha::Int, beta::Float64; vec_arg=[], constants = [], discrete_bdd=[]) where {W, F}
     DFiP = DistFix{W, F}
     if alpha == 0
         unit_exponential(DFiP, beta)
     elseif alpha == 1
         
         t = (exp(beta*2.0^(-F))*(beta*2.0^(-F) - 1) + 1)*(1 - exp(beta)) / ((1 - exp(beta*2.0^(-F)))*(exp(beta) * (beta - 1) + 1))
-        
-        if f == []
-            coinflip = flip(t)
-        else
-            coinflip = f[1]
-        end
+        coinflip = flip(t)
 
         if (length(vec_arg) != 0)
             (Y, Z, U) = vec_arg
@@ -591,7 +586,6 @@ function unit_gamma(t::Type{DistFix{W, F}}, alpha::Int, beta::Float64; vec_arg=[
         else
             discrete_bdd = Vector(undef, α)
             constants = gamma_constants(alpha, beta, 1/2^F)
-            constant_flips = [flip(i) for i in constants]
 
             t = (exp(beta*2.0^(-F))*(beta*2.0^(-F) - 1) + 1)*(1 - exp(beta)) / ((1 - exp(beta*2.0^(-F)))*(exp(beta) * (beta - 1) + 1))
             f = flip(t)
@@ -609,8 +603,8 @@ function unit_gamma(t::Type{DistFix{W, F}}, alpha::Int, beta::Float64; vec_arg=[
         end
 
         seq = Int(α*(α^2 + 5)/6)
-        @show constant_flips
-        x1 = unit_gamma(DFiP, alpha-1, beta, vec_arg=vec_expo[1:seq], constants=constants[α + 2:length(constants)], discrete_bdd=discrete_bdd[2:α], constant_flips=constant_flips[α + 2:length(constants)], f=[f])
+        # @show constant_flips
+        x1 = unit_gamma(DFiP, alpha-1, beta, vec_arg=vec_expo[1:seq], constants=constants[α + 2:length(constants)], discrete_bdd=discrete_bdd[2:α])
         x2 = vec_expo[seq + 1]
         observe(x2 < x1)
 
@@ -633,7 +627,7 @@ function unit_gamma(t::Type{DistFix{W, F}}, alpha::Int, beta::Float64; vec_arg=[
             t = ifelse(prob_equals(l, DistUInt{Int(ceil(log(α)))}(i-1)), discrete_dist_vec[i], t)
         end
         
-        ifelse(constant_flips[1], x1, t)
+        ifelse(flip(constants[1]), x1, t)
     end
 
 end
