@@ -31,7 +31,7 @@ function get_world_probs(w::WMC, query::JointQuery, evidence::AnyBool)
     function rec(context::CuddNode, state, rembits)
         issat(w.c.mgr, context) || return
         if isempty(rembits)
-            p = exp(logprob(w, context, vals) - evid_logp)
+            p = exp(logprob(w, context) - evid_logp)
             push!(states, state => p)
         else
             head = rembits[1]
@@ -52,14 +52,15 @@ function get_world_probs(w::WMC, query::JointQuery, evidence::AnyBool)
 end
 
 
-function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}, errors, dots)
+function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}, errors, dots, flip_pr_resolver)
     w = WMC(
         BDDCompiler(Iterators.flatten((
             Iterators.flatten(query.bits for query in queries),
             (err[1] for err in errors),
             [evidence],
             Iterators.flatten(xs for (xs, filename) in dots),
-        )))
+        ))),
+        flip_pr_resolver
     )
 
     enable_reordering(w.c, cudd.reordering_type)

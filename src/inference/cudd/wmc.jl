@@ -9,8 +9,9 @@ using DataStructures: LinkedList, cons, nil
 mutable struct WMC
     c::BDDCompiler
     cache::Dict{CuddNode, Float64}
-    function WMC(c)
-        w = new(c, Dict{CuddNode, Float64}())
+    flip_pr_resolver
+    function WMC(c, flip_pr_resolver)
+        w = new(c, Dict{CuddNode, Float64}(), flip_pr_resolver)
         w.cache[constant(w.c.mgr, true)] = log(one(Float64))
         w.cache[constant(w.c.mgr, false)] = log(zero(Float64))
         w
@@ -19,16 +20,16 @@ end
 
 logprob(w::WMC, x::AnyBool) = logprob(w, compile(w.c, x))
 
-function logprob(w::WMC, x::CuddNode, vals=nothing)
+function logprob(w::WMC, x::CuddNode)
     get!(w.cache, x) do
         f = w.c.level_to_flip[level(x)]
-        p = if f.prob isa ADNode
-            compute(f.prob, vals)
-        else
+        p = if f.prob isa Real
             f.prob
+        else
+            w.flip_pr_resolver(f.prob)
         end
-        a = log(p) + logprob(w, high(x), vals)
-        b = log(1.0-p) + logprob(w, low(x), vals)
+        a = log(p) + logprob(w, high(x))
+        b = log(1.0-p) + logprob(w, low(x))
         if isinf(a)
             b
         elseif isinf(b)
@@ -40,19 +41,21 @@ function logprob(w::WMC, x::CuddNode, vals=nothing)
     end
 end
 
+grad_logprob(w::WMC, x::AnyBool) = grad_logprob(w, compile(w.c, x))
+
 # Calculate gradient of a BDD node w.r.t. flip probabilities (reverse mode)
-function grad_logprob(w::WMC, x::CuddNode, vals=nothing)::Dict{Flip, Float64}
+function grad_logprob(w::WMC, x::CuddNode)::Dict{Flip, Float64}
     grad = DefaultDict{Flip, Float64}(0.)
     deriv = DefaultDict{CuddNode, Float64}(0.)
     deriv[x] = 1
     level_traversal(x) do node
         i, lo, hi = level(node), low(node), high(node)
         f = w.c.level_to_flip[i]
-        fhi, flo = logprob(w, hi, vals), logprob(w, lo, vals)
-        p = if f.prob isa ADNode
-            compute(f.prob, vals)
-        else
+        fhi, flo = logprob(w, hi), logprob(w, lo)
+        p = if f.prob isa Real
             f.prob
+        else
+            w.flip_pr_resolver(f.prob)
         end
         denom = p * exp(fhi) + (1 - p) * exp(flo)
         deriv[hi] += deriv[node] * p * exp(fhi) / denom
