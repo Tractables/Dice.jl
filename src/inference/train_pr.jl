@@ -1,6 +1,6 @@
 # The bridge between autodiff and cudd
 
-export step_vars!, train_pr!, BoolToMax, total_logprob, valuation_to_flip_pr_resolver, mle_loss
+export step_vars!, train_pr!, BoolToMax, total_logprob, valuation_to_flip_pr_resolver, mle_loss, kl_divergence
 
 struct BoolToMax
     bool::AnyBool
@@ -36,6 +36,8 @@ function step_pr!(
     # so, calculate these logprs
     w = WMC(BDDCompiler(bools), valuation_to_flip_pr_resolver(var_vals))
     bool_logprs = Valuation(Var(bool) => logprob(w, bool) for bool in bools)
+    # TODO: have differentiate return vals as well to avoid this compute
+    # or have it take vals
     loss_val = compute(bool_logprs, [loss])[loss] # for return value only
 
     # so we can move the blame from to loss to those bools
@@ -85,6 +87,27 @@ end
 
 function mle_loss(bools_to_max::Vector{<:AnyBool})
     mle_loss([BoolToMax(b, true, 1) for b in bools_to_max])
+end
+
+# This is valid but not what we usually want: when training a dist, the reference
+# distribution should be constant, and the other should be symbolic.
+# reference distribution to be constant.
+# function kl_divergence(p::Dist, q::Dict{<:Any, <:Real}, domain::Set{<:Pair{<:Any, <:Dist}})
+#     res = 0
+#     for (x, x_dist) in domain
+#         logpx = Var(prob_equals(p, x_dist)) # Var(b) represents the logpr of b
+#         res += exp(logpx) * (logpx - log(q[x])) 
+#     end
+#     res
+# end
+
+function kl_divergence(p::Dict{<:Any, <:Real}, q::Dist, domain::Set{<:Pair{<:Any, <:Dist}})
+    res = 0
+    for (x, x_dist) in domain
+        logqx = Var(prob_equals(q, x_dist)) # Var(b) represents the logpr of b
+        res += p[x] * (log(p[x]) - logqx) 
+    end
+    res
 end
 
 # Train group_to_psp to such that generate() approximates dataset's distribution
