@@ -80,6 +80,3 @@ plot(p_exp, label="exponential")
 plot!(p_linear, label="linear")
 plot!(q, label="true")
 savefig("continuous_experiments/visualizing_approx.png")
-
-q
-
