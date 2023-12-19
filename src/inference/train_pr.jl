@@ -31,7 +31,7 @@ function step_pr!(
 )
     # loss refers to logprs of bools
     # error to do with var(true)? just make it a vector of anybool and don't filter
-    bools = Vector{Dist{Bool}}([n.id for n in vars(loss) if !(n.id isa Bool)])
+    bools = Vector{Dist{Bool}}([n.id for n in variables(loss) if !(n.id isa Bool)])
 
     # so, calculate these logprs
     w = WMC(BDDCompiler(bools), valuation_to_flip_pr_resolver(var_vals))
@@ -137,7 +137,7 @@ function compute_loss(
     var_vals::Valuation,
     loss::ADNode
 )
-    bools = Vector{Dist{Bool}}([n.id for n in vars(loss) if !(n.id isa Bool)])
+    bools = Vector{Dist{Bool}}([n.id for n in variables(loss) if !(n.id isa Bool)])
     w = WMC(BDDCompiler(bools), valuation_to_flip_pr_resolver(var_vals))
     bool_logprs = Valuation(Var(bool) => logprob(w, bool) for bool in bools)
     compute(bool_logprs, [loss])[loss] # for return value only
