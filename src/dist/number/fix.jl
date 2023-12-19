@@ -3,7 +3,7 @@ using SymPy
 @vars varint
 @vars v2
 
-export DistFix, bitblast, bitblast_linear, bitblast_exponential, bitblast_exact, unit_exponential, exponential, laplace, unit_gamma, shift_point_gamma, n_unit_exponentials
+export DistFix, bitblast, bitblast_linear, bitblast_exponential, bitblast_exact, unit_exponential, exponential, laplace, unit_gamma, shift_point_gamma, n_unit_exponentials, geometric
 
 ##################################
 # types, structs, and constructors
@@ -53,7 +53,7 @@ function Base.convert(::Type{DistFix{W2, F2}}, x::DistFix{W1, F1}) where {W1,W2,
         mantissa = convert(DistInt{W1+(F2-F1)}, x.mantissa)
         mantissa <<= (F2-F1)
     else #F2 < F1
-        mantissa = drop_bits(DistInt{W1+(F2-F1)}, x.mantissa; last=true)
+        mantissa = drop_bits(DistInt{W1+(F2-F1)}, x.mantissa; last=false)
     end
     convert(DistFix{W2, F2}, DistFix{W1+(F2-F1), F2}(mantissa))
 end
@@ -646,3 +646,16 @@ end
 #     Y
 # end
 
+######################################################################################################
+# bit blasting geometric distribution: https://en.wikipedia.org/wiki/Geometric_distribution
+######################################################################################################
+
+# Creates a geometric distribution over the integers in the range [0, stop-1]
+function geometric(::Type{DistFix{W, F}}, success::Float64, stop::Int) where {W, F}
+    #TODO: use convert
+    @assert ispow2(stop)
+    bits = Int(log2(stop))
+    @assert W - F > bits
+
+    convert(DistFix{W, F}, DistFix{W, 0}(unit_exponential(DistFix{bits+1, bits}, log(1 - success)*2^bits).mantissa))
+end

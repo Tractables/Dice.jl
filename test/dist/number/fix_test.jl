@@ -388,5 +388,11 @@ end
     #TODO test for beta = 0
     #TODO test for positive beta
 
+    # Truncated Geometric
+    x = Truncated(Geometric(0.8), 0, 32)
+    @test_throws Exception a = geometric(DistFix{6, 2}, 0.8, 32)
+    a = geometric(DistFix{8, 2}, 0.8, 32)
+    @test pr(a)[0.0] ≈ pdf(x, 0.0)
+    @test pr(a)[19] ≈ pdf(x, 19.0)
 end
 
