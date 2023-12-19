@@ -28,7 +28,7 @@ for width in [3]
 
         # Weighted training
         wt_var_to_vals = Valuation(x => 0 for x in vars)
-        train_pr!(
+        history = train_pr!(
             wt_var_to_vals,
             mle_loss([
                 BoolToMax(
@@ -38,7 +38,7 @@ for width in [3]
                 for i in 0:2^width-1
             ]),
             epochs=2000,
-            learning_rate=0.003
+            learning_rate=0.1
         )
         wt_dist = pr(int, flip_pr_resolver=valuation_to_flip_pr_resolver(wt_var_to_vals))
 
@@ -52,14 +52,14 @@ for width in [3]
                 Set([i => DistUInt{width}(i) for i in 0:2^width-1])
             ),
             epochs=2000,
-            learning_rate=0.003
+            learning_rate=0.1
         )
         kl_dist = pr(int, flip_pr_resolver=valuation_to_flip_pr_resolver(kl_var_to_vals))
 
         # Counting
         counting_prs = [
             sum(p for (x, p) in target_dist if x & 2^i > 0)
-            for i in 0:width-1
+            for i in width-1:-1:0
         ]
         counting_int = DistUInt{width}(map(flip, counting_prs))
         counting_dist = pr(counting_int)
