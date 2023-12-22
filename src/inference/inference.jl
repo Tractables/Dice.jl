@@ -173,5 +173,6 @@ include("pr.jl")
 # - train_group_probs!(::Vector{<:AnyBool}))
 # - train_group_probs!(::Vector{<:Tuple{<:AnyBool, <:AnyBool}})
 include("train_pr.jl")
+include("train_pr_losses.jl")
 
 include("sample.jl")

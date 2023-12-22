@@ -3,7 +3,7 @@ export value, compute, differentiate, value, Valuation, Derivs, compute_one, var
 using DirectedAcyclicGraphs
 using DataStructures: DefaultDict
 
-Valuation = Dict{Var, ADNodeCompatible}
+Valuation = Dict{Variable, ADNodeCompatible}
 Derivs = Dict{ADNode, ADNodeCompatible}
 
 function compute_one(root, vals::Dict{ADNode, <:ADNodeCompatible})
