@@ -1,4 +1,4 @@
-export value, compute, differentiate, value, Valuation, Derivs, compute_one
+export value, compute, differentiate, Valuation, Derivs, ADComputer
 
 using DirectedAcyclicGraphs
 using DataStructures: DefaultDict
@@ -6,23 +6,29 @@ using DataStructures: DefaultDict
 Valuation = Dict{Var, ADNodeCompatible}
 Derivs = Dict{ADNode, ADNodeCompatible}
 
-function compute_one(root, vals::Dict{ADNode, <:ADNodeCompatible})
-    foldup(root, compute_leaf, compute_inner, ADNodeCompatible, vals)
+mutable struct ADComputer
+    vals::Dict{ADNode, ADNodeCompatible}
+    function ADComputer(var_vals::Valuation)
+        new(merge(Dict{ADNode, ADNodeCompatible}(), var_vals))
+    end
 end
 
+function compute(a::ADComputer, root::ADNode)
+    foldup(root, compute_leaf, compute_inner, ADNodeCompatible, a.vals)
+end
+
+compute(var_vals::Valuation, root::ADNode) = compute(var_vals, [root])[root]
 function compute(var_vals::Valuation, roots)
-    vals = Dict{ADNode, ADNodeCompatible}()
-    merge!(vals, var_vals)
+    a = ADComputer(var_vals)
     for root in roots
-        compute_one(root, vals)
+        compute(a, root)
     end
-    vals
+    a.vals
 end
 
 function differentiate(var_vals::Valuation, root_derivs::Derivs)
     vals = compute(var_vals, keys(root_derivs))
-    derivs = Dict{ADNode, ADNodeCompatible}()
-    merge!(derivs, root_derivs)
+    derivs = merge(Dict{ADNode, ADNodeCompatible}(), root_derivs)
     foreach_down(keys(root_derivs)) do n
         haskey(derivs, n) && backward(n, vals, derivs)
     end

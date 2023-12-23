@@ -1,6 +1,5 @@
 using Test
 using Dice
-using Plots
 
 function dict_approx(d1::AbstractDict, d2::AbstractDict)
     issetequal(keys(d1), keys(d2)) && all(
@@ -18,7 +17,6 @@ end
         )
     end
 
-
     width = 3
     target_dist = dist_binomial(width, 0.1)
 
@@ -27,7 +25,7 @@ end
 
     # Weighted training
     wt_var_to_vals = Valuation(x => 0 for x in vars)
-    history = train_pr!(
+    history = train!(
         wt_var_to_vals,
         mle_loss([
             BoolToMax(
@@ -66,7 +64,7 @@ end
 
     # KL divergence minimization
     kl_var_to_vals = Valuation(x => 0 for x in vars)
-    train_pr!(
+    train!(
         kl_var_to_vals,
         kl_divergence(
             target_dist,

@@ -27,16 +27,20 @@ function expand_logprs(l::LogPrExpander, root::ADNode)::ADNode
     fi(x::Sin, call) = Sin(call(x.x))
     fi(x::Cos, call) = Cos(call(x.x))
     fi(x::Log, call) = Log(call(x.x))
+    fi(x::ADMatrix, call) = ADMatrix(map(call, x.x))
+    fi(x::GetIndex, call) = GetIndex(call(x.x), x.i)
+    fi(x::Map, call) = Map(x.f, x.f′, call(x.x))
+    fi(x::Transpose, call) = Transpose(call(x.x))
     foldup(root, fl, fi, ADNode, l.cache)
 end
 
-# Within root's LogPrs there are Dist{Bool} DAGs. Collect minimal roots all DAGs.
-function bool_roots(root::ADNode)
+# Within roots' LogPrs there are Dist{Bool} DAGs. Collect minimal roots all DAGs
+function bool_roots(roots)
     # TODO: have non-root removal be done in src/inference/cudd/compile.jl
     seen_adnodes = Dict{ADNode, Nothing}()
     seen_bools = Dict{AnyBool, Nothing}()
     non_roots = Set{AnyBool}()
-    to_visit = Vector{ADNode}([root])
+    to_visit = Vector{ADNode}(roots)
     while !isempty(to_visit)
         x = pop!(to_visit)
         foreach(x, seen_adnodes) do y
@@ -53,13 +57,15 @@ function bool_roots(root::ADNode)
     setdiff(keys(seen_bools), non_roots)
 end
 
-function compute_mixed(
-    var_vals::Valuation,
-    x::ADNode
-)
-    l = LogPrExpander(WMC(BDDCompiler(bool_roots(x))))
-    x = expand_logprs(l, x)
-    compute(var_vals, [x])[x]
+function compute_mixed(var_vals::Valuation, root::ADNode)
+    compute_mixed(var_vals, [root])[root]
+end
+
+function compute_mixed(var_vals::Valuation, roots)
+    l = LogPrExpander(WMC(BDDCompiler(bool_roots(roots))))
+    expanded_roots = [expand_logprs(l, x) for x in roots]
+    vals = compute(var_vals, expanded_roots)
+    Dict(root => vals[l.cache[root]] for root in roots)
 end
 
 function train!(
@@ -70,7 +76,7 @@ function train!(
 )
     losses = []
     for _ in 1:epochs
-        l = LogPrExpander(WMC(BDDCompiler(bool_roots(loss))))
+        l = LogPrExpander(WMC(BDDCompiler(bool_roots([loss]))))
         loss = expand_logprs(l, loss)
         vals, derivs = differentiate(var_vals, Derivs(loss => 1))
 
