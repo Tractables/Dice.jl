@@ -80,21 +80,6 @@ Base.:(*)(x::ADNode, y::ADNode) = Mul(x, y)
 Base.:(*)(x::ADNode, y::ADNodeCompatible) = Mul(x, Constant(y))
 Base.:(*)(x::ADNodeCompatible, y::ADNode) = Mul(Constant(x), y)
 
-# mutable struct Div <: ADNode
-#     x::ADNode
-#     y::ADNode
-# end
-# NodeType(::Type{Div}) = Inner()
-# children(x::Div) = [x.x, x.y]
-# compute_inner(x::Div, call) = call(x.x) / call(x.y)
-# function backward(n::Div, vals, derivs)
-#     derivs[n.x] += derivs[n] / vals[n.y]
-#     derivs[n.y] -= derivs[n] * vals[n.x] / vals[n.y] ^ 2
-# end
-# Base.:(/)(x::ADNode, y::ADNode) = Div(x, y)
-# Base.:(/)(x::ADNode, y::Real) = Div(x, Constant(y))
-# Base.:(/)(x::Real, y::ADNode) = Div(Constant(x), y)
-
 mutable struct Pow <: ADNode
     x::ADNode
     y::ADNode
@@ -136,17 +121,6 @@ function backward(n::Cos, vals, derivs)
     add_deriv(derivs, n.x, derivs[n] * -sin(vals[n.x]))
 end
 Base.cos(x::ADNode) = Cos(x)
-
-# mutable struct Exp <: ADNode
-#     x::ADNode
-# end
-# NodeType(::Type{Exp}) = Inner()
-# children(x::Exp) = [x.x]
-# compute_inner(x::Exp, call) = exp(call(x.x))
-# function backward(n::Exp, vals, derivs)
-#     derivs[n.x] += derivs[n] * exp(vals[n.x])
-# end
-# Base.exp(x::ADNode) = Exp(x)
 
 mutable struct Log <: ADNode
     x::ADNode
