@@ -229,31 +229,6 @@ function backward(n::Transpose, vals, derivs)
     add_deriv(derivs, n.x, transpose(derivs[n]))
 end
 
-# Give override for add_logprobs so logprob in wmc.jl is differentiable
-# computes log(exp(x) + exp(y))
-mutable struct NodeLogPr <: ADNode
-    pr::ADNode
-    hi::ADNode
-    lo::ADNode
-end
-NodeType(::Type{NodeLogPr}) = Inner()
-children(x::NodeLogPr) = [x.pr, x.hi, x.lo]
-# compute by calling higher-accuracy, non-autodiff-able implementation
-compute_inner(x::NodeLogPr, call) = node_logprob(call(x.pr), call(x.hi), call(x.lo))
-function backward(n::NodeLogPr, vals, derivs)
-    denom = vals[n.pr] * exp(vals[n.hi]) + (1 - vals[n.pr]) * exp(vals[n.lo])
-    add_deriv(derivs, n.hi, derivs[n] * vals[n.pr] * exp(vals[n.hi]) / denom)
-    add_deriv(derivs, n.lo, derivs[n] * (1 - vals[n.pr]) * exp(vals[n.lo]) / denom)
-    add_deriv(derivs, n.pr, derivs[n] * (exp(vals[n.hi]) - exp(vals[n.lo])) / denom)
-end
-node_logprob(pr::ADNode, hi::ADNode, lo::ADNode) = NodeLogPr(pr, hi, lo)
-node_logprob(pr::ADNode, hi::ADNode, lo::ADNodeCompatible) = NodeLogPr(pr, hi, Constant(lo))
-node_logprob(pr::ADNode, hi::ADNodeCompatible, lo::ADNode) = NodeLogPr(pr, Constant(hi), lo)
-node_logprob(pr::ADNode, hi::ADNodeCompatible, lo::ADNodeCompatible) = NodeLogPr(pr, Constant(hi), Constant(lo))
-node_logprob(pr::ADNodeCompatible, hi::ADNode, lo::ADNode) = NodeLogPr(Constant(pr), hi, lo)
-node_logprob(pr::ADNodeCompatible, hi::ADNode, lo::ADNodeCompatible) = NodeLogPr(Constant(pr), hi, Constant(lo))
-node_logprob(pr::ADNodeCompatible, hi::ADNodeCompatible, lo::ADNode) = NodeLogPr(Constant(pr), hi, Constant(lo))
-
 # Desugared ops
 Base.zero(::ADNode) = Constant(0)
 Base.:(-)(x::ADNode) = x * -1

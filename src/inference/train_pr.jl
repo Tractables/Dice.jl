@@ -29,7 +29,6 @@ function expand_logprs(l::LogPrExpander, root::ADNode)::ADNode
     fi(x::Sin, call) = Sin(call(x.x))
     fi(x::Cos, call) = Cos(call(x.x))
     fi(x::Log, call) = Log(call(x.x))
-    fi(x::NodeLogPr, call) = NodeLogPr(call(x.pr), call(x.hi), call(x.lo))
     foldup(root, fl, fi, ADNode, l.cache)
 end
 
