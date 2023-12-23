@@ -1,4 +1,3 @@
-
 export BoolToMax, mle_loss, kl_divergence
 
 struct BoolToMax

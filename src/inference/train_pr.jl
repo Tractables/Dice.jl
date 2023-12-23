@@ -1,5 +1,5 @@
 # The bridge between autodiff and cudd
-export step_vars!, train_pr!, LogPr, compute_mixed
+export LogPr, compute_mixed, train!
 using DataStructures: Queue
 
 mutable struct LogPr <: ADNode
@@ -17,8 +17,6 @@ mutable struct LogPrExpander
     end
 end
 
-
-
 function expand_logprs(l::LogPrExpander, root::ADNode)::ADNode
     fl(x::LogPr) = expand_logprs(l, logprob(l.w, x.bool))
     fl(x::Var) = x
@@ -32,6 +30,7 @@ function expand_logprs(l::LogPrExpander, root::ADNode)::ADNode
     foldup(root, fl, fi, ADNode, l.cache)
 end
 
+# Within root's LogPrs there are Dist{Bool} DAGs. Collect minimal roots all DAGs.
 function bool_roots(root::ADNode)
     # TODO: have non-root removal be done in src/inference/cudd/compile.jl
     seen_adnodes = Dict{ADNode, Nothing}()
@@ -54,53 +53,6 @@ function bool_roots(root::ADNode)
     setdiff(keys(seen_bools), non_roots)
 end
 
-
-# Find the log-probabilities and the log-probability gradient of a BDD
-function add_scaled_dict!(
-    x::AbstractDict{<:Any, <:Real},
-    y::AbstractDict{<:Any, <:Real},
-    s::Real
-)
-    for (k, v) in y
-        x[k] += v * s
-    end
-end
-
-
-function step_pr!(
-    var_vals::Valuation,
-    loss::ADNode,
-    learning_rate::Real
-)
-    l = LogPrExpander(WMC(BDDCompiler(bool_roots(loss))))
-    loss = expand_logprs(l, loss)
-    vals, derivs = differentiate(var_vals, Derivs(loss => 1))
-
-    # update vars
-    for (adnode, d) in derivs
-        if adnode isa Var
-            var_vals[adnode] -= d * learning_rate
-        end
-    end
-
-    vals[loss]
-end
-
-# Train group_to_psp to such that generate() approximates dataset's distribution
-function train_pr!(
-    var_vals::Valuation,
-    loss::ADNode;
-    epochs::Integer,
-    learning_rate::Real,
-)
-    losses = []
-    for _ in 1:epochs
-        push!(losses, step_pr!(var_vals, loss, learning_rate))
-    end
-    push!(losses, compute_mixed(var_vals, loss))
-    losses
-end
-
 function compute_mixed(
     var_vals::Valuation,
     x::ADNode
@@ -108,4 +60,29 @@ function compute_mixed(
     l = LogPrExpander(WMC(BDDCompiler(bool_roots(x))))
     x = expand_logprs(l, x)
     compute(var_vals, [x])[x]
+end
+
+function train!(
+    var_vals::Valuation,
+    loss::ADNode;
+    epochs::Integer,
+    learning_rate::Real,
+)
+    losses = []
+    for _ in 1:epochs
+        l = LogPrExpander(WMC(BDDCompiler(bool_roots(loss))))
+        loss = expand_logprs(l, loss)
+        vals, derivs = differentiate(var_vals, Derivs(loss => 1))
+
+        # update vars
+        for (adnode, d) in derivs
+            if adnode isa Var
+                var_vals[adnode] -= d * learning_rate
+            end
+        end
+
+        push!(losses, vals[loss])
+    end
+    push!(losses, compute_mixed(var_vals, loss))
+    losses
 end

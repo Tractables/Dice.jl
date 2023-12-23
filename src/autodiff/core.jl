@@ -1,9 +1,9 @@
-export value, compute, differentiate, value, Valuation, Derivs, compute_one, variables
+export value, compute, differentiate, value, Valuation, Derivs, compute_one
 
 using DirectedAcyclicGraphs
 using DataStructures: DefaultDict
 
-Valuation = Dict{Variable, ADNodeCompatible}
+Valuation = Dict{Var, ADNodeCompatible}
 Derivs = Dict{ADNode, ADNodeCompatible}
 
 function compute_one(root, vals::Dict{ADNode, <:ADNodeCompatible})
@@ -50,8 +50,4 @@ function foreach_down(f::Function, roots)
     for n in Iterators.reverse(rev_topo)
         f(n)
     end
-end
-
-function variables(x::ADNode)
-    filter(node -> node isa Variable, x)
 end

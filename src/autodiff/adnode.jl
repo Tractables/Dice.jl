@@ -1,15 +1,8 @@
-export ADNode, ADMatrix, Variable, Var, ad_map, sigmoid, deriv_sigmoid, inverse_sigmoid
+export ADNode, ADMatrix, Var, ad_map, sigmoid, deriv_sigmoid, inverse_sigmoid
 
 import DirectedAcyclicGraphs: NodeType, DAG, children
 
 abstract type ADNode <: DAG end
-
-# We always differentiate with respect to Variables
-abstract type Variable <: ADNode end
-
-NodeType(::Type{<:Variable}) = Leaf()
-compute_leaf(x::Variable) = error("The value of $(x) should've been provided in `vals`!")
-backward(::Variable, _, _) = nothing
 
 ADNodeCompatible = Union{Real, AbstractMatrix{<:Real}}
 
@@ -21,10 +14,12 @@ function add_deriv(derivs, n::ADNode, amount::ADNodeCompatible)
     end
 end
 
-
-struct Var <: Variable
+struct Var <: ADNode
     id::Any
 end
+NodeType(::Type{Var}) = Leaf()
+compute_leaf(x::Var) = error("The value of $(x) should've been provided in `vals`!")
+backward(::Var, _, _) = nothing
 function Base.show(io::IO, x::Var)
     print(io, "Var(")
     show(io, x.id)

@@ -166,11 +166,6 @@ include("cudd/wmc.jl")
 # - pr(::Dist, evidence=..., errors=...)
 include("pr.jl")
 
-# Exposes functionality for changing the probabilities of flip_for's
-# to maximize a list of (possibly conditional) bools
-# Notable exports:
-# - train_group_probs!(::Vector{<:AnyBool}))
-# - train_group_probs!(::Vector{<:Tuple{<:AnyBool, <:AnyBool}})
 include("train_pr.jl")
 include("train_pr_losses.jl")
 
