@@ -40,7 +40,10 @@ for width in [3]
             epochs=2000,
             learning_rate=0.1
         )
-        wt_dist = pr(int, flip_pr_resolver=valuation_to_flip_pr_resolver(wt_var_to_vals))
+        wt_dist = Dict(
+            i => compute_mixed(wt_var_to_vals, exp(LogPr(prob_equals(int, DistUInt{width}(i)))))
+            for i in 0:2^width-1
+        )
 
         # KL divergence minimization
         kl_var_to_vals = Valuation(x => 0 for x in vars)
@@ -54,7 +57,10 @@ for width in [3]
             epochs=2000,
             learning_rate=0.1
         )
-        kl_dist = pr(int, flip_pr_resolver=valuation_to_flip_pr_resolver(kl_var_to_vals))
+        kl_dist = Dict(
+            i => compute_mixed(kl_var_to_vals, exp(LogPr(prob_equals(int, DistUInt{width}(i)))))
+            for i in 0:2^width-1
+        )
 
         # Counting
         counting_prs = [

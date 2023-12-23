@@ -1,5 +1,5 @@
 export condprobs, condprob, Cudd, CuddDebugInfo, ProbException, allobservations, JointQuery, 
-    returnvalue, expectation, variance, kldivergence, tvdistance, entropy
+    returnvalue, expectation, variance, kldivergence, tvdistance, entropy, pr
 
 using DataStructures: DefaultDict, DefaultOrderedDict, OrderedDict
 
@@ -27,9 +27,8 @@ function pr(queries::Vector{JointQuery}; evidence::AnyBool = true,
             errors::Vector{CondError} = CondError[],
             dots::Vector{Tuple{Vector{AnyBool}, String}} = Tuple{Vector{AnyBool}, String}[],
             algo::InferAlgo = default_infer_algo(),
-            flip_pr_resolver::Union{Nothing, Function} = nothing
             ) 
-    pr(algo, evidence, queries, errors, dots, flip_pr_resolver)
+    pr_impl(algo, evidence, queries, errors, dots)
 end
 
 function pr(queries::JointQuery...; kwargs...)

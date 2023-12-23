@@ -1,4 +1,4 @@
-export pr, Cudd, CuddDebugInfo
+export Cudd, CuddDebugInfo
 
 using DataStructures: OrderedDict
 
@@ -52,15 +52,14 @@ function get_world_probs(w::WMC, query::JointQuery, evidence::AnyBool)
 end
 
 
-function pr(cudd::Cudd, evidence, queries::Vector{JointQuery}, errors, dots, flip_pr_resolver)
+function pr_impl(cudd::Cudd, evidence, queries::Vector{JointQuery}, errors, dots)
     w = WMC(
         BDDCompiler(Iterators.flatten((
             Iterators.flatten(query.bits for query in queries),
             (err[1] for err in errors),
             [evidence],
             Iterators.flatten(xs for (xs, filename) in dots),
-        ))),
-        flip_pr_resolver
+        )))
     )
 
     enable_reordering(w.c, cudd.reordering_type)

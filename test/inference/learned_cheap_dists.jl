@@ -3,7 +3,7 @@ using Dice
 using Plots
 
 function dict_approx(d1::AbstractDict, d2::AbstractDict)
-    keys(d1) == keys(d2) && all(
+    issetequal(keys(d1), keys(d2)) && all(
         d1[k] ≈ d2[k]
         for k in keys(d1)
     )
@@ -39,7 +39,10 @@ end
         epochs=300,
         learning_rate=0.1
     )
-    wt_dist = pr(int, flip_pr_resolver=valuation_to_flip_pr_resolver(wt_var_to_vals))
+    wt_dist = Dict(
+        i => compute_mixed(wt_var_to_vals, exp(LogPr(prob_equals(int, DistUInt{width}(i)))))
+        for i in 0:2^width-1
+    )
     @test dict_approx(
         wt_var_to_vals,
         Dict(
@@ -73,16 +76,19 @@ end
         epochs=300,
         learning_rate=0.1
     )
-    kl_dist = pr(int, flip_pr_resolver=valuation_to_flip_pr_resolver(kl_var_to_vals))
+    kl_dist = Dict(
+        i => compute_mixed(kl_var_to_vals, exp(LogPr(prob_equals(int, DistUInt{width}(i)))))
+        for i in 0:2^width-1
+    )
     @test dict_approx(
-        wt_var_to_vals,
+        kl_var_to_vals,
         Dict(
             Var("var0_psp") => -3.2837129282982764,
             Var("var1_psp") => -1.734139957995633,
             Var("var2_psp") => -0.4254578347528184)
     )
     @test dict_approx(
-        wt_dist,
+        kl_dist,
         Dict(
             0 => 0.4954604613881238,
             1 => 0.3237688128294564,

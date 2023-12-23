@@ -31,7 +31,7 @@ function Base.show(io::IO, x::Var)
     print(io, ")")
 end
 
-struct Constant <: ADNode
+mutable struct Constant <: ADNode
     value::ADNodeCompatible
 end
 NodeType(::Type{Constant}) = Leaf()
@@ -43,7 +43,7 @@ function Base.show(io::IO, x::Constant)
     print(io, ")")
 end
 
-struct Add <: ADNode
+mutable struct Add <: ADNode
     x::ADNode
     y::ADNode
 end
@@ -58,7 +58,7 @@ Base.:(+)(x::ADNode, y::ADNode) = Add(x, y)
 Base.:(+)(x::ADNode, y::ADNodeCompatible) = Add(x, Constant(y))
 Base.:(+)(x::ADNodeCompatible, y::ADNode) = Add(Constant(x), y)
 
-struct Mul <: ADNode
+mutable struct Mul <: ADNode
     x::ADNode
     y::ADNode
 end
@@ -80,7 +80,7 @@ Base.:(*)(x::ADNode, y::ADNode) = Mul(x, y)
 Base.:(*)(x::ADNode, y::ADNodeCompatible) = Mul(x, Constant(y))
 Base.:(*)(x::ADNodeCompatible, y::ADNode) = Mul(Constant(x), y)
 
-# struct Div <: ADNode
+# mutable struct Div <: ADNode
 #     x::ADNode
 #     y::ADNode
 # end
@@ -95,7 +95,7 @@ Base.:(*)(x::ADNodeCompatible, y::ADNode) = Mul(Constant(x), y)
 # Base.:(/)(x::ADNode, y::Real) = Div(x, Constant(y))
 # Base.:(/)(x::Real, y::ADNode) = Div(Constant(x), y)
 
-struct Pow <: ADNode
+mutable struct Pow <: ADNode
     x::ADNode
     y::ADNode
 end
@@ -113,7 +113,7 @@ Base.:(^)(x::ADNode, y::ADNode) = Pow(x, y)
 Base.:(^)(x::ADNode, y::ADNodeCompatible) = Pow(x, Constant(y))
 Base.:(^)(x::ADNodeCompatible, y::ADNode) = Pow(Constant(x), y)
 
-struct Sin <: ADNode
+mutable struct Sin <: ADNode
     x::ADNode
 end
 NodeType(::Type{Sin}) = Inner()
@@ -125,7 +125,7 @@ function backward(n::Sin, vals, derivs)
 end
 Base.sin(x::ADNode) = Sin(x)
 
-struct Cos <: ADNode
+mutable struct Cos <: ADNode
     x::ADNode
 end
 NodeType(::Type{Cos}) = Inner()
@@ -137,7 +137,7 @@ function backward(n::Cos, vals, derivs)
 end
 Base.cos(x::ADNode) = Cos(x)
 
-# struct Exp <: ADNode
+# mutable struct Exp <: ADNode
 #     x::ADNode
 # end
 # NodeType(::Type{Exp}) = Inner()
@@ -148,7 +148,7 @@ Base.cos(x::ADNode) = Cos(x)
 # end
 # Base.exp(x::ADNode) = Exp(x)
 
-struct Log <: ADNode
+mutable struct Log <: ADNode
     x::ADNode
 end
 NodeType(::Type{Log}) = Inner()
@@ -160,7 +160,7 @@ function backward(n::Log, vals, derivs)
 end
 Base.log(x::ADNode) = Log(x)
 
-struct ADMatrix <: ADNode
+mutable struct ADMatrix <: ADNode
     x::AbstractMatrix{ADNode}
     function ADMatrix(x::AbstractMatrix{<:Union{<:Real, ADNode}})
         x isa AbstractMatrix{ADNode} && return new(x)
@@ -182,7 +182,7 @@ Base.:(+)(::Any, ::AbstractMatrix{<:ADNode}) = error("Lift to ADMatrix for perfo
 Base.:(*)(::AbstractMatrix{<:ADNode}, ::AbstractMatrix) = error("Lift to ADMatrix for performance")
 Base.:(*)(::AbstractMatrix, ::AbstractMatrix{<:ADNode}) = error("Lift to ADMatrix for performance")
 
-struct GetIndex <: ADNode
+mutable struct GetIndex <: ADNode
     x::ADNode
     i::CartesianIndex
 end
@@ -206,7 +206,7 @@ Base.getindex(x::ADNode, i...) = GetIndex(x, CartesianIndex(i...))
 #     where `RM = Union{Real, AbstractMatrix}`
 #   `differentiate(f::ADFunction)::ADFunction`
 # ...but let's save this for the next Dice rewrite!
-struct Map <: ADNode
+mutable struct Map <: ADNode
     f::Function
     f′::Function
     x::ADNode
@@ -219,7 +219,7 @@ function backward(n::Map, vals, derivs)
 end
 ad_map(f::Function, f′::Function, x::ADNode) = Map(f, f′, x)
 
-struct Transpose <: ADNode
+mutable struct Transpose <: ADNode
     x::ADNode
 end
 NodeType(::Type{Transpose}) = Inner()
@@ -228,6 +228,31 @@ compute_inner(x::Transpose, call) = transpose(call(x.x))
 function backward(n::Transpose, vals, derivs)
     add_deriv(derivs, n.x, transpose(derivs[n]))
 end
+
+# Give override for add_logprobs so logprob in wmc.jl is differentiable
+# computes log(exp(x) + exp(y))
+mutable struct NodeLogPr <: ADNode
+    pr::ADNode
+    hi::ADNode
+    lo::ADNode
+end
+NodeType(::Type{NodeLogPr}) = Inner()
+children(x::NodeLogPr) = [x.pr, x.hi, x.lo]
+# compute by calling higher-accuracy, non-autodiff-able implementation
+compute_inner(x::NodeLogPr, call) = node_logprob(call(x.pr), call(x.hi), call(x.lo))
+function backward(n::NodeLogPr, vals, derivs)
+    denom = vals[n.pr] * exp(vals[n.hi]) + (1 - vals[n.pr]) * exp(vals[n.lo])
+    add_deriv(derivs, n.hi, derivs[n] * vals[n.pr] * exp(vals[n.hi]) / denom)
+    add_deriv(derivs, n.lo, derivs[n] * (1 - vals[n.pr]) * exp(vals[n.lo]) / denom)
+    add_deriv(derivs, n.pr, derivs[n] * (exp(vals[n.hi]) - exp(vals[n.lo])) / denom)
+end
+node_logprob(pr::ADNode, hi::ADNode, lo::ADNode) = NodeLogPr(pr, hi, lo)
+node_logprob(pr::ADNode, hi::ADNode, lo::ADNodeCompatible) = NodeLogPr(pr, hi, Constant(lo))
+node_logprob(pr::ADNode, hi::ADNodeCompatible, lo::ADNode) = NodeLogPr(pr, Constant(hi), lo)
+node_logprob(pr::ADNode, hi::ADNodeCompatible, lo::ADNodeCompatible) = NodeLogPr(pr, Constant(hi), Constant(lo))
+node_logprob(pr::ADNodeCompatible, hi::ADNode, lo::ADNode) = NodeLogPr(Constant(pr), hi, lo)
+node_logprob(pr::ADNodeCompatible, hi::ADNode, lo::ADNodeCompatible) = NodeLogPr(Constant(pr), hi, Constant(lo))
+node_logprob(pr::ADNodeCompatible, hi::ADNodeCompatible, lo::ADNode) = NodeLogPr(Constant(pr), hi, Constant(lo))
 
 # Desugared ops
 Base.zero(::ADNode) = Constant(0)

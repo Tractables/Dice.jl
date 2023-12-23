@@ -6,12 +6,13 @@ export WMC
 
 using DataStructures: LinkedList, cons, nil
 
+ADFloat = Union{AbstractFloat, ADNode}
+
 mutable struct WMC
     c::BDDCompiler
-    cache::Dict{CuddNode, Float64}
-    flip_pr_resolver
-    function WMC(c, flip_pr_resolver)
-        w = new(c, Dict{CuddNode, Float64}(), flip_pr_resolver)
+    cache::Dict{CuddNode, ADFloat}
+    function WMC(c)
+        w = new(c, Dict{CuddNode, ADFloat}())
         w.cache[constant(w.c.mgr, true)] = log(one(Float64))
         w.cache[constant(w.c.mgr, false)] = log(zero(Float64))
         w
@@ -20,48 +21,23 @@ end
 
 logprob(w::WMC, x::AnyBool) = logprob(w, compile(w.c, x))
 
+function node_logprob(level_pr, hi_logpr, lo_logpr)
+    a = log(level_pr) + hi_logpr
+    b = log(1.0-level_pr) + lo_logpr
+    # Better-accuracy version of log(exp(a) + exp(b))
+    # return log(exp(a) + exp(b))
+    if isinf(a)
+        b
+    elseif isinf(b)
+        a
+    else
+        max(a,b) + log1p(exp(-abs(a-b)))
+    end
+end
+
 function logprob(w::WMC, x::CuddNode)
     get!(w.cache, x) do
         f = w.c.level_to_flip[level(x)]
-        p = if f.prob isa Real
-            f.prob
-        else
-            w.flip_pr_resolver(f.prob)
-        end
-        a = log(p) + logprob(w, high(x))
-        b = log(1.0-p) + logprob(w, low(x))
-        if isinf(a)
-            b
-        elseif isinf(b)
-            a
-        else
-            # log(exp(a) + exp(y))
-            max(a,b) + log1p(exp(-abs(a-b)))
-        end
+        node_logprob(f.prob, logprob(w, high(x)), logprob(w, low(x)))
     end
 end
-
-grad_logprob(w::WMC, x::AnyBool) = grad_logprob(w, compile(w.c, x))
-
-# Calculate gradient of a BDD node w.r.t. flip probabilities (reverse mode)
-function grad_logprob(w::WMC, x::CuddNode)::Dict{Flip, Float64}
-    grad = DefaultDict{Flip, Float64}(0.)
-    deriv = DefaultDict{CuddNode, Float64}(0.)
-    deriv[x] = 1
-    level_traversal(x) do node
-        i, lo, hi = level(node), low(node), high(node)
-        f = w.c.level_to_flip[i]
-        fhi, flo = logprob(w, hi), logprob(w, lo)
-        p = if f.prob isa Real
-            f.prob
-        else
-            w.flip_pr_resolver(f.prob)
-        end
-        denom = p * exp(fhi) + (1 - p) * exp(flo)
-        deriv[hi] += deriv[node] * p * exp(fhi) / denom
-        deriv[lo] += deriv[node] * (1 - p) * exp(flo) / denom
-        grad[f] += deriv[node] * (exp(fhi) - exp(flo)) / denom
-    end
-    grad
-end
-

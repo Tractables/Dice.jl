@@ -23,8 +23,10 @@ function differentiate(var_vals::Valuation, root_derivs::Derivs)
     vals = compute(var_vals, keys(root_derivs))
     derivs = Dict{ADNode, ADNodeCompatible}()
     merge!(derivs, root_derivs)
-    foreach_down(n -> if haskey(derivs, n) backward(n, vals, derivs) end, keys(root_derivs))
-    derivs
+    foreach_down(keys(root_derivs)) do n
+        haskey(derivs, n) && backward(n, vals, derivs)
+    end
+    vals, derivs
 end
 
 # Extending DirectedAcyclicGraphs.jl

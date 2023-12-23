@@ -1,9 +1,58 @@
 # The bridge between autodiff and cudd
-export step_vars!, train_pr!, total_logprob, valuation_to_flip_pr_resolver
+export step_vars!, train_pr!, LogPr, compute_mixed
 using DataStructures: Queue
 
-struct LogPr <: Variable
+mutable struct LogPr <: ADNode
     bool::Dist{Bool}
+end
+NodeType(::Type{LogPr}) = Leaf()
+compute_leaf(::LogPr) = error("LogPr must be expanded")
+backward(::LogPr, _, _) = error("LogPr must be expanded")
+
+mutable struct LogPrExpander
+    w::WMC
+    cache::Dict{ADNode, ADNode}
+    function LogPrExpander(w)
+        new(w, Dict{ADNode, ADNode}())
+    end
+end
+
+
+
+function expand_logprs(l::LogPrExpander, root::ADNode)::ADNode
+    fl(x::LogPr) = expand_logprs(l, logprob(l.w, x.bool))
+    fl(x::Var) = x
+    fl(x::Constant) = x
+    fi(x::Add, call) = Add(call(x.x), call(x.y))
+    fi(x::Mul, call) = Mul(call(x.x), call(x.y))
+    fi(x::Pow, call) = Pow(call(x.x), call(x.y))
+    fi(x::Sin, call) = Sin(call(x.x))
+    fi(x::Cos, call) = Cos(call(x.x))
+    fi(x::Log, call) = Log(call(x.x))
+    fi(x::NodeLogPr, call) = NodeLogPr(call(x.pr), call(x.hi), call(x.lo))
+    foldup(root, fl, fi, ADNode, l.cache)
+end
+
+function bool_roots(root::ADNode)
+    # TODO: have non-root removal be done in src/inference/cudd/compile.jl
+    seen_adnodes = Dict{ADNode, Nothing}()
+    seen_bools = Dict{AnyBool, Nothing}()
+    non_roots = Set{AnyBool}()
+    to_visit = Vector{ADNode}([root])
+    while !isempty(to_visit)
+        x = pop!(to_visit)
+        foreach(x, seen_adnodes) do y
+            if y isa LogPr
+                foreach(y.bool, seen_bools) do bool
+                    union!(non_roots, children(bool))
+                    if bool isa Flip && bool.prob isa ADNode && !haskey(seen_adnodes, bool.prob)
+                        push!(to_visit, bool.prob)
+                    end
+                end
+            end
+        end
+    end
+    setdiff(keys(seen_bools), non_roots)
 end
 
 
@@ -24,43 +73,9 @@ function step_pr!(
     loss::ADNode,
     learning_rate::Real
 )
-    # loss refers to logprs of bools
-    # error to do with LogPr(true)? just make it a vector of anybool and don't filter
-    bools = Vector{Dist{Bool}}([
-        n.bool for n in variables(loss)
-        if !(n isa Var) && !(n.bool isa Bool)
-    ])
-
-    # so, calculate these logprs
-    w = WMC(BDDCompiler(bools), valuation_to_flip_pr_resolver(var_vals))
-    bool_logprs = Valuation(LogPr(bool) => logprob(w, bool) for bool in bools)
-    # TODO: have differentiate return vals as well to avoid this compute
-    # or have it take vals
-    loss_val = compute(bool_logprs, [loss])[loss] # for return value only
-
-    # so we can move the blame from to loss to those bools
-    derivs = differentiate(bool_logprs, Derivs(loss => 1))
-
-    # find grad of loss w.r.t. each flip's probability
-    grad = DefaultDict{Flip, Float64}(0.)
-    for bool in bools
-        add_scaled_dict!(grad, grad_logprob(w, bool), derivs[LogPr(bool)])
-    end
-
-    # move blame from flips probabilities to their adnode params
-    root_derivs = Derivs()
-    for (f, d) in grad
-        if f.prob isa ADNode
-            if haskey(root_derivs, f.prob)
-                root_derivs[f.prob] += d
-            else
-                root_derivs[f.prob] = d
-            end
-        end
-    end
-
-    # move blame from adnode params to vars
-    derivs = differentiate(var_vals, root_derivs)
+    l = LogPrExpander(WMC(BDDCompiler(bool_roots(loss))))
+    loss = expand_logprs(l, loss)
+    vals, derivs = differentiate(var_vals, Derivs(loss => 1))
 
     # update vars
     for (adnode, d) in derivs
@@ -68,7 +83,8 @@ function step_pr!(
             var_vals[adnode] -= d * learning_rate
         end
     end
-    loss_val
+
+    vals[loss]
 end
 
 # Train group_to_psp to such that generate() approximates dataset's distribution
@@ -82,27 +98,15 @@ function train_pr!(
     for _ in 1:epochs
         push!(losses, step_pr!(var_vals, loss, learning_rate))
     end
-    push!(losses, compute_loss(var_vals, loss))
+    push!(losses, compute_mixed(var_vals, loss))
     losses
 end
 
-function valuation_to_flip_pr_resolver(var_vals)
-    vals = Dict{ADNode, ADNodeCompatible}()
-    merge!(vals, var_vals)
-    function flip_pr_resolver(prob)
-        compute_one(prob, vals)
-    end   
-end
-
-function compute_loss(
+function compute_mixed(
     var_vals::Valuation,
-    loss::ADNode
+    x::ADNode
 )
-    bools = Vector{Dist{Bool}}([
-        n.bool for n in variables(loss)
-        if !(n isa Var) && !(n.bool isa Bool)
-    ])
-    w = WMC(BDDCompiler(bools), valuation_to_flip_pr_resolver(var_vals))
-    bool_logprs = Valuation(LogPr(bool) => logprob(w, bool) for bool in bools)
-    compute(bool_logprs, [loss])[loss] # for return value only
+    l = LogPrExpander(WMC(BDDCompiler(bool_roots(x))))
+    x = expand_logprs(l, x)
+    compute(var_vals, [x])[x]
 end

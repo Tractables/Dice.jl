@@ -66,6 +66,7 @@ function compile(c::BDDCompiler, root::AnyBool)::CuddNode
 end
 
 function compile(c::BDDCompiler, roots::Vector{<:AnyBool})::Vector{CuddNode}
+    # TODO: don't add here; maintain set of covered nodes, panic if not covered
     add_roots!(c, roots)
     [compile_existing(c, root) for root in roots]
 end

@@ -5,11 +5,11 @@ using Test
     x = Var("x")
 
     e = x^2
-    derivs = differentiate(Valuation(x => 5), Derivs(e => π))
+    _, derivs = differentiate(Valuation(x => 5), Derivs(e => π))
     @test derivs[x] ≈ 10 * π
 
     e = 1/x
-    derivs = differentiate(Valuation(x => 5), Derivs(e => π))
+    _, derivs = differentiate(Valuation(x => 5), Derivs(e => π))
     @test derivs[x] ≈ -1/25 * π
 end
 

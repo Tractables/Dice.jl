@@ -2,7 +2,8 @@ export step_maximize!, add_pr_var!
 
 function step_maximize!(var_vals::Valuation, nodes_to_max, learning_rate)
     root_derivs = Derivs(n => 1 for n in nodes_to_max)
-    for (n, d) in differentiate(var_vals, root_derivs)
+    _, derivs = differentiate(var_vals, root_derivs)
+    for (n, d) in derivs
         n isa Var && (var_vals[n] += d * learning_rate)
     end
 end

@@ -46,14 +46,14 @@ end
     var_vals = Valuation(psp => 0)
     b = @dice_ite if flip(prob) true else flip(prob) end
     train_pr!(var_vals, mle_loss([prob_equals(b, x) for x in dataset]); epochs=200, learning_rate=0.003)
-    p1 = pr(b; flip_pr_resolver=valuation_to_flip_pr_resolver(var_vals))[true]
+    p1 = compute_mixed(var_vals, LogPr(b))
 
     # Train for 100 epochs, twice
     b = @dice_ite if flip(prob) true else flip(prob) end
     var_vals = Valuation(psp => 0)
     train_pr!(var_vals, mle_loss([prob_equals(b, x) for x in dataset]); epochs=100, learning_rate=0.003)
     train_pr!(var_vals, mle_loss([prob_equals(b, x) for x in dataset]); epochs=100, learning_rate=0.003)
-    p2 = pr(b; flip_pr_resolver=valuation_to_flip_pr_resolver(var_vals))[true]
+    p2 = compute_mixed(var_vals, LogPr(b))
 
     @test p1 ≈ p2
 end
