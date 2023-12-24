@@ -75,9 +75,9 @@ function train!(
     learning_rate::Real,
 )
     losses = []
+    l = LogPrExpander(WMC(BDDCompiler(bool_roots([loss]))))
+    loss = expand_logprs(l, loss)
     for _ in 1:epochs
-        l = LogPrExpander(WMC(BDDCompiler(bool_roots([loss]))))
-        loss = expand_logprs(l, loss)
         vals, derivs = differentiate(var_vals, Derivs(loss => 1))
 
         # update vars
