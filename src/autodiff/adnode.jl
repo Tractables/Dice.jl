@@ -198,7 +198,7 @@ function backward(n::Transpose, vals, derivs)
     add_deriv(derivs, n.x, transpose(derivs[n]))
 end
 
-# Give override for add_logprobs so logprob in wmc.jl is differentiable
+# Give override for add_logprobs so logprob in wmc.jl is differentiable.
 # computes log(exp(x) + exp(y))
 mutable struct NodeLogPr <: ADNode
     pr::ADNode

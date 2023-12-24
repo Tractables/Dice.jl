@@ -104,10 +104,11 @@ end
 function with_concrete_ad_flips(f, var_vals, dist)
     flip_to_original_prob = Dict()
     a = ADComputer(var_vals)
+    l = LogPrExpander(WMC(BDDCompiler()))
     for x in collect_flips(tobits(dist))
         if x.prob isa ADNode
             flip_to_original_prob[x] = x.prob
-            x.prob = compute(a, x.prob)
+            x.prob = compute(a, expand_logprs(l, x.prob))
         end
     end
     res = f()

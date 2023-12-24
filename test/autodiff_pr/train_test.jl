@@ -62,7 +62,8 @@ end
     x = Var("x")
     prob = sigmoid(x)
     prob2 = exp(LogPr(flip(prob) & flip(prob)))
-    loss = mle_loss([flip(prob2) & flip(prob2) & !flip(prob2)])
+    bool = flip(prob2) & flip(prob2) & !flip(prob2)
+    loss = mle_loss([bool])
     var_vals = Valuation(x => 0)
     train!(var_vals, loss, epochs=2000, learning_rate=0.1)
 
@@ -70,4 +71,5 @@ end
     # therefore, prob should be sqrt(2/3)
     @test compute(var_vals, prob) ≈ sqrt(2/3)
     @test compute_mixed(var_vals, loss) ≈ -log(2/3*2/3*1/3)
+    pr_mixed(var_vals)(bool)
 end
