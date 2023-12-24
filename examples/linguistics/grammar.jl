@@ -1,5 +1,5 @@
 using Dice
-include("../util.jl")
+include("util.jl")
 
 # Put enum in module so case variables are scoped
 module Terminals
@@ -64,12 +64,9 @@ function expand_symbol(sym, max_depth)
     end
 end
 
-sentence = @dice @dice_ite begin
-    x = expand_symbol(start_sym, num_steps)
-    sentence, err = x[1], x[2]
-    # has_prefix = prob_startswith(sentence, DistVector([DistEnum(x) for x in prefix]))
-    sentence
-end
+x = expand_symbol(start_sym, num_steps)
+sentence, err = x[1], x[2]
+# has_prefix = prob_startswith(sentence, DistVector([DistEnum(x) for x in prefix]))
 
 # dist is the distribution over sentences in execution paths where error is false.
 # error_p is the probability error is true.

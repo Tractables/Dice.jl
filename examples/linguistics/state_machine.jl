@@ -1,5 +1,5 @@
 using Dice
-include("../util.jl")
+include("util.jl")
 
 # See state_machine.jpg for a diagram of this machine
 machine = Dict(  # List of transitions

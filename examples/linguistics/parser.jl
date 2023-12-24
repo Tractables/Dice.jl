@@ -1,5 +1,6 @@
 using Dice
-include("../util.jl")
+include("util.jl")
+include("dist_tree.jl")
 
 # Put enum in module so case variables are scoped
 module Syms
@@ -21,7 +22,7 @@ rules = Dict(
 )
 
 # Sentence to probabilistically parse
-expected_sentence = [Syms.a, Syms.b, Syms.c]
+expected_sentence = DistVector(map(DistEnum, [Syms.a, Syms.b, Syms.c]))
 
 # Maximum depth parse tree to consider
 num_steps = 3
@@ -32,8 +33,8 @@ num_steps = 3
 # the depth bound without being able to expand all nonterminal leaves.
 function rule_to_tree(lhs, rhs, max_depth)
     # Put nonterminal at root
-    expansion = DistTree(DistEnum(lhs))
-    error = DistFalse()
+    expansion = DistBranch(DistEnum(lhs), DistVector([]))
+    error = false
     for subterm in rhs
         # Children are trees for RHS symbols
         x = symbol_to_tree(subterm, max_depth - 1)
@@ -49,9 +50,9 @@ end
 # depth bound without being able to expand all nonterminal leaves.
 function symbol_to_tree(sym, max_depth)
     if !haskey(rules, sym)  # sym is a terminal
-        DistTree(DistEnum(sym)), DistFalse()
+        DistLeaf(DistEnum(sym)), false
     elseif max_depth == 0  # Reached max depth
-        DistTree(DistEnum(start_sym)), DistTrue()  # Dummy node, just indicate that there is error
+        DistBranch(DistEnum(start_sym), DistVector([])), true  # Dummy node, just indicate that there is error
     else  # Choose from expansions with probabilities associated with their rules
         discrete((rule_to_tree(sym, rhs, max_depth), p) for (rhs, p) in rules[sym])    
     end
@@ -59,21 +60,22 @@ end
 
 tree, err = symbol_to_tree(start_sym, num_steps)
 sentence = leaves(tree)
-observe = prob_equals(sentence, to_dist(expected_sentence))
+@show pr(sentence, evidence=!err)
+observe = prob_equals(sentence, expected_sentence)
 
 # dist is the distribution over trees, excluding execution paths where err is true, given observe.
 # error_p is the probability err is true given observe.
 # Note: observe re-normalizes probabilities but error does not.
-dist, error_p = infer(tree, err=err, observation=observe)
+error_p = pr(err, evidence=observe)[true]
+dist = Dict(fixup_tree(k) => v*(1-error_p) for (k, v) in pr(tree, evidence=observe & !err))
 @assert sum(values(dist)) + error_p ≈ 1
 
 println("Probability of error: $(error_p)")
 println("Distribution over trees:")
 print_dict(dist)
-println("$(num_nodes([tree, observe, err], suppress_warning=true)) nodes, $(num_flips([tree, observe, err])) flips")
 
 # To visualize trees:
-example_tree = collect(dist)[1][1]
+example_tree = collect(dist)[2][1]
 print_tree(example_tree)
 
 #==
