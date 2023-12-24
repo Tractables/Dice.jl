@@ -31,6 +31,7 @@ function expand_logprs(l::LogPrExpander, root::ADNode)::ADNode
     fi(x::GetIndex, call) = GetIndex(call(x.x), x.i)
     fi(x::Map, call) = Map(x.f, x.f′, call(x.x))
     fi(x::Transpose, call) = Transpose(call(x.x))
+    fi(x::NodeLogPr, call) = NodeLogPr(call(x.pr), call(x.hi), call(x.lo))
     foldup(root, fl, fi, ADNode, l.cache)
 end
 

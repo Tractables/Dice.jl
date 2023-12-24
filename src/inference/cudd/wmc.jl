@@ -21,11 +21,23 @@ end
 
 logprob(w::WMC, x::AnyBool) = logprob(w, compile(w.c, x))
 
+function node_logprob(level_pr, hi_logpr, lo_logpr)
+    a = log(level_pr) + hi_logpr
+    b = log(1.0-level_pr) + lo_logpr
+    # Better-accuracy version of log(exp(a) + exp(b))
+    # return log(exp(a) + exp(b))
+    if isinf(a)
+        b
+    elseif isinf(b)
+        a
+    else
+        max(a,b) + log1p(exp(-abs(a-b)))
+    end
+end
+
 function logprob(w::WMC, x::CuddNode)
     get!(w.cache, x) do
         f = w.c.level_to_flip[level(x)]
-        a = log(f.prob) + logprob(w, high(x))
-        b = log(1.0-f.prob) + logprob(w, low(x))
-        log(exp(a) + exp(b))
+        node_logprob(f.prob, logprob(w, high(x)), logprob(w, low(x)))
     end
 end
