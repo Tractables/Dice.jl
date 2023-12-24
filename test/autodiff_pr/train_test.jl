@@ -46,14 +46,28 @@ end
     var_vals = Valuation(psp => 0)
     b = @dice_ite if flip(prob) true else flip(prob) end
     train!(var_vals, mle_loss([prob_equals(b, x) for x in dataset]); epochs=200, learning_rate=0.003)
-    p1 = compute_mixed(var_vals, LogPr(b))
+    p1 = pr_mixed(var_vals)(b)[true]
 
     # Train for 100 epochs, twice
     b = @dice_ite if flip(prob) true else flip(prob) end
     var_vals = Valuation(psp => 0)
     train!(var_vals, mle_loss([prob_equals(b, x) for x in dataset]); epochs=100, learning_rate=0.003)
     train!(var_vals, mle_loss([prob_equals(b, x) for x in dataset]); epochs=100, learning_rate=0.003)
-    p2 = compute_mixed(var_vals, LogPr(b))
+    p2 = pr_mixed(var_vals)(b)[true]
 
     @test p1 ≈ p2
+end
+
+@testset "interleaving" begin
+    x = Var("x")
+    prob = sigmoid(x)
+    prob2 = exp(LogPr(flip(prob) & flip(prob)))
+    loss = mle_loss([flip(prob2) & flip(prob2) & !flip(prob2)])
+    var_vals = Valuation(x => 0)
+    train!(var_vals, loss, epochs=2000, learning_rate=0.1)
+
+    # loss is minimized if prob2 is 2/3
+    # therefore, prob should be sqrt(2/3)
+    @test compute(var_vals, prob) ≈ sqrt(2/3)
+    @test compute_mixed(var_vals, loss) ≈ -log(2/3*2/3*1/3)
 end

@@ -1,6 +1,5 @@
 # The bridge between autodiff and cudd
-export LogPr, compute_mixed, train!
-using DataStructures: Queue
+export LogPr, compute_mixed, train!, pr_mixed, support_mixed, with_concrete_ad_flips
 
 mutable struct LogPr <: ADNode
     bool::Dist{Bool}
@@ -92,4 +91,49 @@ function train!(
     end
     push!(losses, compute_mixed(var_vals, loss))
     losses
+end
+
+function collect_flips(bools)
+    flips = Vector{Flip}()
+    foreach_down(bools) do x
+        x isa Flip && push!(flips, x)
+    end
+    flips
+end
+
+function with_concrete_ad_flips(f, var_vals, dist)
+    flip_to_original_prob = Dict()
+    a = ADComputer(var_vals)
+    for x in collect_flips(tobits(dist))
+        if x.prob isa ADNode
+            flip_to_original_prob[x] = x.prob
+            x.prob = compute(a, x.prob)
+        end
+    end
+    res = f()
+    for (x, prob) in flip_to_original_prob
+        x.prob = prob
+    end
+    res
+end
+
+function pr_mixed(var_vals)
+    (args...; kwargs...) -> with_concrete_ad_flips(var_vals, args...) do
+        pr(args...; kwargs...)
+    end
+end
+
+function support_mixed(dist)
+    flip_to_original_prob = Dict()
+    for x in collect_flips(tobits(dist))
+        if x.prob isa ADNode
+            flip_to_original_prob[x] = x.prob
+            x.prob = 0.5
+        end
+    end
+    res = keys(pr(dist))
+    for (x, prob) in flip_to_original_prob
+        x.prob = prob
+    end
+    res
 end

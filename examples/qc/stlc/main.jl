@@ -106,13 +106,13 @@ show(io, Dict(s => vals[adnode] for (s, adnode) in adnodes_of_interest))
 println(io)
 
 println_flush(io, "Inferring initial distribution...")
-time_infer_init = @elapsed metric_dist = pr_with_concrete_flips(var_vals, metric)
+time_infer_init = @elapsed metric_dist = pr_mixed(var_vals)(metric)
 println(io, "  $(time_infer_init) seconds")
 save_metric_dist(joinpath(OUT_DIR, "dist_before.csv"), METRIC, metric_dist; io=io)
 println(io)
 
 println_flush(io, "Saving samples...")
-time_sample_init = @elapsed with_concrete_flips(var_vals, e) do
+time_sample_init = @elapsed with_concrete_ad_flips(var_vals, e) do
     save_samples(joinpath(OUT_DIR, "terms_before.txt"), e; io=io)
 end
 println(io, "  $(time_sample_init) seconds")
@@ -158,12 +158,12 @@ show(io, Dict(s => vals[adnode] for (s, adnode) in adnodes_of_interest))
 println(io)
 
 println(io, "Inferring trained distribution...")
-time_infer_final = @elapsed metric_dist_after = pr_with_concrete_flips(var_vals, metric)
+time_infer_final = @elapsed metric_dist_after = pr_mixed(var_vals)(metric)
 save_metric_dist(joinpath(OUT_DIR, "dist_trained_" * OUT_FILE_TAG * ".csv"), METRIC, metric_dist_after; io=io)
 println(io)
 
 println(io, "Saving samples...")
-time_sample_final = @elapsed with_concrete_flips(var_vals, e) do
+time_sample_final = @elapsed with_concrete_ad_flips(var_vals, e) do
     save_samples(joinpath(OUT_DIR, "terms_trained_" * OUT_FILE_TAG * ".txt"), e; io=io)
 end
 println(io, "  $(time_sample_final) seconds")

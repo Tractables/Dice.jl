@@ -21,13 +21,11 @@ all_colors_receive_own_dart = all(
   for (num_own_darts, weight) in zip(DARTS_PER_COLOR, weights)
 )
 
-pr_all_colors_receive_own_dart = exp(LogPr(all_colors_receive_own_dart))
-
-compute_mixed(var_vals, pr_all_colors_receive_own_dart) # 0.182
+pr_mixed(var_vals)(all_colors_receive_own_dart) # 0.182
 train!(var_vals, -LogPr(all_colors_receive_own_dart); epochs=1000, learning_rate=0.3)
 
 # We've increased the chance of success!
-compute_mixed(var_vals, pr_all_colors_receive_own_dart) # 0.234
+pr_mixed(var_vals)(pr_all_colors_receive_own_dart) # 0.234
 
 # Compute what ratio we actually need to paint the target:
 [compute(var_vals, weight/sum(weights)) for weight in weights]

@@ -166,7 +166,4 @@ include("cudd/wmc.jl")
 # - pr(::Dist, evidence=..., errors=...)
 include("pr.jl")
 
-include("train_pr.jl")
-include("train_pr_losses.jl")
-
 include("sample.jl")
