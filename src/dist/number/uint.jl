@@ -421,10 +421,38 @@ function unif_obs(lo::DistUInt{W}, hi::DistUInt{W}) where W
     x, (x >= lo) & (x <= hi)
 end
 
+function collect_flips(bools)
+    flips = Vector{Flip}()
+    Dice.foreach_down(bools) do x
+        x isa Flip && push!(flips, x)
+    end
+    flips
+end
+
+function with_arb_ad_flips(f, dist)
+    flips = collect_flips(tobits(dist))
+    flip_to_original_prob = Dict()
+    for x in flips
+        if x.prob isa ADNode
+            flip_to_original_prob[x] = x.prob
+            x.prob = 0.5
+        end
+    end
+    res = f()
+    # restore
+    for (x, prob) in flip_to_original_prob
+        x.prob = prob
+    end
+    res
+end
+
 # Uniform from 0 to hi, exclusive
 function unif_half(hi::DistUInt{W})::DistUInt{W} where W
     # note: # could use path cond too
-    prod = lcm([BigInt(x) for x in keys(pr(hi)) if x != 0])
+    support = with_arb_ad_flips(hi) do
+        keys(pr(hi))
+    end
+    prod = lcm([BigInt(x) for x in support if x != 0])
     u = uniform(DistUInt{ndigits(prod, base=2)}, 0, prod)
     rem_trunc(u, hi)
 end

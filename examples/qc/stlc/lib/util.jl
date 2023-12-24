@@ -151,3 +151,35 @@ function println_flush(io, args...)
     println(io, args...)
     flush(io)
 end
+
+function collect_flips(bools)
+    flips = Vector{Dice.Flip}()
+    Dice.foreach_down(bools) do x
+        x isa Dice.Flip && push!(flips, x)
+    end
+    flips
+end
+
+function with_concrete_flips(f, var_vals, dist)
+    flips = collect_flips(Dice.tobits(dist))
+    flip_to_original_prob = Dict()
+    a = ADComputer(var_vals)
+    for x in flips
+        if x.prob isa ADNode
+            flip_to_original_prob[x] = x.prob
+            x.prob = compute(a, x.prob)
+        end
+    end
+    res = f()
+    # restore
+    for (x, prob) in flip_to_original_prob
+        x.prob = prob
+    end
+    res
+end
+
+function pr_with_concrete_flips(var_vals, dist)
+    with_concrete_flips(var_vals, dist) do
+        pr(dist)
+    end
+end

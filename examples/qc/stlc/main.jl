@@ -14,7 +14,7 @@ include("lib/generator.jl")
 
 # Specify generator, initial & target distributions
 METRIC = num_apps  # term_size or num_apps
-INIT_SIZE = 5      # size passed to top call of gen_expr
+INIT_SIZE = 3      # size passed to top call of gen_expr
 GEN_TYP_SIZE = 2   # size passed to all calls of gen_type
 LINEAR = false     # by default, the desired distribution is uniform.
 
@@ -71,9 +71,14 @@ if LOG_TO_FILE
     println()
 end
 
+var_vals = Valuation()
 adnodes_of_interest = Dict{String, ADNode}()
-function register_weight!(s, init=0.5)
-    adnodes_of_interest[s] = add_unit_interval_var!(s, init)
+function register_weight!(s)
+    var = Var("$(s)_before_sigmoid")
+    var_vals[var] = 0
+    weight = sigmoid(var)
+    adnodes_of_interest[s] = weight
+    weight
 end
 
 println_flush(io, "Building $(METRIC)(gen_expr(...)) computation graph...")
@@ -96,27 +101,29 @@ println(io)
 ############################
 
 println(io, "Initial adnodes_of_interest:")
-vals = Dict{ADNode, Real}()
-show(io, Dict(s => compute(adnode, vals) for (s, adnode) in adnodes_of_interest))
+vals = compute(var_vals, values(adnodes_of_interest))
+show(io, Dict(s => vals[adnode] for (s, adnode) in adnodes_of_interest))
 println(io)
 
 println_flush(io, "Inferring initial distribution...")
-time_infer_init = @elapsed metric_dist = pr(metric)
+time_infer_init = @elapsed metric_dist = pr_with_concrete_flips(var_vals, metric)
 println(io, "  $(time_infer_init) seconds")
 save_metric_dist(joinpath(OUT_DIR, "dist_before.csv"), METRIC, metric_dist; io=io)
 println(io)
 
 println_flush(io, "Saving samples...")
-time_sample_init = @elapsed save_samples(joinpath(OUT_DIR, "terms_before.txt"), e; io=io)
+time_sample_init = @elapsed with_concrete_flips(var_vals, e) do
+    save_samples(joinpath(OUT_DIR, "terms_before.txt"), e; io=io)
+end
 println(io, "  $(time_sample_init) seconds")
 println(io)
 
-bools_to_max = [
+loss = mle_loss([
     BoolToMax(prob_equals(metric, DistUInt32(i)), weight=if LINEAR i else 1 end)
     for i in key_range(metric_dist)
-]
+])
 
-initial_logprob = total_logprob(bools_to_max)
+initial_logprob = compute_mixed(var_vals, -loss)
 println(io, "Initial logprob: $(initial_logprob)")
 println(io)
 
@@ -125,7 +132,7 @@ println(io)
 ############################
 
 println_flush(io, "Training...")
-time_train = @elapsed learning_curve = train_vars!(bools_to_max; epochs=EPOCHS)
+time_train = @elapsed learning_curve = train!(var_vals, loss; epochs=EPOCHS, learning_rate=0.003)
 println(io, "  $(time_train) seconds")
 println(io)
 
@@ -139,23 +146,25 @@ end
 # After
 ############################
 
-final_logprob = total_logprob(bools_to_max)
+final_logprob = compute_mixed(var_vals, -loss)
 println(io, "Final logprob: $(final_logprob)")
 approx_improvement = round(exp(final_logprob - initial_logprob), digits=2)
 println(io, "Drawing the target dataset is $(approx_improvement)x more likely")
 println(io)
 
 println(io, "Learned adnodes_of_interest:")
-vals = Dict{ADNode, Real}()
-show(io, Dict(s => compute(adnode, vals) for (s, adnode) in adnodes_of_interest))
+vals = compute(var_vals, values(adnodes_of_interest))
+show(io, Dict(s => vals[adnode] for (s, adnode) in adnodes_of_interest))
 println(io)
 
 println(io, "Inferring trained distribution...")
-time_infer_final = @elapsed metric_dist_after = pr(metric)
+time_infer_final = @elapsed metric_dist_after = pr_with_concrete_flips(var_vals, metric)
 save_metric_dist(joinpath(OUT_DIR, "dist_trained_" * OUT_FILE_TAG * ".csv"), METRIC, metric_dist_after; io=io)
 println(io)
 
 println(io, "Saving samples...")
-time_sample_final = @elapsed save_samples(joinpath(OUT_DIR, "terms_trained_" * OUT_FILE_TAG * ".txt"), e; io=io)
+time_sample_final = @elapsed with_concrete_flips(var_vals, e) do
+    save_samples(joinpath(OUT_DIR, "terms_trained_" * OUT_FILE_TAG * ".txt"), e; io=io)
+end
 println(io, "  $(time_sample_final) seconds")
 println(io)
