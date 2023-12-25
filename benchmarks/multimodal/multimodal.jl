@@ -20,42 +20,17 @@ code = @dice begin
                                 bitblast_exponential(DFiP, Normal(0, 1), pieces, -8.0, 8.0) + mu1,
                                 bitblast_exponential(DFiP, Normal(0, 1), pieces, -8.0, 8.0) + mu2)
                 observe(prob_equals(y, DFiP(data)))
-                # if flip(2/3) 
-                #             gaussian_observe(DFiP, pieces, -8.0, 8.0, mu1, 1.0, DFiP(data), add=true, exp=true)
-                # else           gaussian_observe(DFiP, pieces, -8.0, 8.0, mu2, 1.0, DFiP(data), add=true, exp=true)
-                # end
             end
             (mu1)
         end
 
-
+# Plotting the query result
 t = pr(code, ignore_errors=true)
 plot(t, xlabel="mu1", ylabel="pr(mu1)", smooth=false, linewidth=5, guidefontsize=20, tickfontsize=10, legend=false)
-savefig("multimodal_4_128.png")
+savefig("./benchmarks/multimodal/multimodal_6_256.png")
 
+# Writing result to a text file
 t_new = filter(a -> (a[1] >= -8) & (a[1] < 8), t)
-io = open("multimodal_6_256.txt", "w")
+io = open("./benchmarks/multimodal/multimodal_6_256.txt", "w")
 writedlm(io, [value for (key, value) in sort([(k, v) for (k, v) in t_new])])
 close(io)
-
-x = Dict{Float64, Float64}()
-for i in -8.0:0.1:7.9
-    sum = 0
-    for j in i:0.015625:(i+0.1 - 0.015625)
-        sum = sum + t[j]
-    end
-    x[i] = sum
-end
-
-
-
-
-
-
-
-
-# Results for MCMC
-
-  
-
-

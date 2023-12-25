@@ -1,6 +1,6 @@
 data {
 	int<lower=0>  N;
-        real y[N];
+    real y[N];
 }
 parameters {
 	real<lower=-16, upper=16> mu1;
