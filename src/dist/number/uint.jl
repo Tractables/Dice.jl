@@ -271,6 +271,7 @@ function variance(x::DistUInt{W}; kwargs...) where W
     return ans
 end
 
+
 ##################################
 # methods
 ##################################
@@ -422,37 +423,9 @@ end
 
 # Uniform from 0 to hi, exclusive
 function unif_half(hi::DistUInt{W})::DistUInt{W} where W
-    # max_hi = maxvalue(hi)
-    # max_hi > 60 && error("Likely to time out")
-    # prod = BigInt(1)
-    # for prime in primes_at_most(max_hi)
-    #     prod *= prime ^ floor_log(prime, max_hi)
-    # end
-
     # note: # could use path cond too
     prod = lcm([BigInt(x) for x in keys(pr(hi)) if x != 0])
     u = uniform(DistUInt{ndigits(prod, base=2)}, 0, prod)
     rem_trunc(u, hi)
 end
 
-# function primes_at_most(n::Int)
-#     isprime = [true for _ in 1:n]
-#     for p in 2:trunc(Int, sqrt(n))
-#         if isprime[p]
-#             for i in p^2:p:n
-#                 isprime[i] = false
-#             end
-#         end
-#     end
-#     [i for i in 2:n if isprime[i]]
-# end
-
-# function floor_log(base, n)
-#     v = 1
-#     pow = 0
-#     while v * base <= n
-#         v *= base
-#         pow += 1
-#     end
-#     pow
-# end

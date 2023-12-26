@@ -1,6 +1,7 @@
 export sample
 using DirectedAcyclicGraphs: foldup
 
+"""Run vanilla rejection sampling without any compilation"""
 function sample(x; evidence=true)
     vals = Dict{ADNode, Real}()
     while true
