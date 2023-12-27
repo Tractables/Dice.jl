@@ -14,7 +14,7 @@ end
 
 function gaussian_observe(::Type{DistFix{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::DistFix{W, F}, std::Float64, datapt::DistFix{W, F}; add=true, exp=false) where W where F
     @assert std > 0
-    g = bitblast(DistFix{W, F}, Normal(0.0, std), pieces, start, stop, exp)
+    g = bitblast(DistFix{W, F}, Normal(0.0, std), pieces, start, stop)
     
     if add
         observe(g + mean == datapt)
@@ -28,7 +28,7 @@ function gaussian_observe(::Type{DistFix{W, F}}, pieces::Int, start::Float64, st
     # isneg = DistFix{W, F}(0.0) < std
     # isneg && error("Standard deviation <= 0")
 
-    g = bitblast(DistFix{W, F}, Normal(mean, 1.0), pieces, start, stop, exp)
+    g = bitblast(DistFix{W, F}, Normal(mean, 1.0), pieces, start, stop)
     if mult
         observe(g*std == datapt)
     else
@@ -41,7 +41,7 @@ function gaussian_observe(::Type{DistFix{W, F}}, pieces::Int, start::Float64, st
     # isneg = DistFix{W, F}(0.0) < std
     # isneg && error("Standard deviation <= 0")
 
-    g = bitblast(DistFix{W, F}, Normal(0.0, 1.0), pieces, start, stop, exp)
+    g = bitblast(DistFix{W, F}, Normal(0.0, 1.0), pieces, start, stop)
     if mult
         observe(g*std + mean == datapt)
     else

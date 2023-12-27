@@ -151,6 +151,7 @@ function bitblast(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution,
                         cdf(dist, lastinter) - cdf(dist, lastinter - 1/2^F )]
         linear_piece_probs[i] = (border_probs[i][1] + border_probs[i][2])/2 * 2^(bits_per_piece)
     end
+    @show piece_probs
 
     PieceChoice = DistUInt{max(1,Int(log2(numpieces)))}
     piecechoice = discrete(PieceChoice, piece_probs ./ total_prob) # selector variable for pieces
