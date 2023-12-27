@@ -11,9 +11,7 @@ backward(::LogPr, _, _) = error("LogPr must be expanded")
 mutable struct LogPrExpander
     w::WMC
     cache::Dict{ADNode, ADNode}
-    function LogPrExpander(w)
-        new(w, Dict{ADNode, ADNode}())
-    end
+    LogPrExpander(w) = new(w, Dict{ADNode, ADNode}())
 end
 
 function expand_logprs(l::LogPrExpander, root::ADNode)::ADNode
@@ -68,29 +66,20 @@ function compute_mixed(var_vals::Valuation, roots)
     Dict(root => vals[l.cache[root]] for root in roots)
 end
 
-function train!(
-    var_vals::Valuation,
-    loss::ADNode;
-    epochs::Integer,
-    learning_rate::Real,
-)
+function train!(var_vals::Valuation, loss::ADNode; epochs::Integer, learning_rate::Real)
     losses = []
     l = LogPrExpander(WMC(BDDCompiler(bool_roots([loss]))))
     loss = expand_logprs(l, loss)
     for _ in 1:epochs
         vals, derivs = differentiate(var_vals, Derivs(loss => 1))
-
-        # update vars
         for (adnode, d) in derivs
             if adnode isa Var
                 var_vals[adnode] -= d * learning_rate
             end
         end
-
         push!(losses, vals[loss])
     end
     push!(losses, compute_mixed(var_vals, loss))
-    losses
 end
 
 function collect_flips(bools)
