@@ -6,13 +6,11 @@ export WMC
 
 using DataStructures: LinkedList, cons, nil
 
-ADFloat = Union{AbstractFloat, ADNode}
-
 mutable struct WMC
     c::BDDCompiler
-    cache::Dict{CuddNode, ADFloat}
+    cache::Dict{CuddNode, Union{AbstractFloat, ADNode}}
     function WMC(c)
-        w = new(c, Dict{CuddNode, ADFloat}())
+        w = new(c, Dict{CuddNode, Union{AbstractFloat, ADNode}}())
         w.cache[constant(w.c.mgr, true)] = log(one(Float64))
         w.cache[constant(w.c.mgr, false)] = log(zero(Float64))
         w
@@ -25,7 +23,6 @@ function node_logprob(level_pr, hi_logpr, lo_logpr)
     a = log(level_pr) + hi_logpr
     b = log(1.0-level_pr) + lo_logpr
     # Better-accuracy version of log(exp(a) + exp(b))
-    # return log(exp(a) + exp(b))
     if isinf(a)
         b
     elseif isinf(b)

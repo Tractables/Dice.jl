@@ -26,8 +26,7 @@ conditional errors, and a custom inference algorithm.
 function pr(queries::Vector{JointQuery}; evidence::AnyBool = true, 
             errors::Vector{CondError} = CondError[],
             dots::Vector{Tuple{Vector{AnyBool}, String}} = Tuple{Vector{AnyBool}, String}[],
-            algo::InferAlgo = default_infer_algo(),
-            ) 
+            algo::InferAlgo = default_infer_algo()) 
     pr_impl(algo, evidence, queries, errors, dots)
 end
 
