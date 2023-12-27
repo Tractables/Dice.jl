@@ -166,15 +166,6 @@ function backward(n::GetIndex, vals, derivs)
 end
 Base.getindex(x::ADNode, i...) = GetIndex(x, CartesianIndex(i...))
 
-# rtjoa: This could be more elegant (e.g. not require the user to provide the
-# derivative of `f`) if we restructured autodiff.jl to be pure.
-# One possible interface is:
-#   `lambda(parameters::Vector{Var}, result::ADNode)::ADFunction`
-#   `apply(f::ADFunction, arguments::Vector{ADNode})`
-#   `compute(f::ADFunction, arguments::Vector{RM})::RM`
-#     where `RM = Union{Real, AbstractMatrix}`
-#   `differentiate(f::ADFunction)::ADFunction`
-# ...but let's save this for the next Dice rewrite!
 mutable struct Map <: ADNode
     f::Function
     f′::Function
@@ -198,8 +189,7 @@ function backward(n::Transpose, vals, derivs)
     add_deriv(derivs, n.x, transpose(derivs[n]))
 end
 
-# Give override for add_logprobs so logprob in wmc.jl is differentiable.
-# computes log(exp(x) + exp(y))
+# Overloads node_logprob so wmc.jl's logprob has a smaller computation graph
 mutable struct NodeLogPr <: ADNode
     pr::ADNode
     hi::ADNode
@@ -207,7 +197,6 @@ mutable struct NodeLogPr <: ADNode
 end
 NodeType(::Type{NodeLogPr}) = Inner()
 children(x::NodeLogPr) = [x.pr, x.hi, x.lo]
-# compute by calling higher-accuracy, non-autodiff-able implementation
 compute_inner(x::NodeLogPr, call) = node_logprob(call(x.pr), call(x.hi), call(x.lo))
 function backward(n::NodeLogPr, vals, derivs)
     denom = vals[n.pr] * exp(vals[n.hi]) + (1 - vals[n.pr]) * exp(vals[n.lo])
