@@ -20,7 +20,7 @@ end
 
 function bind_opt(f, ma::DistI{Opt{T}})::DistI{<:Opt{<:Any}} where T
     match(ma, [
-        "None" => () -> DistNone(T)
+        "None" => () -> DistNone(T) # TODO: should be DistNone(return type of f)
         "Some" => f
     ])
 end
