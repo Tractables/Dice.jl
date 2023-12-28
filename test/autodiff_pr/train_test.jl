@@ -73,3 +73,22 @@ end
     @test compute_mixed(var_vals, loss) ≈ -log(2/3*2/3*1/3)
     pr_mixed(var_vals)(bool)
 end
+
+@testset "user functions in interleaving" begin
+    x = Var("x")
+
+    prob3 = sigmoid(x)
+    prob = sqrt(prob3)
+
+    prob2 = exp(LogPr(flip(prob) & flip(prob)))
+    bool = flip(prob2) & flip(prob2) & !flip(prob2)
+    loss = mle_loss([bool])
+    var_vals = Valuation(x => 0)
+    train!(var_vals, loss, epochs=2000, learning_rate=0.1)
+
+    # loss is minimized if prob2 is 2/3
+    # therefore, prob should be sqrt(2/3)
+    @test compute(var_vals, prob3) ≈ sqrt(2/3)
+    @test compute_mixed(var_vals, loss) ≈ -log(2/3*2/3*1/3)
+    pr_mixed(var_vals)(bool)
+end
