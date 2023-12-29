@@ -5,7 +5,7 @@ This folder contains the needed files to replicate experiments in Section 2.2 in
 ## Running HyBit
 
 ```bash
-julia --project benchmarks/multimodal.jl
+julia --project benchmarks/multimodal/multimodal.jl
 ```
 
 ## Sampling from Stan

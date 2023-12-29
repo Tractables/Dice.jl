@@ -63,8 +63,9 @@ end
 @show time_linear
 @show time_exp
 
-# plot(time_linear, kld_linear, xaxis=:log, yaxis=:log, marker=:dot, label="linear", xlabel="time", ylabel="KLD", title="Accuracy-Time plot", annot=pieces)
-plot(pieces, kld_exp, xaxis=:log, yaxis=:log, marker=:dot, legend=false, xlabel="Number of pieces", ylabel="KL divergence", xguidefontsize=20, yguidefontsize=20)
+plot(time_linear, kld_linear, xaxis=:log, yaxis=:log, marker=:dot, label="linear", xlabel="time", ylabel="KLD", title="Accuracy-Time plot", annot=pieces)
+plot!(time_exp, kld_exp, xaxis=:log, yaxis=:log, marker=:dot, label="exp", xlabel="time", ylabel="KLD", title="Accuracy-Time plot", annot=pieces)
+# plot(pieces, kld_exp, xaxis=:log, yaxis=:log, marker=:dot, legend=false, xlabel="Number of pieces", ylabel="KL divergence", xguidefontsize=20, yguidefontsize=20)
 savefig("continuous_experiments/linear_vs_exponential.png")
 
 # Plot gaussian
