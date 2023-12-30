@@ -8,8 +8,11 @@ dataTreatedGroup = [0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 0, 1, 0, 
 dataControlGroup = [ifelse(a == 1, true, false) for a in dataControlGroup]
 dataTreatedGroup = [ifelse(a == 1, true, false) for a in dataTreatedGroup]
 
-bits = parse(Int64, ARGS[1])
-p = pr(@dice uniform(DistUInt{3}))
+if length(ARGS) == 0
+    bits = 6
+else
+    bits = parse(Int64, ARGS[1])
+end
 
 DFiP = DistFix{2+bits, bits}
 

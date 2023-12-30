@@ -3,11 +3,15 @@ using Dice, Distributions
 using DelimitedFiles
 using BenchmarkTools
 
-precision = parse(Int64, ARGS[1])
-num_pieces = parse(Int64, ARGS[2])
-flag = parse(Int64, ARGS[3])
-
-p = pr(@dice uniform(DistUInt{3}))
+if length(ARGS) == 0
+  precision = 20
+  num_pieces = 512
+  flag = 1
+else
+  precision = parse(Int64, ARGS[1])
+  num_pieces = parse(Int64, ARGS[2])
+  flag = parse(Int64, ARGS[3])
+end
 
 DFiP = DistFix{6+precision, precision}
 truncation = (-8.0, 8.0)

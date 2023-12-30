@@ -3,12 +3,15 @@ using Dice, Distributions
 using DelimitedFiles
 using BenchmarkTools
 
-precision = parse(Int64, ARGS[1])
-num_pieces = parse(Int64, ARGS[2])
+if length(ARGS) == 0
+    bits = 11
+    pieces = 32
+else
+    bits = parse(Int64, ARGS[1])
+    pieces = parse(Int64, ARGS[2])
+end
 
-p = pr(@dice uniform(DistUInt{3}))
-
-DFiP = DistFix{6+precision, precision}
+DFiP = DistFix{6+bits, bits}
 
 
 truncation = (-8.0, 8.0)
@@ -31,7 +34,7 @@ t = @timed expectation(@dice begin
     mu2 = uniform(DFiP, -8.0, 8.0)
     mu = mu1 + mu2
     for datapoint in data
-        g = bitblast_exponential(DFiP, Normal(0, 1), num_pieces, truncation[1], truncation[2])
+        g = bitblast_exponential(DFiP, Normal(0, 1), pieces, truncation[1], truncation[2])
         observe(g + mu == datapoint)
     end
     mu1
@@ -39,6 +42,6 @@ end;)
 
 p = t.value
 io = open(string("./benchmarks/altermu2/results.txt"), "a")
-@show precision, num_pieces, p, t.time
-writedlm(io, [precision num_pieces p t.time], ",")  
+@show bits, pieces, p, t.time
+writedlm(io, [bits pieces p t.time], ",")  
 close(io)

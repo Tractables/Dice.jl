@@ -3,10 +3,13 @@ using Dice, Distributions
 using DelimitedFiles
 using BenchmarkTools
 
-bits = parse(Int64, ARGS[1])
-flag = parse(Int64, ARGS[3])
-
-p = pr(@dice uniform(DistUInt{3}))
+if length(ARGS) == 0
+    bits = 0
+    flag = 1
+else
+    bits = parse(Int64, ARGS[1])
+    flag = parse(Int64, ARGS[2])
+end
 
 DFiP = DistFix{8+bits, bits}
 
@@ -31,7 +34,7 @@ t = @timed expectation(@dice begin
             else
                 w2
             end
-        end)
+        end; ignore_errors=true)
 
 p = t.value
 

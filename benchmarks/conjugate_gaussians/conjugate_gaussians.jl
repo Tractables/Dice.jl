@@ -4,13 +4,13 @@ using DelimitedFiles
 using BenchmarkTools
 using Plots
 
-bits = parse(Int64, ARGS[1])
-pieces = parse(Int64, ARGS[2])
-
-bits = 16
-pieces = 2048
-
-p = pr(@dice uniform(DistUInt{3}))
+if length(ARGS) == 0
+    bits = 16
+    pieces = 2048
+else
+    bits = parse(Int64, ARGS[1])
+    pieces = parse(Int64, ARGS[2])
+end
 
 DFiP = DistFix{8 + bits, bits}
 

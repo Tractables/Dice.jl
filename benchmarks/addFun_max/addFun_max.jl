@@ -3,12 +3,13 @@ using Dice, Distributions
 using DelimitedFiles
 using BenchmarkTools
 
-bits = parse(Int64, ARGS[1])
-pieces = parse(Int64, ARGS[2])
-
-bits = 8
-pieces = 16
-p = pr(@dice uniform(DistUInt{3}))
+if length(ARGS) == 0
+    bits = 18
+    pieces = 32
+else
+    bits = parse(Int64, ARGS[1])
+    pieces = parse(Int64, ARGS[2])
+end
 
 DFiP = DistFix{5+bits, bits}
 
@@ -18,7 +19,7 @@ t = @timed expectation(@dice begin
                 m = if (x < y) y else x end
                 m
 end)
-@show median(t).time
+
 p = t.value
 
 io = open(string("./benchmarks/addFun_max/results.txt"), "a")

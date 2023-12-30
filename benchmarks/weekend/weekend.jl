@@ -3,10 +3,13 @@ using Dice, Distributions
 using DelimitedFiles
 using BenchmarkTools
 
-precision = parse(Int64, ARGS[1])
-num_pieces = parse(Int64, ARGS[2])
-
-p = pr(@dice uniform(DistUInt{3}))
+if length(ARGS) == 0
+  precision = 20
+  num_pieces = 4096
+else
+  precision = parse(Int64, ARGS[1])
+  num_pieces = parse(Int64, ARGS[2])
+end
 
 DFiP = DistFix{4+precision, precision}
 

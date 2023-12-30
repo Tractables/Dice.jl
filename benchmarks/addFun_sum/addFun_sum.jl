@@ -3,10 +3,13 @@ using Dice, Distributions
 using DelimitedFiles
 using BenchmarkTools
 
-bits = parse(Int64, ARGS[1])
-pieces = parse(Int64, ARGS[2])
-
-p = pr(@dice uniform(DistUInt{3}))
+if length(ARGS) == 0
+    bits = 18
+    pieces = 128
+else
+    bits = parse(Int64, ARGS[1])
+    pieces = parse(Int64, ARGS[2])
+end
 
 DFiP = DistFix{5+bits, bits}
 indices = [1, 0, 1]
