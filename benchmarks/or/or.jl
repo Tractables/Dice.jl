@@ -5,13 +5,15 @@ using DelimitedFiles
 using BenchmarkTools
 using Plots
 
-# bits = 0
-# pieces = 128
-# n_vars = 100
+n_vars = if length(ARGS) > 0 ARGS[1] else 5 end
 
-bits = parse(Int64, ARGS[1])
-pieces = parse(Int64, ARGS[2])
-n_vars = parse(Int64, ARGS[3])
+if length(ARGS) > 1
+    bits = parse(Int64, ARGS[2])
+    pieces = parse(Int64, ARGS[3])
+else
+    bits = 20
+    pieces = 32
+end
 
 DFiP = DistFix{9 + bits, bits}
 
