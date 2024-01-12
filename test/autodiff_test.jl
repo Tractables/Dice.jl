@@ -5,7 +5,7 @@ using Test
     x = Var("x")
 
     e = x^2
-    _, derivs = differentiate(Valuation(x => 5), Derivs(e => π))
+    _, derivs = gradient(x -> x^2, 5)differentiate(Valuation(x => 5), Derivs(e => π))
     @test derivs[x] ≈ 10 * π
 
     e = 1/x
