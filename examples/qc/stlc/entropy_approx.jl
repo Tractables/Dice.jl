@@ -116,8 +116,25 @@ end
 println(io, "  $(time_build) seconds")
 println(io)
 
+ctor = generated_constructors[2]
+function neg_entropy2(p::Dist, domain::Set{<:Dist})
+    sum(domain) do x
+        pe = prob_equals(p, x)
+        if length(support_mixed(pe)) == 1
+            Dice.Constant(0)
+        else
+            LogPr(pe) * exp(LogPr(pe))
+        end
+    end
+end
+generated_constructors
+# compute_mixed(neg_entropy2())
+compute_mixed(var_vals, LogPr(prob_equals(generated_constructors[end], DistInt32(0))))
+[compute_mixed(var_vals, neg_entropy2(ctor, Set([DistInt32(i) for i in 0:3]))) for ctor in generated_constructors]
+prob_equals(ctor, DistInt32(2))
+
 loss = sum(
-    neg_entropy(ctor, Set([DistInt32(i) for i in 0:3]))
+    neg_entropy2(ctor, Set([DistInt32(i) for i in 0:3]))
     for ctor in generated_constructors
     if begin
         sup = support_mixed(ctor)
@@ -125,6 +142,7 @@ loss = sum(
         ct > 1
     end
 )
+compute_mixed(var_vals, loss)
 
 ############################
 # Before
@@ -160,7 +178,7 @@ println(io)
 ############################
 
 println_flush(io, "Training...")
-time_train = @elapsed learning_curve = train!(var_vals, loss; epochs=EPOCHS, learning_rate=0.003)
+time_train = @elapsed learning_curve = train!(var_vals, loss; epochs=EPOCHS, learning_rate=0.03)
 println(io, "  $(time_train) seconds")
 println(io)
 

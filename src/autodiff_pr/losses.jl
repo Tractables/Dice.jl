@@ -50,6 +50,11 @@ end
 
 function neg_entropy(p::Dist, domain::Set{<:Dist})
     sum(domain) do x
-        LogPr(prob_equals(p, x)) * exp(LogPr(prob_equals(p, x)))
+        pe = prob_equals(p, x)
+        if pe isa Bool
+            Constant(0)
+        else
+            LogPr(pe) * exp(LogPr(pe))
+        end
     end
 end
