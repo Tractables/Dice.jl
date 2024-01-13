@@ -1,0 +1,31 @@
+2024-01-12T20:04:08.711
+== Config ==
+INIT_SIZE: 2
+GEN_TYP_SIZE: 1
+PARAMETERIZE_FLIP_GROUPS_BY_SZ: true
+EPOCHS: 2000
+DistNat: DistUInt32
+TAG: entropy_approx_v01
+
+Building (gen_expr(...)) computation graph...
+  7.221540375 seconds
+
+Initial adnodes_of_interest:
+Dict("sz1_succ_abs" => 0.5, "tysz1_gen_type_tbool" => 0.5, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.5, "sz2_succ_abs" => 0.5, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.5, "sz1_succ_app" => 0.5)
+Saving samples...
+Saved samples to examples/qc/stlc/output/entropy_approx_v01/entropy/sz=2,tysz=1/terms_before.txt.
+  1.844304333 seconds
+
+Initial entropy: NaN
+
+Training...
+  2.905164583 seconds
+
+Final entropy: NaN
+
+Learned adnodes_of_interest:
+Dict("sz1_succ_abs" => 0.5524501787278423, "tysz1_gen_type_tbool" => 0.5403919103189322, "sz0_zero_pr_var2" => 0.5254890263986366, "sz2_succ_app" => 0.4028255954724057, "sz2_succ_abs" => 0.5815814594956497, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.500007314162315, "sz1_succ_app" => 0.44144173842959433)
+Saving samples...
+Saved samples to examples/qc/stlc/output/entropy_approx_v01/entropy/sz=2,tysz=1/terms_trained_param_by_sz=true,epochs=2000.txt.
+  0.139626708 seconds
+

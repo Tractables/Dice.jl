@@ -25,7 +25,7 @@ EPOCHS = 2000  # epochs to train for
 
 LOG_TO_FILE = true
 
-TAG = "v3_opt_meta_ad"
+TAG = "entropy_approx_v01"
 
 ############################
 
@@ -78,19 +78,53 @@ function register_weight!(s)
     weight
 end
 
+function ctor_to_id(ctor)
+    match(ctor, [
+        "Var" => _ -> DistInt32(0)
+        "Boolean" => _ -> DistInt32(1)
+        "App" => (_, _) -> DistInt32(2)
+        "Abs" => (_, _) -> DistInt32(3)
+    ])
+end
+
+function opt_ctor_to_id(opt_ctor)
+    match(opt_ctor, [
+        "Some" => ctor_to_id,
+        "None" => () -> DistInt32(-1),
+    ])
+end
+
+generated_constructors = DistInt32[]
+function add_ctor(v::DistI{Opt{DistI{Expr}}})
+    push!(generated_constructors, opt_ctor_to_id(v))
+    v
+end
+
+
 println_flush(io, "Building (gen_expr(...)) computation graph...")
+generated_constructors = []
 time_build = @elapsed begin
     e = gen_expr(
         DistNil(DistI{Typ}),
         gen_type(GEN_TYP_SIZE, PARAMETERIZE_FLIP_GROUPS_BY_SZ),
         INIT_SIZE,
         GEN_TYP_SIZE,
-        PARAMETERIZE_FLIP_GROUPS_BY_SZ
+        PARAMETERIZE_FLIP_GROUPS_BY_SZ,
+        add_ctor
     )
 end
 println(io, "  $(time_build) seconds")
 println(io)
 
+loss = sum(
+    neg_entropy(ctor, Set([DistInt32(i) for i in 0:3]))
+    for ctor in generated_constructors
+    if begin
+        sup = support_mixed(ctor)
+        ct = sum(1 for i in 0:3 if i in sup)
+        ct > 1
+    end
+)
 
 ############################
 # Before
@@ -116,27 +150,6 @@ to_id = Dict(
     "Abs" => DistUInt32(4),
 )
 
-# 99% \x. x      ["Var", "Abs"]
-# 1%  (\x. x) y  ["Var", "Var", "Abs", "App"]
-
-# dist(collect_constructors(e))
-# Var => 0.99 * 1/2 + 0.01 * 2/4
-# Abs => 0.99 * 1/2 + 0.01 * 1/4
-# App => 0.01 * 1/4
-
-function collect_constructors(e)
-    match(e, [
-        "Var"     => (i)        -> DistVector([to_id["Var"]]),
-        "Boolean" => (b)        -> DistVector([to_id["Boolean"]]),
-        "App"     => (f, x)    -> prob_append(prob_extend(collect_constructors(f), collect_constructors(x)), to_id["App"]),
-        "Abs"     => (ty, e′)  -> prob_append(collect_constructors(e′), to_id["Abs"]),
-    ])
-end
-random_term = match(e, [
-    "None" => () -> DistNone(DistUInt32),
-    "Some" => e -> DistSome(choice(collect_constructors(e)))
-])
-loss = neg_entropy(random_term, Set([DistSome(i) for i in values(to_id)]))
 
 initial_entropy = compute_mixed(var_vals, -loss)
 println(io, "Initial entropy: $(initial_entropy)")

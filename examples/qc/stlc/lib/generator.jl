@@ -48,45 +48,49 @@ function gen_bool()
     DistBoolean(flip(0.5))
 end
 
-function gen_expr(env::Ctx, tau::DistI{Typ}, sz::Integer, gen_typ_sz::Integer, by_sz)::DistI{Opt{DistI{Expr}}}
-    for_prefix = if by_sz "sz$(sz)_" else "" end
-    if sz == 0
-        backtrack_for(for_prefix * "zero", [
-            one_of(
-                map(DistI{Expr})(
-                    DistVar,
-                    gen_var(env, tau, zero(DistNat), DistNil(DistNat))
-                )
-            ),
-            gen_zero(env, tau)
-        ])
-    else
-        sz′ = sz - 1
-        backtrack_for(for_prefix * "succ", [
-            # Var
-            one_of(
-                map(DistI{Expr})(
-                    DistVar,
-                    gen_var(env, tau, zero(DistNat), DistNil(DistNat))
-                )
-            ),
-            # App
-            begin
-                T1 = gen_type(gen_typ_sz, by_sz)
-                bind_opt(gen_expr(env, DistTFun(T1, tau), sz′, gen_typ_sz, by_sz)) do e1
-                    bind_opt(gen_expr(env, T1, sz′, gen_typ_sz, by_sz)) do e2
-                        DistSome(DistApp(e1, e2))
-                    end
-                end
-            end,
-            # Value
-            match(tau, [
-                "TBool" => () -> DistSome(gen_bool()),
-                "TFun" => (T1, T2) ->
-                    bind_opt(gen_expr(DistCons(T1, env), T2, sz′, gen_typ_sz, by_sz)) do e
-                        DistSome(DistAbs(T1, e))
-                    end
-            ]),
-        ])
-    end
+function gen_expr(env::Ctx, tau::DistI{Typ}, sz::Integer, gen_typ_sz::Integer, by_sz, track_return)::DistI{Opt{DistI{Expr}}}
+    track_return(
+        begin
+            for_prefix = if by_sz "sz$(sz)_" else "" end
+            if sz == 0
+                backtrack_for(for_prefix * "zero", [
+                    one_of(
+                        map(DistI{Expr})(
+                            DistVar,
+                            gen_var(env, tau, zero(DistNat), DistNil(DistNat))
+                        )
+                    ),
+                    gen_zero(env, tau)
+                ])
+            else
+                sz′ = sz - 1
+                backtrack_for(for_prefix * "succ", [
+                    # Var
+                    one_of(
+                        map(DistI{Expr})(
+                            DistVar,
+                            gen_var(env, tau, zero(DistNat), DistNil(DistNat))
+                        )
+                    ),
+                    # App
+                    begin
+                        T1 = gen_type(gen_typ_sz, by_sz)
+                        bind_opt(gen_expr(env, DistTFun(T1, tau), sz′, gen_typ_sz, by_sz, track_return)) do e1
+                            bind_opt(gen_expr(env, T1, sz′, gen_typ_sz, by_sz, track_return)) do e2
+                                DistSome(DistApp(e1, e2))
+                            end
+                        end
+                    end,
+                    # Value
+                    match(tau, [
+                        "TBool" => () -> DistSome(gen_bool()),
+                        "TFun" => (T1, T2) ->
+                            bind_opt(gen_expr(DistCons(T1, env), T2, sz′, gen_typ_sz, by_sz, track_return)) do e
+                                DistSome(DistAbs(T1, e))
+                            end
+                    ]),
+                ])
+            end
+        end
+    )
 end
