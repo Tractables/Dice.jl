@@ -14,8 +14,8 @@ include("lib/generator.jl")
 
 # Specify generator, initial & target distributions
 METRIC = "entropy"
-INIT_SIZE = 2      # size passed to top call of gen_expr
-GEN_TYP_SIZE = 1   # size passed to all calls of gen_type
+INIT_SIZE = 5      # size passed to top call of gen_expr
+GEN_TYP_SIZE = 2   # size passed to all calls of gen_type
 
 # Hyperparams
 PARAMETERIZE_FLIP_GROUPS_BY_SZ = true  # whether flips at the same code location
