@@ -4,11 +4,11 @@ abstract type LossParams{T} end
 
 abstract type Generation{T} end
 
-abstract type STLC <: Benchmark end
-
 ##################################
 # STLC generation
 ##################################
+
+abstract type STLC <: Benchmark end
 
 struct STLCGenerationParams <: GenerationParams{STLC}
     param_vars_by_size::Bool
@@ -59,6 +59,70 @@ function build_loss(::ApproxSTLCConstructorEntropy, generation::STLCGeneration)
 end
 
 ##################################
+# Exact STLC constructor entropy loss
+##################################
+
+struct STLCConstructorEntropy <: LossParams{STLC} end
+to_subpath(::STLCConstructorEntropy) = ["entropy"]
+function build_loss(::STLCConstructorEntropy, generation::STLCGeneration)
+    random_term = match(generation.e, [
+        "Some" => e -> DistSome(choice(collect_constructors(e))),
+        "None" => () -> DistNone(DistInt32),
+    ])
+    loss = neg_entropy(random_term, Set([DistSome(i) for i in values(stlc_ctor_to_id)]))
+    loss, nothing
+end
+
+##################################
+# BST generation
+##################################
+
+abstract type BST <: Benchmark end
+
+struct BSTGenerationParams <: GenerationParams{BST}
+    size::Integer
+    BSTGenerationParams(; size) = new(size)
+end
+struct BSTGeneration <: Generation{BST}
+    t::DistI{Tree}
+    constructors_overapproximation::Vector{DistI{Tree}}
+end
+function to_subpath(p::BSTGenerationParams)
+    [
+        "bst",
+        "sz=$(p.size)",
+    ]
+end
+function generate(p::BSTGenerationParams)
+    constructors_overapproximation = []
+    function add_ctor(v::DistI{Tree})
+        push!(constructors_overapproximation, v)
+        v
+    end
+    t = gen_tree(
+        p.size,
+        DistNat(0),
+        DistNat(40),
+        add_ctor,
+    )
+    BSTGeneration(t, constructors_overapproximation)
+end
+
+##################################
+# Approx BST constructor entropy loss
+##################################
+
+struct ApproxBSTConstructorEntropy <: LossParams{BST} end
+to_subpath(::ApproxBSTConstructorEntropy) = ["approx_entropy"]
+function build_loss(::ApproxBSTConstructorEntropy, generation::BSTGeneration)
+    loss = sum(
+        neg_entropy(ctor_to_id(ctor), values(bst_ctor_to_id), ignore_non_support=true)
+        for ctor in generation.constructors_overapproximation
+    )
+    loss, nothing
+end
+
+##################################
 # MLE loss
 ##################################
 
@@ -100,19 +164,4 @@ function metric_loss(metric::Dist, ::Linear)
         BoolToMax(prob_equals(metric, DistUInt32(i)), weight=i)
         for i in support_mixed(metric)
     ])
-end
-
-##################################
-# Exact STLC constructor entropy loss
-##################################
-
-struct STLCConstructorEntropy <: LossParams{STLC} end
-to_subpath(::STLCConstructorEntropy) = ["entropy"]
-function build_loss(::STLCConstructorEntropy, generation::STLCGeneration)
-    random_term = match(generation.e, [
-        "Some" => e -> DistSome(choice(collect_constructors(e))),
-        "None" => () -> DistNone(DistInt32),
-    ])
-    loss = neg_entropy(random_term, Set([DistSome(i) for i in values(stlc_ctor_to_id)]))
-    loss, nothing
 end
