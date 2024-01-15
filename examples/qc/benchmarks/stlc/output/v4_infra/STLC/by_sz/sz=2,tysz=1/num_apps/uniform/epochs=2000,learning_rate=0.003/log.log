@@ -1,0 +1,40 @@
+2024-01-14T18:59:36.992
+== Config ==
+TAG: v4_infra
+STLCGenerationParams(true, 2, 1)
+MLELossParams{STLC}(NumApps(), Uniform())
+EPOCHS: 2000
+LEARNING_RATE: 0.003
+DistNat: DistUInt32
+
+Building computation graph...
+  11.619795557 seconds
+
+Initial adnodes_of_interest:
+Dict("sz1_succ_abs" => 0.5, "tysz1_gen_type_tbool" => 0.5, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.5, "sz2_succ_abs" => 0.5, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.5, "sz1_succ_app" => 0.5)
+Inferring initial distribution...
+  0.255517536 seconds
+Saved metric dist to examples/qc/benchmarks/stlc/output/v4_infra/STLC/by_sz/sz=2,tysz=1/num_apps/uniform/epochs=2000,learning_rate=0.003/dist_before.csv.
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/stlc/output/v4_infra/STLC/by_sz/sz=2,tysz=1/num_apps/uniform/epochs=2000,learning_rate=0.003/terms_before.txt.
+  2.658043849 seconds
+
+Initial loss: Dice.Add(17717928539214294226)
+
+Training...
+  2.258345507 seconds
+
+Final logprob: 5.603402072496315
+Drawing the target dataset is 1.36x more likely
+
+Learned adnodes_of_interest:
+Dict("sz1_succ_abs" => 0.4040994646611332, "tysz1_gen_type_tbool" => 0.3898050541437879, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.6086307765953906, "sz2_succ_abs" => 0.36241837534771965, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.4575828949877497, "sz1_succ_app" => 0.612357374780445)
+Inferring trained distribution...
+Saved metric dist to examples/qc/benchmarks/stlc/output/v4_infra/STLC/by_sz/sz=2,tysz=1/num_apps/uniform/epochs=2000,learning_rate=0.003/dist_trained.csv.
+  0.015229351 seconds
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/stlc/output/v4_infra/STLC/by_sz/sz=2,tysz=1/num_apps/uniform/epochs=2000,learning_rate=0.003/terms_trained.txt.
+  0.189465751 seconds
+

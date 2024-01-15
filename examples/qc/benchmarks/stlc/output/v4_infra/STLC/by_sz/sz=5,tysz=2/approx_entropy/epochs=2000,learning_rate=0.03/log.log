@@ -1,0 +1,10 @@
+2024-01-14T19:02:20.667
+== Config ==
+TAG: v4_infra
+STLCGenerationParams(true, 5, 2)
+ApproxSTLCConstructorEntropy()
+EPOCHS: 2000
+LEARNING_RATE: 0.03
+DistNat: DistUInt32
+
+Building computation graph...
