@@ -23,6 +23,7 @@ loss_params = MLELossParams(
     target_dist=Uniform(),
 )
 loss_params = ApproxSTLCConstructorEntropy()
+# loss_params = STLCConstructorEntropy()
 
 EPOCHS = 2000
 LEARNING_RATE = if loss_params isa ApproxSTLCConstructorEntropy 0.03 else 0.003 end
@@ -41,7 +42,7 @@ path = joinpath(
         ["epochs=$(EPOCHS),learning_rate=$(LEARNING_RATE)"],
     )
 )
-OUT_DIR = "examples/qc/benchmarks/stlc/output/$(path)"
+OUT_DIR = "examples/qc/benchmarks/output/$(path)"
 
 ###########################
 
@@ -79,12 +80,14 @@ function register_weight!(s)
     weight
 end
 
-println_flush(io, "Building computation graph...")
-time_build = @elapsed begin
-    generation = generate(generation_params)
-    loss, extra = build_loss(loss_params, generation)
-end
-println(io, "  $(time_build) seconds")
+println_flush(io, "Building generation computation graph...")
+time_build_generation = @elapsed generation = generate(generation_params)
+println(io, "  $(time_build_generation) seconds")
+println(io)
+
+println_flush(io, "Building generation loss computation graph...")
+time_build_loss = @elapsed loss, extra = build_loss(loss_params, generation)
+println(io, "  $(time_build_loss) seconds")
 println(io)
 
 

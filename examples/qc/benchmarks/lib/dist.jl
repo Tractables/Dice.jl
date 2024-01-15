@@ -72,6 +72,22 @@ function opt_ctor_to_id(opt_ctor)
     ])
 end
 
+stlc_ctor_to_id = Dict(
+    "Var" => DistInt32(0),
+    "Boolean" => DistInt32(1),
+    "App" => DistInt32(2),
+    "Abs" => DistInt32(3),
+)
+
+function collect_constructors(e)
+    match(e, [
+        "Var"     => (i)        -> DistVector([stlc_ctor_to_id["Var"]]),
+        "Boolean" => (b)        -> DistVector([stlc_ctor_to_id["Boolean"]]),
+        "App"     => (f, x)    -> prob_append(prob_extend(collect_constructors(f), collect_constructors(x)), stlc_ctor_to_id["App"]),
+        "Abs"     => (ty, e′)  -> prob_append(collect_constructors(e′), stlc_ctor_to_id["Abs"]),
+    ])
+end
+
 # https://stackoverflow.com/questions/59338968/printing-lambda-expressions-in-haskell
 
 parens(b, s) = if b "($(s))" else s end

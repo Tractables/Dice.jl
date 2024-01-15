@@ -1,0 +1,34 @@
+2024-01-14T22:06:50.322
+== Config ==
+TAG: v4_infra
+STLCGenerationParams(true, 2, 1)
+STLCConstructorEntropy()
+EPOCHS: 2000
+LEARNING_RATE: 0.003
+DistNat: DistUInt32
+
+Building generation computation graph...
+  10.079254541 seconds
+
+Building generation loss computation graph...
+  4.044596307 seconds
+
+Initial adnodes_of_interest:
+Dict("sz1_succ_abs" => 0.5, "tysz1_gen_type_tbool" => 0.5, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.5, "sz2_succ_abs" => 0.5, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.5, "sz1_succ_app" => 0.5)
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v4_infra/stlc/by_sz/sz=2,tysz=1/entropy/epochs=2000,learning_rate=0.003/terms_before.txt.
+  2.935255772 seconds
+
+Initial loss: -1.164324889768336817765395270065151324652229424763360009858320885423779852711313
+
+Training...
+  123.235489229 seconds
+
+Final loss: -1.204239217283552940615691010870456578354822609696087403680814419213565666895845
+
+Learned adnodes_of_interest:
+Dict{String, BigFloat}("sz1_succ_abs" => 0.4869180714585302048570691232081182505035314975712561891330706457265077292495624, "tysz1_gen_type_tbool" => 0.4032244342636440581314631791189805529647330199176391995559655804680627593107093, "sz0_zero_pr_var2" => 0.5363102627524367109315280385158543365485249142267061685217095391137725521451866, "sz2_succ_app" => 0.5310888332267741651410380935576152249841616557040295523185300153916628485459204, "sz2_succ_abs" => 0.4668556352115892728646660044489504476059097249154731008664729006580142980245938, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.5333202372740048442191299519771065502391005550942749484340712888669154670773755, "sz1_succ_app" => 0.4779235071274206156476036536648448358274716682736680104217035231776925978595043)
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v4_infra/stlc/by_sz/sz=2,tysz=1/entropy/epochs=2000,learning_rate=0.003/terms_trained.txt.
+  0.209783088 seconds
+
