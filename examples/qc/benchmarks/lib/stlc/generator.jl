@@ -1,9 +1,6 @@
 # Based on
 # https://github.com/jwshi21/etna/blob/main/bench-suite/Coq/STLC/Methods/BespokeGenerator.v
 
-# Encoding: DistUInt32 for binary; DistI{Nat} for Peano
-# Shouldn't affect results
-DistNat = DistUInt32
 
 Ctx = DistI{List{DistI{Typ}}}
 

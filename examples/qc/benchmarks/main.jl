@@ -4,31 +4,32 @@
 # Saves the distributions and sampled terms before and after training.
 
 using Dice
-include("lib/dist.jl")
-include("lib/util.jl")
-include("lib/generator.jl")
+include("lib/lib.jl")
 include("benchmarks.jl")
 
 ############################
 # Config
 ############################
 
-generation_params = STLCGenerationParams(
-    param_vars_by_size=true,
-    size=5,
-    ty_size=2,
-)
-loss_params = MLELossParams(
-    metric=NumApps(),
-    target_dist=Uniform(),
-)
-loss_params = ApproxSTLCConstructorEntropy()
+# generation_params = STLCGenerationParams(
+#     param_vars_by_size=true,
+#     size=5,
+#     ty_size=2,
+# )
+# loss_params = MLELossParams(
+#     metric=NumApps(),
+#     target_dist=Uniform(),
+# )
+# loss_params = ApproxSTLCConstructorEntropy()
 # loss_params = STLCConstructorEntropy()
+
+generation_params = BSTGenerationParams(size=3)
+loss_params = ApproxBSTConstructorEntropy()
 
 EPOCHS = 2000
 LEARNING_RATE = if loss_params isa ApproxSTLCConstructorEntropy 0.03 else 0.003 end
 
-TAG = "v4_infra"
+TAG = "v04_infra"
 
 LOG_TO_FILE = true
 

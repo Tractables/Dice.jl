@@ -56,28 +56,28 @@ function num_apps(e::DistI{Expr})
     ])
 end
 
-function ctor_to_id(ctor)
-    match(ctor, [
-        "Var" => _ -> DistInt32(0)
-        "Boolean" => _ -> DistInt32(1)
-        "App" => (_, _) -> DistInt32(2)
-        "Abs" => (_, _) -> DistInt32(3)
-    ])
-end
-
-function opt_ctor_to_id(opt_ctor)
-    match(opt_ctor, [
-        "Some" => ctor_to_id,
-        "None" => () -> DistInt32(-1),
-    ])
-end
-
 stlc_ctor_to_id = Dict(
     "Var" => DistInt32(0),
     "Boolean" => DistInt32(1),
     "App" => DistInt32(2),
     "Abs" => DistInt32(3),
 )
+
+function ctor_to_id(ctor::DistI{Expr})
+    match(ctor, [
+        "Var" => _ -> stlc_ctor_to_id["Var"]
+        "Boolean" => _ -> stlc_ctor_to_id["Boolean"]
+        "App" => (_, _) -> stlc_ctor_to_id["App"]
+        "Abs" => (_, _) -> stlc_ctor_to_id["Abs"]
+    ])
+end
+
+function opt_ctor_to_id(opt_ctor::DistI{Opt{DistI{Expr}}})
+    match(opt_ctor, [
+        "Some" => ctor_to_id,
+        "None" => () -> DistInt32(-1),
+    ])
+end
 
 function collect_constructors(e)
     match(e, [
