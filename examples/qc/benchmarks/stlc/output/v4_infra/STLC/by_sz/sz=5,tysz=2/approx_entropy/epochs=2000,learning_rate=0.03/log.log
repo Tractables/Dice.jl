@@ -1,4 +1,4 @@
-2024-01-14T19:02:20.667
+2024-01-14T19:40:36.751
 == Config ==
 TAG: v4_infra
 STLCGenerationParams(true, 5, 2)
@@ -7,4 +7,28 @@ EPOCHS: 2000
 LEARNING_RATE: 0.03
 DistNat: DistUInt32
 
-Building computation graph...
+Building generation computation graph...
+  17.73495736 seconds
+
+Building generation loss computation graph...
+  246.007870148 seconds
+
+Initial adnodes_of_interest:
+Dict("tysz2_gen_type_tbool" => 0.5, "sz4_succ_var" => 0.5, "tysz1_gen_type_tbool" => 0.5, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.5, "sz4_succ_abs" => 0.5, "sz5_succ_var" => 0.5, "sz5_succ_abs" => 0.5, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.5, "sz1_succ_app" => 0.5, "sz1_succ_abs" => 0.5, "sz3_succ_abs" => 0.5, "sz3_succ_app" => 0.5, "sz5_succ_app" => 0.5, "sz4_succ_app" => 0.5, "sz2_succ_abs" => 0.5, "sz3_succ_var" => 0.5)
+Saving samples...
+Saved samples to examples/qc/benchmarks/stlc/output/v4_infra/STLC/by_sz/sz=5,tysz=2/approx_entropy/epochs=2000,learning_rate=0.03/terms_before.txt.
+  107.217707535 seconds
+
+Initial loss: -268.9974234499506
+
+Training...
+  177.329861307 seconds
+
+Final loss: -278.7035965163802
+
+Learned adnodes_of_interest:
+Dict("tysz2_gen_type_tbool" => 0.6406501979548712, "sz4_succ_var" => 0.6674255144274396, "tysz1_gen_type_tbool" => 0.5518244186781357, "sz0_zero_pr_var2" => 0.6074364937924714, "sz2_succ_app" => 0.29247488413020517, "sz4_succ_abs" => 0.46214510333327624, "sz5_succ_var" => 0.5, "sz5_succ_abs" => 0.6296817679421843, "sz2_succ_var" => 0.6924425693295808, "sz1_succ_var" => 0.6690399301775135, "sz1_succ_app" => 0.3164272452618666, "sz1_succ_abs" => 0.44933794966818746, "sz3_succ_abs" => 0.43541600818707565, "sz3_succ_app" => 0.2995197540262324, "sz5_succ_app" => 0.3278028860562152, "sz4_succ_app" => 0.30132673109175784, "sz2_succ_abs" => 0.42233005579465055, "sz3_succ_var" => 0.6824377595027068)
+Saving samples...
+Saved samples to examples/qc/benchmarks/stlc/output/v4_infra/STLC/by_sz/sz=5,tysz=2/approx_entropy/epochs=2000,learning_rate=0.03/terms_trained.txt.
+  110.290220352 seconds
+

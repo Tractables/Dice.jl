@@ -6,7 +6,9 @@ abstract type Generation{T} end
 
 abstract type STLC <: Benchmark end
 
+##################################
 # STLC generation
+##################################
 
 struct STLCGenerationParams <: GenerationParams{STLC}
     param_vars_by_size::Bool
@@ -16,11 +18,11 @@ struct STLCGenerationParams <: GenerationParams{STLC}
 end
 struct STLCGeneration <: Generation{STLC}
     e::DistI{Opt{DistI{Expr}}}
-    constructors_overapproximation::Vector{DistInt32}
+    constructors_overapproximation::Vector{DistI{Opt{DistI{Expr}}}}
 end
 function to_subpath(p::STLCGenerationParams)
     [
-        "STLC",
+        "stlc",
         if p.param_vars_by_size "by_sz" else "not_by_sz" end,
         "sz=$(p.size),tysz=$(p.ty_size)",
     ]
@@ -28,7 +30,7 @@ end
 function generate(p::STLCGenerationParams)
     constructors_overapproximation = []
     function add_ctor(v::DistI{Opt{DistI{Expr}}})
-        push!(constructors_overapproximation, opt_ctor_to_id(v))
+        push!(constructors_overapproximation, v)
         v
     end
     e = gen_expr(
@@ -42,34 +44,24 @@ function generate(p::STLCGenerationParams)
     STLCGeneration(e, constructors_overapproximation)
 end
 
+##################################
 # Approx STLC constructor entropy loss
+##################################
 
 struct ApproxSTLCConstructorEntropy <: LossParams{STLC} end
-to_subpath(p::ApproxSTLCConstructorEntropy) = ["approx_entropy"]
+to_subpath(::ApproxSTLCConstructorEntropy) = ["approx_entropy"]
 function build_loss(::ApproxSTLCConstructorEntropy, generation::STLCGeneration)
-    function neg_entropy2(p::Dist, domain::Set{<:Dist})
-        sum(domain) do x
-            pe = prob_equals(p, x)
-            if length(support_mixed(pe)) == 1
-                Dice.Constant(0)
-            else
-                LogPr(pe) * exp(LogPr(pe))
-            end
-        end
-    end
     loss = sum(
-        neg_entropy2(ctor, Set([DistInt32(i) for i in 0:3]))
+        neg_entropy(opt_ctor_to_id(ctor), values(stlc_ctor_to_id), ignore_non_support=true)
         for ctor in generation.constructors_overapproximation
-        if begin
-            sup = support_mixed(ctor)
-            ct = sum(1 for i in 0:3 if i in sup)
-            ct > 1
-        end
     )
     loss, nothing
 end
 
+##################################
 # MLE loss
+##################################
+
 abstract type Metric{T} end
 abstract type TargetDist end
 
@@ -110,35 +102,17 @@ function metric_loss(metric::Dist, ::Linear)
     ])
 end
 
-#==
-starter code for STLC exact entropy loss:
+##################################
+# Exact STLC constructor entropy loss
+##################################
 
-to_id = Dict(
-    "Var" => DistUInt32(1),
-    "Boolean" => DistUInt32(2),
-    "App" => DistUInt32(3),
-    "Abs" => DistUInt32(4),
-)
-
-# 99% \x. x      ["Var", "Abs"]
-# 1%  (\x. x) y  ["Var", "Var", "Abs", "App"]
-
-# dist(collect_constructors(e))
-# Var => 0.99 * 1/2 + 0.01 * 2/4
-# Abs => 0.99 * 1/2 + 0.01 * 1/4
-# App => 0.01 * 1/4
-
-function collect_constructors(e)
-    match(e, [
-        "Var"     => (i)        -> DistVector([to_id["Var"]]),
-        "Boolean" => (b)        -> DistVector([to_id["Boolean"]]),
-        "App"     => (f, x)    -> prob_append(prob_extend(collect_constructors(f), collect_constructors(x)), to_id["App"]),
-        "Abs"     => (ty, e′)  -> prob_append(collect_constructors(e′), to_id["Abs"]),
+struct STLCConstructorEntropy <: LossParams{STLC} end
+to_subpath(::STLCConstructorEntropy) = ["entropy"]
+function build_loss(::STLCConstructorEntropy, generation::STLCGeneration)
+    random_term = match(generation.e, [
+        "Some" => e -> DistSome(choice(collect_constructors(e))),
+        "None" => () -> DistNone(DistInt32),
     ])
+    loss = neg_entropy(random_term, Set([DistSome(i) for i in values(stlc_ctor_to_id)]))
+    loss, nothing
 end
-random_term = match(e, [
-    "None" => () -> DistNone(DistUInt32),
-    "Some" => e -> DistSome(choice(collect_constructors(e)))
-])
-loss = neg_entropy(random_term, Set([DistSome(i) for i in values(to_id)]))
-==#

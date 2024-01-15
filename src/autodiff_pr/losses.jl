@@ -48,10 +48,10 @@ function kl_divergence(p::Dict{<:Any, <:Real}, q::Dist, domain::Set{<:Pair{<:Any
     res
 end
 
-function neg_entropy(p::Dist, domain::Set{<:Dist})
+function neg_entropy(p::Dist, domain; ignore_non_support=false)
     sum(domain) do x
         pe = prob_equals(p, x)
-        if pe isa Bool
+        if ignore_non_support && length(support_mixed(pe)) == 1
             Constant(0)
         else
             LogPr(pe) * exp(LogPr(pe))

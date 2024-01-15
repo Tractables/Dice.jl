@@ -97,6 +97,7 @@ end
 
 dummy(::Type{DistString}) = DistString("dummy")
 dummy(::Type{DistUInt32}) = DistUInt32(555)
+dummy(::Type{DistInt32}) = DistInt32(555)
 
 function prob_getindex(d::DistVector{T}, idx::DistUInt32) where T
     ans = if isempty(d.contents) dummy(T) else d.contents[1] end
