@@ -11,20 +11,19 @@ include("benchmarks.jl")
 # Config
 ############################
 
-# generation_params = STLCGenerationParams(
-#     param_vars_by_size=true,
-#     size=5,
-#     ty_size=2,
-# )
-# loss_params = MLELossParams(
-#     metric=NumApps(),
-#     target_dist=Uniform(),
-# )
-# loss_params = ApproxSTLCConstructorEntropy()
-# loss_params = STLCConstructorEntropy()
+generation_params = STLCGenerationParams(
+    param_vars_by_size=true,
+    size=3,
+    ty_size=1,
+)
+loss_params = ApproxSTLCConstructorEntropy()
+# loss_params = MixedLossParams([
+#     ApproxSTLCConstructorEntropy() => 10,
+#     MLELossParams(metric=NumApps(), target_dist=Uniform()) => 1,
+# ])
 
-generation_params = BSTGenerationParams(size=3)
-loss_params = ApproxBSTConstructorEntropy()
+# generation_params = BSTGenerationParams(size=3)
+# loss_params = ApproxBSTConstructorEntropy()
 
 EPOCHS = 2000
 LEARNING_RATE = if loss_params isa ApproxSTLCConstructorEntropy 0.03 else 0.003 end
@@ -154,15 +153,13 @@ vals = compute(var_vals, values(adnodes_of_interest))
 show(io, Dict(s => vals[adnode] for (s, adnode) in adnodes_of_interest))
 println(io)
 
-if loss_params isa MLELossParams{STLC}
-    println(io, "Inferring trained distribution...")
-    time_infer_final = @elapsed metric_dist_after = pr_mixed(var_vals)(extra)
+if generation isa STLCGeneration
+    println(io, "Inferring trained num apps distribution...")
+    time_infer_final = @elapsed metric_dist_after = pr_mixed(var_vals)(num_apps(generation.e))
     save_metric_dist(joinpath(OUT_DIR, "dist_trained.csv"), metric_dist_after; io)
     println(io, "  $(time_infer_final) seconds")
     println(io)
-end
 
-if generation isa STLCGeneration
     println(io, "Saving samples...")
     time_sample_final = @elapsed with_concrete_ad_flips(var_vals, generation.e) do
         save_samples(joinpath(OUT_DIR, "terms_trained.txt"), generation.e; io)
