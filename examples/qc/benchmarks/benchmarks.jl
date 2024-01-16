@@ -165,3 +165,31 @@ function metric_loss(metric::Dist, ::Linear)
         for i in support_mixed(metric)
     ])
 end
+
+##################################
+# Mixed loss
+##################################
+
+struct MixedLossParams{T} <: LossParams{T}
+    weighted_losses::Vector{<:Pair{<:LossParams{T}, <:Real}}
+end
+function to_subpath(p::MixedLossParams)
+    [join(
+        [
+            "$(join(to_subpath(loss), "_"))_w$(weight)"
+            for (loss, weight) in p.weighted_losses
+        ],
+        "_AND_"
+    )]
+end
+function build_loss(p::MixedLossParams{T}, generation::Generation{T}) where T
+    mixed_loss = Dice.Constant(0)
+    extras = []
+    for (loss, weight) in p.weighted_losses
+        loss, extra = build_loss(loss, generation)
+        mixed_loss += Dice.Constant(weight) * loss
+        push!(extras, extra)
+    end
+    mixed_loss, extras
+end
+
