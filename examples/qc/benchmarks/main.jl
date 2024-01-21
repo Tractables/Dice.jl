@@ -13,20 +13,16 @@ include("benchmarks.jl")
 
 generation_params = STLCGenerationParams(
     param_vars_by_size=true,
-    size=3,
-    ty_size=1,
+    size=5,
+    ty_size=2,
 )
-loss_params = ApproxSTLCConstructorEntropy()
-# loss_params = MixedLossParams([
-#     ApproxSTLCConstructorEntropy() => 10,
-#     MLELossParams(metric=NumApps(), target_dist=Uniform()) => 1,
-# ])
+loss_params = STLC4321AppsLoss()
 
 # generation_params = BSTGenerationParams(size=3)
 # loss_params = ApproxBSTConstructorEntropy()
 
-EPOCHS = 2000
-LEARNING_RATE = if loss_params isa ApproxSTLCConstructorEntropy 0.03 else 0.003 end
+EPOCHS = 500
+LEARNING_RATE = if loss_params isa ApproxSTLCConstructorEntropy 0.03 else 0.01 end
 
 TAG = "v04_infra"
 
@@ -74,7 +70,11 @@ var_vals = Valuation()
 adnodes_of_interest = Dict{String, ADNode}()
 function register_weight!(s)
     var = Var("$(s)_before_sigmoid")
-    var_vals[var] = 0
+    if !haskey(var_vals, var) || var_vals[var] == 0
+        var_vals[var] = 0
+    else
+        println(io, "WARNING: not registering fresh weight for $(s)")
+    end
     weight = sigmoid(var)
     adnodes_of_interest[s] = weight
     weight
@@ -95,9 +95,15 @@ println(io)
 # Before
 ############################
 
+println(io, "Initial var_vals:")
+show(io, var_vals)
+println(io)
+println(io)
+
 println(io, "Initial adnodes_of_interest:")
 vals = compute(var_vals, values(adnodes_of_interest))
 show(io, Dict(s => vals[adnode] for (s, adnode) in adnodes_of_interest))
+println(io)
 println(io)
 
 if loss_params isa MLELossParams{STLC}
@@ -148,9 +154,15 @@ if loss_params isa MLELossParams
 end
 println(io)
 
+println(io, "Learned var_vals:")
+show(io, var_vals)
+println(io)
+println(io)
+
 println(io, "Learned adnodes_of_interest:")
 vals = compute(var_vals, values(adnodes_of_interest))
 show(io, Dict(s => vals[adnode] for (s, adnode) in adnodes_of_interest))
+println(io)
 println(io)
 
 if generation isa STLCGeneration
