@@ -7,7 +7,6 @@ end
 NodeType(::Type{LogPr}) = Leaf()
 compute_leaf(::LogPr) = error("LogPr must be expanded")
 backward(::LogPr, _, _) = error("LogPr must be expanded")
-LogPr(b::Bool) = Constant(if b log(1.) else log(0.) end)
 
 mutable struct LogPrExpander
     w::WMC
@@ -17,9 +16,6 @@ mutable struct LogPrExpander
     end
 end
 
-function expand_logprs(l::LogPrExpander, x::Float64)
-    Constant(x)
-end
 function expand_logprs(l::LogPrExpander, root::ADNode)::ADNode
     fl(x::LogPr) = expand_logprs(l, logprob(l.w, x.bool))
     fl(x::Var) = x
