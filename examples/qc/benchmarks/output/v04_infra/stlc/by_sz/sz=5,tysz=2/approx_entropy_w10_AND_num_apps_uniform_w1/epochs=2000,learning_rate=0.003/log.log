@@ -1,0 +1,38 @@
+2024-01-15T18:20:48.805
+== Config ==
+TAG: v04_infra
+STLCGenerationParams(true, 5, 2)
+MixedLossParams{STLC}(Pair{LossParams{STLC}, Int64}[ApproxSTLCConstructorEntropy() => 10, MLELossParams{STLC}(NumApps(), Uniform()) => 1])
+EPOCHS: 2000
+LEARNING_RATE: 0.003
+DistNat: DistUInt32
+
+Building generation computation graph...
+  16.589699242 seconds
+
+Building generation loss computation graph...
+  320.564701398 seconds
+
+Initial adnodes_of_interest:
+Dict("tysz2_gen_type_tbool" => 0.5, "sz4_succ_var" => 0.5, "tysz1_gen_type_tbool" => 0.5, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.5, "sz4_succ_abs" => 0.5, "sz5_succ_var" => 0.5, "sz5_succ_abs" => 0.5, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.5, "sz1_succ_app" => 0.5, "sz1_succ_abs" => 0.5, "sz3_succ_abs" => 0.5, "sz3_succ_app" => 0.5, "sz5_succ_app" => 0.5, "sz4_succ_app" => 0.5, "sz2_succ_abs" => 0.5, "sz3_succ_var" => 0.5)
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=5,tysz=2/approx_entropy_w10_AND_num_apps_uniform_w1/epochs=2000,learning_rate=0.003/terms_before.txt.
+  110.566533136 seconds
+
+Initial loss: -2465.2615500067213
+
+Training...
+  181271.01289 seconds
+
+Final loss: -2567.7676607454437
+
+Learned adnodes_of_interest:
+Dict("tysz2_gen_type_tbool" => 0.645229173718391, "sz4_succ_var" => 0.7138218178445672, "tysz1_gen_type_tbool" => 0.553597254791098, "sz0_zero_pr_var2" => 0.6069320086588633, "sz2_succ_app" => 0.3784400734165228, "sz4_succ_abs" => 0.2014582734191568, "sz5_succ_var" => 0.5, "sz5_succ_abs" => 0.12943087933670294, "sz2_succ_var" => 0.7112775931440988, "sz1_succ_var" => 0.6730243828398719, "sz1_succ_app" => 0.37275948996194735, "sz1_succ_abs" => 0.38543385371532435, "sz3_succ_abs" => 0.23665425898250395, "sz3_succ_app" => 0.4292094842654136, "sz5_succ_app" => 0.7336150721296886, "sz4_succ_app" => 0.464544312291689, "sz2_succ_abs" => 0.2928857286157865, "sz3_succ_var" => 0.7136432738953229)
+Inferring trained num apps distribution...
+Saved metric dist to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=5,tysz=2/approx_entropy_w10_AND_num_apps_uniform_w1/epochs=2000,learning_rate=0.003/dist_trained.csv.
+  63.21219152 seconds
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=5,tysz=2/approx_entropy_w10_AND_num_apps_uniform_w1/epochs=2000,learning_rate=0.003/terms_trained.txt.
+  111.936987661 seconds
+

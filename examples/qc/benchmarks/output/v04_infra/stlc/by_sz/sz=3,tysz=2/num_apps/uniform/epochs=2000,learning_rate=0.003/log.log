@@ -1,0 +1,51 @@
+2024-01-21T16:16:38.095
+== Config ==
+TAG: v04_infra
+STLCGenerationParams(true, 3, 2)
+MLELossParams{STLC}(NumApps(), Uniform())
+EPOCHS: 2000
+LEARNING_RATE: 0.003
+DistNat: DistUInt32
+
+Building generation computation graph...
+  13.232810931 seconds
+
+Building generation loss computation graph...
+  1.097860355 seconds
+
+Initial var_vals:
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz3_succ_app_before_sigmoid") => 0, Var("sz3_succ_abs_before_sigmoid") => 0, Var("sz0_zero_pr_var2_before_sigmoid") => 0, Var("tysz1_gen_type_tbool_before_sigmoid") => 0, Var("sz1_succ_abs_before_sigmoid") => 0, Var("tysz2_gen_type_tbool_before_sigmoid") => 0, Var("sz2_succ_abs_before_sigmoid") => 0, Var("sz2_succ_var_before_sigmoid") => 0, Var("sz2_succ_app_before_sigmoid") => 0, Var("sz1_succ_var_before_sigmoid") => 0, Var("sz1_succ_app_before_sigmoid") => 0, Var("sz3_succ_var_before_sigmoid") => 0)
+
+Initial adnodes_of_interest:
+Dict("tysz2_gen_type_tbool" => 0.5, "tysz1_gen_type_tbool" => 0.5, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.5, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.5, "sz1_succ_app" => 0.5, "sz1_succ_abs" => 0.5, "sz3_succ_abs" => 0.5, "sz3_succ_app" => 0.5, "sz2_succ_abs" => 0.5, "sz3_succ_var" => 0.5)
+
+Inferring initial distribution...
+  0.641260862 seconds
+Saved metric dist to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=3,tysz=2/num_apps/uniform/epochs=2000,learning_rate=0.003/dist_before.csv.
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=3,tysz=2/num_apps/uniform/epochs=2000,learning_rate=0.003/terms_before.txt.
+  6.532915897 seconds
+
+Initial loss: 20.238481981031438
+
+Training...
+  17.679609946 seconds
+
+Final loss: 17.22762054594957
+Drawing the target dataset is 20.3x more likely
+
+Learned var_vals:
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz3_succ_app_before_sigmoid") => 0.7139068640473675, Var("sz3_succ_abs_before_sigmoid") => -1.0906450721502345, Var("sz0_zero_pr_var2_before_sigmoid") => 0, Var("tysz1_gen_type_tbool_before_sigmoid") => -0.4262775279703983, Var("sz1_succ_abs_before_sigmoid") => -1.2955389956220553, Var("tysz2_gen_type_tbool_before_sigmoid") => -0.6595653889723927, Var("sz2_succ_abs_before_sigmoid") => -0.307957951331839, Var("sz2_succ_var_before_sigmoid") => -0.26274518235452854, Var("sz2_succ_app_before_sigmoid") => 0.46917250146430894, Var("sz1_succ_var_before_sigmoid") => 0.04149587100319742, Var("sz1_succ_app_before_sigmoid") => 0.7731373401016686, Var("sz3_succ_var_before_sigmoid") => 0.0)
+
+Learned adnodes_of_interest:
+Dict("tysz2_gen_type_tbool" => 0.3408372476438082, "tysz1_gen_type_tbool" => 0.3950155729504988, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.6151878798944757, "sz2_succ_var" => 0.43468900171159874, "sz1_succ_var" => 0.5103724794228329, "sz1_succ_app" => 0.6841991723159101, "sz1_succ_abs" => 0.2149167539907951, "sz3_succ_abs" => 0.25149682656466177, "sz3_succ_app" => 0.6712638585215595, "sz2_succ_abs" => 0.42361325788008763, "sz3_succ_var" => 0.5)
+
+Inferring trained num apps distribution...
+Saved metric dist to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=3,tysz=2/num_apps/uniform/epochs=2000,learning_rate=0.003/dist_trained.csv.
+  0.398940962 seconds
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=3,tysz=2/num_apps/uniform/epochs=2000,learning_rate=0.003/terms_trained.txt.
+  2.812958578 seconds
+

@@ -1,0 +1,14 @@
+λx:Bool -> Bool. true
+(λx:Bool. λy:Bool -> Bool -> Bool. λz:(Bool -> Bool) -> Bool. false) true ((λx:Bool -> Bool. λy:Bool. λz:Bool. true) ((λx:Bool. λy:Bool. true) ((λx:Bool. false) true))) ((λx:Bool. λy:(Bool -> Bool) -> Bool -> Bool. λz:Bool. λw:Bool -> Bool. true) true ((λx:Bool. λy:Bool -> Bool. λz:Bool. false) false) true)
+(λx:Bool -> Bool. (λy:Bool. false) false) ((λx:Bool. (λy:(Bool -> Bool) -> Bool. λz:Bool. λw:Bool. false) (λy:Bool -> Bool. false)) ((λx:Bool. false) ((λx:Bool -> Bool -> Bool. false) (λx:Bool. λy:Bool. false))) ((λx:Bool. λy:Bool. λz:Bool -> Bool. false) false ((λx:(Bool -> Bool) -> Bool. true) (λx:Bool -> Bool. false)) ((λx:(Bool -> Bool) -> Bool -> Bool. λy:Bool. λz:Bool. false) (λx:Bool -> Bool. λy:Bool. true) false)))
+false
+(λx:(Bool -> Bool) -> Bool. (λy:Bool -> Bool. λz:Bool -> Bool -> Bool. λw:Bool -> Bool -> Bool. λa:Bool. true) (λy:Bool. true) (λy:Bool. λz:Bool. false)) ((λx:Bool -> Bool -> Bool. λy:Bool -> Bool. λz:Bool -> Bool. false) ((λx:(Bool -> Bool) -> Bool -> Bool. λy:Bool. λz:Bool. false) (λx:Bool -> Bool. λy:Bool. false)) (λx:Bool. (λy:Bool. true) x)) ((λx:Bool -> Bool. (λy:Bool -> Bool -> Bool. y) ((λy:Bool. λz:Bool. λw:Bool. true) true)) ((λx:Bool. λy:Bool. false) true))
+λx:Bool. (λy:Bool -> Bool. λz:Bool. false) (λy:Bool. (λz:Bool. λw:Bool. true) false ((λz:Bool -> Bool -> Bool. false) (λz:Bool. λw:Bool. true)))
+true
+λx:Bool. x
+(λx:Bool. (λy:Bool -> Bool. λz:Bool -> Bool. λw:Bool -> Bool. false) (λy:Bool. true) ((λy:Bool. λz:Bool. false) false)) true (λx:Bool. x)
+λx:Bool. λy:Bool. y
+(λx:Bool. (λy:(Bool -> Bool) -> Bool -> Bool. λz:(Bool -> Bool) -> Bool -> Bool. λw:Bool. λa:Bool. λb:Bool. true) (λy:Bool -> Bool. λz:Bool. false) (λy:Bool -> Bool. y) ((λy:Bool. true) x)) false
+(λx:Bool -> Bool -> Bool. λy:Bool -> Bool -> Bool. false) ((λx:Bool -> Bool. (λy:(Bool -> Bool) -> Bool. λz:Bool. λw:Bool. false) (λy:Bool -> Bool. true)) ((λx:Bool. λy:Bool. λz:Bool. false) false true)) ((λx:Bool. (λy:Bool. λz:Bool. λw:Bool. false) x) true)
+λx:Bool -> Bool. false
+(λx:Bool -> Bool -> Bool. λy:Bool -> Bool -> Bool. λz:Bool. false) (λx:Bool. λy:Bool. true) (λx:Bool. λy:Bool. x) true

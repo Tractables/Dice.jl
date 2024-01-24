@@ -1,0 +1,28 @@
+2024-01-20T22:08:29.925
+== Config ==
+TAG: v04_infra
+STLCGenerationParams(true, 6, 2)
+ApproxSTLCConstructorEntropy()
+EPOCHS: 500
+LEARNING_RATE: 0.1
+DistNat: DistUInt32
+
+Building generation computation graph...
+  21.291546437 seconds
+
+Building generation loss computation graph...
+  1293.565762919 seconds
+
+Initial var_vals:
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz3_succ_app_before_sigmoid") => 0, Var("sz5_succ_app_before_sigmoid") => 0, Var("sz4_succ_abs_before_sigmoid") => 0, Var("sz6_succ_app_before_sigmoid") => 0, Var("sz3_succ_abs_before_sigmoid") => 0, Var("sz0_zero_pr_var2_before_sigmoid") => 0, Var("sz4_succ_var_before_sigmoid") => 0, Var("sz5_succ_var_before_sigmoid") => 0, Var("tysz1_gen_type_tbool_before_sigmoid") => 0, Var("sz1_succ_abs_before_sigmoid") => 0, Var("tysz2_gen_type_tbool_before_sigmoid") => 0, Var("sz2_succ_abs_before_sigmoid") => 0, Var("sz6_succ_var_before_sigmoid") => 0, Var("sz6_succ_abs_before_sigmoid") => 0, Var("sz2_succ_var_before_sigmoid") => 0, Var("sz2_succ_app_before_sigmoid") => 0, Var("sz1_succ_var_before_sigmoid") => 0, Var("sz1_succ_app_before_sigmoid") => 0, Var("sz5_succ_abs_before_sigmoid") => 0, Var("sz3_succ_var_before_sigmoid") => 0, Var("sz4_succ_app_before_sigmoid") => 0)
+
+Initial adnodes_of_interest:
+Dict("tysz2_gen_type_tbool" => 0.5, "sz4_succ_var" => 0.5, "sz6_succ_app" => 0.5, "tysz1_gen_type_tbool" => 0.5, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.5, "sz4_succ_abs" => 0.5, "sz5_succ_var" => 0.5, "sz5_succ_abs" => 0.5, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.5, "sz1_succ_app" => 0.5, "sz1_succ_abs" => 0.5, "sz6_succ_var" => 0.5, "sz3_succ_abs" => 0.5, "sz3_succ_app" => 0.5, "sz6_succ_abs" => 0.5, "sz5_succ_app" => 0.5, "sz4_succ_app" => 0.5, "sz2_succ_abs" => 0.5, "sz3_succ_var" => 0.5)
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=6,tysz=2/approx_entropy/epochs=500,learning_rate=0.1/terms_before.txt.
+  505.053231658 seconds
+
+Initial loss: -805.0277774485304
+
+Training...

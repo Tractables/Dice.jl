@@ -1,0 +1,46 @@
+2024-01-20T21:55:49.496
+== Config ==
+TAG: v04_infra
+STLCGenerationParams(true, 5, 2)
+ApproxSTLCConstructorEntropy()
+EPOCHS: 500
+LEARNING_RATE: 0.1
+DistNat: DistUInt32
+
+Building generation computation graph...
+  17.338884402 seconds
+
+Building generation loss computation graph...
+  255.663716233 seconds
+
+Initial var_vals:
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz3_succ_app_before_sigmoid") => 0, Var("sz5_succ_app_before_sigmoid") => 0, Var("sz4_succ_abs_before_sigmoid") => 0, Var("sz3_succ_abs_before_sigmoid") => 0, Var("sz0_zero_pr_var2_before_sigmoid") => 0, Var("sz4_succ_var_before_sigmoid") => 0, Var("sz5_succ_var_before_sigmoid") => 0, Var("tysz1_gen_type_tbool_before_sigmoid") => 0, Var("sz1_succ_abs_before_sigmoid") => 0, Var("tysz2_gen_type_tbool_before_sigmoid") => 0, Var("sz2_succ_abs_before_sigmoid") => 0, Var("sz2_succ_var_before_sigmoid") => 0, Var("sz2_succ_app_before_sigmoid") => 0, Var("sz1_succ_var_before_sigmoid") => 0, Var("sz1_succ_app_before_sigmoid") => 0, Var("sz5_succ_abs_before_sigmoid") => 0, Var("sz3_succ_var_before_sigmoid") => 0, Var("sz4_succ_app_before_sigmoid") => 0)
+
+Initial adnodes_of_interest:
+Dict("tysz2_gen_type_tbool" => 0.5, "sz4_succ_var" => 0.5, "tysz1_gen_type_tbool" => 0.5, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.5, "sz4_succ_abs" => 0.5, "sz5_succ_var" => 0.5, "sz5_succ_abs" => 0.5, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.5, "sz1_succ_app" => 0.5, "sz1_succ_abs" => 0.5, "sz3_succ_abs" => 0.5, "sz3_succ_app" => 0.5, "sz5_succ_app" => 0.5, "sz4_succ_app" => 0.5, "sz2_succ_abs" => 0.5, "sz3_succ_var" => 0.5)
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=5,tysz=2/approx_entropy/epochs=500,learning_rate=0.1/terms_before.txt.
+  110.447657912 seconds
+
+Initial loss: -268.9974234499506
+
+Training...
+  72.029217742 seconds
+
+Final loss: -271.28995127428686
+
+Learned var_vals:
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz3_succ_app_before_sigmoid") => -0.75869237254718, Var("sz5_succ_app_before_sigmoid") => -0.6112391930327599, Var("sz4_succ_abs_before_sigmoid") => -0.13199710623296823, Var("sz3_succ_abs_before_sigmoid") => -0.22837020867231037, Var("sz0_zero_pr_var2_before_sigmoid") => 0.1102427748799445, Var("sz4_succ_var_before_sigmoid") => 0.6539198486752168, Var("sz5_succ_var_before_sigmoid") => 0.0, Var("tysz1_gen_type_tbool_before_sigmoid") => 0.11211849168716584, Var("sz1_succ_abs_before_sigmoid") => 0.10076947723463958, Var("tysz2_gen_type_tbool_before_sigmoid") => -0.10531276284935442, Var("sz2_succ_abs_before_sigmoid") => -0.2610672387598516, Var("sz2_succ_var_before_sigmoid") => 0.7787401821429062, Var("sz2_succ_app_before_sigmoid") => -0.7747271869694379, Var("sz1_succ_var_before_sigmoid") => 1.134738723390108, Var("sz1_succ_app_before_sigmoid") => -0.41408628696096766, Var("sz5_succ_abs_before_sigmoid") => 0.47061523528905436, Var("sz3_succ_var_before_sigmoid") => 0.7113059109301645, Var("sz4_succ_app_before_sigmoid") => -0.7763897624819985)
+
+Learned adnodes_of_interest:
+Dict("tysz2_gen_type_tbool" => 0.47369611567358016, "sz4_succ_var" => 0.657893247167612, "tysz1_gen_type_tbool" => 0.5280002974558489, "sz0_zero_pr_var2" => 0.5275328144318258, "sz2_succ_app" => 0.315457409056211, "sz4_succ_abs" => 0.46704855295774816, "sz5_succ_var" => 0.5, "sz5_succ_abs" => 0.6155293639920255, "sz2_succ_var" => 0.6854085308525141, "sz1_succ_var" => 0.7567123531442018, "sz1_succ_app" => 0.397932712125379, "sz1_succ_abs" => 0.5251710729670502, "sz3_succ_abs" => 0.4431542893226164, "sz3_succ_app" => 0.31893023358419487, "sz5_succ_app" => 0.3517765730848171, "sz4_succ_app" => 0.31509849599925205, "sz2_succ_abs" => 0.4351013753919281, "sz3_succ_var" => 0.6706896541472351)
+
+Inferring trained num apps distribution...
+Saved metric dist to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=5,tysz=2/approx_entropy/epochs=500,learning_rate=0.1/dist_trained.csv.
+  75.038134059 seconds
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=5,tysz=2/approx_entropy/epochs=500,learning_rate=0.1/terms_trained.txt.
+  101.993643729 seconds
+

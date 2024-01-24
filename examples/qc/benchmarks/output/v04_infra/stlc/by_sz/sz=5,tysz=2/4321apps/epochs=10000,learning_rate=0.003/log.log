@@ -1,0 +1,22 @@
+2024-01-20T23:28:16.325
+== Config ==
+TAG: v04_infra
+STLCGenerationParams(true, 5, 2)
+STLC4321AppsLoss()
+EPOCHS: 10000
+LEARNING_RATE: 0.003
+DistNat: DistUInt32
+
+Building generation computation graph...
+  17.106561894 seconds
+
+Building generation loss computation graph...
+  0.751869436 seconds
+
+Initial var_vals:
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz3_succ_app_before_sigmoid") => 0, Var("sz5_succ_app_before_sigmoid") => 0, Var("sz4_succ_abs_before_sigmoid") => 0, Var("sz3_succ_abs_before_sigmoid") => 0, Var("sz0_zero_pr_var2_before_sigmoid") => 0, Var("sz4_succ_var_before_sigmoid") => 0, Var("sz5_succ_var_before_sigmoid") => 0, Var("tysz1_gen_type_tbool_before_sigmoid") => 0, Var("sz1_succ_abs_before_sigmoid") => 0, Var("tysz2_gen_type_tbool_before_sigmoid") => 0, Var("sz2_succ_abs_before_sigmoid") => 0, Var("sz2_succ_var_before_sigmoid") => 0, Var("sz2_succ_app_before_sigmoid") => 0, Var("sz1_succ_var_before_sigmoid") => 0, Var("sz1_succ_app_before_sigmoid") => 0, Var("sz5_succ_abs_before_sigmoid") => 0, Var("sz3_succ_var_before_sigmoid") => 0, Var("sz4_succ_app_before_sigmoid") => 0)
+
+Initial adnodes_of_interest:
+Dict("tysz2_gen_type_tbool" => 0.5, "sz4_succ_var" => 0.5, "tysz1_gen_type_tbool" => 0.5, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.5, "sz4_succ_abs" => 0.5, "sz5_succ_var" => 0.5, "sz5_succ_abs" => 0.5, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.5, "sz1_succ_app" => 0.5, "sz1_succ_abs" => 0.5, "sz3_succ_abs" => 0.5, "sz3_succ_app" => 0.5, "sz5_succ_app" => 0.5, "sz4_succ_app" => 0.5, "sz2_succ_abs" => 0.5, "sz3_succ_var" => 0.5)
+
+Saving samples...

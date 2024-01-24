@@ -1,0 +1,10 @@
+2024-01-14T23:44:14.462
+== Config ==
+TAG: v04_infra
+BSTGenerationParams(3)
+ApproxBSTConstructorEntropy()
+EPOCHS: 2000
+LEARNING_RATE: 0.003
+DistNat: DistUInt32
+
+Building generation computation graph...

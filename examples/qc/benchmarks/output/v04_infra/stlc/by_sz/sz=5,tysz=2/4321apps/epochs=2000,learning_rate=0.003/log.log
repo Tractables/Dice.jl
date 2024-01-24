@@ -1,0 +1,46 @@
+2024-01-20T22:39:25.088
+== Config ==
+TAG: v04_infra
+STLCGenerationParams(true, 5, 2)
+STLC4321AppsLoss()
+EPOCHS: 2000
+LEARNING_RATE: 0.003
+DistNat: DistUInt32
+
+Building generation computation graph...
+  17.442048862 seconds
+
+Building generation loss computation graph...
+  0.754126274 seconds
+
+Initial var_vals:
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz3_succ_app_before_sigmoid") => 0, Var("sz5_succ_app_before_sigmoid") => 0, Var("sz4_succ_abs_before_sigmoid") => 0, Var("sz3_succ_abs_before_sigmoid") => 0, Var("sz0_zero_pr_var2_before_sigmoid") => 0, Var("sz4_succ_var_before_sigmoid") => 0, Var("sz5_succ_var_before_sigmoid") => 0, Var("tysz1_gen_type_tbool_before_sigmoid") => 0, Var("sz1_succ_abs_before_sigmoid") => 0, Var("tysz2_gen_type_tbool_before_sigmoid") => 0, Var("sz2_succ_abs_before_sigmoid") => 0, Var("sz2_succ_var_before_sigmoid") => 0, Var("sz2_succ_app_before_sigmoid") => 0, Var("sz1_succ_var_before_sigmoid") => 0, Var("sz1_succ_app_before_sigmoid") => 0, Var("sz5_succ_abs_before_sigmoid") => 0, Var("sz3_succ_var_before_sigmoid") => 0, Var("sz4_succ_app_before_sigmoid") => 0)
+
+Initial adnodes_of_interest:
+Dict("tysz2_gen_type_tbool" => 0.5, "sz4_succ_var" => 0.5, "tysz1_gen_type_tbool" => 0.5, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.5, "sz4_succ_abs" => 0.5, "sz5_succ_var" => 0.5, "sz5_succ_abs" => 0.5, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.5, "sz1_succ_app" => 0.5, "sz1_succ_abs" => 0.5, "sz3_succ_abs" => 0.5, "sz3_succ_app" => 0.5, "sz5_succ_app" => 0.5, "sz4_succ_app" => 0.5, "sz2_succ_abs" => 0.5, "sz3_succ_var" => 0.5)
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=5,tysz=2/4321apps/epochs=2000,learning_rate=0.003/terms_before.txt.
+  116.809845689 seconds
+
+Initial loss: 2.1840191810854757
+
+Training...
+  1008.649686721 seconds
+
+Final loss: 1.6905411711441167
+
+Learned var_vals:
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz3_succ_app_before_sigmoid") => -0.8065842763263084, Var("sz5_succ_app_before_sigmoid") => -0.072011014689977, Var("sz4_succ_abs_before_sigmoid") => 0.6135103102882966, Var("sz3_succ_abs_before_sigmoid") => 0.5279427312661754, Var("sz0_zero_pr_var2_before_sigmoid") => 0, Var("sz4_succ_var_before_sigmoid") => -0.021867556462945092, Var("sz5_succ_var_before_sigmoid") => 0.0, Var("tysz1_gen_type_tbool_before_sigmoid") => 0.03033575595062491, Var("sz1_succ_abs_before_sigmoid") => 0.2342528798836248, Var("tysz2_gen_type_tbool_before_sigmoid") => 0.4572985187499511, Var("sz2_succ_abs_before_sigmoid") => 0.3725579587756861, Var("sz2_succ_var_before_sigmoid") => 0.08353508909390367, Var("sz2_succ_app_before_sigmoid") => -0.5636696270699456, Var("sz1_succ_var_before_sigmoid") => 0.05503789657734508, Var("sz1_succ_app_before_sigmoid") => -0.3292551479561304, Var("sz5_succ_abs_before_sigmoid") => 0.06951297188935658, Var("sz3_succ_var_before_sigmoid") => 0.0673545550346557, Var("sz4_succ_app_before_sigmoid") => -0.845851996288041)
+
+Learned adnodes_of_interest:
+Dict("tysz2_gen_type_tbool" => 0.6123731143665472, "sz4_succ_var" => 0.494533328724834, "tysz1_gen_type_tbool" => 0.50758335744274, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.3626988047219576, "sz4_succ_abs" => 0.6487411348644323, "sz5_succ_var" => 0.5, "sz5_succ_abs" => 0.5173712486357185, "sz2_succ_var" => 0.5208716366348458, "sz1_succ_var" => 0.5137560018805474, "sz1_succ_app" => 0.41842186816355487, "sz1_succ_abs" => 0.5582968795491227, "sz3_succ_abs" => 0.629003159015677, "sz3_succ_app" => 0.3086188429363781, "sz5_succ_app" => 0.4820050218647643, "sz4_succ_app" => 0.30030371923526084, "sz2_succ_abs" => 0.5920769265496446, "sz3_succ_var" => 0.5168322757472986)
+
+Inferring trained num apps distribution...
+Saved metric dist to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=5,tysz=2/4321apps/epochs=2000,learning_rate=0.003/dist_trained.csv.
+  69.65950159 seconds
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=5,tysz=2/4321apps/epochs=2000,learning_rate=0.003/terms_trained.txt.
+  112.96410079 seconds
+

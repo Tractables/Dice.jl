@@ -1,0 +1,51 @@
+2024-01-21T16:17:43.899
+== Config ==
+TAG: v04_infra
+STLCGenerationParams(true, 5, 2)
+MLELossParams{STLC}(NumApps(), Uniform())
+EPOCHS: 2000
+LEARNING_RATE: 0.003
+DistNat: DistUInt32
+
+Building generation computation graph...
+  17.226839272 seconds
+
+Building generation loss computation graph...
+  69.716494037 seconds
+
+Initial var_vals:
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz3_succ_app_before_sigmoid") => 0, Var("sz5_succ_app_before_sigmoid") => 0, Var("sz4_succ_abs_before_sigmoid") => 0, Var("sz3_succ_abs_before_sigmoid") => 0, Var("sz0_zero_pr_var2_before_sigmoid") => 0, Var("sz4_succ_var_before_sigmoid") => 0, Var("sz5_succ_var_before_sigmoid") => 0, Var("tysz1_gen_type_tbool_before_sigmoid") => 0, Var("sz1_succ_abs_before_sigmoid") => 0, Var("tysz2_gen_type_tbool_before_sigmoid") => 0, Var("sz2_succ_abs_before_sigmoid") => 0, Var("sz2_succ_var_before_sigmoid") => 0, Var("sz2_succ_app_before_sigmoid") => 0, Var("sz1_succ_var_before_sigmoid") => 0, Var("sz1_succ_app_before_sigmoid") => 0, Var("sz5_succ_abs_before_sigmoid") => 0, Var("sz3_succ_var_before_sigmoid") => 0, Var("sz4_succ_app_before_sigmoid") => 0)
+
+Initial adnodes_of_interest:
+Dict("tysz2_gen_type_tbool" => 0.5, "sz4_succ_var" => 0.5, "tysz1_gen_type_tbool" => 0.5, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.5, "sz4_succ_abs" => 0.5, "sz5_succ_var" => 0.5, "sz5_succ_abs" => 0.5, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.5, "sz1_succ_app" => 0.5, "sz1_succ_abs" => 0.5, "sz3_succ_abs" => 0.5, "sz3_succ_app" => 0.5, "sz5_succ_app" => 0.5, "sz4_succ_app" => 0.5, "sz2_succ_abs" => 0.5, "sz3_succ_var" => 0.5)
+
+Inferring initial distribution...
+  70.959560632 seconds
+Saved metric dist to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=5,tysz=2/num_apps/uniform/epochs=2000,learning_rate=0.003/dist_before.csv.
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=5,tysz=2/num_apps/uniform/epochs=2000,learning_rate=0.003/terms_before.txt.
+  108.729943113 seconds
+
+Initial loss: 224.7126844927842
+
+Training...
+  190305.35210185 seconds
+
+Final loss: 114.30859862155822
+Drawing the target dataset is 8.869216850690118e47x more likely
+
+Learned var_vals:
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz3_succ_app_before_sigmoid") => 1.4830238512172478, Var("sz5_succ_app_before_sigmoid") => 1.388601835278538, Var("sz4_succ_abs_before_sigmoid") => -0.139584924944432, Var("sz3_succ_abs_before_sigmoid") => -2.3315428340020086, Var("sz0_zero_pr_var2_before_sigmoid") => 0, Var("sz4_succ_var_before_sigmoid") => -0.2735300249673144, Var("sz5_succ_var_before_sigmoid") => 0.0, Var("tysz1_gen_type_tbool_before_sigmoid") => 0.3285784291011167, Var("sz1_succ_abs_before_sigmoid") => -3.1847458548191216, Var("tysz2_gen_type_tbool_before_sigmoid") => 1.4334068656521763, Var("sz2_succ_abs_before_sigmoid") => -1.932526730299123, Var("sz2_succ_var_before_sigmoid") => 0.9292401637435532, Var("sz2_succ_app_before_sigmoid") => 0.1746224331430693, Var("sz1_succ_var_before_sigmoid") => 0.9568043303530085, Var("sz1_succ_app_before_sigmoid") => 0.6751780059964629, Var("sz5_succ_abs_before_sigmoid") => -3.419747656171911, Var("sz3_succ_var_before_sigmoid") => -1.0003832865187863, Var("sz4_succ_app_before_sigmoid") => 0.3600191532028238)
+
+Learned adnodes_of_interest:
+Dict("tysz2_gen_type_tbool" => 0.807431589942519, "sz4_succ_var" => 0.4320406851513774, "tysz1_gen_type_tbool" => 0.5814134465957436, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.5435450129943228, "sz4_succ_abs" => 0.465160318291371, "sz5_succ_var" => 0.5, "sz5_succ_abs" => 0.03168396939694729, "sz2_succ_var" => 0.7169211057662201, "sz1_succ_var" => 0.7224815228294785, "sz1_succ_app" => 0.6626616299951797, "sz1_succ_abs" => 0.03974381583608742, "sz3_succ_abs" => 0.08854407128325685, "sz3_succ_app" => 0.8150288811767272, "sz5_succ_app" => 0.8003689403056172, "sz4_succ_app" => 0.5890450705010624, "sz2_succ_abs" => 0.12647117296375718, "sz3_succ_var" => 0.2688660693407728)
+
+Inferring trained num apps distribution...
+Saved metric dist to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=5,tysz=2/num_apps/uniform/epochs=2000,learning_rate=0.003/dist_trained.csv.
+  70.744680556 seconds
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=5,tysz=2/num_apps/uniform/epochs=2000,learning_rate=0.003/terms_trained.txt.
+  119.044226266 seconds
+

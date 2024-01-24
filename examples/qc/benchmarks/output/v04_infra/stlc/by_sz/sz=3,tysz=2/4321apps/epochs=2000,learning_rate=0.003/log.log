@@ -1,0 +1,38 @@
+2024-01-20T21:31:55.713
+== Config ==
+TAG: v04_infra
+STLCGenerationParams(true, 3, 2)
+STLC4321AppsLoss()
+EPOCHS: 2000
+LEARNING_RATE: 0.003
+DistNat: DistUInt32
+
+Building generation computation graph...
+  13.113619971 seconds
+
+Building generation loss computation graph...
+  0.549273647 seconds
+
+Initial adnodes_of_interest:
+Dict("tysz2_gen_type_tbool" => 0.5, "tysz1_gen_type_tbool" => 0.5, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.5, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.5, "sz1_succ_app" => 0.5, "sz1_succ_abs" => 0.5, "sz3_succ_abs" => 0.5, "sz3_succ_app" => 0.5, "sz2_succ_abs" => 0.5, "sz3_succ_var" => 0.5)
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=3,tysz=2/4321apps/epochs=2000,learning_rate=0.003/terms_before.txt.
+  6.468194921 seconds
+
+Initial loss: 1.6407055606745775
+
+Training...
+  15.585713308 seconds
+
+Final loss: 1.4437585207558667
+
+Learned adnodes_of_interest:
+Dict("tysz2_gen_type_tbool" => 0.47916771134214453, "tysz1_gen_type_tbool" => 0.4875536052528877, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.35539926058953664, "sz2_succ_var" => 0.49212635649044606, "sz1_succ_var" => 0.5046332397945446, "sz1_succ_app" => 0.3656998962533423, "sz1_succ_abs" => 0.6030161440410383, "sz3_succ_abs" => 0.5435590746260237, "sz3_succ_app" => 0.4523058111179104, "sz2_succ_abs" => 0.6187043822520948, "sz3_succ_var" => 0.5)
+Inferring trained num apps distribution...
+Saved metric dist to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=3,tysz=2/4321apps/epochs=2000,learning_rate=0.003/dist_trained.csv.
+  0.428590522 seconds
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=3,tysz=2/4321apps/epochs=2000,learning_rate=0.003/terms_trained.txt.
+  2.733270299 seconds
+

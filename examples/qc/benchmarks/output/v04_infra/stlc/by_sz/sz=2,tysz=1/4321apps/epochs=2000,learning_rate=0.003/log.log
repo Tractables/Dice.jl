@@ -1,0 +1,42 @@
+2024-01-20T21:47:21.204
+== Config ==
+TAG: v04_infra
+STLCGenerationParams(true, 2, 1)
+STLC4321AppsLoss()
+EPOCHS: 2000
+LEARNING_RATE: 0.003
+DistNat: DistUInt32
+
+Building generation computation graph...
+  9.599673489 seconds
+
+Building generation loss computation graph...
+  0.387848839 seconds
+
+Initial var_vals:
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz2_succ_var_before_sigmoid") => 0, Var("sz1_succ_abs_before_sigmoid") => 0, Var("sz2_succ_abs_before_sigmoid") => 0, Var("sz0_zero_pr_var2_before_sigmoid") => 0, Var("sz1_succ_var_before_sigmoid") => 0, Var("tysz1_gen_type_tbool_before_sigmoid") => 0, Var("sz1_succ_app_before_sigmoid") => 0, Var("sz2_succ_app_before_sigmoid") => 0)
+Initial adnodes_of_interest:
+Dict("sz1_succ_abs" => 0.5, "tysz1_gen_type_tbool" => 0.5, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.5, "sz2_succ_abs" => 0.5, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.5, "sz1_succ_app" => 0.5)
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=2,tysz=1/4321apps/epochs=2000,learning_rate=0.003/terms_before.txt.
+  3.026864591 seconds
+
+Initial loss: 1.305975296707675
+
+Training...
+  2.237611776 seconds
+
+Final loss: 1.2966482794070402
+
+Learned var_vals:
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz2_succ_var_before_sigmoid") => 0.0, Var("sz1_succ_abs_before_sigmoid") => 0.15386981970528008, Var("sz2_succ_abs_before_sigmoid") => 0.031596496568851634, Var("sz0_zero_pr_var2_before_sigmoid") => 0, Var("sz1_succ_var_before_sigmoid") => -0.03632791617354947, Var("tysz1_gen_type_tbool_before_sigmoid") => -0.10601654777184827, Var("sz1_succ_app_before_sigmoid") => -0.12802531162920366, Var("sz2_succ_app_before_sigmoid") => -0.03210334953979029)
+Learned adnodes_of_interest:
+Dict("sz1_succ_abs" => 0.5383917381510512, "tysz1_gen_type_tbool" => 0.4735206596430874, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.4919748518464411, "sz2_succ_abs" => 0.5078984670411053, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.49091901962870127, "sz1_succ_app" => 0.46803731714865193)
+Inferring trained num apps distribution...
+Saved metric dist to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=2,tysz=1/4321apps/epochs=2000,learning_rate=0.003/dist_trained.csv.
+  0.44228615 seconds
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v04_infra/stlc/by_sz/sz=2,tysz=1/4321apps/epochs=2000,learning_rate=0.003/terms_trained.txt.
+  0.177272868 seconds
+
