@@ -74,6 +74,22 @@ function build_loss(::STLCConstructorEntropy, generation::STLCGeneration)
 end
 
 ##################################
+# STLC "4231" (few apps) loss
+##################################
+
+struct STLC4321AppsLoss <: LossParams{STLC} end
+to_subpath(::STLC4321AppsLoss) = ["4321apps"]
+function build_loss(::STLC4321AppsLoss, generation::STLCGeneration)
+    metric = num_apps(generation.e)
+    mle_loss([
+        BoolToMax(prob_equals(metric, DistUInt32(0)), weight=.4),
+        BoolToMax(prob_equals(metric, DistUInt32(1)), weight=.3),
+        BoolToMax(prob_equals(metric, DistUInt32(2)), weight=.2),
+        BoolToMax(prob_equals(metric, DistUInt32(3)), weight=.1),
+    ]), nothing
+end
+
+##################################
 # BST generation
 ##################################
 
