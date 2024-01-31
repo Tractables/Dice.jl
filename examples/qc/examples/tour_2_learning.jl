@@ -6,49 +6,25 @@
 using Revise
 using Dice
 
-# What value for ? maximizes the probability of the following expression?
-#   flip(?) & flip(?) & !flip(?)
+# What value of θ maximizes `pr(flip(θ) & flip(θ) & !flip(θ))`?
 
 # Let's check!
-p = add_unit_interval_var!("p")
-x = flip(p) & flip(p) & !flip(p)
-train_vars!([x])
-compute(p)  # ~ 2/3
+θ = Var("θ")
+x = flip(θ) & flip(θ) & !flip(θ)
+var_vals = Valuation(θ => 0.5) # as we train by GD, we need to provide starting a value
+loss = -LogPr(x)
+train!(var_vals, loss, epochs=200, learning_rate=0.1) # mutates var_vals
+compute_mixed(var_vals, θ) # ~ 2/3
 
-# What just happened?
-# - `add_unit_interval_var!()` registers a value in (0,1) to learn (init. 0.5)
-# - `train_vars!(bools)` performs maximum likelihood estimation to train
-#   the parameter to maximize the product of the probabilities of the bools
-
-# We can also perform computation on params before using them for flip
-# probabilities. For example, `x` could have been equivalently defined as:
-#   x = flip(p) & flip(p) & flip(1 - p)
-
-clear_vars!()  # call before adding the params of the next "program"
-
-# (For the curious) What's happening under the hood?
-# - TODO: discuss `ADNode`s, `compute`
-# - TODO: discuss how `add_unit_interval_var!`` wraps a param in `sigmoid`
-
-# If the flips above can have different groups, each can take on a
-# different probability.
-a = add_unit_interval_var!("a")
-b = add_unit_interval_var!("b")
-c = add_unit_interval_var!("c")
-x = flip(a) & flip(b) & !flip(c)
-train_vars!([x])
-compute(a)  # 0.8419880024053406
-compute(b)  # 0.8419880024053406
-compute(c)  # 0.1580119975946594
-
-# We can also keep training to get closer to 1, 1, 0.
-train_vars!([x]; epochs=10000, learning_rate=3.0)
-compute(a)  # 0.9999666784828445
-compute(b)  # 0.9999666784828445
-compute(c)  # 3.332151715556398e-5
-
-clear_vars!()
-
+# Optional note!
+# In practice, we pass learned prs. through sigmoid to bound in [0, 1].
+# The above example becomes:
+θ = sigmoid(Var("θ_before_sigmoid"))
+x = flip(θ) & flip(θ) & !flip(θ)
+var_vals = Valuation(Var("θ_before_sigmoid") => 0)
+loss = -LogPr(x)  # symbolic version of log(pr(...))
+train!(var_vals, loss, epochs=200, learning_rate=0.1)
+compute_mixed(var_vals, θ) # ~ 2/3
 
 ################################################################################
 # Approximating datasets
@@ -56,51 +32,46 @@ clear_vars!()
 
 # Consider the following probabilistic program with holes. What probability
 # will cause x to be true 2/3 of the time?
-p = add_unit_interval_var!("p")
+p_before_sigmoid = Var("p_before_sigmoid")
+p = sigmoid(p_before_sigmoid)
 b = @dice_ite if flip(p) true else flip(0.5) end
 
 # We can match this dataset...
 dataset = [true, true, false]
 
-# ...by maximizing these distributions over bools:
-bools_to_maximize = [prob_equals(b, x) for x in dataset]
-train_vars!(bools_to_maximize; learning_rate=0.1)
-compute(p) # ~ 1/3
+# ...by maximizing this value
+antiloss = LogPr(prob_equals(b, true)) + LogPr(prob_equals(b, true)) + LogPr(prob_equals(b, false))
 
-# We can also check how close we are by performing normal Dice inference.
-# Let's back up:
-clear_vars!()
-p = add_unit_interval_var!("p")
-b = @dice_ite if flip(p) true else flip(0.5) end
+var_vals = Valuation(p_before_sigmoid => 0)
+train!(var_vals, -antiloss; epochs=2000, learning_rate=0.1)
+compute_mixed(var_vals, p) # ~ 1/3
 
-# By default, unit interval params have a value of 0.5
-pr(b)  # true => 0.75
+# Equivalently, we can use `mle_loss`:
+loss = mle_loss([prob_equals(b, x) for x in dataset])
+var_vals = Valuation(p_before_sigmoid => 0)
+train!(var_vals, loss; epochs=2000, learning_rate=0.1)
+compute_mixed(var_vals, p) # ~ 1/3
 
-train_vars!([prob_equals(b, x) for x in dataset]; learning_rate=0.1)
-
+# Two ways to "check our work" by seeing the original progam's probability.
 # The program is true 2/3 of the time, as desired!
-pr(b)  # true  => 0.666667
-
-clear_vars!()
-p = add_unit_interval_var!("p")
-# As before, we can also constrain multiple flips to have the same probability
-#                                  vvvvvvv changed
-b = @dice_ite if flip(p) true else flip(p) end
-train_vars!([prob_equals(b, x) for x in dataset]; learning_rate=0.1)
-compute(p) # 0.42264973081037427
-pr(b)  # true => 0.666667
-
-clear_vars!()
+pr_mixed(var_vals)(b)  # true  => ~ 2/3
+compute_mixed(var_vals, exp(LogPr(b))) # ~ 2/3
 
 # Here's an example for ints. Lets say we build an int whose bits are flips such
 # that it has a uniform distribution over 0, 2, 4, ..., 14.
-probs = [add_unit_interval_var!("b$(i)") for i in 1:4]
+pre_sigmoid_probs = [Var("b$(i)") for i in 1:4]
+probs = [sigmoid(psp) for psp in pre_sigmoid_probs]
 n = DistUInt{4}([flip(prob) for prob in probs])
+
 dataset = [DistUInt{4}(even) for even in 0:2:14]
-bools_to_maximize = [prob_equals(n, x) for x in dataset]
-train_vars!(bools_to_maximize; learning_rate=0.1)
-[compute(prob) for prob in probs] # 0.5, 0.5, 0.5, 0.000626043181613181
-clear_vars!()
+loss = mle_loss([prob_equals(n, x) for x in dataset])
+
+# Train
+var_vals = Valuation(psp => 0 for psp in pre_sigmoid_probs)
+train!(var_vals, loss; learning_rate=0.1, epochs=2000)
+
+# Check the desired probabilities
+[compute_mixed(var_vals, prob) for prob in probs] # 0.5, 0.5, 0.5, 0.000626043181613181
 
 ################################################################################
 ###################### TODO: update the rest of this file ######################
