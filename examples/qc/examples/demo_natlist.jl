@@ -7,7 +7,7 @@ function gen_list(size)
 
     # Try changing the parameter to flip_for to a constant, which would force
     # all sizes to use the same probability.
-    @dice_ite if flip_for(size)
+    @dice_ite if flip(sigmoid(Var(size)))
         DistNil(DistUInt32)
     else
         # The flips used in the uniform aren't tracked via flip_for, so we
@@ -27,20 +27,22 @@ DATASET = [DistUInt32(x) for x in 0:INIT_SIZE]
 list = gen_list(INIT_SIZE)
 list_len = length(list)
 
+var_vals = Valuation(Var(size) => 0 for size in 1:INIT_SIZE)
+
 println("Distribution before training:")
-display(pr(list_len))
+display(pr_mixed(var_vals)(list_len))
 println()
 
-bools_to_maximize = AnyBool[prob_equals(list_len, x) for x in DATASET]
-train_group_probs!(bools_to_maximize, 1000, 0.3)  # epochs and lr
+loss = mle_loss([prob_equals(list_len, x) for x in DATASET])
+train!(var_vals, loss, epochs=1000, learning_rate=0.3)
 
 # Done!
 println("Learned flip probability for each size:")
-display(get_group_probs())
+display(Dict(size => compute(var_vals, sigmoid(Var(size))) for size in 1:INIT_SIZE))
 println()
 
 println("Distribution over lengths after training:")
-display(pr(list_len))
+display(pr_mixed(var_vals)(list_len))
 
 #==
 Distribution before training:
