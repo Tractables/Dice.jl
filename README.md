@@ -16,6 +16,11 @@ cd Dice.jl
 julia --project
 ```
 
+If on an Apple Silicon machine, run:
+```
+julia --project -e "import Pkg;Pkg.add(url=\"https://github.com/rtjoa/CUDD.jl.git\",rev=\"m1compat\")"
+```
+
 Install Dice and update dependencies (one can also use `precompile` or `build`):
 
 ```
