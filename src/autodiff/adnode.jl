@@ -1,8 +1,27 @@
-export ADNode, ADMatrix, Var, ad_map, sigmoid, deriv_sigmoid, inverse_sigmoid
+export ADNode, ADMatrix, Var, ad_map, sigmoid, deriv_sigmoid, inverse_sigmoid, to_graph
+
+using Graphs
 
 import DirectedAcyclicGraphs: NodeType, DAG, children
 
 abstract type ADNode <: DAG end
+
+function to_graph(root::DAG)
+    g = SimpleDiGraph()
+    nodes = []
+    function fi(n::DAG, call)
+        add_vertex!(g)
+        push!(nodes, n)
+        id = nv(g)
+        for child in if isinner(n) children(n) else [] end
+            add_edge!(g, id, call(child))
+        end
+        id
+    end
+    fl(n::DAG) = fi(n, _ -> error())
+    foldup(root, fl, fi, Integer)
+    g, nodes
+end
 
 ADNodeCompatible = Union{Real, AbstractMatrix{<:Real}}
 
