@@ -151,3 +151,10 @@ function println_flush(io, args...)
     println(io, args...)
     flush(io)
 end
+
+function showln(io::IO, v)
+    show(io, v)
+    println(io)
+    println(io)
+    flush(io)
+end
