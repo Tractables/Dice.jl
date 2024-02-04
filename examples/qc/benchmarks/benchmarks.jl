@@ -61,7 +61,7 @@ function save_learning_curve(out_dir, learning_curve)
             println(file, "$(epoch)\t$(logpr)")
         end
         plot(xs, learning_curve)
-        savefig(joinpath(out_dir, "learning_curve.png"))
+        # savefig(joinpath(out_dir, "learning_curve.png"))
     end
 end
 
@@ -295,6 +295,32 @@ function generate(p::BSTGenerationParams)
         add_ctor,
     )
     BSTGeneration(t, constructors_overapproximation)
+end
+function generation_emit_stats(g::BSTGeneration, io::IO, out_dir::String, s::String, var_vals::Valuation)
+end
+
+##################################
+# Sampling BST entropy loss
+##################################
+
+struct SamplingBSTEntropy <: LossParams{BST}
+    resampling_frequency::Integer
+    samples_per_batch::Integer
+    function SamplingBSTEntropy(; resampling_frequency, samples_per_batch)
+        new(resampling_frequency, samples_per_batch)
+    end
+end
+to_subpath(p::SamplingBSTEntropy) = ["sampling_entropy", "freq=$(p.resampling_frequency),spb=$(p.samples_per_batch)"]
+function create_loss_manager(p::SamplingBSTEntropy, io, out_dir, var_vals, g::BSTGeneration)
+    function train!(; epochs, learning_rate)
+        train_via_sampling_entropy!(
+            io, out_dir, var_vals, g.t; epochs, learning_rate,
+            resampling_frequency=p.resampling_frequency, samples_per_batch=p.samples_per_batch,
+            consider=_->true,
+            ignore=_->false
+        )
+    end
+    LossMgrImpl(_ -> nothing, train!)
 end
 
 ##################################
