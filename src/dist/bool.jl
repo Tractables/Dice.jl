@@ -119,6 +119,7 @@ tobits(::Bool) = []
 tobits(b::Dist{Bool}) = [b]
 frombits(b::Bool, _) = b
 frombits(b::Dist{Bool}, world) = world[b]
+frombits_as_dist(b::Dist{Bool}, world) = world[b]
 
 ##################################
 # DirectedAcyclicGraphs.jl
