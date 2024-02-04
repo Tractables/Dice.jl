@@ -13,9 +13,14 @@ include("benchmarks.jl")
 
 generation_params = STLCGenerationParams(
     param_vars_by_size=true,
-    size=2,
+    size=1,
     ty_size=1,
 )
+loss_params = SamplingSTLCEntropy(
+    resampling_frequency=10,
+    samples_per_batch=1000,
+)
+
 # loss_params = MixedLossParams(Pair{SimpleLossParams{STLC}, Real}[
 #     ApproxSTLCConstructorEntropy() => 10,
 #     MLELossParams(
@@ -23,14 +28,13 @@ generation_params = STLCGenerationParams(
 #         target_dist=Target4321(),
 #     ) => 1,
 # ])
-loss_params = SamplingSTLCEntropy(
+
+
+generation_params = BSTGenerationParams(size=5; dummy_vals=true)
+loss_params = SamplingBSTEntropy(
     resampling_frequency=10,
     samples_per_batch=1000,
 )
-
-
-# generation_params = BSTGenerationParams(size=3)
-# loss_params = ApproxBSTConstructorEntropy()
 
 EPOCHS = 500
 LEARNING_RATE = if loss_params isa ApproxSTLCConstructorEntropy 0.03 else 0.01 end
