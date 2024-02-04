@@ -1,3 +1,5 @@
+using Plots
+
 abstract type Benchmark end
 abstract type GenerationParams{T} end
 abstract type LossParams{T} end
@@ -124,6 +126,8 @@ function create_simple_loss_manager(loss, io, out_dir, var_vals)
             for (epoch, logpr) in zip(0:epochs, learning_curve)
                 println(file, "$(epoch)\t$(logpr)")
             end
+            plot(0:epochs, learning_curve)
+            savefig(joinpath(out_dir, "learning_curve.png"))
         end
     end
     SimpleLossMgr(emit_stats, f_train, loss)
