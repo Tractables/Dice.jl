@@ -13,7 +13,6 @@ struct BenchmarkMgr
     train!::Function # epochs::Integer -> learning_rate::Real -> learning_curve::Vector{<:Real}
 end
 
-
 function create_benchmark_manager(
     io::IO, 
     out_dir::String,
@@ -87,10 +86,10 @@ function generate(p::STLCGenerationParams)
     STLCGeneration(e, constructors_overapproximation)
 end
 
-function generation_emit_stats(generation::STLCGeneration, io::IO, out_dir::String, s::String, var_vals::Valuation)
+function generation_emit_stats(g::STLCGeneration, io::IO, out_dir::String, s::String, var_vals::Valuation)
     println_flush(io, "Saving samples...")
-    time_sample = @elapsed with_concrete_ad_flips(var_vals, generation.e) do
-        save_samples(joinpath(out_dir, "terms_$(s).txt"), generation.e; io=io)
+    time_sample = @elapsed with_concrete_ad_flips(var_vals, g.e) do
+        save_samples(joinpath(out_dir, "terms_$(s).txt"), g.e; io=io)
     end
     println(io, "  $(time_sample) seconds")
     println(io)
@@ -102,11 +101,14 @@ end
 
 struct ApproxSTLCConstructorEntropy <: SimpleLossParams{STLC} end
 to_subpath(::ApproxSTLCConstructorEntropy) = ["approx_entropy"]
-function create_loss_manager(::ApproxSTLCConstructorEntropy, io, out_dir, var_vals, generation)
-    loss = sum(
+function create_loss_manager(p::ApproxSTLCConstructorEntropy, io, out_dir, var_vals, generation)
+    println_flush(io, "Building computation graph for $(p)...")
+    time_build_loss = @elapsed loss = sum(
         neg_entropy(opt_ctor_to_id(ctor), values(stlc_ctor_to_id), ignore_non_support=true)
         for ctor in generation.constructors_overapproximation
     )
+    println(io, "  $(time_build_loss) seconds")
+    println(io)
     create_simple_loss_manager(loss, io, out_dir, var_vals)
 end
 
@@ -143,12 +145,17 @@ end
 
 struct STLCConstructorEntropy <: SimpleLossParams{STLC} end
 to_subpath(::STLCConstructorEntropy) = ["entropy"]
-function create_loss_manager(::STLCConstructorEntropy, io, out_dir, var_vals, generation::STLCGeneration)
-    random_term = match(generation.e, [
-        "Some" => e -> DistSome(choice(collect_constructors(e))),
-        "None" => () -> DistNone(DistInt32),
-    ])
-    loss = neg_entropy(random_term, Set([DistSome(i) for i in values(stlc_ctor_to_id)]))
+function create_loss_manager(p::STLCConstructorEntropy, io, out_dir, var_vals, generation::STLCGeneration)
+    println_flush(io, "Building computation graph for $(p)...")
+    time_build_loss = @elapsed begin
+        random_term = match(generation.e, [
+            "Some" => e -> DistSome(choice(collect_constructors(e))),
+            "None" => () -> DistNone(DistInt32),
+        ])
+        loss = neg_entropy(random_term, Set([DistSome(i) for i in values(stlc_ctor_to_id)]))
+    end
+    println(io, "  $(time_build_loss) seconds")
+    println(io)
     create_simple_loss_manager(loss, io, out_dir, var_vals)
 end
 
@@ -193,11 +200,14 @@ end
 
 struct ApproxBSTConstructorEntropy <: SimpleLossParams{BST} end
 to_subpath(::ApproxBSTConstructorEntropy) = ["approx_entropy"]
-function create_loss_manager(::ApproxBSTConstructorEntropy, io, out_dir, var_vals, generation::BSTGeneration)
-    loss = sum(
+function create_loss_manager(p::ApproxBSTConstructorEntropy, io, out_dir, var_vals, generation::BSTGeneration)
+    println_flush(io, "Building computation graph for $(p)...")
+    time_build_loss = @elapsed loss = sum(
         neg_entropy(ctor_to_id(ctor), values(bst_ctor_to_id), ignore_non_support=true)
         for ctor in generation.constructors_overapproximation
     )
+    println(io, "  $(time_build_loss) seconds")
+    println(io)
     create_simple_loss_manager(loss, io, out_dir, var_vals)
 end
 
@@ -214,9 +224,15 @@ struct MLELossParams{T} <: SimpleLossParams{T}
     MLELossParams(; metric::Metric{T}, target_dist) where T = new{T}(metric, target_dist)
 end
 to_subpath(p::MLELossParams) = [name(p.metric), name(p.target_dist)]
-function create_loss_manager(loss_params::MLELossParams{STLC}, io, out_dir, var_vals, generation::STLCGeneration)
-    metric = compute_metric(loss_params.metric, generation)
-    loss = metric_loss(metric, loss_params.target_dist)
+function create_loss_manager(p::MLELossParams{STLC}, io, out_dir, var_vals, generation::STLCGeneration)
+    println_flush(io, "Building computation graph for $(p)...")
+    time_build_loss = @elapsed begin
+        metric = compute_metric(p.metric, generation)
+        loss = metric_loss(metric, p.target_dist)
+    end
+    println(io, "  $(time_build_loss) seconds")
+    println(io)
+
     mgr = create_simple_loss_manager(loss, io, out_dir, var_vals)
 
     # Also save distribution of metric being trained
@@ -224,7 +240,7 @@ function create_loss_manager(loss_params::MLELossParams{STLC}, io, out_dir, var_
         println_flush(io, "Saving $(tag) distribution...")
         time_infer = @elapsed metric_dist = pr_mixed(var_vals)(metric)
         println(io, "  $(time_infer) seconds")
-        save_metric_dist(joinpath(out_dir, "dist_$(name(loss_params.metric))_$(tag).csv"), metric_dist; io)
+        save_metric_dist(joinpath(out_dir, "dist_$(name(p.metric))_$(tag).csv"), metric_dist; io)
         println(io)
 
         emit_stats(mgr, tag)
