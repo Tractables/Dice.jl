@@ -73,6 +73,7 @@ function train!(
     loss::ADNode;
     epochs::Integer,
     learning_rate::Real,
+    append_last_loss=true,
 )
     losses = []
     l = LogPrExpander(WMC(BDDCompiler(bool_roots([loss]))))
@@ -89,7 +90,7 @@ function train!(
 
         push!(losses, vals[loss])
     end
-    push!(losses, compute_mixed(var_vals, loss))
+    append_last_loss && push!(losses, compute_mixed(var_vals, loss))
     losses
 end
 
