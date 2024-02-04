@@ -240,7 +240,7 @@ node_logprob(pr::ADNode, hi::ADNodeCompatible, lo::ADNode) = NodeLogPr(pr, Const
 node_logprob(pr::ADNode, hi::ADNodeCompatible, lo::ADNodeCompatible) = NodeLogPr(pr, Constant(hi), Constant(lo))
 node_logprob(pr::ADNodeCompatible, hi::ADNode, lo::ADNode) = NodeLogPr(Constant(pr), hi, lo)
 node_logprob(pr::ADNodeCompatible, hi::ADNode, lo::ADNodeCompatible) = NodeLogPr(Constant(pr), hi, Constant(lo))
-node_logprob(pr::ADNodeCompatible, hi::ADNodeCompatible, lo::ADNode) = NodeLogPr(Constant(pr), hi, Constant(lo))
+node_logprob(pr::ADNodeCompatible, hi::ADNodeCompatible, lo::ADNode) = NodeLogPr(Constant(pr), Constant(hi), lo)
 
 # Desugared ops
 Base.zero(::ADNode) = Constant(0)
