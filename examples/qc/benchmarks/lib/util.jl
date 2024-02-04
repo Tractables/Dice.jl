@@ -158,3 +158,9 @@ function showln(io::IO, v)
     println(io)
     flush(io)
 end
+
+function cmd_out(cmd)
+    io = IOBuffer()
+    run(pipeline(cmd, stdout=io))
+    String(take!(io))
+end
