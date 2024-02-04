@@ -43,6 +43,20 @@ function frombits(x::DistI{T}, world) where T
     (param_lists(T)[constructor][1], args)
 end
 
+function frombits_as_dist(x::DistI{T}, world) where T
+    DistI{T}(
+        frombits_as_dist(x.constructor, world),
+        [
+            if arg_list === nothing
+                nothing
+            else
+                [frombits_as_dist(arg, world) for arg in arg_list]
+            end
+            for arg_list in x.arg_lists
+        ]
+    )
+end
+
 function Base.ifelse(cond::Dist{Bool}, then::DistI{T}, elze::DistI{T}) where T
     arg_lists = [
         if then_args === nothing
