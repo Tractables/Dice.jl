@@ -1,4 +1,5 @@
 using Plots
+ENV["GKSwstype"] = "100" # prevent plots from displaying
 
 abstract type Benchmark end
 abstract type GenerationParams{T} end
@@ -61,7 +62,7 @@ function save_learning_curve(out_dir, learning_curve)
             println(file, "$(epoch)\t$(logpr)")
         end
         plot(xs, learning_curve)
-        # savefig(joinpath(out_dir, "learning_curve.png"))
+        savefig(joinpath(out_dir, "learning_curve.png"))
     end
 end
 
@@ -270,7 +271,8 @@ abstract type BST <: Benchmark end
 
 struct BSTGenerationParams <: GenerationParams{BST}
     size::Integer
-    BSTGenerationParams(; size) = new(size)
+    dummy_vals::Bool
+    BSTGenerationParams(; size, dummy_vals) = new(size, dummy_vals)
 end
 struct BSTGeneration <: Generation{BST}
     t::DistI{Tree}
@@ -279,6 +281,7 @@ end
 function to_subpath(p::BSTGenerationParams)
     [
         "bst",
+        if p.dummy_vals "dummy_vals" else "actual_vals" end,
         "sz=$(p.size)",
     ]
 end
@@ -288,12 +291,17 @@ function generate(p::BSTGenerationParams)
         push!(constructors_overapproximation, v)
         v
     end
-    t = gen_tree(
-        p.size,
-        DistNat(0),
-        DistNat(40),
-        add_ctor,
-    )
+    t = if p.dummy_vals
+        gen_tree_dummy_vals(p.size, add_ctor)
+    else
+        gen_tree(
+            p.size,
+            DistNat(0),
+            DistNat(40),
+            add_ctor,
+        )
+    end
+
     BSTGeneration(t, constructors_overapproximation)
 end
 function generation_emit_stats(g::BSTGeneration, io::IO, out_dir::String, s::String, var_vals::Valuation)
