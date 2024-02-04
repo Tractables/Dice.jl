@@ -20,7 +20,6 @@ loss_params = SamplingSTLCEntropy(
     resampling_frequency=10,
     samples_per_batch=1000,
 )
-
 # loss_params = MixedLossParams(Pair{SimpleLossParams{STLC}, Real}[
 #     ApproxSTLCConstructorEntropy() => 10,
 #     MLELossParams(
@@ -29,15 +28,11 @@ loss_params = SamplingSTLCEntropy(
 #     ) => 1,
 # ])
 
+generation_params = BSTGenerationParams(size=5, dummy_vals=true)
+loss_params = SamplingBSTEntropy(resampling_frequency=10, samples_per_batch=10000)
 
-generation_params = BSTGenerationParams(size=5; dummy_vals=true)
-loss_params = SamplingBSTEntropy(
-    resampling_frequency=10,
-    samples_per_batch=1000,
-)
-
-EPOCHS = 500
-LEARNING_RATE = if loss_params isa ApproxSTLCConstructorEntropy 0.03 else 0.01 end
+EPOCHS = 2000
+LEARNING_RATE = 0.01
 
 TAG = "v05"
 
@@ -64,8 +59,9 @@ io = if LOG_TO_FILE open(LOG_PATH, "w") else stdout end
 
 using Dates
 t = now()
+commit = strip(cmd_out(`git rev-parse --short HEAD`))
 for io′ in Set([io, stdout])
-    println(io′, t)
+    println(io′, "$(t) $(commit)")
     println(io′, "== Config ==")
     println(io′, "TAG: $(TAG)")
     println(io′, generation_params)
