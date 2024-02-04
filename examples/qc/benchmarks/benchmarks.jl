@@ -82,7 +82,7 @@ function create_simple_loss_manager(loss, io, out_dir, var_vals)
     SimpleLossMgr(emit_stats, f_train, loss)
 end
 
-function train_via_sampling_entropy!(io, out_dir, var_vals, e; epochs, learning_rate, resampling_frequency, samples_per_batch, domain, ignored_domain)
+function train_via_sampling_entropy!(io, out_dir, var_vals, e; epochs, learning_rate, resampling_frequency, samples_per_batch, consider, ignore)
     learning_rate = learning_rate / sqrt(samples_per_batch)
 
     learning_curve = []
@@ -100,10 +100,10 @@ function train_via_sampling_entropy!(io, out_dir, var_vals, e; epochs, learning_
         loss = sum(
             LogPr(prob_equals(e, sample))
             for sample in samples
-            if any(prob_equals(sample, i) === true for i in domain)
+            if consider(sample)
         )
         for sample in samples
-            @assert any(prob_equals(sample, i) === true for i in union(domain, ignored_domain))
+            @assert consider(sample) ^ ignore(sample)
         end
 
         epochs_this_batch = min(epochs - epochs_done, resampling_frequency)
@@ -189,6 +189,30 @@ function create_loss_manager(p::ApproxSTLCConstructorEntropy, io, out_dir, var_v
 end
 
 ##################################
+# Sampling STLC entropy loss
+##################################
+
+struct SamplingSTLCEntropy <: LossParams{STLC}
+    resampling_frequency::Integer
+    samples_per_batch::Integer
+    function SamplingSTLCEntropy(; resampling_frequency, samples_per_batch)
+        new(resampling_frequency, samples_per_batch)
+    end
+end
+to_subpath(p::SamplingSTLCEntropy) = ["sampling_entropy", "freq=$(p.resampling_frequency),spb=$(p.samples_per_batch)"]
+function create_loss_manager(p::SamplingSTLCEntropy, io, out_dir, var_vals, g::STLCGeneration)
+    function train!(; epochs, learning_rate)
+        train_via_sampling_entropy!(
+            io, out_dir, var_vals, g.e; epochs, learning_rate,
+            resampling_frequency=p.resampling_frequency, samples_per_batch=p.samples_per_batch,
+            consider=_->true,
+            ignore=_->false
+        )
+    end
+    LossMgrImpl(_ -> nothing, train!)
+end
+
+##################################
 # Sampling STLC constructor entropy loss
 ##################################
 
@@ -199,7 +223,7 @@ struct SamplingSTLCConstructorEntropy <: LossParams{STLC}
         new(resampling_frequency, samples_per_batch)
     end
 end
-to_subpath(p::SamplingSTLCConstructorEntropy) = ["sampling_entropy", "freq=$(p.resampling_frequency),spb=$(p.samples_per_batch)"]
+to_subpath(p::SamplingSTLCConstructorEntropy) = ["sampling_ctor_entropy", "freq=$(p.resampling_frequency),spb=$(p.samples_per_batch)"]
 function create_loss_manager(p::SamplingSTLCConstructorEntropy, io, out_dir, var_vals, g::STLCGeneration)
     println_flush(io, "Building random_ctor graph...")
     time_build_random_ctor = @elapsed random_ctor = match(g.e, [
@@ -211,8 +235,8 @@ function create_loss_manager(p::SamplingSTLCConstructorEntropy, io, out_dir, var
         train_via_sampling_entropy!(
             io, out_dir, var_vals, random_ctor; epochs, learning_rate,
             resampling_frequency=p.resampling_frequency, samples_per_batch=p.samples_per_batch,
-            domain=values(stlc_ctor_to_id),
-            ignored_domain=[DistInt32(-1)]
+            consider=s->any(prob_equals(s, x)===true for x in values(stlc_ctor_to_id)),
+            ignore=s->prob_equals(s, DistInt32(-1))===true,
         )
     end
     LossMgrImpl(_ -> nothing, train!)
@@ -223,7 +247,7 @@ end
 ##################################
 
 struct STLCConstructorEntropy <: SimpleLossParams{STLC} end
-to_subpath(::STLCConstructorEntropy) = ["entropy"]
+to_subpath(::STLCConstructorEntropy) = ["ctor_entropy"]
 function create_loss_manager(p::STLCConstructorEntropy, io, out_dir, var_vals, generation::STLCGeneration)
     println_flush(io, "Building computation graph for $(p)...")
     time_build_loss = @elapsed begin
@@ -278,7 +302,7 @@ end
 ##################################
 
 struct ApproxBSTConstructorEntropy <: SimpleLossParams{BST} end
-to_subpath(::ApproxBSTConstructorEntropy) = ["approx_entropy"]
+to_subpath(::ApproxBSTConstructorEntropy) = ["approx_ctor_entropy"]
 function create_loss_manager(p::ApproxBSTConstructorEntropy, io, out_dir, var_vals, generation::BSTGeneration)
     println_flush(io, "Building computation graph for $(p)...")
     time_build_loss = @elapsed loss = sum(

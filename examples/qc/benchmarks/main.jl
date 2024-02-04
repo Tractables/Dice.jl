@@ -23,7 +23,7 @@ generation_params = STLCGenerationParams(
 #         target_dist=Target4321(),
 #     ) => 1,
 # ])
-loss_params = SamplingSTLCConstructorEntropy(
+loss_params = SamplingSTLCEntropy(
     resampling_frequency=10,
     samples_per_batch=1000,
 )
