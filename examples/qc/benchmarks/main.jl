@@ -28,11 +28,11 @@ loss_params = SamplingSTLCEntropy(
 #     ) => 1,
 # ])
 
-generation_params = BSTGenerationParams(size=5, dummy_vals=true)
-loss_params = SamplingBSTEntropy(resampling_frequency=10, samples_per_batch=10000)
+generation_params = BSTGenerationParams(size=2, dummy_vals=false)
+loss_params = SamplingBSTEntropy(resampling_frequency=20, samples_per_batch=10000)
 
-EPOCHS = 2000
-LEARNING_RATE = 0.01
+EPOCHS = 1000
+LEARNING_RATE = 0.1
 
 TAG = "v05"
 
@@ -54,6 +54,12 @@ OUT_DIR = "examples/qc/benchmarks/output/$(path)"
 
 LOG_PATH = joinpath(OUT_DIR, "log.log")
 
+if isfile(LOG_PATH) && "-f" ∉ ARGS
+    println("Error: Log already exists at the following path:")
+    println(LOG_PATH)
+    exit(1)
+end
+
 mkpath(OUT_DIR)
 io = if LOG_TO_FILE open(LOG_PATH, "w") else stdout end
 
@@ -61,7 +67,7 @@ using Dates
 t = now()
 commit = strip(cmd_out(`git rev-parse --short HEAD`))
 for io′ in Set([io, stdout])
-    println(io′, "$(t) $(commit)")
+    println(io′, "$(t) $(commit) $(join(ARGS, " "))")
     println(io′, "== Config ==")
     println(io′, "TAG: $(TAG)")
     println(io′, generation_params)
@@ -105,3 +111,7 @@ vals = compute(var_vals, values(adnodes_of_interest))
 showln(io, Dict(s => vals[adnode] for (s, adnode) in adnodes_of_interest))
 
 mgr.emit_stats("trained")
+
+t′ = now()
+println(io, t′)
+println(io, "Total time elapsed: $(canonicalize(t′ - t))")

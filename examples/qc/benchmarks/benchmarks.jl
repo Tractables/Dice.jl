@@ -62,7 +62,7 @@ function save_learning_curve(out_dir, learning_curve)
             println(file, "$(epoch)\t$(logpr)")
         end
         plot(xs, learning_curve)
-        savefig(joinpath(out_dir, "learning_curve.png"))
+        savefig(joinpath(out_dir, "learning_curve.svg"))
     end
 end
 
@@ -98,7 +98,7 @@ function train_via_sampling_entropy!(io, out_dir, var_vals, e; epochs, learning_
         time_sample += time_sample_here
         println(io, "  $(time_sample_here) seconds")
 
-        loss = sum(
+        loss = -sum(
             LogPr(prob_equals(e, sample))
             for sample in samples
             if consider(sample)
