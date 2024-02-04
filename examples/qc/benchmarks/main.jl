@@ -13,16 +13,20 @@ include("benchmarks.jl")
 
 generation_params = STLCGenerationParams(
     param_vars_by_size=true,
-    size=3,
-    ty_size=2,
+    size=2,
+    ty_size=1,
 )
-loss_params = MixedLossParams(Pair{SimpleLossParams{STLC}, Real}[
-    ApproxSTLCConstructorEntropy() => 10,
-    MLELossParams(
-        metric=NumApps(),
-        target_dist=Target4321(),
-    ) => 1,
-])
+# loss_params = MixedLossParams(Pair{SimpleLossParams{STLC}, Real}[
+#     ApproxSTLCConstructorEntropy() => 10,
+#     MLELossParams(
+#         metric=NumApps(),
+#         target_dist=Target4321(),
+#     ) => 1,
+# ])
+loss_params = SamplingSTLCConstructorEntropy(
+    resampling_frequency=10,
+    samples_per_batch=1000,
+)
 
 
 # generation_params = BSTGenerationParams(size=3)
@@ -86,17 +90,17 @@ function register_weight!(s)
     weight
 end
 
+mgr = create_benchmark_manager(io, OUT_DIR, var_vals, generation_params, loss_params)
 
-println_flush(io, "Initial adnodes_of_interest:")
+println_flush(io, "ADNodes of interest (initial):")
 vals = compute(var_vals, values(adnodes_of_interest))
 showln(io, Dict(s => vals[adnode] for (s, adnode) in adnodes_of_interest))
 
-mgr = create_benchmark_manager(io, OUT_DIR, var_vals, generation_params, loss_params)
 mgr.emit_stats("initial")
 mgr.train!(epochs=EPOCHS, learning_rate=LEARNING_RATE)
 
 
-println(io, "Trained adnodes_of_interest:")
+println_flush(io, "ADNodes of interest (trained):")
 vals = compute(var_vals, values(adnodes_of_interest))
 showln(io, Dict(s => vals[adnode] for (s, adnode) in adnodes_of_interest))
 
