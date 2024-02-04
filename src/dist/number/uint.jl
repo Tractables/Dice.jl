@@ -213,6 +213,10 @@ function frombits(x::DistUInt{W}, world) where W
     v
 end
 
+function frombits_as_dist(x::DistUInt{W}, world) where W
+    DistUInt{W}([frombits(b, world) for b in x.bits])
+end
+
 function expectation(x::DistUInt; kwargs...)
     bitprobs = pr(x.bits...; kwargs...)
     expectation(bitprobs)

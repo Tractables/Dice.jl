@@ -69,6 +69,10 @@ function frombits(x::DistInt{W}, world) where W
     base + frombits(drop_bits(DistUInt{W-1}, x.number), world)
 end
 
+function frombits_as_dist(x::DistInt{W}, world) where W
+    DistInt(frombits_as_dist(x.number, world))
+end
+
 function expectation(x::DistInt{W}; kwargs...) where W
     bitprobs = pr(x.number.bits...; kwargs...)
     base = -(2^(W-1)) * bitprobs[1][true]
