@@ -74,12 +74,18 @@ function train!(
     epochs::Integer,
     learning_rate::Real,
     append_last_loss=true,
+    stop_if_inf_or_nan=true,
 )
     losses = []
     l = LogPrExpander(WMC(BDDCompiler(bool_roots([loss]))))
     loss = expand_logprs(l, loss)
     for _ in 1:epochs
         vals, derivs = differentiate(var_vals, Derivs(loss => 1))
+
+        if stop_if_inf_or_nan && (isinf(vals[loss]) || isnan(vals[loss]))
+            push!(losses, vals[loss])
+            return losses
+        end
 
         # update vars
         for (adnode, d) in derivs
