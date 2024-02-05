@@ -28,13 +28,13 @@ loss_params = SamplingSTLCEntropy(
 #     ) => 1,
 # ])
 
-generation_params = BSTGenerationParams(size=2, dummy_vals=false)
+generation_params = BSTGenerationParams(size=5, dummy_vals=true)
 loss_params = SamplingBSTEntropy(resampling_frequency=20, samples_per_batch=10000)
 
 EPOCHS = 1000
-LEARNING_RATE = 0.1
+LEARNING_RATE = 3.0
 
-TAG = "v05"
+TAG = "v06"
 
 LOG_TO_FILE = true
 

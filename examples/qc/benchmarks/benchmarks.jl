@@ -84,7 +84,7 @@ function create_simple_loss_manager(loss, io, out_dir, var_vals)
 end
 
 function train_via_sampling_entropy!(io, out_dir, var_vals, e; epochs, learning_rate, resampling_frequency, samples_per_batch, consider, ignore)
-    learning_rate = learning_rate / sqrt(samples_per_batch)
+    learning_rate = learning_rate / samples_per_batch
 
     learning_curve = []
     time_sample = 0
@@ -115,6 +115,11 @@ function train_via_sampling_entropy!(io, out_dir, var_vals, e; epochs, learning_
         time_step += time_step_here
         append!(learning_curve, subcurve)
         println(io, "  $(time_step_here) seconds")
+        if isinf(last(learning_curve)) || isnan(last(learning_curve))
+            println(io, "Stopping early due to Inf/NaN loss")
+            break
+        end
+
     end
     println(io, "Sample time:  $(time_sample) seconds")
     println(io, "Step time:    $(time_step) seconds")
