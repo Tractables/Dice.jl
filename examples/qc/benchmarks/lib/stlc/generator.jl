@@ -25,7 +25,7 @@ end
 # TODO: try returning expr instead of opt extr? what does env do?
 function gen_zero(env::Ctx, tau::DistI{Typ})
     match(tau, [
-        "TBool" => ()       -> DistSome(DistBoolean(flip(0.5))),
+        "TBool" => ()       -> DistSome(DistBoolean(flip(0.5))), # TODO: should this be constant for just learning structure?
         "TFun"  => (T1, T2) -> bind_opt(gen_zero(DistCons(T1, env), T2)) do e
             DistSome(DistAbs(T1, e))
         end
@@ -87,6 +87,51 @@ function gen_expr(env::Ctx, tau::DistI{Typ}, sz::Integer, gen_typ_sz::Integer, b
                             end
                     ]),
                 ])
+            end
+        end
+    )
+end
+
+function tb_gen_expr(sz::Integer, track_return)
+    track_return(
+        if sz == 0
+            @dice_ite if flip(register_weight!("sz$(s)_pvar"))
+                DistVar(0) # really, this is arbitrary
+            else
+                DistBoolean(true) # really, this is arbitrary
+            end
+        else
+            sz′ = sz - 1
+            frequency_for("sz$(s)", [
+                DistVar(0), # really, this is arbitrary
+                DistBoolean(true), # really, this is arbitrary
+                begin
+                    typ = tb_gen_type(2, track_return) # TODO: what size to pass here?
+                    e = tb_gen_expr(sz′, track_return)
+                    DistAbs(typ, e)
+                end,
+                begin
+                    e1 = tb_gen_expr(sz′, track_return)
+                    e2 = tb_gen_expr(sz′, track_return)
+                    DistApp(e1, e2)
+                end,
+            ])
+        end
+    )
+end
+
+function tb_gen_type(sz::Integer, track_return)
+    track_return(
+        if sz == 0
+            DistTBool()
+        else
+            sz′ = sz - 1
+            @dice_ite if flip(register_weight!("tysz$(s)_ptbool"))
+                DistTBool()
+            else
+                ty1 = tb_gen_type(sz′, track_return)
+                ty2 = tb_gen_type(sz′, track_return)
+                DistTFun(ty1, ty2)
             end
         end
     )
