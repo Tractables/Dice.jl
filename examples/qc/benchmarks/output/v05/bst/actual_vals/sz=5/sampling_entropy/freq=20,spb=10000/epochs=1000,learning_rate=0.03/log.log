@@ -1,0 +1,10 @@
+2024-02-04T15:46:38.295 a4a971a 
+== Config ==
+TAG: v05
+BSTGenerationParams(5, false)
+SamplingBSTEntropy(20, 10000)
+EPOCHS: 1000
+LEARNING_RATE: 0.03
+DistNat: DistUInt32
+
+Building generation computation graph...

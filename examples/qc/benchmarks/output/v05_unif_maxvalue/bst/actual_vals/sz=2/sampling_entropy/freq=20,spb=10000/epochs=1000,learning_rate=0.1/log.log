@@ -1,0 +1,22 @@
+2024-02-04T15:10:28.189 b6519ea 
+== Config ==
+TAG: v05_unif_maxvalue
+BSTGenerationParams(2, false)
+SamplingBSTEntropy(20, 10000)
+EPOCHS: 1000
+LEARNING_RATE: 0.1
+DistNat: DistUInt32
+
+Building generation computation graph...
+  17.749595727 seconds
+
+ADNodes of interest (initial):
+Dict("sz1" => 0.5, "sz2" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz2_before_sigmoid") => 0, Var("sz1_before_sigmoid") => 0)
+
+Training...
+Sampling...
+  478.926345176 seconds
+Stepping...
