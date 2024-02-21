@@ -11,7 +11,7 @@ println("""genType
       get
       [
         (1, ($(w("tysz1_gen_type_tbool")), 1000-$(w("tysz1_gen_type_tbool"))));
-        (2, ($(w("tysz2_gen_type_tbool")), 2000-$(w("tysz2_gen_type_tbool"))))
+        (2, ($(w("tysz2_gen_type_tbool")), 1000-$(w("tysz2_gen_type_tbool"))))
       ]
 
 Fixpoint genExpr env tau (sz: nat) : G (option Expr) :=
