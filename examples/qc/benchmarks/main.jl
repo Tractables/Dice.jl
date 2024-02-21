@@ -13,13 +13,13 @@ include("benchmarks.jl")
 
 generation_params = STLCGenerationParams(
     param_vars_by_size=true,
-    size=1,
-    ty_size=1,
+    size=5,
+    ty_size=2,
 )
-loss_params = SamplingSTLCEntropy(
-    resampling_frequency=10,
-    samples_per_batch=1000,
+loss_params = ApproxSTLCConstructorEntropy(
 )
+EPOCHS = 2000
+LEARNING_RATE = 0.03
 # loss_params = MixedLossParams(Pair{SimpleLossParams{STLC}, Real}[
 #     ApproxSTLCConstructorEntropy() => 10,
 #     MLELossParams(
@@ -28,13 +28,12 @@ loss_params = SamplingSTLCEntropy(
 #     ) => 1,
 # ])
 
-generation_params = BSTGenerationParams(size=5, dummy_vals=true)
-loss_params = SamplingBSTEntropy(resampling_frequency=20, samples_per_batch=10000)
+# generation_params = BSTGenerationParams(size=5, dummy_vals=true)
+# loss_params = SamplingBSTEntropy(resampling_frequency=5, samples_per_batch=300)
+# EPOCHS = 10000
+# LEARNING_RATE = 0.003
 
-EPOCHS = 1000
-LEARNING_RATE = 3.0
-
-TAG = "v06"
+TAG = "v07_loss_div_by_spb"
 
 LOG_TO_FILE = true
 

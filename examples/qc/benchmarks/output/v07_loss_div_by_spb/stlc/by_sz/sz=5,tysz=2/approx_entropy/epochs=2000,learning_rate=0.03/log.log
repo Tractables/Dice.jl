@@ -1,0 +1,44 @@
+2024-02-20T18:54:48.501 4e7be29 
+== Config ==
+TAG: v07_loss_div_by_spb
+STLCGenerationParams(true, 5, 2)
+ApproxSTLCConstructorEntropy()
+EPOCHS: 2000
+LEARNING_RATE: 0.03
+DistNat: DistUInt32
+
+Building generation computation graph...
+  18.66780394 seconds
+
+Building computation graph for ApproxSTLCConstructorEntropy()...
+  277.833856152 seconds
+
+ADNodes of interest (initial):
+Dict("tysz2_gen_type_tbool" => 0.5, "sz4_succ_var" => 0.5, "tysz1_gen_type_tbool" => 0.5, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.5, "sz4_succ_abs" => 0.5, "sz5_succ_var" => 0.5, "sz5_succ_abs" => 0.5, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.5, "sz1_succ_app" => 0.5, "sz1_succ_abs" => 0.5, "sz3_succ_abs" => 0.5, "sz3_succ_app" => 0.5, "sz5_succ_app" => 0.5, "sz4_succ_app" => 0.5, "sz2_succ_abs" => 0.5, "sz3_succ_var" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz5_succ_abs_before_sigmoid") => 0, Var("sz3_succ_abs_before_sigmoid") => 0, Var("sz1_succ_abs_before_sigmoid") => 0, Var("sz4_succ_app_before_sigmoid") => 0, Var("sz4_succ_abs_before_sigmoid") => 0, Var("sz2_succ_abs_before_sigmoid") => 0, Var("sz1_succ_app_before_sigmoid") => 0, Var("sz5_succ_var_before_sigmoid") => 0, Var("tysz1_gen_type_tbool_before_sigmoid") => 0, Var("sz1_succ_var_before_sigmoid") => 0, Var("sz3_succ_app_before_sigmoid") => 0, Var("sz2_succ_var_before_sigmoid") => 0, Var("sz4_succ_var_before_sigmoid") => 0, Var("tysz2_gen_type_tbool_before_sigmoid") => 0, Var("sz5_succ_app_before_sigmoid") => 0, Var("sz0_zero_pr_var2_before_sigmoid") => 0, Var("sz3_succ_var_before_sigmoid") => 0, Var("sz2_succ_app_before_sigmoid") => 0)
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v07_loss_div_by_spb/stlc/by_sz/sz=5,tysz=2/approx_entropy/epochs=2000,learning_rate=0.03/terms_initial.txt.
+  126.542713106 seconds
+
+Loss (initial): -268.9974234499506
+
+Training...
+  188.306441087 seconds
+
+ADNodes of interest (trained):
+Dict("tysz2_gen_type_tbool" => 0.6406501979548712, "sz4_succ_var" => 0.6674255144274396, "tysz1_gen_type_tbool" => 0.5518244186781357, "sz0_zero_pr_var2" => 0.6074364937924714, "sz2_succ_app" => 0.29247488413020517, "sz4_succ_abs" => 0.46214510333327624, "sz5_succ_var" => 0.5, "sz5_succ_abs" => 0.6296817679421843, "sz2_succ_var" => 0.6924425693295808, "sz1_succ_var" => 0.6690399301775135, "sz1_succ_app" => 0.3164272452618666, "sz1_succ_abs" => 0.44933794966818746, "sz3_succ_abs" => 0.43541600818707565, "sz3_succ_app" => 0.2995197540262324, "sz5_succ_app" => 0.3278028860562152, "sz4_succ_app" => 0.30132673109175784, "sz2_succ_abs" => 0.42233005579465055, "sz3_succ_var" => 0.6824377595027068)
+
+Parameter values (trained):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz5_succ_abs_before_sigmoid") => 0.5308518388953688, Var("sz3_succ_abs_before_sigmoid") => -0.25978724752369337, Var("sz1_succ_abs_before_sigmoid") => -0.20334600570937514, Var("sz4_succ_app_before_sigmoid") => -0.8409880451111083, Var("sz4_succ_abs_before_sigmoid") => -0.1517098967369152, Var("sz2_succ_abs_before_sigmoid") => -0.3132155437120633, Var("sz1_succ_app_before_sigmoid") => -0.7702397525165244, Var("sz5_succ_var_before_sigmoid") => 0.0, Var("tysz1_gen_type_tbool_before_sigmoid") => 0.20804483534659257, Var("sz1_succ_var_before_sigmoid") => 0.7038460115883682, Var("sz3_succ_app_before_sigmoid") => -0.8495857934223755, Var("sz2_succ_var_before_sigmoid") => 0.8115634660305919, Var("sz4_succ_var_before_sigmoid") => 0.6965639434076718, Var("tysz2_gen_type_tbool_before_sigmoid") => 0.5781873019011724, Var("sz5_succ_app_before_sigmoid") => -0.7181391512417546, Var("sz0_zero_pr_var2_before_sigmoid") => 0.43654930939398384, Var("sz3_succ_var_before_sigmoid") => 0.7649974958496639, Var("sz2_succ_app_before_sigmoid") => -0.8833943315862337)
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v07_loss_div_by_spb/stlc/by_sz/sz=5,tysz=2/approx_entropy/epochs=2000,learning_rate=0.03/terms_trained.txt.
+  116.745755607 seconds
+
+Loss (trained): -278.7035965163802
+
+2024-02-20T19:08:26.942
+Total time elapsed: 13 minutes, 38 seconds, 441 milliseconds
