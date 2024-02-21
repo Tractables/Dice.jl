@@ -3,7 +3,11 @@
 bool_roots = Dice.bool_roots
 LogPrExpander = Dice.LogPrExpander
 expand_logprs = Dice.expand_logprs
-to_graph
+
+@assert mgr.loss_mgr isa SimpleLossMgr
+
+loss = mgr.loss_mgr.loss
+
 l = LogPrExpander(WMC(BDDCompiler(bool_roots([loss]))))
 eloss = expand_logprs(l, loss)
 
@@ -30,7 +34,7 @@ function dump_graph(path, node)
     open(path, "w") do file
         println(file, "digraph G {")
         for (i, n) in enumerate(nodes)
-            if n isa Var
+            if n isa Var || n isa LogPr
                 println(file, "  $(i) [fillcolor=lightcyan, style=filled];")
             end
             println(file, "  $(i) [label=\"$(node_to_label(n))\"];")
