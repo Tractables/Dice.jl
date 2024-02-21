@@ -1,0 +1,44 @@
+2024-02-20T23:15:48.008 9d3fc88 -f
+== Config ==
+TAG: v8
+TypeBasedSTLCGenerator(5, 2)
+ApproxSTLCConstructorEntropy()
+EPOCHS: 2000
+LEARNING_RATE: 0.03
+DistNat: DistUInt32
+
+Building generation computation graph...
+  1.726117163 seconds
+
+Building computation graph for ApproxSTLCConstructorEntropy()...
+  12.23329154 seconds
+
+ADNodes of interest (initial):
+Dict("sz4_freq_4" => 0.5, "sz0_pvar" => 0.5, "sz3_freq_1" => 0.5, "sz1_freq_1" => 0.5, "sz1_freq_2" => 0.5, "sz5_freq_1" => 0.5, "sz3_freq_4" => 0.5, "sz4_freq_1" => 0.5, "sz5_freq_3" => 0.5, "sz3_freq_3" => 0.5, "sz1_freq_3" => 0.5, "sz2_freq_1" => 0.5, "sz5_freq_2" => 0.5, "sz2_freq_2" => 0.5, "sz4_freq_2" => 0.5, "sz4_freq_3" => 0.5, "tysz1_ptbool" => 0.5, "sz2_freq_4" => 0.5, "sz2_freq_3" => 0.5, "sz1_freq_4" => 0.5, "sz3_freq_2" => 0.5, "tysz2_ptbool" => 0.5, "sz5_freq_4" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz4_freq_1_before_sigmoid") => 0, Var("sz3_freq_1_before_sigmoid") => 0, Var("sz2_freq_3_before_sigmoid") => 0, Var("sz1_freq_2_before_sigmoid") => 0, Var("sz2_freq_2_before_sigmoid") => 0, Var("sz0_pvar_before_sigmoid") => 0, Var("sz2_freq_1_before_sigmoid") => 0, Var("sz3_freq_4_before_sigmoid") => 0, Var("sz5_freq_1_before_sigmoid") => 0, Var("sz5_freq_4_before_sigmoid") => 0, Var("sz5_freq_3_before_sigmoid") => 0, Var("sz4_freq_3_before_sigmoid") => 0, Var("sz4_freq_4_before_sigmoid") => 0, Var("sz3_freq_2_before_sigmoid") => 0, Var("sz5_freq_2_before_sigmoid") => 0, Var("sz1_freq_3_before_sigmoid") => 0, Var("sz1_freq_1_before_sigmoid") => 0, Var("sz4_freq_2_before_sigmoid") => 0, Var("tysz2_ptbool_before_sigmoid") => 0, Var("sz3_freq_3_before_sigmoid") => 0, Var("sz1_freq_4_before_sigmoid") => 0, Var("sz2_freq_4_before_sigmoid") => 0, Var("tysz1_ptbool_before_sigmoid") => 0)
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v8/stlc/typebased/sz=5,tysz=2/approx_entropy/epochs=2000,learning_rate=0.03/terms_initial.txt.
+  7.341500065 seconds
+
+Loss (initial): -336.17638257157415
+
+Training...
+  102.908563644 seconds
+
+ADNodes of interest (trained):
+Dict("sz4_freq_4" => 0.5, "sz0_pvar" => 0.5, "sz3_freq_1" => 0.5, "sz1_freq_1" => 0.5, "sz1_freq_2" => 0.5000000000000001, "sz5_freq_1" => 0.5, "sz3_freq_4" => 0.5, "sz4_freq_1" => 0.5, "sz5_freq_3" => 0.5, "sz3_freq_3" => 0.5, "sz1_freq_3" => 0.5, "sz2_freq_1" => 0.5, "sz5_freq_2" => 0.5, "sz2_freq_2" => 0.5000000000000001, "sz4_freq_2" => 0.5000000000000001, "sz4_freq_3" => 0.5, "tysz1_ptbool" => 0.5, "sz2_freq_4" => 0.5, "sz2_freq_3" => 0.5, "sz1_freq_4" => 0.5, "sz3_freq_2" => 0.5000000000000001, "tysz2_ptbool" => 0.5, "sz5_freq_4" => 0.5)
+
+Parameter values (trained):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz4_freq_1_before_sigmoid") => 4.1217029789208884e-17, Var("sz3_freq_1_before_sigmoid") => 4.2153780466236395e-17, Var("sz2_freq_3_before_sigmoid") => -1.639313684798083e-16, Var("sz1_freq_2_before_sigmoid") => 3.4285074779205593e-16, Var("sz2_freq_2_before_sigmoid") => 2.857089564934293e-16, Var("sz0_pvar_before_sigmoid") => 0.0, Var("sz2_freq_1_before_sigmoid") => 4.215378046623641e-17, Var("sz3_freq_4_before_sigmoid") => -1.6393136847980834e-16, Var("sz5_freq_1_before_sigmoid") => 4.090477956353306e-17, Var("sz5_freq_4_before_sigmoid") => -1.5907414274707275e-16, Var("sz5_freq_3_before_sigmoid") => -1.5907414274707275e-16, Var("sz4_freq_3_before_sigmoid") => -1.6028844918025671e-16, Var("sz4_freq_4_before_sigmoid") => -1.6028844918025671e-16, Var("sz3_freq_2_before_sigmoid") => 2.8570895649338026e-16, Var("sz5_freq_2_before_sigmoid") => 2.772435059306144e-16, Var("sz1_freq_3_before_sigmoid") => -1.9671764217574509e-16, Var("sz1_freq_1_before_sigmoid") => 5.0584536559483695e-17, Var("sz4_freq_2_before_sigmoid") => 2.7935986857130525e-16, Var("tysz2_ptbool_before_sigmoid") => 0, Var("sz3_freq_3_before_sigmoid") => -1.6393136847980834e-16, Var("sz1_freq_4_before_sigmoid") => -1.9671764217574509e-16, Var("sz2_freq_4_before_sigmoid") => -1.639313684798083e-16, Var("tysz1_ptbool_before_sigmoid") => 0)
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v8/stlc/typebased/sz=5,tysz=2/approx_entropy/epochs=2000,learning_rate=0.03/terms_trained.txt.
+  4.050003934 seconds
+
+Loss (trained): -336.17638257157415
+
+2024-02-20T23:18:11.894
+Total time elapsed: 2 minutes, 23 seconds, 886 milliseconds
