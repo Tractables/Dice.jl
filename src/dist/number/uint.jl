@@ -1,6 +1,6 @@
 export DistUInt, DistUInt8, DistUInt16, DistUInt32, DistUInt64,
     uniform, uniform_arith, uniform_ite, triangle, discrete, unif, unif_obs,
-    flip_reciprocal
+    flip_reciprocal, unif2, unif_half2
 
 ##################################
 # types, structs, and constructors
@@ -415,6 +415,28 @@ end
 # Uniform from lo to hi, inclusive
 function unif(lo::DistUInt{W}, hi::DistUInt{W}) where W
     lo + unif_half(hi + DistUInt32(1) - lo)
+end
+
+# Uniform from lo to hi, inclusive
+function unif2(lo::DistUInt{W}, hi::DistUInt{W}) where W
+    lo + unif_half2(hi + DistUInt32(1) - lo)
+end
+
+# Uniform from 0 to hi, exclusive
+function unif_half2(u::DistUInt{W}) where W
+    res = nothing
+    for x in support_mixed(u)
+        res = if res === nothing
+            uniform(DistUInt{W}, 0, x)
+        else
+            @dice_ite if prob_equals(u, DistUInt32(x))
+                uniform(DistUInt{W}, 0, x)
+            else
+                res
+            end
+        end
+    end
+    res
 end
 
 flip_reciprocal(x) = prob_equals(DistUInt32(0), unif_half(x))
