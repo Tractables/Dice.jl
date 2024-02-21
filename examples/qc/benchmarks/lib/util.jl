@@ -74,24 +74,18 @@ function map(::Type{RetT}) where RetT
 end
 
 function frequency_for(name, xs)
-    # Hand-build shuffle for lengths 2 and 3
-    @dice_ite if length(xs) == 2
-        if flip_for("$(name)_var_")
-            xs[1]
+    weights = [register_weight!("$(name)_$(i)") for i in 1:length(xs)]
+    res = last(xs)
+    weight_sum = last(weights)
+    for i in length(xs) - 1 : -1 : 1
+        weight_sum += weights[i]
+        res = @dice_ite if flip(weights[i] / weight_sum)
+            xs[i]
         else
-            xs[2]
+            res
         end
-    elseif length(xs) == 3
-        if flip_for("$(name)_var", 1/3)
-            xs[1]
-        elseif flip_for("$(name)_app")
-            xs[2]
-        else
-            xs[3]
-        end
-    else
-        error("todo: generic frequency_for")
     end
+    res
 end
 
 function opt_stlc_str(ast)

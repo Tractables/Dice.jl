@@ -11,13 +11,11 @@ include("benchmarks.jl")
 # Config
 ############################
 
-generation_params = STLCGenerationParams(
-    param_vars_by_size=true,
+generation_params = TypeBasedSTLCGenerator(
     size=5,
     ty_size=2,
 )
-loss_params = ApproxSTLCConstructorEntropy(
-)
+loss_params = ApproxSTLCConstructorEntropy()
 EPOCHS = 2000
 LEARNING_RATE = 0.03
 # loss_params = MixedLossParams(Pair{SimpleLossParams{STLC}, Real}[
@@ -33,7 +31,7 @@ LEARNING_RATE = 0.03
 # EPOCHS = 10000
 # LEARNING_RATE = 0.003
 
-TAG = "v07_loss_div_by_spb"
+TAG = "v8"
 
 LOG_TO_FILE = true
 
@@ -90,6 +88,7 @@ function register_weight!(s)
     else
         println(io, "WARNING: not registering fresh weight for $(s)")
     end
+    # var_vals[var] = inverse_sigmoid(rand())
     weight = sigmoid(var)
     adnodes_of_interest[s] = weight
     weight
@@ -102,7 +101,7 @@ vals = compute(var_vals, values(adnodes_of_interest))
 showln(io, Dict(s => vals[adnode] for (s, adnode) in adnodes_of_interest))
 
 mgr.emit_stats("initial")
-mgr.train!(epochs=EPOCHS, learning_rate=LEARNING_RATE)
+mgr.loss_mgr.train!(epochs=EPOCHS, learning_rate=LEARNING_RATE)
 
 
 println_flush(io, "ADNodes of interest (trained):")
@@ -114,3 +113,5 @@ mgr.emit_stats("trained")
 t′ = now()
 println(io, t′)
 println(io, "Total time elapsed: $(canonicalize(t′ - t))")
+
+include("dump_loss_graph.jl")

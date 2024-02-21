@@ -11,7 +11,8 @@ abstract type Generation{T} end
 
 struct BenchmarkMgr
     emit_stats::Function # tag::String -> ()
-    train!::Function # epochs::Integer -> learning_rate::Real -> learning_curve::Vector{<:Real}
+    # train!::Function # epochs::Integer -> learning_rate::Real -> learning_curve::Vector{<:Real}
+    loss_mgr
 end
 
 function create_benchmark_manager(
@@ -36,7 +37,7 @@ function create_benchmark_manager(
         loss_mgr.emit_stats(s)
     end
 
-    BenchmarkMgr(emit_stats, loss_mgr.train!)
+    BenchmarkMgr(emit_stats, loss_mgr)
 end
 
 struct LossMgrImpl <: LossMgr
@@ -133,25 +134,38 @@ end
 ##################################
 
 abstract type STLC <: Benchmark end
-
-struct STLCGenerationParams <: GenerationParams{STLC}
-    param_vars_by_size::Bool
-    size::Integer
-    ty_size::Integer
-    STLCGenerationParams(;param_vars_by_size, size, ty_size) = new(param_vars_by_size, size, ty_size)
-end
 struct STLCGeneration <: Generation{STLC}
     e::DistI{Opt{DistI{Expr}}}
     constructors_overapproximation::Vector{DistI{Opt{DistI{Expr}}}}
 end
-function to_subpath(p::STLCGenerationParams)
+function generation_emit_stats(g::STLCGeneration, io::IO, out_dir::String, s::String, var_vals::Valuation)
+    println_flush(io, "Saving samples...")
+    time_sample = @elapsed with_concrete_ad_flips(var_vals, g.e) do
+        save_samples(joinpath(out_dir, "terms_$(s).txt"), g.e; io=io)
+    end
+    println(io, "  $(time_sample) seconds")
+    println(io)
+end
+
+##################################
+# Bespoke STLC generator
+##################################
+
+struct BespokeSTLCGenerator <: GenerationParams{STLC}
+    param_vars_by_size::Bool
+    size::Integer
+    ty_size::Integer
+    BespokeSTLCGenerator(;param_vars_by_size, size, ty_size) = new(param_vars_by_size, size, ty_size)
+end
+function to_subpath(p::BespokeSTLCGenerator)
     [
         "stlc",
+        "bespoke",
         if p.param_vars_by_size "by_sz" else "not_by_sz" end,
         "sz=$(p.size),tysz=$(p.ty_size)",
     ]
 end
-function generate(p::STLCGenerationParams)
+function generate(p::BespokeSTLCGenerator)
     constructors_overapproximation = []
     function add_ctor(v::DistI{Opt{DistI{Expr}}})
         push!(constructors_overapproximation, v)
@@ -168,13 +182,34 @@ function generate(p::STLCGenerationParams)
     STLCGeneration(e, constructors_overapproximation)
 end
 
-function generation_emit_stats(g::STLCGeneration, io::IO, out_dir::String, s::String, var_vals::Valuation)
-    println_flush(io, "Saving samples...")
-    time_sample = @elapsed with_concrete_ad_flips(var_vals, g.e) do
-        save_samples(joinpath(out_dir, "terms_$(s).txt"), g.e; io=io)
+##################################
+# Type-based STLC generator
+##################################
+
+struct TypeBasedSTLCGenerator <: GenerationParams{STLC}
+    size::Integer
+    ty_size::Integer
+    TypeBasedSTLCGenerator(; size, ty_size) = new(size, ty_size)
+end
+function to_subpath(p::TypeBasedSTLCGenerator)
+    [
+        "stlc",
+        "typebased",
+        "sz=$(p.size),tysz=$(p.ty_size)",
+    ]
+end
+function generate(p::TypeBasedSTLCGenerator)
+    constructors_overapproximation = []
+    function add_ctor(v::DistI{Expr})
+        push!(constructors_overapproximation, DistSome(v))
+        v
     end
-    println(io, "  $(time_sample) seconds")
-    println(io)
+    e = tb_gen_expr(
+        p.size,
+        p.ty_size,
+        add_ctor,
+    )
+    STLCGeneration(DistSome(e), constructors_overapproximation)
 end
 
 ##################################

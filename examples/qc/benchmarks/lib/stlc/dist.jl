@@ -110,7 +110,9 @@ end
 function var_str(i)
     i += 1  # 1-idx
     vars = ["x", "y", "z", "w"]
-    if i <= length(vars)
+    if i <= 0
+        "badvar_$(i)"
+    elseif i <= length(vars)
         vars[i]
     else
         string('a' + i - length(vars) - 1)
