@@ -504,7 +504,7 @@ function n_unit_exponentials(::Type{DistFix{W, F}}, betas::Vector{Float64}) wher
             ans[j][i] = false
         end
     end
-    for i in 1:F
+    for i in F:-1:1
         for j in 1:l
             ans[j][i + W - F] = flip(exp(betas[j]/2^i)/(1+exp(betas[j]/2^i)))
         end
@@ -557,14 +557,20 @@ end
 
 
 
-function unit_gamma(t::Type{DistFix{W, F}}, alpha::Int, beta::Float64; vec_arg=[], constants = [], discrete_bdd=[]) where {W, F}
+function unit_gamma(t::Type{DistFix{W, F}}, alpha::Int, beta::Float64; vec_arg=[], constants = [], discrete_bdd=[], coinflips = []) where {W, F}
     DFiP = DistFix{W, F}
     if alpha == 0
         unit_exponential(DFiP, beta)
     elseif alpha == 1
         
         t = (exp(beta*2.0^(-F))*(beta*2.0^(-F) - 1) + 1)*(1 - exp(beta)) / ((1 - exp(beta*2.0^(-F)))*(exp(beta) * (beta - 1) + 1))
-        coinflip = flip(t)
+        
+        if (length(coinflips) != 0)
+            coinflip = coinflips[1]
+        else
+            coinflip = flip(t)
+        end
+        
 
         if (length(vec_arg) != 0)
             (Y, Z, U) = vec_arg
