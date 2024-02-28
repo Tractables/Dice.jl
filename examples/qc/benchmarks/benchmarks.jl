@@ -308,6 +308,16 @@ end
 ##################################
 
 abstract type BST <: Benchmark end
+struct BSTGeneration <: Generation{BST}
+    t::DistI{Tree}
+    constructors_overapproximation::Vector{DistI{Tree}}
+end
+function generation_emit_stats(g::BSTGeneration, io::IO, out_dir::String, s::String, var_vals::Valuation)
+end
+
+##################################
+# Bespoke BST generator
+##################################
 
 @enum BSTValues BSTActualVals BSTDummyVals BSTApproxVals
 function str(x::BSTValues)
@@ -322,23 +332,20 @@ function str(x::BSTValues)
     end
 end
 
-struct BSTGenerationParams <: GenerationParams{BST}
+struct BespokeBSTGenerator <: GenerationParams{BST}
     size::Integer
     vals::BSTValues
-    BSTGenerationParams(; size, vals) = new(size, vals)
+    BespokeBSTGenerator(; size, vals) = new(size, vals)
 end
-struct BSTGeneration <: Generation{BST}
-    t::DistI{Tree}
-    constructors_overapproximation::Vector{DistI{Tree}}
-end
-function to_subpath(p::BSTGenerationParams)
+function to_subpath(p::BespokeBSTGenerator)
     [
         "bst",
+        "bespoke",
         str(p.vals),
         "sz=$(p.size)",
     ]
 end
-function generate(p::BSTGenerationParams)
+function generate(p::BespokeBSTGenerator)
     constructors_overapproximation = []
     function add_ctor(v::DistI{Tree})
         push!(constructors_overapproximation, v)
@@ -356,7 +363,30 @@ function generate(p::BSTGenerationParams)
 
     BSTGeneration(t, constructors_overapproximation)
 end
-function generation_emit_stats(g::BSTGeneration, io::IO, out_dir::String, s::String, var_vals::Valuation)
+
+##################################
+# Type-based BST generator
+##################################
+
+struct TypeBasedBSTGenerator <: GenerationParams{BST}
+    size::Integer
+    TypeBasedBSTGenerator(; size) = new(size)
+end
+function to_subpath(p::TypeBasedBSTGenerator)
+    [
+        "bst",
+        "typebased",
+        "sz=$(p.size)",
+    ]
+end
+function generate(p::TypeBasedBSTGenerator)
+    constructors_overapproximation = []
+    function add_ctor(v::DistI{Tree})
+        push!(constructors_overapproximation, v)
+        v
+    end
+    t = typebased_gen_tree(p.size, add_ctor)
+    BSTGeneration(t, constructors_overapproximation)
 end
 
 ##################################

@@ -11,10 +11,7 @@ include("benchmarks.jl")
 # Config
 ############################
 
-generation_params = BSTGenerationParams(
-    size=3,
-    vals=BSTActualVals,
-)
+generation_params = TypeBasedBSTGenerator(size=2)
 loss_params = ApproxBSTConstructorEntropy()
 EPOCHS = 2000
 LEARNING_RATE = 0.01
