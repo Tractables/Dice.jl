@@ -41,3 +41,22 @@ function gen_tree_dummy_vals(s::Integer, track_return)
         end
     )
 end
+
+
+function typebased_gen_tree(s::Integer, track_return)
+    track_return(
+        @dice_ite if s == 0
+            DistE()
+        else
+            s′ = s - 1
+            if flip(register_weight!("sz$(s)"))
+                DistE()
+            else
+                l = typebased_gen_tree(s′, track_return)
+                r = typebased_gen_tree(s′, track_return)
+                k = v = DistNat(0) # arbitrary
+                DistT(l, k, v, r)
+            end
+        end
+    )
+end
