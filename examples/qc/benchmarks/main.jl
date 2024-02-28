@@ -11,13 +11,13 @@ include("benchmarks.jl")
 # Config
 ############################
 
-generation_params = TypeBasedSTLCGenerator(
-    size=5,
-    ty_size=2,
+generation_params = BSTGenerationParams(
+    size=3,
+    vals=BSTActualVals,
 )
-loss_params = ApproxSTLCConstructorEntropy()
+loss_params = ApproxBSTConstructorEntropy()
 EPOCHS = 2000
-LEARNING_RATE = 0.03
+LEARNING_RATE = 0.01
 # loss_params = MixedLossParams(Pair{SimpleLossParams{STLC}, Real}[
 #     ApproxSTLCConstructorEntropy() => 10,
 #     MLELossParams(
@@ -31,7 +31,7 @@ LEARNING_RATE = 0.03
 # EPOCHS = 10000
 # LEARNING_RATE = 0.003
 
-TAG = "v8"
+TAG = "v9_unif2"
 
 LOG_TO_FILE = true
 

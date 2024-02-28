@@ -1,6 +1,6 @@
 export DistUInt, DistUInt8, DistUInt16, DistUInt32, DistUInt64,
     uniform, uniform_arith, uniform_ite, triangle, discrete, unif, unif_obs,
-    flip_reciprocal, unif2, unif_half2
+    flip_reciprocal, unif2, unif_half2, unif_approx, unif_half_approx, unif_half
 
 ##################################
 # types, structs, and constructors
@@ -61,7 +61,7 @@ end
 
 "Construct a uniform random number by offsetting a 0-based uniform"
 function uniform_arith(::Type{DistUInt{W}}, start, stop) where W
-    @assert 0 <= start < stop <= 2 ^ W # don't make this BigInt or the dynamo will fail
+    @assert 0 <= start < stop <= 2 ^ W "$(start) $(stop)" # don't make this BigInt or the dynamo will fail
     DInt = DistUInt{W}
     if start > 0
         DInt(start) + uniform_arith(DInt, 0, stop-start)
@@ -412,6 +412,13 @@ function minvalue(x::DistUInt{W}) where W
     v
 end
 
+function unif_approx(lo::DistUInt{W}, hi::DistUInt{W}) where W
+    lo + unif_half_approx(hi + DistUInt32(1) - lo)
+end
+function unif_half_approx(u::DistUInt{W}) where W
+    uniform(DistUInt{W}) % u
+end
+
 # Uniform from lo to hi, inclusive
 function unif(lo::DistUInt{W}, hi::DistUInt{W}) where W
     lo + unif_half(hi + DistUInt32(1) - lo)
@@ -426,6 +433,9 @@ end
 function unif_half2(u::DistUInt{W}) where W
     res = nothing
     for x in support_mixed(u)
+        if x == 0 
+            continue
+        end
         res = if res === nothing
             uniform(DistUInt{W}, 0, x)
         else
