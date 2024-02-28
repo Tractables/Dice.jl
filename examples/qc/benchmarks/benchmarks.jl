@@ -309,10 +309,23 @@ end
 
 abstract type BST <: Benchmark end
 
+@enum BSTValues BSTActualVals BSTDummyVals BSTApproxVals
+function str(x::BSTValues)
+    if x == BSTActualVals
+        "actual"
+    elseif x == BSTDummyVals
+        "dummy"
+    elseif x == BSTApproxVals
+        "approx"
+    else
+        error("")
+    end
+end
+
 struct BSTGenerationParams <: GenerationParams{BST}
     size::Integer
-    dummy_vals::Bool
-    BSTGenerationParams(; size, dummy_vals) = new(size, dummy_vals)
+    vals::BSTValues
+    BSTGenerationParams(; size, vals) = new(size, vals)
 end
 struct BSTGeneration <: Generation{BST}
     t::DistI{Tree}
@@ -321,7 +334,7 @@ end
 function to_subpath(p::BSTGenerationParams)
     [
         "bst",
-        if p.dummy_vals "dummy_vals" else "actual_vals" end,
+        str(p.vals),
         "sz=$(p.size)",
     ]
 end
@@ -331,15 +344,14 @@ function generate(p::BSTGenerationParams)
         push!(constructors_overapproximation, v)
         v
     end
-    t = if p.dummy_vals
+    t = if p.vals == BSTDummyVals
         gen_tree_dummy_vals(p.size, add_ctor)
+    elseif p.vals == BSTApproxVals
+        gen_tree(p.size, DistNat(0), DistNat(40), true, add_ctor)
+    elseif p.vals == BSTActualVals
+        gen_tree(p.size, DistNat(0), DistNat(40), false, add_ctor)
     else
-        gen_tree(
-            p.size,
-            DistNat(0),
-            DistNat(40),
-            add_ctor,
-        )
+        error()
     end
 
     BSTGeneration(t, constructors_overapproximation)
