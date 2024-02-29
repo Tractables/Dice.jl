@@ -473,7 +473,7 @@ struct MLELossParams{T} <: SimpleLossParams{T}
     MLELossParams(; metric::Metric{T}, target_dist) where T = new{T}(metric, target_dist)
 end
 to_subpath(p::MLELossParams) = [name(p.metric), name(p.target_dist)]
-function create_loss_manager(p::MLELossParams{STLC}, io, out_dir, var_vals, generation::STLCGeneration)
+function create_loss_manager(p::MLELossParams, io, out_dir, var_vals, generation)
     println_flush(io, "Building computation graph for $(p)...")
     time_build_loss = @elapsed begin
         metric = compute_metric(p.metric, generation)
@@ -496,6 +496,10 @@ function create_loss_manager(p::MLELossParams{STLC}, io, out_dir, var_vals, gene
     end
     SimpleLossMgr(f_emit′, mgr.train!, mgr.loss)
 end
+
+struct TreeSize <: Metric{BST} end
+compute_metric(::TreeSize, gen::BSTGeneration) = tree_size(gen.t)
+name(::TreeSize) = "tree_size"
 
 struct NumApps <: Metric{STLC} end
 compute_metric(::NumApps, gen::STLCGeneration) = num_apps(gen.e)

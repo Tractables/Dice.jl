@@ -11,9 +11,9 @@ include("benchmarks.jl")
 # Config
 ############################
 
-generation_params = TypeBasedBSTGenerator(size=2)
-loss_params = ApproxBSTConstructorEntropy()
-EPOCHS = 2000
+generation_params = TypeBasedBSTGenerator(size=5)
+loss_params = MLELossParams(metric=TreeSize(), target_dist=Target4321())
+EPOCHS = 50000
 LEARNING_RATE = 0.01
 # loss_params = MixedLossParams(Pair{SimpleLossParams{STLC}, Real}[
 #     ApproxSTLCConstructorEntropy() => 10,

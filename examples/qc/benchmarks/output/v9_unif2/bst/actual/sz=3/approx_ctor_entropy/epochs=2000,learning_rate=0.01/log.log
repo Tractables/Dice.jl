@@ -1,0 +1,10 @@
+2024-02-27T21:05:51.658 950dabf -f
+== Config ==
+TAG: v9_unif2
+BSTGenerationParams(3, BSTActualVals)
+ApproxBSTConstructorEntropy()
+EPOCHS: 2000
+LEARNING_RATE: 0.01
+DistNat: DistUInt32
+
+Building generation computation graph...

@@ -1,0 +1,36 @@
+2024-02-27T21:12:33.966 1b12640 -f
+== Config ==
+TAG: v9_unif2
+BSTGenerationParams(3, BSTApproxVals)
+ApproxBSTConstructorEntropy()
+EPOCHS: 2000
+LEARNING_RATE: 0.01
+DistNat: DistUInt32
+
+Building generation computation graph...
+  3.457221317 seconds
+
+Building computation graph for ApproxBSTConstructorEntropy()...
+  28.143798347 seconds
+
+ADNodes of interest (initial):
+Dict("sz1" => 0.5, "sz2" => 0.5, "sz3" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz3_before_sigmoid") => 0, Var("sz1_before_sigmoid") => 0, Var("sz2_before_sigmoid") => 0)
+
+Loss (initial): -4.8278219956074295
+
+Training...
+  1458.061965968 seconds
+
+ADNodes of interest (trained):
+Dict("sz1" => 0.4392055483670529, "sz2" => 0.48684308491283373, "sz3" => 0.5)
+
+Parameter values (trained):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz3_before_sigmoid") => 0.0, Var("sz1_before_sigmoid") => -0.24438691899739048, Var("sz2_before_sigmoid") => -0.052639812171329174)
+
+Loss (trained): -4.852030263915971
+
+2024-02-27T21:37:53.502
+Total time elapsed: 25 minutes, 19 seconds, 536 milliseconds

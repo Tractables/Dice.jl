@@ -1,0 +1,44 @@
+2024-02-28T00:08:02.516 8b1f4ad 
+== Config ==
+TAG: v9_unif2
+TypeBasedBSTGenerator(5)
+MLELossParams{BST}(TreeSize(), Target4321())
+EPOCHS: 50000
+LEARNING_RATE: 0.01
+DistNat: DistUInt32
+
+Building generation computation graph...
+  0.68210682 seconds
+
+Building computation graph for MLELossParams{BST}(TreeSize(), Target4321())...
+  0.648138634 seconds
+
+ADNodes of interest (initial):
+Dict("sz4" => 0.5, "sz5" => 0.5, "sz1" => 0.5, "sz2" => 0.5, "sz3" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz3_before_sigmoid") => 0, Var("sz1_before_sigmoid") => 0, Var("sz5_before_sigmoid") => 0, Var("sz2_before_sigmoid") => 0, Var("sz4_before_sigmoid") => 0)
+
+Saving initial distribution...
+  2.958769508 seconds
+Saved metric dist to examples/qc/benchmarks/output/v9_unif2/bst/typebased/sz=5/tree_size/target4321/epochs=50000,learning_rate=0.01/dist_tree_size_initial.csv.
+
+Loss (initial): 1.7798683143244367
+
+Training...
+  32.301049747 seconds
+
+ADNodes of interest (trained):
+Dict("sz4" => 0.6751985953442341, "sz5" => 0.4000000000000027, "sz1" => 0.5, "sz2" => 0.9452954154273959, "sz3" => 0.9853778656054402)
+
+Parameter values (trained):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz3_before_sigmoid") => 4.210488752426903, Var("sz1_before_sigmoid") => 0, Var("sz5_before_sigmoid") => -0.40546510810815295, Var("sz2_before_sigmoid") => 2.849549968616318, Var("sz4_before_sigmoid") => 0.7317929299672263)
+
+Saving trained distribution...
+  0.017468666 seconds
+Saved metric dist to examples/qc/benchmarks/output/v9_unif2/bst/typebased/sz=5/tree_size/target4321/epochs=50000,learning_rate=0.01/dist_tree_size_trained.csv.
+
+Loss (trained): 1.299425701935724
+
+2024-02-28T00:08:54.864
+Total time elapsed: 52 seconds, 348 milliseconds
