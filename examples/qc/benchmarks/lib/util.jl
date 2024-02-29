@@ -158,3 +158,5 @@ function cmd_out(cmd)
     run(pipeline(cmd, stdout=io))
     String(take!(io))
 end
+
+thousandths(n) = Integer(round(n, digits=3) * 1000)

@@ -1,0 +1,13 @@
+2024-02-20T23:42:54.598 41357fa 
+== Config ==
+TAG: v8
+TypeBasedSTLCGenerator(5, 2)
+SamplingSTLCConstructorEntropy(10, 300)
+EPOCHS: 10000
+LEARNING_RATE: 0.1
+DistNat: DistUInt32
+
+Building generation computation graph...
+  1.84004713 seconds
+
+Building random_ctor graph...
