@@ -23,6 +23,10 @@ LEARNING_RATE = 0.01
 #     ) => 1,
 # ])
 
+generation_params = BespokeSTLCGenerator(param_vars_by_size=true, size=5, ty_size=2)
+loss_params = ApproxSTLCConstructorEntropy()
+EPOCHS=1
+LEARNING_RATE = 0.3
 # generation_params = BSTGenerationParams(size=5, dummy_vals=true)
 # loss_params = SamplingBSTEntropy(resampling_frequency=5, samples_per_batch=300)
 # EPOCHS = 10000
@@ -39,7 +43,7 @@ path = joinpath(
         [TAG],
         to_subpath(generation_params),
         to_subpath(loss_params),
-        ["epochs=$(EPOCHS),learning_rate=$(LEARNING_RATE)"],
+        ["epochs=$(EPOCHS)-learning_rate=$(LEARNING_RATE)"],
     )
 )
 OUT_DIR = "examples/qc/benchmarks/output/$(path)"

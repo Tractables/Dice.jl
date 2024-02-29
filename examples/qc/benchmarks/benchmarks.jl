@@ -24,8 +24,8 @@ function create_benchmark_manager(
 ) where T
     println_flush(io, "Building generation computation graph...")
     time_build_generation = @elapsed generation = generate(generation_params)
-    println(io, "  $(time_build_generation) seconds")
-    println(io)
+    println_flush(io, "  $(time_build_generation) seconds")
+    println_flush(io)
 
     loss_mgr = create_loss_manager(loss_params, io, out_dir, var_vals, generation)
 
@@ -35,9 +35,16 @@ function create_benchmark_manager(
 
         generation_emit_stats(generation, io, out_dir, s, var_vals)
         loss_mgr.emit_stats(s)
+
+        generation_params_emit_stats(generation_params, io, out_dir, s, var_vals)
     end
 
     BenchmarkMgr(emit_stats, loss_mgr)
+end
+
+function generation_params_emit_stats(generation_params, io, out_dir, s, var_vals)
+    println_flush(io, "Default generation_params_emit_stats")
+    println_flush(io)
 end
 
 struct LossMgrImpl <: LossMgr
@@ -162,7 +169,7 @@ function to_subpath(p::BespokeSTLCGenerator)
         "stlc",
         "bespoke",
         if p.param_vars_by_size "by_sz" else "not_by_sz" end,
-        "sz=$(p.size),tysz=$(p.ty_size)",
+        "sz=$(p.size)-tysz=$(p.ty_size)",
     ]
 end
 function generate(p::BespokeSTLCGenerator)
@@ -182,6 +189,21 @@ function generate(p::BespokeSTLCGenerator)
     STLCGeneration(e, constructors_overapproximation)
 end
 
+function generation_params_emit_stats(p::BespokeSTLCGenerator, io, out_dir, s, var_vals)
+    if p == BespokeSTLCGenerator(param_vars_by_size=true,size=5,ty_size=2)
+        path = joinpath(out_dir, "$(s)_Generator.v")
+        open(path, "w") do file
+            vals = compute(var_vals, values(adnodes_of_interest))
+            adnodes_vals = Dict(s => vals[adnode] for (s, adnode) in adnodes_of_interest)
+            println(file, bespoke_stlc_to_coq(adnodes_vals))
+        end
+        println_flush(io, "Saved Coq generator to $(path)")
+    else
+        println_flush(io, "Translation back to Coq not defined")
+    end
+    println_flush(io)
+end
+
 ##################################
 # Type-based STLC generator
 ##################################
@@ -195,7 +217,7 @@ function to_subpath(p::TypeBasedSTLCGenerator)
     [
         "stlc",
         "typebased",
-        "sz=$(p.size),tysz=$(p.ty_size)",
+        "sz=$(p.size)-tysz=$(p.ty_size)",
     ]
 end
 function generate(p::TypeBasedSTLCGenerator)
