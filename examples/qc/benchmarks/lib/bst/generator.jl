@@ -60,3 +60,10 @@ function typebased_gen_tree(s::Integer, track_return)
         end
     )
 end
+
+function tree_size(e::DistI{Tree})
+    match(e, [
+        "E" => () -> DistUInt32(0),
+        "T" => (l, k, v, r) -> DistUInt32(1) + tree_size(l) + tree_size(r),
+    ])
+end
