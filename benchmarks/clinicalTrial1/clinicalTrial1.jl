@@ -41,9 +41,9 @@ t = @timed pr(@dice begin
 end)
 
 
-p = t.value
+p = t.value[true]
 
-io = open(string("./benchmarks/clinicalTrial1/results.txt"), "a")
+io = open(string("./benchmarks/clinicalTrial1/results.txt"), "w")
 @show bits, p, t.time
 writedlm(io, [bits p t.time], ",")  
 close(io)

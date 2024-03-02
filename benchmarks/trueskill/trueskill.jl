@@ -5,7 +5,7 @@ using BenchmarkTools
 
 if length(ARGS) == 0
     bits = 4
-    pieces = 128
+    pieces = 32
 else
     bits = parse(Int64, ARGS[1])
     pieces = parse(Int64, ARGS[2])
@@ -39,7 +39,7 @@ t = @timed pr(@dice begin
 
 p = t.value
 
-io = open(string("./benchmarks/trueskill/results.txt"), "a")
+io = open(string("./benchmarks/trueskill/results.txt"), "w")
 @show bits, pieces, p[1.0], t.time
 writedlm(io, [bits pieces p[1.0] t.time], ",")  
 close(io)

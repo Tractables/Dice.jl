@@ -5,7 +5,7 @@ using BenchmarkTools
 
 if length(ARGS) == 0
     bits = 18
-    pieces = 32
+    pieces = 64
 else
     bits = parse(Int64, ARGS[1])
     pieces = parse(Int64, ARGS[2])
@@ -22,7 +22,7 @@ end)
 
 p = t.value
 
-io = open(string("./benchmarks/addFun_max/results.txt"), "a")
+io = open(string("./benchmarks/addFun_max/results.txt"), "w")
 @show bits, pieces, p, t.time
 writedlm(io, [bits pieces p t.time], ",")  
 close(io)

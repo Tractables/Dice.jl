@@ -1,4 +1,4 @@
-# Conjugate Gaussians
+# Logical Structure
 
 This folder contains the needed files to replicate experiments in Section 2.1 in the [paper](https://arxiv.org/abs/2312.05706)
 

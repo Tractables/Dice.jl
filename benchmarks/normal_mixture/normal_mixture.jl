@@ -4,16 +4,21 @@ using DelimitedFiles
 using BenchmarkTools
 
 if length(ARGS) == 0
-  precision = 20
-  num_pieces = 512
-  flag = 1
+  flag = parse(Int64, ARGS[1])
+  if flag == 1
+    bits, pieces = 3, 64
+  elseif flag == 2
+    bits, pieces = 3, 16
+  elseif flag == 0
+    bits, pieces = 3, 32
+  end
 else
-  precision = parse(Int64, ARGS[1])
-  num_pieces = parse(Int64, ARGS[2])
-  flag = parse(Int64, ARGS[3])
+  bits = parse(Int64, ARGS[2])
+  pieces = parse(Int64, ARGS[3])
+  flag = parse(Int64, ARGS[1])
 end
 
-DFiP = DistFix{6+precision, precision}
+DFiP = DistFix{6+bits, bits}
 truncation = (-8.0, 8.0)
 mult_arg = true
 
@@ -22,12 +27,12 @@ ys = DFiP.([10.0787617156523, -9.51866467444093, 9.73922587306449, 11.5662681883
 t = @timed expectation(@dice begin
   
   theta = uniform(DFiP, 0.0, 1.0)
-  mu1 = bitblast_exponential(DFiP, Normal(-10, 1), num_pieces, -18.0, -2.0)
-  mu2 = bitblast_exponential(DFiP, Normal(10, 1), num_pieces, 2.0, 18.0)
+  mu1 = bitblast_exponential(DFiP, Normal(-10, 1), pieces, -18.0, -2.0)
+  mu2 = bitblast_exponential(DFiP, Normal(10, 1), pieces, 2.0, 18.0)
 
   for y in ys
-    c1 = bitblast_exponential(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
-    c2 = bitblast_exponential(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
+    c1 = bitblast_exponential(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
+    c2 = bitblast_exponential(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
     a = ifelse(parametrised_flip(theta), mu1 + c1, mu2 + c2)
     observe(a == y)
   end
@@ -43,7 +48,7 @@ end)
 
 p = t.value
 
-io = open(string("./benchmarks/normal_mixture/results.txt"), "a")
-@show precision, num_pieces, p, flag, t.time
-writedlm(io, [precision num_pieces p flag t.time], ",")  
+io = open(string("./benchmarks/normal_mixture/results_")*string(flag)*string(".txt"), "w")
+@show bits, pieces, p, flag, t.time
+writedlm(io, [bits pieces p flag t.time], ",")  
 close(io)

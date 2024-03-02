@@ -5,7 +5,7 @@ using DelimitedFiles
 using BenchmarkTools
 using Plots
 
-n_vars = if length(ARGS) > 0 ARGS[1] else 5 end
+n_vars = if length(ARGS) > 0 parse(Int64, ARGS[1]) else 5 end
 
 if length(ARGS) > 1
     bits = parse(Int64, ARGS[2])
@@ -41,7 +41,7 @@ t = @timed expectation(@dice begin
 end)
     
 p = t.value
-io = open(string("./benchmarks/or/results_")*string(n_vars)*string(".txt"), "a")
+io = open(string("./benchmarks/or/results_")*string(n_vars)*string(".txt"), "w")
 @show bits, pieces, p, t.time
 writedlm(io, [bits pieces p t.time], ",")  
 close(io)

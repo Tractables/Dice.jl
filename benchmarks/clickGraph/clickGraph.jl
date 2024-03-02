@@ -34,11 +34,9 @@ t = @timed expectation(@dice begin
             similarityAll
 end)
 
-# t = expectation(code)
-
 p = t.value
 
-io = open(string("./benchmarks/clickGraph/results.txt"), "a")
+io = open(string("./benchmarks/clickGraph/results.txt"), "w")
 @show bits, p, t.time
 writedlm(io, [bits p t.time], ",")  
 close(io)

@@ -14,7 +14,7 @@ end
 
 DFiP = DistFix{8 + bits, bits}
 
-data = DFiP.([8.0, 9.0])
+data = DFiP.([1.0, 2.0])
 add_arg = true
 
 t = @timed expectation(@dice begin
@@ -28,7 +28,7 @@ t = @timed expectation(@dice begin
 # plot(t.value)
 
 p = t.value
-io = open(string("./benchmarks/conjugate_gaussians/results.txt"), "w")
+io = open(string("./benchmarks/conjugate_gaussians2/results.txt"), "w")
 @show bits, pieces, p, t.time
 writedlm(io, [bits pieces p t.time], ",")  
 close(io)

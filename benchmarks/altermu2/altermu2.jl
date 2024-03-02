@@ -5,7 +5,7 @@ using BenchmarkTools
 
 if length(ARGS) == 0
     bits = 11
-    pieces = 32
+    pieces = 256
 else
     bits = parse(Int64, ARGS[1])
     pieces = parse(Int64, ARGS[2])

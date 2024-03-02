@@ -3,12 +3,16 @@ using Dice, Distributions
 using DelimitedFiles
 using BenchmarkTools
 
-if length(ARGS) == 0
-    bits = 0
-    flag = 1
+if length(ARGS) == 1
+    flag = parse(Int64, ARGS[1])
+    if flag == 1
+        bits = 8
+    else
+        bits = 11
+    end
 else
-    bits = parse(Int64, ARGS[1])
-    flag = parse(Int64, ARGS[2])
+    bits = parse(Int64, ARGS[2])
+    flag = parse(Int64, ARGS[1])
 end
 
 DFiP = DistFix{8+bits, bits}
@@ -38,7 +42,7 @@ t = @timed expectation(@dice begin
 
 p = t.value
 
-io = open(string("./benchmarks/zeroone/results.txt"), "a")
+io = open(string("./benchmarks/zeroone/results_")*string(flag)*string(".txt"), "w")
 @show bits, p, flag, t.time
 writedlm(io, [bits p flag t.time], ",")  
 close(io)
