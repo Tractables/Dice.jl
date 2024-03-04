@@ -32,10 +32,15 @@ LEARNING_RATE = 0.3
 # EPOCHS = 10000
 # LEARNING_RATE = 0.003
 
-generation_params = TypeBasedRBTGenerator(size=2, color_by_size=true)
-loss_params = SatisfyPropertyLoss(BookkeepingInvariant())
-EPOCHS=1
-LEARNING_RATE = 0.3
+generation_params = TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=false)
+loss_params = SatisfyPropertyLoss(MultipleInvariants([
+    BookkeepingInvariant(),
+    BalanceInvariant(),
+    BlackRootInvariant(),
+]))
+# loss_params = SatisfyPropertyLoss(BookkeepingInvariant())
+EPOCHS=20000
+LEARNING_RATE = .3
 
 TAG = "v9_unif2"
 

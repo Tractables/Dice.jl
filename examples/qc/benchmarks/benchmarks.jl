@@ -614,18 +614,21 @@ end
 struct TypeBasedRBTGenerator <: GenerationParams{RBT}
     size::Integer
     color_by_size::Bool
-    TypeBasedRBTGenerator(; size, color_by_size) = new(size, color_by_size)
+    learn_leaf_weights::Bool
+    TypeBasedRBTGenerator(; size, color_by_size, learn_leaf_weights) =
+        new(size, color_by_size, learn_leaf_weights)
 end
 function to_subpath(p::TypeBasedRBTGenerator)
     [
         "rbt",
         "bespoke",
         "sz=$(p.size)",
-        "color_by_size=$(p.color_by_size)"
+        "color_by_size=$(p.color_by_size)",
+        "learn_leaf_weights=$(p.learn_leaf_weights)",
     ]
 end
 function generate(p::TypeBasedRBTGenerator)
-    RBTGeneration(tb_gen_rbt(p.size, p.color_by_size))
+    RBTGeneration(tb_gen_rbt(p.size, p.color_by_size, p.learn_leaf_weights))
 end
 function generation_params_emit_stats(p::TypeBasedRBTGenerator, io, out_dir, s, var_vals)
     path = joinpath(out_dir, "$(s)_Generator.v")
@@ -691,5 +694,5 @@ check_property(p::MultipleInvariants{T}, g::Generation{T}) where T =
         check_property(property, g)
         for property in p.properties
     ])
-name(::MultipleInvariants{T}) where T =
+name(p::MultipleInvariants{T}) where T =
     join([name(property) for property in p.properties], "AND")
