@@ -160,3 +160,33 @@ function cmd_out(cmd)
 end
 
 thousandths(n) = Integer(round(n, digits=3) * 1000)
+
+global _soft_assert_ever_triggered = Ref(false)
+
+
+function to_unquoted(e)
+    io = IOBuffer()
+    Base.show_unquoted(io, e)
+    String(take!(io))
+end
+
+macro soft_assert(io, b, msg)
+    src = "$(__source__.file):$(__source__.line)"
+    b_s = to_unquoted(b)
+    quote
+        if !$(esc(b))
+            global _soft_assert_ever_triggered[] = true
+            for io in Set([$(esc(io)), stdout])
+                println(io, "Assertion failed at $($src)")
+                println(io, $b_s)
+                println(io, $(esc(msg)))
+            end
+        end
+    end
+end
+atexit() do
+    if _soft_assert_ever_triggered[]
+        println("WARNING: this program failed soft assertion(s)")
+        exit(1)
+    end
+end

@@ -596,3 +596,100 @@ function create_loss_manager(p::MixedLossParams{T}, io, out_dir, var_vals, gener
     SimpleLossMgr(emit_stats, mgr.train!, mgr.loss)
 end
 
+##################################
+# RBT generation
+##################################
+
+abstract type RBT <: Benchmark end
+struct RBTGeneration <: Generation{RBT}
+    t::DistI{RBTree}
+end
+function generation_emit_stats(g::RBTGeneration, io::IO, out_dir::String, s::String, var_vals::Valuation)
+end
+
+##################################
+# Type-based RBT generator
+##################################
+
+struct TypeBasedRBTGenerator <: GenerationParams{RBT}
+    size::Integer
+    color_by_size::Bool
+    TypeBasedRBTGenerator(; size, color_by_size) = new(size, color_by_size)
+end
+function to_subpath(p::TypeBasedRBTGenerator)
+    [
+        "rbt",
+        "bespoke",
+        "sz=$(p.size)",
+        "color_by_size=$(p.color_by_size)"
+    ]
+end
+function generate(p::TypeBasedRBTGenerator)
+    RBTGeneration(tb_gen_rbt(p.size, p.color_by_size))
+end
+function generation_params_emit_stats(p::TypeBasedRBTGenerator, io, out_dir, s, var_vals)
+    path = joinpath(out_dir, "$(s)_Generator.v")
+    open(path, "w") do file
+        vals = compute(var_vals, values(adnodes_of_interest))
+        adnodes_vals = Dict(s => vals[adnode] for (s, adnode) in adnodes_of_interest)
+        println(file, typebased_rbt_to_coq(p, adnodes_vals, io))
+    end
+    println_flush(io, "Saved Coq generator to $(path)")
+end
+
+abstract type Property{T} end
+
+struct SatisfyPropertyLoss{T} <: SimpleLossParams{T}
+    property::Property{T}
+end
+to_subpath(p::SatisfyPropertyLoss) = [name(p.property)]
+function create_loss_manager(p::SatisfyPropertyLoss, io, out_dir, var_vals, generation)
+    println_flush(io, "Building computation graph for $(p)...")
+    time_build_loss = @elapsed begin
+        meets_property = check_property(p.property, generation)
+        loss = -LogPr(meets_property)
+    end
+    println(io, "  $(time_build_loss) seconds")
+    println(io)
+
+    mgr = create_simple_loss_manager(loss, io, out_dir, var_vals)
+
+    # Also print probability that property is met
+    function f_emit′(tag)
+        println_flush(io, "Checking pr property met...")
+        time_infer = @elapsed p_meets = pr_mixed(var_vals)(meets_property)[true]
+        println(io, "  $(time_infer) seconds")
+
+        println_flush(io, "Pr meets property: $(p_meets)")
+        println_flush(io)
+
+        emit_stats(mgr, tag)
+    end
+    SimpleLossMgr(f_emit′, mgr.train!, mgr.loss)
+end
+
+struct BookkeepingInvariant <: Property{RBT} end
+check_property(::BookkeepingInvariant, g::RBTGeneration) =
+    satisfies_bookkeeping_invariant(g.t)
+name(::BookkeepingInvariant) = "bookkeeping"
+
+struct BalanceInvariant <: Property{RBT} end
+check_property(::BalanceInvariant, g::RBTGeneration) =
+    satisfies_balance_invariant(g.t)
+name(::BalanceInvariant) = "balance"
+
+struct BlackRootInvariant <: Property{RBT} end
+check_property(::BlackRootInvariant, g::RBTGeneration) =
+    satisfies_black_root_invariant(g.t)
+name(::BlackRootInvariant) = "blackroot"
+
+struct MultipleInvariants{T} <: Property{T}
+    properties::Vector{<:Property{T}}
+end
+check_property(p::MultipleInvariants{T}, g::Generation{T}) where T = 
+    reduce(&, [
+        check_property(property, g)
+        for property in p.properties
+    ])
+name(::MultipleInvariants{T}) where T =
+    join([name(property) for property in p.properties], "AND")
