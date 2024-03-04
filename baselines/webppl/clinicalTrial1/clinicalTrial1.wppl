@@ -10,8 +10,6 @@ var model = function() {
 
     map(
     function(c0, c1) {
-        //var c0 = pair[0];
-        //var c1 = pair[1];
         if (isEffective) {
             if (c0 == 0) {
                 condition(flip(probControl) == false);
@@ -46,12 +44,6 @@ var model = function() {
     pairs.slice(0, 100));
 
     return (isEffective);
-}
-
-var model2 = function() {
-    var a = (bernoulli({p: 0.5}));
-    condition(a == false);
-    return a;
 }
 
 var func1 = function() {

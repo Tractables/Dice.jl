@@ -1,5 +1,6 @@
 import numpy as np
 import math
+import os
 import sys
 import statistics
 import csv
@@ -133,6 +134,38 @@ for i in benchmarks:
     table[count].append(error)
     count += 1
     # print(table[count-1])
+
+count = 0
+for i in benchmarks:
+    print(i)
+
+    files = os.listdir(f"baselines/webppl/{i}/")
+    # print(files)
+    files = [f for f in files if f[-3:] == "txt"]
+    files.sort()
+    files[0], files[1], files[2] = files[2], files[0], files[1]
+    print(files)
+    
+    for j in files:
+        print(i, j)
+        file_handle = open(f"baselines/webppl/{i}/{j}")
+        ans = []
+        lines = file_handle.readlines()
+        for k in lines:
+            if k.split() == []:
+                continue
+            if k.split()[0] == "{":
+                if int(k.split()[-2]) > 1200000:
+                    continue
+
+                ans.append(abs(float(k.split()[2][:-1]) - gt[i]))
+            else:
+                continue
+        if ans == []:
+            table[count].append("timeout")
+        else:
+            table[count].append(statistics.mean(ans))
+    count += 1
 
 
 

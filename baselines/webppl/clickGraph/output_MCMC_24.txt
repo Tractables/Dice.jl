@@ -1,0 +1,10 @@
+{ value: 0.6147622929790159, runtimeInMilliseconds: 623711 }
+{ value: 0.6135558096863735, runtimeInMilliseconds: 585756 }
+{ value: 0.6145559489916035, runtimeInMilliseconds: 574622 }
+{ value: 0.6158619995824619, runtimeInMilliseconds: 586190 }
+{ value: 0.6158887527063235, runtimeInMilliseconds: 639212 }
+{ value: 0.6153548808960334, runtimeInMilliseconds: 602917 }
+{ value: 0.6139898864925512, runtimeInMilliseconds: 658866 }
+{ value: 0.6115097759746829, runtimeInMilliseconds: 828304 }
+{ value: 0.6147660879093225, runtimeInMilliseconds: 756964 }
+{ value: 0.6116696930295384, runtimeInMilliseconds: 786103 }
