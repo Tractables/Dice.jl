@@ -7,7 +7,15 @@ function typebased_rbt_to_coq(p, adnodes_vals, io)
     leaf_wt_key(sz) = "leaf_sz$(sz)"
     leaf_wt(sz) = w(leaf_wt_key(sz))
 
-    expected_keys = Set(flatten([red_wt_key(sz),leaf_wt_key(sz)] for sz in 1:p.size))
+    expected_keys = Set(
+        flatten(
+            if p.learn_leaf_weights
+                ([red_wt_key(sz),leaf_wt_key(sz)])
+            else
+                ([red_wt_key(sz)])
+            end
+            for sz in 1:p.size
+        ))
     @soft_assert io issetequal(keys(adnodes_vals), expected_keys) "$(adnodes_vals) $(expected_keys)"
     """
 Require Import ZArith.
@@ -42,11 +50,15 @@ Definition manual_gen_tree :=
             join(["($(sz), $(red_wt(sz)))" for sz in 1:p.size], "; ")
           )
          ] s 0 in
-         let weight_leaf := get [
+         let weight_leaf := $(
+          if p.learn_leaf_weights
+          "get [
           $(
             join(["($(sz), $(leaf_wt(sz)))" for sz in 1:p.size], "; ")
           )
-         ] s 0 in
+         ] s 0"
+          else "500" end
+         ) in
          match size with
          | 0 => returnGen E
          | S size' =>

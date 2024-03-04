@@ -41,19 +41,19 @@ Coq < Coq < Coq < GenSizedTree =
 |}
      : GenSized Tree
 ==#
-function tb_gen_rbt(sz, color_by_sz)
+function tb_gen_rbt(sz, color_by_sz, learn_leaf_weights)
     if sz == 0
         DistRBE()
     else
-        @dice_ite if flip(register_weight!("leaf_sz$(sz)"))
+        @dice_ite if flip(if learn_leaf_weights register_weight!("leaf_sz$(sz)") else .5 end)
             DistRBE()
         else
             color_group = if color_by_sz "red_sz$(sz)" else "red" end
             color = if flip(register_weight!(color_group)) DistRed() else DistBlack() end
             k = DistInt32(0)
             v = DistInt32(0)
-            l = tb_gen_rbt(sz - 1, color_by_sz)
-            r = tb_gen_rbt(sz - 1, color_by_sz)
+            l = tb_gen_rbt(sz - 1, color_by_sz, learn_leaf_weights)
+            r = tb_gen_rbt(sz - 1, color_by_sz, learn_leaf_weights)
             DistRBT(color, l, k, v, r)
         end
     end

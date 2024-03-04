@@ -47,7 +47,7 @@ function satisfies_bookkeeping_invariant(e::DistI{RBTree})
             "T" => (c, l, k, v, r) -> begin
                 left_black_height, left_valid = black_height_and_valid(l)
                 right_black_height, right_valid = black_height_and_valid(r)
-                @dice_ite if left_valid && right_valid && prob_equals(left_black_height, right_black_height) 
+                @dice_ite if left_valid & right_valid & prob_equals(left_black_height, right_black_height) 
                     left_black_height + if is_red(c) DistUInt32(0) else DistUInt32(1) end, true
                 else
                     DistUInt32(0), false
@@ -60,14 +60,14 @@ function satisfies_bookkeeping_invariant(e::DistI{RBTree})
 end
 
 # Check that all red nodes have black children
-function satisfied_balance_invariant(e::DistI{RBTree})
+function satisfies_balance_invariant(e::DistI{RBTree})
     function color_and_valid(t::DistI{RBTree})
         match(t, [
             "E" => () -> (DistBlack(), true),
             "T" => (c, l, k, v, r) -> begin
                 left_color, left_valid = color_and_valid(l)
                 right_color, right_valid = color_and_valid(r)
-                if left_valid && right_valid && !(is_red(c) && (is_red(left_color) || is_red(right_color)))
+                @dice_ite if left_valid & right_valid & !(is_red(c) & (is_red(left_color) | is_red(right_color)))
                     c, true
                 else
                     c, false
@@ -82,6 +82,6 @@ end
 function satisfies_black_root_invariant(t::DistI{RBTree})
     match(t, [
         "E" => () -> true,
-        "T" => (c, l, k, v, r) -> !isred(c)
+        "T" => (c, l, k, v, r) -> !is_red(c)
     ])
 end
