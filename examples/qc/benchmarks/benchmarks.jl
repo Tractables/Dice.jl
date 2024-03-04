@@ -621,7 +621,7 @@ end
 function to_subpath(p::TypeBasedRBTGenerator)
     [
         "rbt",
-        "bespoke",
+        "typebased",
         "sz=$(p.size)",
         "color_by_size=$(p.color_by_size)",
         "learn_leaf_weights=$(p.learn_leaf_weights)",
