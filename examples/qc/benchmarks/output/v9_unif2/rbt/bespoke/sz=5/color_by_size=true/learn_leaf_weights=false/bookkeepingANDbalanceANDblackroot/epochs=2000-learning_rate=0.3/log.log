@@ -1,0 +1,46 @@
+2024-03-03T17:31:57.450 4f4113b 
+== Config ==
+TAG: v9_unif2
+TypeBasedRBTGenerator(5, true, false)
+SatisfyPropertyLoss{RBT}(MultipleInvariants{RBT}(Property{RBT}[BookkeepingInvariant(), BalanceInvariant(), BlackRootInvariant()]))
+EPOCHS: 2000
+LEARNING_RATE: 0.3
+DistNat: DistUInt32
+
+Building generation computation graph...
+  0.751260033 seconds
+
+Building computation graph for SatisfyPropertyLoss{RBT}(MultipleInvariants{RBT}(Property{RBT}[BookkeepingInvariant(), BalanceInvariant(), BlackRootInvariant()]))...
+  2.210498304 seconds
+
+ADNodes of interest (initial):
+Dict("red_sz3" => 0.5, "red_sz4" => 0.5, "red_sz5" => 0.5, "red_sz2" => 0.5, "red_sz1" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz5_before_sigmoid") => 0, Var("red_sz4_before_sigmoid") => 0, Var("red_sz2_before_sigmoid") => 0, Var("red_sz3_before_sigmoid") => 0, Var("red_sz1_before_sigmoid") => 0)
+
+Checking pr property met...
+  2.790377909 seconds
+Pr meets property: 0.5807290942781707
+
+Loss (initial): 0.5434709057786584
+
+Saved Coq generator to examples/qc/benchmarks/output/v9_unif2/rbt/bespoke/sz=5/color_by_size=true/learn_leaf_weights=false/bookkeepingANDbalanceANDblackroot/epochs=2000-learning_rate=0.3/initial_Generator.v
+Training...
+  6.154610911 seconds
+
+ADNodes of interest (trained):
+Dict("red_sz3" => 0.5026120350807681, "red_sz4" => 0.9820946601447434, "red_sz5" => 0.006369549013088872, "red_sz2" => 0.5019186570248912, "red_sz1" => 0.5000045025270833)
+
+Parameter values (trained):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz5_before_sigmoid") => -5.049836689333575, Var("red_sz4_before_sigmoid") => 4.004588714672682, Var("red_sz2_before_sigmoid") => 0.007674665769477226, Var("red_sz3_before_sigmoid") => 0.010448235371044626, Var("red_sz1_before_sigmoid") => 1.801010833377972e-5)
+
+Checking pr property met...
+  0.017385875 seconds
+Pr meets property: 0.6926981815662623
+
+Loss (trained): 0.36716089909595473
+
+Saved Coq generator to examples/qc/benchmarks/output/v9_unif2/rbt/bespoke/sz=5/color_by_size=true/learn_leaf_weights=false/bookkeepingANDbalanceANDblackroot/epochs=2000-learning_rate=0.3/trained_Generator.v
+2024-03-03T17:32:25.548
+Total time elapsed: 28 seconds, 98 milliseconds

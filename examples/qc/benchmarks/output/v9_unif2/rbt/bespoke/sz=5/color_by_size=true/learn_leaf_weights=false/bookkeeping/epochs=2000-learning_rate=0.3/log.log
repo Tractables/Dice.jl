@@ -1,0 +1,46 @@
+2024-03-03T17:32:10.469 4f4113b 
+== Config ==
+TAG: v9_unif2
+TypeBasedRBTGenerator(5, true, false)
+SatisfyPropertyLoss{RBT}(BookkeepingInvariant())
+EPOCHS: 2000
+LEARNING_RATE: 0.3
+DistNat: DistUInt32
+
+Building generation computation graph...
+  0.77513805 seconds
+
+Building computation graph for SatisfyPropertyLoss{RBT}(BookkeepingInvariant())...
+  1.21676984 seconds
+
+ADNodes of interest (initial):
+Dict("red_sz3" => 0.5, "red_sz4" => 0.5, "red_sz5" => 0.5, "red_sz2" => 0.5, "red_sz1" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz5_before_sigmoid") => 0, Var("red_sz4_before_sigmoid") => 0, Var("red_sz2_before_sigmoid") => 0, Var("red_sz3_before_sigmoid") => 0, Var("red_sz1_before_sigmoid") => 0)
+
+Checking pr property met...
+  2.614931875 seconds
+Pr meets property: 0.6789091152592631
+
+Loss (initial): 0.38726801125227817
+
+Saved Coq generator to examples/qc/benchmarks/output/v9_unif2/rbt/bespoke/sz=5/color_by_size=true/learn_leaf_weights=false/bookkeeping/epochs=2000-learning_rate=0.3/initial_Generator.v
+Training...
+  6.482677432 seconds
+
+ADNodes of interest (trained):
+Dict("red_sz3" => 0.9958261913177822, "red_sz4" => 0.9959960966085394, "red_sz5" => 0.5, "red_sz2" => 0.9956971116334062, "red_sz1" => 0.9956371819296455)
+
+Parameter values (trained):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz5_before_sigmoid") => 0, Var("red_sz4_before_sigmoid") => 5.516473605354135, Var("red_sz2_before_sigmoid") => 5.444156596187075, Var("red_sz3_before_sigmoid") => 5.47474376364001, Var("red_sz1_before_sigmoid") => 5.430264721068612)
+
+Checking pr property met...
+  0.014853159 seconds
+Pr meets property: 0.9916999096850596
+
+Loss (trained): 0.008334727860890068
+
+Saved Coq generator to examples/qc/benchmarks/output/v9_unif2/rbt/bespoke/sz=5/color_by_size=true/learn_leaf_weights=false/bookkeeping/epochs=2000-learning_rate=0.3/trained_Generator.v
+2024-03-03T17:32:37.436
+Total time elapsed: 26 seconds, 967 milliseconds

@@ -1,0 +1,46 @@
+2024-03-03T17:31:26.109 4f4113b 
+== Config ==
+TAG: v9_unif2
+TypeBasedRBTGenerator(5, true, false)
+SatisfyPropertyLoss{RBT}(BalanceInvariant())
+EPOCHS: 2000
+LEARNING_RATE: 0.03
+DistNat: DistUInt32
+
+Building generation computation graph...
+  0.758317121 seconds
+
+Building computation graph for SatisfyPropertyLoss{RBT}(BalanceInvariant())...
+  1.232259426 seconds
+
+ADNodes of interest (initial):
+Dict("red_sz3" => 0.5, "red_sz4" => 0.5, "red_sz5" => 0.5, "red_sz2" => 0.5, "red_sz1" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz5_before_sigmoid") => 0, Var("red_sz4_before_sigmoid") => 0, Var("red_sz2_before_sigmoid") => 0, Var("red_sz3_before_sigmoid") => 0, Var("red_sz1_before_sigmoid") => 0)
+
+Checking pr property met...
+  2.449703813 seconds
+Pr meets property: 0.773371091654306
+
+Loss (initial): 0.256996278766762
+
+Saved Coq generator to examples/qc/benchmarks/output/v9_unif2/rbt/bespoke/sz=5/color_by_size=true/learn_leaf_weights=false/balance/epochs=2000-learning_rate=0.03/initial_Generator.v
+Training...
+  4.187921031 seconds
+
+ADNodes of interest (trained):
+Dict("red_sz3" => 0.21307076506333755, "red_sz4" => 0.10759098047204825, "red_sz5" => 0.271457038779459, "red_sz2" => 0.11896808726382128, "red_sz1" => 0.32670258603850744)
+
+Parameter values (trained):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz5_before_sigmoid") => -0.9872427057456673, Var("red_sz4_before_sigmoid") => -2.115587749948427, Var("red_sz2_before_sigmoid") => -2.0022385656974278, Var("red_sz3_before_sigmoid") => -1.3065139860087733, Var("red_sz1_before_sigmoid") => -0.7231369204900814)
+
+Checking pr property met...
+  0.012195077 seconds
+Pr meets property: 0.954690557369603
+
+Loss (trained): 0.04636801470517837
+
+Saved Coq generator to examples/qc/benchmarks/output/v9_unif2/rbt/bespoke/sz=5/color_by_size=true/learn_leaf_weights=false/balance/epochs=2000-learning_rate=0.03/trained_Generator.v
+2024-03-03T17:31:51.061
+Total time elapsed: 24 seconds, 952 milliseconds

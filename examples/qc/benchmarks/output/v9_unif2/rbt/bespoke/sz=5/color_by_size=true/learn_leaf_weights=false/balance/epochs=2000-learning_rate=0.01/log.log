@@ -1,0 +1,46 @@
+2024-03-03T17:31:12.695 4f4113b 
+== Config ==
+TAG: v9_unif2
+TypeBasedRBTGenerator(5, true, false)
+SatisfyPropertyLoss{RBT}(BalanceInvariant())
+EPOCHS: 2000
+LEARNING_RATE: 0.01
+DistNat: DistUInt32
+
+Building generation computation graph...
+  0.77663149 seconds
+
+Building computation graph for SatisfyPropertyLoss{RBT}(BalanceInvariant())...
+  1.26177714 seconds
+
+ADNodes of interest (initial):
+Dict("red_sz3" => 0.5, "red_sz4" => 0.5, "red_sz5" => 0.5, "red_sz2" => 0.5, "red_sz1" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz5_before_sigmoid") => 0, Var("red_sz4_before_sigmoid") => 0, Var("red_sz2_before_sigmoid") => 0, Var("red_sz3_before_sigmoid") => 0, Var("red_sz1_before_sigmoid") => 0)
+
+Checking pr property met...
+  2.481809964 seconds
+Pr meets property: 0.773371091654306
+
+Loss (initial): 0.256996278766762
+
+Saved Coq generator to examples/qc/benchmarks/output/v9_unif2/rbt/bespoke/sz=5/color_by_size=true/learn_leaf_weights=false/balance/epochs=2000-learning_rate=0.01/initial_Generator.v
+Training...
+  4.102161768 seconds
+
+ADNodes of interest (trained):
+Dict("red_sz3" => 0.35763818757397026, "red_sz4" => 0.2725407008653982, "red_sz5" => 0.3810533647007768, "red_sz2" => 0.31444361497819184, "red_sz1" => 0.4308695170620722)
+
+Parameter values (trained):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz5_before_sigmoid") => -0.485079627669962, Var("red_sz4_before_sigmoid") => -0.9817700873498697, Var("red_sz2_before_sigmoid") => -0.779425974061798, Var("red_sz3_before_sigmoid") => -0.585629889584973, Var("red_sz1_before_sigmoid") => -0.27830442795511257)
+
+Checking pr property met...
+  0.012250639 seconds
+Pr meets property: 0.8649203127072908
+
+Loss (trained): 0.14511790033175176
+
+Saved Coq generator to examples/qc/benchmarks/output/v9_unif2/rbt/bespoke/sz=5/color_by_size=true/learn_leaf_weights=false/balance/epochs=2000-learning_rate=0.01/trained_Generator.v
+2024-03-03T17:31:37.663
+Total time elapsed: 24 seconds, 968 milliseconds
