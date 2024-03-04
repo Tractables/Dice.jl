@@ -1,0 +1,22 @@
+def main() {
+    y := [1, -1, 1, -1, -1, -1, 1, 1, 1, 1, 1, -1, 1, -1, -1, -1, 1, 1, 1, 1];
+    x := [6, 8, -1, 0, 5, 1.2, -2, 9.8, 4, 12, 1, 10, 1, 2.2, -6, 9.8, 1, 1, 1, 1];
+
+    w1 := uniform(-8, 8);
+    w2 := uniform(-8, 8);
+
+    for i in [0..20) {
+        temp := x[i] * w1 + w2;
+	    temp_bool := bernoulli(1/2.718);
+        if y[i] == 1 {
+            if (temp < 0) {
+                observe(temp_bool);
+            }
+        } else {
+            if (temp > 0) {
+                observe(temp_bool);
+            }
+        }
+    }
+    return w1;
+}

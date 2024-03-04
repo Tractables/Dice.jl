@@ -8,5 +8,7 @@ def main(){
         z = z + 1;
     }
 
-    return z;
+    final := z % 2;
+
+    return Expectation(final);
 }

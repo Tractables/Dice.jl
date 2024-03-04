@@ -1,11 +1,11 @@
 def main() {
     a := gauss(0, 1);
 
-    observe(gauss(a, 1) == 1);
-    observe(gauss(a, 1) == 2);
+    cobserve(gauss(a, 1), 1);
+    cobserve(gauss(a, 1), 2);
 
-    //return Expectation(a);
-    return a;
+    return Expectation(a);
+    //return a;
 }
 
 //def main(){

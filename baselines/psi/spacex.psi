@@ -5,6 +5,7 @@ def main() {
     observe(first_stage >= 0);
     completed_first_stage := engines + first_stage;
     second_stage := gauss(15, 3);
+    observe(second_stage >= 0);
     completed_rocket := completed_first_stage + second_stage;
     return Expectation(completed_rocket);
 }

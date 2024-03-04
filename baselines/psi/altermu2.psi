@@ -10,7 +10,7 @@ def main() {
     mu1 := uniform(-8, 8);
     mu2 := uniform(-8, 8);
     for i in [0..40) {
-        observe(gauss(mu1+mu2, 1) == ys[i]);
+        cobserve(gauss(mu1+mu2, 1), ys[i]);
     }
     return mu1;
 }

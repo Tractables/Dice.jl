@@ -1,0 +1,24 @@
+Inference for Stan model: addFun_max_model
+1 chains: each with iter=(1902282); warmup=(0); thin=(1); 1902282 iterations saved.
+
+Warmup took 0.00 seconds
+Sampling took 0.00 seconds
+
+                          Mean           MCSE         StdDev              5%             50%            95%          N_Eff        N_Eff/s          R_hat
+
+lp__            -1.0012169e+00  1.0826047e-03  1.0006497e+00  -2.9984300e+00  -6.9382200e-01 -5.1340400e-02  8.5432738e+05            inf  1.0000012e+00
+accept_stat__    9.2341600e-01  6.1569620e-05  9.3678851e-02   7.2818600e-01   9.5843700e-01  1.0000000e+00  2.3149956e+06            inf  9.9999949e-01
+stepsize__       8.5553000e-01            nan  4.2423853e-12   8.5553000e-01   8.5553000e-01  8.5553000e-01            nan            nan            nan
+treedepth__      1.9811221e+00  4.3728154e-04  5.8599614e-01   1.0000000e+00   2.0000000e+00  3.0000000e+00  1.7958382e+06            inf  9.9999979e-01
+n_leapfrog__     3.9152933e+00  1.4256866e-03  1.9487198e+00   1.0000000e+00   3.0000000e+00  7.0000000e+00  1.8683175e+06            inf  9.9999963e-01
+divergent__      0.0000000e+00            nan  0.0000000e+00   0.0000000e+00   0.0000000e+00  0.0000000e+00            nan            nan            nan
+energy__         2.0016822e+00  1.6022279e-03  1.4136151e+00   3.5679100e-01   1.6805400e+00  4.7480800e+00  7.7841959e+05            inf  1.0000007e+00
+
+mu1              6.7763024e-04  7.5254041e-04  1.0000023e+00  -1.6455800e+00   6.7307200e-04  1.6444800e+00  1.7658034e+06            inf  9.9999950e-01
+mu2             -1.5700235e-04  8.4140972e-04  1.0012141e+00  -1.6465100e+00  -1.4762000e-03  1.6480700e+00  1.4159205e+06            inf  9.9999991e-01
+ans              5.6457698e-01  7.0997381e-04  8.2685482e-01  -7.6175800e-01   5.4507700e-01  1.9568300e+00  1.3563565e+06            inf  1.0000003e+00
+
+Samples were drawn using hmc with nuts.
+For each parameter, N_Eff is a crude measure of effective sample size,
+and R_hat is the potential scale reduction factor on split chains (at 
+convergence, R_hat=1).

@@ -82,6 +82,61 @@ for i in benchmarks:
     table.append([bench, error, bits, pieces])
     # print(f"{bench} \t {error} \t {bits} \t {pieces}")
 
+variables = {}
+
+variables["pi"] = "answer"
+variables["GPA"] = 5
+variables["tug_of_war"] = "ans"
+variables["altermu2"] = "mu[1]"
+variables["normal_mixture_theta"] = "theta"
+variables["normal_mixture_mu1"] = "mu[1]"
+variables["normal_mixture_mu2"] = "mu[2]"
+variables["spacex"] = "cr"
+variables["zeroone_w1"] = "w1"
+variables["zeroone_w2"] = "w2"
+variables["weekend"] = ""
+variables["conjugate_gaussians2"] = "mu"
+variables["coinBias"] = "b"
+variables["addFun_sum"] = "ans"
+variables["clickGraph"] = "similarityAll"
+variables["addFun_max"] = "ans"
+variables["clinicalTrial2"] = "probIfControl"
+variables["clinicalTrial1"] = "isEffective"
+variables["trueskill"] = "final"
+
+count = 0
+for i in benchmarks:
+    if i == "GPA" or i == "weekend":
+        table[count].append("X")
+        count += 1
+        continue
+    elif i in ["normal_mixture_theta", "normal_mixture_mu1", "normal_mixture_mu2"]:
+        file_handle = open(f"baselines/stan/normal_mixture/results_1200.txt", "r")
+    elif i in ["zeroone_w1", "zeroone_w2"]:
+        file_handle = open(f"baselines/stan/zeroone/results_1200.txt", "r")
+    else:
+        file_handle = open(f"baselines/stan/{i}/results_1200.txt", "r")
+    lines = file_handle.readlines()
+
+    answer = 0
+    for j in lines:
+        current = j.split()
+        if current != []:
+            if current[0] == variables[i]:
+                if i == "pi":
+                    answer = 1 - float(current[1])
+                elif i == "clinicalTrial1":
+                    answer = float(current[1]) - 1
+                else:
+                    answer = float(current[1])
+    error = abs(gt[i] - answer)
+    table[count].append(error)
+    count += 1
+    # print(table[count-1])
+
+
+
+
 print(tabulate(table))
 
 

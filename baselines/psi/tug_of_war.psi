@@ -12,5 +12,5 @@ def main() {
     observe(perf(alice) < perf(bob));
     
     match5 := (perf(alice) < perf(bob));
-    return match5;
+    return Expectation(match5);
 }
