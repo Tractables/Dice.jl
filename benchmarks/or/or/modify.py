@@ -110,7 +110,7 @@ for l in range(len(a)):
 """
 f.close()
 
-f = open(sys.argv[1], "w")
+f = open(sys.argv[1], "a")
 for i in a:
     f.writelines(i)
 

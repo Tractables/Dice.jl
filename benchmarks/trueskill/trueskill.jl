@@ -39,7 +39,7 @@ t = @timed pr(@dice begin
 
 p = t.value
 
-io = open(string("./benchmarks/trueskill/results.txt"), "w")
+io = open(string("./benchmarks/trueskill/results.txt"), "a")
 @show bits, pieces, p[1.0], t.time
 writedlm(io, [bits pieces p[1.0] t.time], ",")  
 close(io)

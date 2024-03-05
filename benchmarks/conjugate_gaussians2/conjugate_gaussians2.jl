@@ -28,7 +28,7 @@ t = @timed expectation(@dice begin
 # plot(t.value)
 
 p = t.value
-io = open(string("./benchmarks/conjugate_gaussians2/results.txt"), "w")
+io = open(string("./benchmarks/conjugate_gaussians2/results.txt"), "a")
 @show bits, pieces, p, t.time
 writedlm(io, [bits pieces p t.time], ",")  
 close(io)

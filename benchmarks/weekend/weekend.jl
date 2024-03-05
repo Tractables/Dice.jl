@@ -27,7 +27,7 @@ end)
 
 p = t.value
 
-io = open(string("./benchmarks/weekend/results.txt"), "w")
+io = open(string("./benchmarks/weekend/results.txt"), "a")
 @show bits, pieces, p[1.0], t.time
 writedlm(io, [bits pieces p[1.0] t.time], ",")  
 close(io)

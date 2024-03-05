@@ -11,9 +11,11 @@ if length(ARGS) > 1
     bits = parse(Int64, ARGS[2])
     pieces = parse(Int64, ARGS[3])
 else
-    bits = 20
-    pieces = 32
+    bits = 18
+    pieces = 1024
 end
+
+@show n_vars, bits, pieces
 
 DFiP = DistFix{9 + bits, bits}
 
@@ -41,7 +43,7 @@ t = @timed expectation(@dice begin
 end)
     
 p = t.value
-io = open(string("./benchmarks/or/results_")*string(n_vars)*string(".txt"), "w")
+io = open(string("./benchmarks/or/results_")*string(n_vars)*string(".txt"), "a")
 @show bits, pieces, p, t.time
 writedlm(io, [bits pieces p t.time], ",")  
 close(io)

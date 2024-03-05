@@ -27,13 +27,13 @@ include("bwh_unif.jl")
 
 
 function results_to_csv(name, results)
-    open(name, "w") do file
+    open(name, "a") do file
         write(file, join([join(row, ',') for row in results], '\n'))
     end
 end
 
 function results_to_latex(name, results)
-    open(name, "w") do file
+    open(name, "a") do file
         # write(file, "| c !{\\vrule width 3\\arrayrulewidth}")
         # for i in 2:length(results[1])
         #     write(file, " c |")

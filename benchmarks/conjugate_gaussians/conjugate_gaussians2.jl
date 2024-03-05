@@ -37,7 +37,7 @@ for (key, value) in t.value
         result[floor(key*10)/10] += value
     end
 end
-io = open("./benchmarks/conjugate_gaussians/conjugate_gaussians_16_2048.txt", "w")
+io = open("./benchmarks/conjugate_gaussians/conjugate_gaussians_16_2048.txt", "a")
 writedlm(io, [value for (key, value) in sort(result)])
 close(io)
 

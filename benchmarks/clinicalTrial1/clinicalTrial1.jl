@@ -43,7 +43,7 @@ end)
 
 p = t.value[true]
 
-io = open(string("./benchmarks/clinicalTrial1/results.txt"), "w")
+io = open(string("./benchmarks/clinicalTrial1/results.txt"), "a")
 @show bits, p, t.time
 writedlm(io, [bits p t.time], ",")  
 close(io)

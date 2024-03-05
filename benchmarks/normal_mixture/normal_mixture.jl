@@ -48,7 +48,7 @@ end)
 
 p = t.value
 
-io = open(string("./benchmarks/normal_mixture/results_")*string(flag)*string(".txt"), "w")
+io = open(string("./benchmarks/normal_mixture/results_")*string(flag)*string(".txt"), "a")
 @show bits, pieces, p, flag, t.time
 writedlm(io, [bits pieces p flag t.time], ",")  
 close(io)

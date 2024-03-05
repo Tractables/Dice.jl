@@ -31,6 +31,6 @@ savefig("./benchmarks/multimodal/multimodal_6_256.png")
 
 # Writing result to a text file
 t_new = filter(a -> (a[1] >= -8) & (a[1] < 8), t)
-io = open("./benchmarks/multimodal/multimodal_6_256.txt", "w")
+io = open("./benchmarks/multimodal/multimodal_6_256.txt", "a")
 writedlm(io, [value for (key, value) in sort([(k, v) for (k, v) in t_new])])
 close(io)
