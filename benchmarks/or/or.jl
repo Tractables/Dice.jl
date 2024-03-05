@@ -11,8 +11,8 @@ if length(ARGS) > 1
     bits = parse(Int64, ARGS[2])
     pieces = parse(Int64, ARGS[3])
 else
-    bits = 18
-    pieces = 1024
+    bits = 16
+    pieces = 4096
 end
 
 @show n_vars, bits, pieces

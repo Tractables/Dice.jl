@@ -1,0 +1,45 @@
+real prior ~ beta(1, 1);
+int<2> z1 ~ bernoulli(prior);
+int<2> z2 ~ bernoulli(0.5);
+int<2> z3 ~ bernoulli(0.5);
+int<2> z4 ~ bernoulli(0.5);
+int<2> z5 ~ bernoulli(0.5);
+int<2> z6 ~ bernoulli(0.5);
+int<2> z7 ~ bernoulli(0.5);
+int<2> z8 ~ bernoulli(0.5);
+int<2> z9 ~ bernoulli(0.5);
+int<2> z10 ~ bernoulli(0.5);
+int<2> z11 ~ bernoulli(0.5);
+int<2> z12 ~ bernoulli(0.5);
+int<2> z13 ~ bernoulli(0.5);
+int<2> z14 ~ bernoulli(0.5);
+int<2> z15 ~ bernoulli(0.5);
+int<2> z16 ~ bernoulli(0.5);
+int<2> z17 ~ bernoulli(0.5);
+int<2> z18 ~ bernoulli(0.5);
+int<2> z19 ~ bernoulli(0.5);
+int<2> z20 ~ bernoulli(0.5);
+int<2> z21 ~ bernoulli(0.5);
+int<2> z22 ~ bernoulli(0.5);
+int<2> z23 ~ bernoulli(0.5);
+int<2> z24 ~ bernoulli(0.5);
+int<2> z25 ~ bernoulli(0.5);
+int<2> z26 ~ bernoulli(0.5);
+int<2> z27 ~ bernoulli(0.5);
+int<2> z28 ~ bernoulli(0.5);
+int<2> z29 ~ bernoulli(0.5);
+int<2> z30 ~ bernoulli(0.5);
+int<2> z31 ~ bernoulli(0.5);
+int<2> z32 ~ bernoulli(0.5);
+int<2> z33 ~ bernoulli(0.5);
+int<2> z34 ~ bernoulli(0.5);
+int<2> z35 ~ bernoulli(0.5);
+data real d1;
+data real d2;
+if (((z1 + z2 + z3 + z4 + z5 + z6 + z7 + z8 + z9 + z10 + z11 + z12 + z13 + z14 + z15 + z16 + z17 + z18 + z19 + z20 + z21 + z22 + z23 + z24 + z25 + z26 + z27 + z28 + z29 + z30 + z31 + z32 + z33 + z34 + z35) - 35) > 0) {
+        d1 ~ normal(1, 1);
+        d2 ~ normal(1, 1);
+} else {
+        d1 ~ normal(-1, 1);
+        d2 ~ normal(-1, 1);
+}
