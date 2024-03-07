@@ -526,8 +526,8 @@ function exponential_for_gamma(α::Int, β::Float64)::Vector{Float64}
 end
 
 function gamma_constants(α::Int, β::Float64, ϵ::Float64)
-    @vars varint
-    @vars v2
+    @syms varint
+    @syms v2
     if α == 0
         []
     else
