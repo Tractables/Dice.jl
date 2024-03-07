@@ -8,7 +8,7 @@ export gaussian_observe, gaussian_observe_enumerate, parametrised_flip, print_tr
 
 function gaussian_observe(::Type{DistFix{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::Float64, std::Float64, datapt::DistFix{W, F}; exp=false) where W where F
     @assert std > 0
-    g = bitblast(DistFix{W, F}, Normal(mean, std), pieces, start, stop, exp)
+    g = bitblast(DistFix{W, F}, Normal(mean, std), pieces, start, stop)
     observe(g == datapt)
 end
 

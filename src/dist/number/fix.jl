@@ -51,7 +51,7 @@ function Base.convert(::Type{DistFix{W2, F2}}, x::DistFix{W1, F1}) where {W1,W2,
         mantissa = convert(DistInt{W1+(F2-F1)}, x.mantissa)
         mantissa <<= (F2-F1)
     else #F2 < F1
-        mantissa = drop_bits(DistInt{W1+(F2-F1)}, x.mantissa; last=false)
+        mantissa = drop_bits(DistInt{W1+(F2-F1)}, x.mantissa; last=true)
     end
     convert(DistFix{W2, F2}, DistFix{W1+(F2-F1), F2}(mantissa))
 end
@@ -526,8 +526,8 @@ function exponential_for_gamma(α::Int, β::Float64)::Vector{Float64}
 end
 
 function gamma_constants(α::Int, β::Float64, ϵ::Float64)
-    @syms varint
-    @syms v2
+    @vars varint
+    @vars v2
     if α == 0
         []
     else

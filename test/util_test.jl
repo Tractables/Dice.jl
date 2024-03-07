@@ -1,7 +1,7 @@
 using Test
 using Dice, Distributions
 
-@testset "Gaussian observations" begin
+# @testset "Gaussian observations" begin
     
     FP = DistFix{6, 2}
     data = FP(0.0)
@@ -49,7 +49,7 @@ using Dice, Distributions
 
     end
 
-end
+# end
 
 @testset "Parametrised Flip" begin
     l = Vector(undef, 10)
