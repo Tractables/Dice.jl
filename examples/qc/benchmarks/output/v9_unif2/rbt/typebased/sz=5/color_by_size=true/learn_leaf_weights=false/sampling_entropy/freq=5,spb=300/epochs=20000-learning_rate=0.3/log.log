@@ -1,0 +1,32 @@
+2024-03-05T22:41:03.834 62bc63d -f
+== Config ==
+TAG: v9_unif2
+TypeBasedRBTGenerator(5, true, false)
+SamplingRBTEntropy(5, 300, SatisfyPropertyLoss{RBT}(MultipleInvariants{RBT}(Property{RBT}[BookkeepingInvariant(), BalanceInvariant(), BlackRootInvariant()])), 0.01)
+EPOCHS: 20000
+LEARNING_RATE: 0.3
+DistNat: DistUInt32
+
+Building generation computation graph...
+  0.736074812 seconds
+
+Building computation graph for SatisfyPropertyLoss{RBT}(MultipleInvariants{RBT}(Property{RBT}[BookkeepingInvariant(), BalanceInvariant(), BlackRootInvariant()]))...
+  2.138432785 seconds
+
+ADNodes of interest (initial):
+Dict("red_sz3" => 0.5, "red_sz4" => 0.5, "red_sz5" => 0.5, "red_sz2" => 0.5, "red_sz1" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz5_before_sigmoid") => 0, Var("red_sz4_before_sigmoid") => 0, Var("red_sz2_before_sigmoid") => 0, Var("red_sz3_before_sigmoid") => 0, Var("red_sz1_before_sigmoid") => 0)
+
+Checking pr property met...
+  2.735432034 seconds
+Pr meets property: 0.5807290942781707
+
+Loss (initial): 0.5434709057786584
+
+Saved Coq generator to examples/qc/benchmarks/output/v9_unif2/rbt/typebased/sz=5/color_by_size=true/learn_leaf_weights=false/sampling_entropy/freq=5,spb=300/epochs=20000-learning_rate=0.3/initial_Generator.v
+Training...
+Sampling...
+  1.300094653 seconds
+Stepping...

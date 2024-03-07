@@ -1,0 +1,51 @@
+2024-03-05T22:58:02.811 62bc63d -f
+== Config ==
+TAG: v9_unif2
+TypeBasedRBTGenerator(5, true, false)
+SamplingRBTEntropy(5, 300, SatisfyPropertyLoss{RBT}(MultipleInvariants{RBT}(Property{RBT}[BookkeepingInvariant(), BalanceInvariant(), BlackRootInvariant()])), 0.01)
+EPOCHS: 1
+LEARNING_RATE: 0.3
+DistNat: DistUInt32
+
+Building generation computation graph...
+  0.739530448 seconds
+
+Building computation graph for SatisfyPropertyLoss{RBT}(MultipleInvariants{RBT}(Property{RBT}[BookkeepingInvariant(), BalanceInvariant(), BlackRootInvariant()]))...
+  2.145963328 seconds
+
+ADNodes of interest (initial):
+Dict("red_sz3" => 0.5, "red_sz4" => 0.5, "red_sz5" => 0.5, "red_sz2" => 0.5, "red_sz1" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz5_before_sigmoid") => 0, Var("red_sz2_before_sigmoid") => 0, Var("red_sz1_before_sigmoid") => 0, Var("red_sz4_before_sigmoid") => 0, Var("red_sz3_before_sigmoid") => 0)
+
+Checking pr property met...
+  2.724362176 seconds
+Pr meets property: 0.5807290942781707
+
+Loss (initial): 0.5434709057786584
+
+Saved Coq generator to examples/qc/benchmarks/output/v9_unif2/rbt/typebased/sz=5/color_by_size=true/learn_leaf_weights=false/sampling_entropy/freq=5,spb=300/epochs=1-learning_rate=0.3/initial_Generator.v
+Training...
+Sampling...
+  1.267912609 seconds
+Stepping...
+  1.535958863 seconds
+Sample time:  1.267912609 seconds
+Step time:    1.535958863 seconds
+
+ADNodes of interest (trained):
+Dict("red_sz3" => 0.5001262484530022, "red_sz4" => 0.4997811015654486, "red_sz5" => 0.5008262325659607, "red_sz2" => 0.4993750612420561, "red_sz1" => 0.5003750004875355)
+
+Parameter values (trained):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz5_before_sigmoid") => 0.0033049332720404296, Var("red_sz2_before_sigmoid") => -0.0024997563334777126, Var("red_sz1_before_sigmoid") => 0.001500002231393091, Var("red_sz4_before_sigmoid") => -0.0008755937941464102, Var("red_sz3_before_sigmoid") => 0.0005049938227409907)
+
+Checking pr property met...
+  0.019603446 seconds
+Pr meets property: 0.5805894886295221
+
+Loss (trained): 0.54371133187943
+
+Saved Coq generator to examples/qc/benchmarks/output/v9_unif2/rbt/typebased/sz=5/color_by_size=true/learn_leaf_weights=false/sampling_entropy/freq=5,spb=300/epochs=1-learning_rate=0.3/trained_Generator.v
+2024-03-05T22:58:28.633
+Total time elapsed: 25 seconds, 822 milliseconds

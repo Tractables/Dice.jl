@@ -1,0 +1,46 @@
+2024-03-06T23:14:59.361 62bc63d -f
+== Config ==
+TAG: v9_unif2
+TypeBasedRBTGenerator(5, true, false)
+SatisfyPropertyLoss{RBT}(MultipleInvariants{RBT}(Property{RBT}[BookkeepingInvariant(), BalanceInvariant()]))
+EPOCHS: 10000
+LEARNING_RATE: 0.03
+DistNat: DistUInt32
+
+Building generation computation graph...
+  0.001753158 seconds
+
+Building computation graph for SatisfyPropertyLoss{RBT}(MultipleInvariants{RBT}(Property{RBT}[BookkeepingInvariant(), BalanceInvariant()]))...
+  0.004481692 seconds
+
+ADNodes of interest (initial):
+Dict("red_sz3" => 0.5, "red_sz4" => 0.5, "red_sz5" => 0.5, "red_sz2" => 0.5, "red_sz1" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz5_before_sigmoid") => 0, Var("red_sz2_before_sigmoid") => 0, Var("red_sz1_before_sigmoid") => 0, Var("red_sz4_before_sigmoid") => 0, Var("red_sz3_before_sigmoid") => 0)
+
+Checking pr property met...
+  0.021804402 seconds
+Pr meets property: 0.6447941382057588
+
+Loss (initial): 0.43882417870300283
+
+Saved Coq generator to examples/qc/benchmarks/output/v9_unif2/rbt/typebased/sz=5/color_by_size=true/learn_leaf_weights=false/bookkeepingANDbalance/epochs=10000-learning_rate=0.03/initial_Generator.v
+Training...
+  50.143878345 seconds
+
+ADNodes of interest (trained):
+Dict("red_sz3" => 0.5115550999722182, "red_sz4" => 0.9511497711058802, "red_sz5" => 0.049732080434465614, "red_sz2" => 0.5013359036619806, "red_sz1" => 0.5000064739099565)
+
+Parameter values (trained):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz5_before_sigmoid") => -2.950093758981817, Var("red_sz2_before_sigmoid") => 0.0053436273632046635, Var("red_sz1_before_sigmoid") => 2.5895639827290588e-5, Var("red_sz4_before_sigmoid") => 2.968912474034039, Var("red_sz3_before_sigmoid") => 0.04622863101107893)
+
+Checking pr property met...
+  0.039352974 seconds
+Pr meets property: 0.6882618189279822
+
+Loss (trained): 0.37358596267245553
+
+Saved Coq generator to examples/qc/benchmarks/output/v9_unif2/rbt/typebased/sz=5/color_by_size=true/learn_leaf_weights=false/bookkeepingANDbalance/epochs=10000-learning_rate=0.03/trained_Generator.v
+2024-03-06T23:15:49.675
+Total time elapsed: 50 seconds, 314 milliseconds
