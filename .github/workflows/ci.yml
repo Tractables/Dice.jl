@@ -25,13 +25,13 @@ jobs:
         run:
           sudo apt update && sudo apt install -y pdf2svg texlive-latex-base texlive-binaries texlive-latex-extra texlive-luatex
 
-      - name: Install IRTools master
-        run: |
-          julia --project -e 'using Pkg; Pkg.instantiate(); Pkg.build();'
-
       - name: Install SymPy
         run: 
           pip3 install sympy
+
+      - name: Install IRTools master
+        run: |
+          julia --project -e 'using Pkg; Pkg.instantiate(); Pkg.build();'
 
       - name: Unit Tests
         run:
