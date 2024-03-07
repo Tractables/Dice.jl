@@ -1,0 +1,24 @@
+Inference for Stan model: normal_mixture_model
+1 chains: each with iter=(246514); warmup=(0); thin=(1); 246514 iterations saved.
+
+Warmup took 0.00 seconds
+Sampling took 0.00 seconds
+
+                          Mean           MCSE         StdDev              5%             50%             95%          N_Eff        N_Eff/s          R_hat
+
+lp__            -8.3835166e+01  3.4619282e-03  1.2282775e+00  -8.6260300e+01  -8.3519200e+01  -8.2503400e+01  1.2588005e+05            inf  9.9999919e-01
+accept_stat__    8.9382892e-01  2.1421918e-04  1.2115381e-01   6.4321800e-01   9.3583000e-01   1.0000000e+00  3.1985817e+05            inf  9.9999594e-01
+stepsize__       8.4329900e-01            nan  6.6236040e-13   8.4329900e-01   8.4329900e-01   8.4329900e-01            nan            nan            nan
+treedepth__      2.0468777e+00  9.1816539e-04  4.3906491e-01   1.0000000e+00   2.0000000e+00   3.0000000e+00  2.2867339e+05            inf  1.0000023e+00
+n_leapfrog__     4.0099467e+00  3.7770931e-03  1.8435760e+00   3.0000000e+00   3.0000000e+00   7.0000000e+00  2.3823563e+05            inf  9.9999741e-01
+divergent__      0.0000000e+00            nan  0.0000000e+00   0.0000000e+00   0.0000000e+00   0.0000000e+00            nan            nan            nan
+energy__         8.5336439e+01  5.2899238e-03  1.7341008e+00   8.3145500e+01   8.5012300e+01   8.8635300e+01  1.0746074e+05            inf  1.0000008e+00
+
+theta            2.8559292e-01  1.1977086e-04  6.8902611e-02   1.7866800e-01   2.8216400e-01   4.0488200e-01  3.3095507e+05            inf  9.9999595e-01
+mu[1]           -9.7021147e+00  5.0785582e-04  2.8853761e-01  -1.0177600e+01  -9.7018200e+00  -9.2280900e+00  3.2279292e+05            inf  1.0000005e+00
+mu[2]            9.6578452e+00  4.1149580e-04  1.8273484e-01   9.3574800e+00   9.6578100e+00   9.9584700e+00  1.9720226e+05            inf  1.0000063e+00
+
+Samples were drawn using hmc with nuts.
+For each parameter, N_Eff is a crude measure of effective sample size,
+and R_hat is the potential scale reduction factor on split chains (at 
+convergence, R_hat=1).

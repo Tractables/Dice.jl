@@ -1,0 +1,24 @@
+Inference for Stan model: pi_model
+1 chains: each with iter=(900659); warmup=(0); thin=(1); 900659 iterations saved.
+
+Warmup took 0.00 seconds
+Sampling took 0.00 seconds
+
+                         Mean           MCSE         StdDev             5%            50%            95%          N_Eff        N_Eff/s          R_hat
+
+lp__           -4.0035580e+00  2.0398112e-03  1.1964762e+00 -6.3983500e+00 -3.6439800e+00 -2.8377300e+00  3.4405524e+05            inf  9.9999889e-01
+accept_stat__   8.8655642e-01  1.4780330e-04  1.5365529e-01  5.3996000e-01  9.5242800e-01  1.0000000e+00  1.0807538e+06            inf  9.9999895e-01
+stepsize__      8.4241500e-01            nan  2.1886949e-12  8.4241500e-01  8.4241500e-01  8.4241500e-01            nan            nan            nan
+treedepth__     1.8473729e+00  5.7491061e-04  5.1040800e-01  1.0000000e+00  2.0000000e+00  3.0000000e+00  7.8819611e+05            inf  1.0000002e+00
+n_leapfrog__    3.3030226e+00  1.7188564e-03  1.5159372e+00  1.0000000e+00  3.0000000e+00  7.0000000e+00  7.7782733e+05            inf  1.0000007e+00
+divergent__     0.0000000e+00            nan  0.0000000e+00  0.0000000e+00  0.0000000e+00  0.0000000e+00            nan            nan            nan
+energy__        5.0063741e+00  2.7917152e-03  1.5654072e+00  3.1733400e+00  4.6543600e+00  8.0457800e+00  3.1442162e+05            inf  9.9999891e-01
+
+u1              5.0021921e-01  3.1471097e-04  2.8903928e-01  4.9405500e-02  5.0075200e-01  9.5048700e-01  8.4350953e+05            inf  1.0000061e+00
+u2              4.9942591e-01  3.1930615e-04  2.8863025e-01  4.9813800e-02  4.9908500e-01  9.4984900e-01  8.1708856e+05            inf  9.9999895e-01
+answer          5.3507598e-01  6.0430650e-04  4.9876843e-01  0.0000000e+00  1.0000000e+00  1.0000000e+00  6.8121373e+05            inf  1.0000032e+00
+
+Samples were drawn using hmc with nuts.
+For each parameter, N_Eff is a crude measure of effective sample size,
+and R_hat is the potential scale reduction factor on split chains (at 
+convergence, R_hat=1).

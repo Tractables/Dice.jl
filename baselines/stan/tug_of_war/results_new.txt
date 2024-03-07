@@ -1,0 +1,28 @@
+Inference for Stan model: tug_of_war_model
+1 chains: each with iter=(743017); warmup=(0); thin=(1); 743017 iterations saved.
+
+Warmup took 0.00 seconds
+Sampling took 0.00 seconds
+
+                          Mean           MCSE         StdDev              5%             50%             95%          N_Eff        N_Eff/s          R_hat
+
+lp__             1.0012077e+00  1.6956134e-03  9.9968943e-01  -9.9337800e-01   1.3084300e+00   1.9481700e+00  3.4759742e+05            inf  9.9999881e-01
+accept_stat__    8.6940397e-01  1.6307262e-04  1.5495241e-01   5.4290000e-01   9.2586400e-01   1.0000000e+00  9.0288937e+05            inf  9.9999914e-01
+stepsize__       1.0120500e+00            nan  3.4559046e-12   1.0120500e+00   1.0120500e+00   1.0120500e+00            nan            nan            nan
+treedepth__      1.7255675e+00  5.2680277e-04  4.4622815e-01   1.0000000e+00   2.0000000e+00   2.0000000e+00  7.1749327e+05            inf  9.9999928e-01
+n_leapfrog__     2.7285876e+00  8.3540777e-04  6.8495305e-01   1.0000000e+00   3.0000000e+00   3.0000000e+00  6.7224038e+05            inf  9.9999881e-01
+divergent__      0.0000000e+00            nan  0.0000000e+00   0.0000000e+00   0.0000000e+00   0.0000000e+00            nan            nan            nan
+energy__        -1.3685208e-03  2.4816327e-03  1.4145579e+00  -1.6439300e+00  -3.2435400e-01   2.7513200e+00  3.2491255e+05            inf  1.0000002e+00
+
+alice            4.9998840e+00  1.1294242e-03  9.9970643e-01   3.3535300e+00   5.0003000e+00   6.6456400e+00  7.8348519e+05            inf  9.9999907e-01
+bob              5.0001458e+00  1.1252893e-03  9.9908679e-01   3.3557700e+00   5.0010300e+00   6.6426900e+00  7.8827561e+05            inf  9.9999918e-01
+lp[1]           -1.9722500e-01            nan  7.2020216e-13  -1.9722500e-01  -1.9722500e-01  -1.9722500e-01            nan            nan            nan
+lp[2]            4.9592300e-01            nan  2.2395989e-12   4.9592300e-01   4.9592300e-01   4.9592300e-01            nan            nan            nan
+lp[3]            4.9592300e-01            nan  2.2395989e-12   4.9592300e-01   4.9592300e-01   4.9592300e-01            nan            nan            nan
+lp[4]            1.1890700e+00            nan  1.8549619e-12   1.1890700e+00   1.1890700e+00   1.1890700e+00            nan            nan            nan
+ans              4.9996419e-01  3.6428490e-04  3.2282559e-01   0.0000000e+00   7.7777800e-01   1.0000000e+00  7.8533249e+05            inf  9.9999884e-01
+
+Samples were drawn using hmc with nuts.
+For each parameter, N_Eff is a crude measure of effective sample size,
+and R_hat is the potential scale reduction factor on split chains (at 
+convergence, R_hat=1).

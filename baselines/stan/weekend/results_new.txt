@@ -1,0 +1,19 @@
+Warning: non-fatal error reading adaptation data
+Inference for Stan model: weekend_model
+1 chains: each with iter=(2377464); warmup=(0); thin=(1); 2377464 iterations saved.
+
+Warmup took 0.00 seconds
+Sampling took 0.00 seconds
+
+                          Mean           MCSE         StdDev              5%             50%             95%          N_Eff        N_Eff/s          R_hat
+
+lp__             0.0000000e+00            nan  0.0000000e+00   0.0000000e+00   0.0000000e+00   0.0000000e+00            nan            nan            nan
+accept_stat__    0.0000000e+00            nan  0.0000000e+00   0.0000000e+00   0.0000000e+00   0.0000000e+00            nan            nan            nan
+
+fp[1]           -3.4775900e+00            nan  4.4366742e-11  -3.4775900e+00  -3.4775900e+00  -3.4775900e+00            nan            nan            nan
+fp[2]           -2.7727600e+00            nan  7.8648216e-13  -2.7727600e+00  -2.7727600e+00  -2.7727600e+00            nan            nan            nan
+
+Samples were drawn using hmc with nuts.
+For each parameter, N_Eff is a crude measure of effective sample size,
+and R_hat is the potential scale reduction factor on split chains (at 
+convergence, R_hat=1).

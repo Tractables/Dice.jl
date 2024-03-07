@@ -8,3 +8,4 @@
 { value: 0.14519877564060552, runtimeInMilliseconds: 416192 }
 { value: 0.1439488333634896, runtimeInMilliseconds: 383877 }
 { value: 0.1453818858922103, runtimeInMilliseconds: 282548 }
+{ value: 0.14552196475062856, runtimeInMilliseconds: 226855 }

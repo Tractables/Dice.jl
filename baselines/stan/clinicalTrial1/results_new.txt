@@ -1,0 +1,26 @@
+Inference for Stan model: clinicalTrial1_model
+1 chains: each with iter=(55378); warmup=(0); thin=(1); 55378 iterations saved.
+
+Warmup took 0.00 seconds
+Sampling took 0.00 seconds
+
+                          Mean           MCSE         StdDev              5%             50%             95%          N_Eff        N_Eff/s          R_hat
+
+lp__            -1.4506184e+02  1.2006144e-02  1.3772985e+00  -1.4772300e+02  -1.4473600e+02  -1.4350700e+02  1.3159792e+04            inf  1.0001667e+00
+accept_stat__    8.3482492e-01  1.6581738e-02  2.5893240e-01   1.0533100e-01   9.4658100e-01   1.0000000e+00  2.4384437e+02            inf  1.0042538e+00
+stepsize__       3.8950500e-01            nan  8.9595807e-14   3.8950500e-01   3.8950500e-01   3.8950500e-01            nan            nan            nan
+treedepth__      2.5505255e+00  3.5036026e-03  6.3217465e-01   2.0000000e+00   3.0000000e+00   3.0000000e+00  3.2557007e+04            inf  1.0000629e+00
+n_leapfrog__     6.6909061e+00  1.6582342e-02  3.3621385e+00   3.0000000e+00   7.0000000e+00   1.5000000e+01  4.1109244e+04            inf  9.9998677e-01
+divergent__      3.6115425e-04  9.8719935e-05  1.9000798e-02   0.0000000e+00   0.0000000e+00   0.0000000e+00  3.7045373e+04            inf            nan
+energy__         1.4656229e+02  1.4809871e-02  1.8355975e+00   1.4420800e+02   1.4623900e+02   1.5002700e+02  1.5362162e+04            inf  1.0000929e+00
+
+probAll          5.1275190e-01  3.7907866e-03  4.7063466e-02   4.4661300e-01   5.1040900e-01   5.7918400e-01  1.5413780e+02            inf  1.0060201e+00
+probControl      4.9820741e-01  1.5842447e-03  2.7839274e-01   5.5013300e-02   4.9192300e-01   9.4527500e-01  3.0879573e+04            inf  1.0000808e+00
+probTreated      5.0117244e-01  1.5463000e-03  2.8018792e-01   5.2816800e-02   5.1001200e-01   9.4794500e-01  3.2833054e+04            inf  9.9999584e-01
+m1              -1.3975303e+02  1.0165680e-02  7.0653054e-01  -1.4117900e+02  -1.3949400e+02  -1.3927600e+02  4.8304661e+03            inf  9.9998896e-01
+isEffective      1.0708404e+00  1.8628672e-02  2.5656039e-01   1.0000000e+00   1.0000000e+00   2.0000000e+00  1.8967732e+02            inf  1.0046058e+00
+
+Samples were drawn using hmc with nuts.
+For each parameter, N_Eff is a crude measure of effective sample size,
+and R_hat is the potential scale reduction factor on split chains (at 
+convergence, R_hat=1).

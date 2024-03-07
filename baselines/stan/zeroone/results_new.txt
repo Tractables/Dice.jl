@@ -1,0 +1,24 @@
+Inference for Stan model: zeroone_model
+1 chains: each with iter=(6529); warmup=(0); thin=(1); 6529 iterations saved.
+
+Warmup took 0.00 seconds
+Sampling took 0.00 seconds
+
+                          Mean           MCSE         StdDev              5%             50%             95%          N_Eff        N_Eff/s          R_hat
+
+lp__             1.5551907e+01  1.4621208e-01  8.0346728e-01   1.4336700e+01   1.5604400e+01   1.6795000e+01  3.0197425e+01            inf  1.0250044e+00
+accept_stat__    9.3555927e-01  5.6740342e-03  1.4265248e-01   5.9465200e-01   1.0000000e+00   1.0000000e+00  6.3208398e+02            inf  1.0005366e+00
+stepsize__       1.4946300e-04            nan  2.9817843e-18   1.4946300e-04   1.4946300e-04   1.4946300e-04            nan            nan            nan
+treedepth__      9.9356716e+00  3.4664629e-02  5.2873642e-01   1.0000000e+01   1.0000000e+01   1.0000000e+01  2.3265123e+02            inf  1.0040668e+00
+n_leapfrog__     1.0086300e+03  6.6536496e+00  1.0502698e+02   1.0230000e+03   1.0230000e+03   1.0230000e+03  2.4916204e+02            inf  1.0030527e+00
+divergent__      2.2668096e-02  8.4776896e-03  1.4885445e-01   0.0000000e+00   0.0000000e+00   0.0000000e+00  3.0829652e+02            inf  1.0010716e+00
+energy__        -1.4556691e+01  1.4915374e-01  1.2726372e+00  -1.6272100e+01  -1.4751800e+01  -1.2286400e+01  7.2801599e+01            inf  1.0138612e+00
+
+w1              -1.8219097e+00  1.1366826e+00  3.4401457e+00  -6.7529100e+00  -2.1495600e+00   3.8628800e+00  9.1595734e+00            inf  1.2092571e+00
+w2               5.9801676e+00  2.9898491e-01  1.3458636e+00   3.5810900e+00   6.1373300e+00   7.8339600e+00  2.0262989e+01            inf  1.0000990e+00
+lp               1.3017154e+01  1.8011791e-01  8.3100890e-01   1.2000000e+01   1.3000000e+01   1.4000000e+01  2.1286172e+01            inf  1.0529933e+00
+
+Samples were drawn using hmc with nuts.
+For each parameter, N_Eff is a crude measure of effective sample size,
+and R_hat is the potential scale reduction factor on split chains (at 
+convergence, R_hat=1).
