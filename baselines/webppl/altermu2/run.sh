@@ -3,6 +3,6 @@ do
 	for i in {1..40}
 	do
        		echo $i	
-		timeout 2000s /space/poorvagarg/webppl/webppl altermu2.wppl --require webppl-timeit -- --s $((2**$i)) --m $1 >> output_$1_$i.txt
+		timeout 2000s webppl altermu2.wppl --require webppl-timeit -- --s $((2**$i)) --m $1 >> output_$1_$i.txt
 	done
 done

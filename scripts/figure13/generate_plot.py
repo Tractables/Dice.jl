@@ -22,7 +22,7 @@ plt.rc('axes', labelsize=20)
 plt.rc('legend', fontsize=10)
 
 def plot_fig8_time(benchmark_name, pieces, ylabel, ll, ul):
-    filehandle = open("/space/poorvagarg/.julia/dev/Dice.jl/benchmarks/" + benchmark_name + "/full_results.txt")
+    filehandle = open("benchmarks/" + benchmark_name + "/full_results.txt")
     lines = filehandle.readlines()
     bits = int(float(lines[-1].split(",")[0]))
     fig, ax = plt.subplots()
@@ -51,7 +51,7 @@ def plot_fig8_time(benchmark_name, pieces, ylabel, ll, ul):
     fig.savefig(benchmark_name + " time.png", dpi=300, bbox_inches="tight")
 
 def plot_fig8_result(benchmark_name, pieces, ylabel, ll, ul):
-    filehandle = open("/space/poorvagarg/.julia/dev/Dice.jl/benchmarks/" + benchmark_name + "/full_results.txt")
+    filehandle = open("benchmarks/" + benchmark_name + "/full_results.txt")
     lines = filehandle.readlines()
     bits = int(float(lines[-1].split(",")[0]))
     fig, ax = plt.subplots()
