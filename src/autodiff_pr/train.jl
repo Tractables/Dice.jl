@@ -17,7 +17,14 @@ mutable struct LogPrExpander
 end
 
 function expand_logprs(l::LogPrExpander, root::ADNode)::ADNode
-    fl(x::LogPr) = expand_logprs(l, logprob(l.w, x.bool))
+    fl(x::LogPr) = begin
+        lpr = logprob(l.w, x.bool)
+        if lpr isa AbstractFloat
+            Constant(lpr)
+        else
+            expand_logprs(l, logprob(l.w, x.bool))
+        end
+    end
     fl(x::Var) = x
     fl(x::Constant) = x
     fi(x::Add, call) = Add(call(x.x), call(x.y))

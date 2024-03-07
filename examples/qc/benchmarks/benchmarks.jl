@@ -91,7 +91,7 @@ function create_simple_loss_manager(loss, io, out_dir, var_vals)
     SimpleLossMgr(emit_stats, f_train, loss)
 end
 
-function train_via_sampling_entropy!(io, out_dir, var_vals, e; epochs, learning_rate, resampling_frequency, samples_per_batch, consider, ignore)
+function train_via_sampling_entropy!(io, out_dir, var_vals, e; epochs, learning_rate, resampling_frequency, samples_per_batch, consider, ignore, additional_loss, additional_loss_lr)
     learning_rate = learning_rate / samples_per_batch
 
     learning_curve = []
@@ -119,7 +119,9 @@ function train_via_sampling_entropy!(io, out_dir, var_vals, e; epochs, learning_
         last_batch = epochs_done + epochs_this_batch == epochs
 
         println_flush(io, "Stepping...")
-        time_step_here = @elapsed subcurve = Dice.train!(var_vals, loss; epochs=epochs_this_batch, learning_rate, append_last_loss=last_batch)
+        time_step_here = @elapsed subcurve = Dice.train!(var_vals,
+            loss + (additional_loss * additional_loss_lr / learning_rate)
+            ; epochs=epochs_this_batch, learning_rate, append_last_loss=last_batch)
         time_step += time_step_here
         append!(learning_curve, subcurve)
         println(io, "  $(time_step_here) seconds")
@@ -269,10 +271,18 @@ function create_loss_manager(p::SamplingSTLCEntropy, io, out_dir, var_vals, g::S
             io, out_dir, var_vals, g.e; epochs, learning_rate,
             resampling_frequency=p.resampling_frequency, samples_per_batch=p.samples_per_batch,
             consider=_->true,
-            ignore=_->false
+            ignore=_->false,
+            additional_loss=Dice.Constant(0),
+            additional_loss_lr=0,
         )
     end
     LossMgrImpl(_ -> nothing, train!)
+end
+
+struct NullLoss{T} <: SimpleLossParams{T} end
+to_subpath(::NullLoss) = ["null"]
+function create_loss_manager(::NullLoss{T}, io, out_dir, var_vals, g::Generation{T}) where T
+    create_simple_loss_manager(Dice.Constant(0), io, out_dir, var_vals)
 end
 
 ##################################
@@ -300,6 +310,8 @@ function create_loss_manager(p::SamplingSTLCConstructorEntropy, io, out_dir, var
             resampling_frequency=p.resampling_frequency, samples_per_batch=p.samples_per_batch,
             consider=s->any(prob_equals(s, x)===true for x in values(stlc_ctor_to_id)),
             ignore=s->prob_equals(s, DistInt32(-1))===true,
+            additional_loss=Dice.Constant(0),
+            additional_loss_lr=0,
         )
     end
     LossMgrImpl(_ -> nothing, train!)
@@ -429,7 +441,9 @@ function create_loss_manager(p::SamplingBSTEntropy, io, out_dir, var_vals, g::BS
             io, out_dir, var_vals, g.t; epochs, learning_rate,
             resampling_frequency=p.resampling_frequency, samples_per_batch=p.samples_per_batch,
             consider=_->true,
-            ignore=_->false
+            ignore=_->false,
+            additional_loss=Dice.Constant(0),
+            additional_loss_lr=0,
         )
     end
     LossMgrImpl(_ -> nothing, train!)
@@ -696,3 +710,43 @@ check_property(p::MultipleInvariants{T}, g::Generation{T}) where T =
     ])
 name(p::MultipleInvariants{T}) where T =
     join([name(property) for property in p.properties], "AND")
+
+##################################
+# Sampling RBT entropy loss
+##################################
+
+struct SamplingRBTEntropy <: LossParams{RBT}
+    resampling_frequency::Integer
+    samples_per_batch::Integer
+    additional_loss_params::SimpleLossParams{RBT}
+    additional_loss_lr::Real
+end
+function SamplingRBTEntropy(; resampling_frequency, samples_per_batch, additional_loss_params, additional_loss_lr)
+    SamplingRBTEntropy(resampling_frequency, samples_per_batch, additional_loss_params, additional_loss_lr)
+end
+to_subpath(p::SamplingRBTEntropy) = [
+    "sampling_entropy",
+    "freq=$(p.resampling_frequency),spb=$(p.samples_per_batch)",
+    "additional_loss=$(join(to_subpath(p.additional_loss_params),"-"))",
+    "allr=$(p.additional_loss_lr)",
+]
+function create_loss_manager(p::SamplingRBTEntropy, io, out_dir, var_vals, g::RBTGeneration)
+    mgr::SimpleLossMgr = create_loss_manager(p.additional_loss_params, io, out_dir, var_vals, g)
+    function train!(; epochs, learning_rate)
+        train_via_sampling_entropy!(
+            io, out_dir, var_vals, g.t; epochs, learning_rate,
+            resampling_frequency=p.resampling_frequency, samples_per_batch=p.samples_per_batch,
+            consider=_->true,
+            ignore=_->false,
+            additional_loss=mgr.loss,
+            additional_loss_lr=p.additional_loss_lr,
+        )
+    end
+    LossMgrImpl(tag -> emit_stats(mgr, tag), train!)
+end
+
+struct NullLoss{T} <: SimpleLossParams{T} end
+to_subpath(::NullLoss) = ["null"]
+function create_loss_manager(::NullLoss{T}, io, out_dir, var_vals, g::Generation{T}) where T
+    create_simple_loss_manager(Dice.Constant(0), io, out_dir, var_vals)
+end
