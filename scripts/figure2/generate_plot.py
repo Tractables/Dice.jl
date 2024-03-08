@@ -137,5 +137,5 @@ ax.plot(webppl_files2, smc_res, marker="o", linestyle="dotted", color="red")
 # plt.ylim(-0.0004, 0.01)
 
 ax.legend(["Stan", "Stan Timeout", "HyBit", "Psi", "Psi Timeout", "WebPPL MH", "WebPPL SMC"], loc='upper right')
-fig.savefig("scripts/figure2/or_error.png", bbox_inches="tight")
+fig.savefig("results/or_error.png", bbox_inches="tight")
 

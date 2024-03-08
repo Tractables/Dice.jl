@@ -48,7 +48,7 @@ def plot_fig8_time(benchmark_name, pieces, ylabel, ll, ul):
         ax.plot(x, y)
         legend_list.append("b = " + str(i))
     ax.legend(legend_list, loc="upper left")
-    fig.savefig(benchmark_name + " time.png", dpi=300, bbox_inches="tight")
+    fig.savefig("results/" + benchmark_name + " time.png", dpi=300, bbox_inches="tight")
 
 def plot_fig8_result(benchmark_name, pieces, ylabel, ll, ul):
     filehandle = open("benchmarks/" + benchmark_name + "/full_results.txt")
@@ -77,7 +77,7 @@ def plot_fig8_result(benchmark_name, pieces, ylabel, ll, ul):
         ax.plot(x[1:], y[1:])
         legend_list.append("b = " + str(i))
     ax.legend(legend_list, loc="upper right")
-    fig.savefig(benchmark_name + " result.png", dpi=300, bbox_inches="tight")
+    fig.savefig("results/" + benchmark_name + " result.png", dpi=300, bbox_inches="tight")
 
 plot_fig8_time("altermu2", pieces, False, 5, 11)
 plot_fig8_result("altermu2", pieces, False, 5, 11)

@@ -38,7 +38,7 @@ ax.scatter(x, y1, marker="o")
 ax.scatter(x, y3, marker = "s")
 
 ax.legend(legend_list, loc="upper left")
-fig.savefig("./mini-experiments/expectation_variance/exp_results.png", dpi=300, bbox_inches="tight")
+fig.savefig("results/exp_results.png", dpi=300, bbox_inches="tight")
 
 fig, ax = plt.subplots()
 ax.set_yscale("log")
@@ -50,5 +50,5 @@ ax.scatter(x, y2, marker="o")
 ax.scatter(x, y4, marker = "s")
 
 ax.legend(legend_list, loc="upper left")
-fig.savefig("./mini-experiments/expectation_variance/var_results.png", dpi=300, bbox_inches="tight")
+fig.savefig("results/var_results.png", dpi=300, bbox_inches="tight")
 

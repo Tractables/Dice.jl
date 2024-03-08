@@ -64,7 +64,7 @@ scale_y = 100
 ticks_y = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x/scale_y))
 ax.yaxis.set_major_formatter(ticks_y)
 
-fig.savefig("conjugate_gaussians.png")
+fig.savefig("results/conjugate_gaussians.png")
 
 # Running AQUA numbers
 
