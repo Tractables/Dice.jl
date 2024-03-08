@@ -6,6 +6,20 @@ import statistics
 import csv
 from tabulate import tabulate
 
+added = "_new"
+if len(sys.argv) > 1:
+    added = ""
+
+
+def open_suffix(filename, tag="r"):
+    f = filename.replace("results", "results" + added)
+    try:
+        file_handle = open(f, tag)
+    except:
+        file_handle = open(filename, tag)
+    return file_handle
+
+
 gt = {}
 benchmarks = ["pi", "weekend", "spacex", "GPA", "tug_of_war", "altermu2", "conjugate_gaussians2", "normal_mixture_theta", "normal_mixture_mu1", "normal_mixture_mu2", "zeroone_w1", "zeroone_w2", "coinBias", "addFun_sum", "clickGraph", "trueskill", "clinicalTrial1", "clinicalTrial2", "addFun_max"]
 
@@ -58,9 +72,9 @@ for i in benchmarks:
     gt_index = -3
     if i in ["normal_mixture_theta", "normal_mixture_mu1", "normal_mixture_mu2", "zeroone_w1", "zeroone_w2"]:
         gt_index = -3
-        file = open(f"benchmarks/{i}/results.txt", "r")
+        file = open_suffix(f"benchmarks/{i}/results.txt", "r")
     else:
-        file = open(f"benchmarks/{i}/results.txt", "r")
+        file = open_suffix(f"benchmarks/{i}/results.txt", "r")
         gt_index = -2
     
     l = file.readlines()
@@ -106,11 +120,11 @@ for i in benchmarks:
         count += 1
         continue
     elif i in ["normal_mixture_theta", "normal_mixture_mu1", "normal_mixture_mu2"]:
-        file_handle = open(f"baselines/stan/normal_mixture/results_1200.txt", "r")
+        file_handle = open_suffix(f"baselines/stan/normal_mixture/results_1200.txt", "r")
     elif i in ["zeroone_w1", "zeroone_w2"]:
-        file_handle = open(f"baselines/stan/zeroone/results_1200.txt", "r")
+        file_handle = open_suffix(f"baselines/stan/zeroone/results_1200.txt", "r")
     else:
-        file_handle = open(f"baselines/stan/{i}/results_1200.txt", "r")
+        file_handle = open_suffix(f"baselines/stan/{i}/results_1200.txt", "r")
     lines = file_handle.readlines()
 
     answer = 0
@@ -131,18 +145,15 @@ for i in benchmarks:
 
 count = 0
 for i in benchmarks:
-    print(i)
 
     files = os.listdir(f"baselines/webppl/{i}/")
     # print(files)
     files = [f for f in files if f[-3:] == "txt"]
     files.sort()
     files[0], files[1], files[2] = files[2], files[0], files[1]
-    print(files)
     
     for j in files:
-        print(i, j)
-        file_handle = open(f"baselines/webppl/{i}/{j}")
+        file_handle = open_suffix(f"baselines/webppl/{i}/{j}")
         ans = []
         lines = file_handle.readlines()
         for k in lines:
@@ -163,19 +174,19 @@ for i in benchmarks:
 
 def AQUA_accuracy(benchmark, gt):
     if benchmark == "normal_mixture_theta":
-        file_handle = open(f"baselines/aqua/normal_mixture/results_new.txt", "r")
+        file_handle = open_suffix(f"baselines/aqua/normal_mixture/results_new.txt", "r")
     elif benchmark == "normal_mixture_mu1":
-        file_handle = open(f"baselines/aqua/normal_mixture/results1_new.txt", "r")
+        file_handle = open_suffix(f"baselines/aqua/normal_mixture/results1_new.txt", "r")
     elif benchmark == "normal_mixture_mu2":
-        file_handle = open(f"baselines/aqua/normal_mixture/results2_new.txt", "r")
+        file_handle = open_suffix(f"baselines/aqua/normal_mixture/results2_new.txt", "r")
     elif benchmark == "zeroone_w1":
-        file_handle = open(f"baselines/aqua/zeroone/results_new.txt", "r")
+        file_handle = open_suffix(f"baselines/aqua/zeroone/results_new.txt", "r")
     elif benchmark == "zeroone_w2":
-        file_handle = open(f"baselines/aqua/zeroone/results1_new.txt", "r")
+        file_handle = open_suffix(f"baselines/aqua/zeroone/results1_new.txt", "r")
     elif benchmark == "conjugate_gaussians2":
-        file_handle = open(f"baselines/aqua/conjugate_gaussians/results_new.txt", "r")
+        file_handle = open_suffix(f"baselines/aqua/conjugate_gaussians/results_new.txt", "r")
     else:
-        file_handle = open(f"baselines/aqua/{benchmark}/results_new.txt", "r")
+        file_handle = open_suffix(f"baselines/aqua/{benchmark}/results_new.txt", "r")
     
     lines = file_handle.readlines()
 

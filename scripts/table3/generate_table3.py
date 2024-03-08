@@ -1,6 +1,20 @@
 from tabulate import tabulate
+import sys
 
-file = open("baselines/psi/results.txt", "r")
+added = "_new"
+if len(sys.argv) > 1:
+    added = ""
+
+
+def open_suffix(filename, tag="r"):
+    f = filename.replace("results", "results" + added)
+    try:
+        file_handle = open(f, tag)
+    except:
+        file_handle = open(filename, tag)
+    return file_handle
+
+file = open_suffix("baselines/psi/results.txt", "r")
 lines = file.readlines()
 
 table = []

@@ -5,6 +5,19 @@ import statistics
 import csv
 import matplotlib.pyplot as plt
 
+added = "_new"
+if len(sys.argv) > 1:
+    added = ""
+
+
+def open_suffix(filename, tag="r"):
+    f = filename.replace("results", "results" + added)
+    try:
+        file_handle = open(f, tag)
+    except:
+        file_handle = open(filename, tag)
+    return file_handle
+
 gt = {}
 gt["altermu2"] = 0.1550617483
 gt["addFun_max"] = 1/math.sqrt(math.pi)
@@ -22,7 +35,7 @@ plt.rc('axes', labelsize=20)
 plt.rc('legend', fontsize=10)
 
 def plot_fig8_time(benchmark_name, pieces, ylabel, ll, ul):
-    filehandle = open("benchmarks/" + benchmark_name + "/full_results.txt")
+    filehandle = open_suffix("benchmarks/" + benchmark_name + "/full_results.txt")
     lines = filehandle.readlines()
     bits = int(float(lines[-1].split(",")[0]))
     fig, ax = plt.subplots()
@@ -51,7 +64,7 @@ def plot_fig8_time(benchmark_name, pieces, ylabel, ll, ul):
     fig.savefig("results/" + benchmark_name + " time.png", dpi=300, bbox_inches="tight")
 
 def plot_fig8_result(benchmark_name, pieces, ylabel, ll, ul):
-    filehandle = open("benchmarks/" + benchmark_name + "/full_results.txt")
+    filehandle = open_suffix("benchmarks/" + benchmark_name + "/full_results.txt")
     lines = filehandle.readlines()
     bits = int(float(lines[-1].split(",")[0]))
     fig, ax = plt.subplots()

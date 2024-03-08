@@ -3,6 +3,30 @@ import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import ticker
 import statistics
+import sys
+
+added = "_new"
+if len(sys.argv) > 1:
+    added = ""
+
+print(added)
+
+
+def open_txt(filename, tag="r"):
+    f = filename.replace(".txt", added + ".txt")
+    try:
+        file_handle = open(f, tag)
+    except:
+        file_handle = open(filename, tag)
+    return file_handle
+
+def open_result(filename, tag="r"):
+    f = filename.replace("results_", "results_" + added)
+    try:
+        file_handle = open(f, tag)
+    except:
+        file_handle = open(filename, tag)
+    return file_handle
 
 fig, ax = plt.subplots()
 plt.rcParams["figure.figsize"] = [13.50, 4.50]
@@ -16,7 +40,7 @@ w = 0.1
 # Plot between -10 and 10 with .001 steps.
 x_axis = np.arange(-2, 8.1, 0.1)
 
-file1 = open("benchmarks/conjugate_gaussians/results1SMC.txt", "r")
+file1 = open_result("benchmarks/conjugate_gaussians/results1SMC.txt", "r")
 lines1 = file1.readlines(100000)
 # print(lines1[1:-1])
 mcmc_samples = []
@@ -26,7 +50,7 @@ for i in lines1[1:-1]:
         mcmc_samples.append(float(j.strip(" ,\n")))
 ax.hist(mcmc_samples, bins = np.arange(-2, 6 + w, w), alpha = 0.25, color="red")
 
-file1 = open("benchmarks/conjugate_gaussians/results1MCMC.txt", "r")
+file1 = open_result("benchmarks/conjugate_gaussians/results1MCMC.txt", "r")
 lines1 = file1.readlines(100000)
 # print(lines1[1:-1])
 mcmc_samples = []

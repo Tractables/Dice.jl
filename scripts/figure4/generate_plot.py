@@ -2,6 +2,30 @@ import math
 import matplotlib.pyplot as plt
 import numpy as np
 from matplotlib import ticker
+import sys
+
+added = "_new"
+if len(sys.argv) > 1:
+    added = ""
+
+print(added)
+
+
+def open_txt(filename, tag="r"):
+    f = filename.replace(".txt", added + ".txt")
+    try:
+        file_handle = open(f, tag)
+    except:
+        file_handle = open(filename, tag)
+    return file_handle
+
+def open_result(filename, tag="r"):
+    f = filename.replace("result_", "result_" + added)
+    try:
+        file_handle = open(f, tag)
+    except:
+        file_handle = open(filename, tag)
+    return file_handle
 
 fig, ax = plt.subplots()
 plt.rcParams["figure.figsize"] = [4.5, 4.50]
@@ -53,7 +77,7 @@ scale_y = 100
 ticks_y = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x/scale_y))
 ax.yaxis.set_major_formatter(ticks_y)
 
-file1 = open("benchmarks/multimodal/result1MCMC.txt", "r")
+file1 = open_result("benchmarks/multimodal/result1MCMC.txt", "r")
 lines1 = file1.readlines(100000)
 print(lines1[1:-1])
 mcmc_samples = []
@@ -63,7 +87,7 @@ for i in lines1[1:-1]:
         mcmc_samples.append(float(j.strip(" ,\n")))
 ax.hist(mcmc_samples, bins = np.arange(-6, 6 + w, w), alpha = 0.25, color="red")
 
-file2 = open("benchmarks/multimodal/result2MCMC.txt", "r")
+file2 = open_result("benchmarks/multimodal/result2MCMC.txt", "r")
 lines2 = file2.readlines(100000)
 mcmc_samples2 = []
 for i in lines2[1:-1]:
@@ -96,7 +120,7 @@ scale_y = 100
 ticks_y = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x/scale_y))
 ax.yaxis.set_major_formatter(ticks_y)
 
-file1 = open("benchmarks/multimodal/result1SMC.txt", "r")
+file1 = open_result("benchmarks/multimodal/result1SMC.txt", "r")
 lines1 = file1.readlines(100000)
 smc_samples = []
 for i in lines1[1:-1]:

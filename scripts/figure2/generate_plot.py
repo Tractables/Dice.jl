@@ -5,10 +5,33 @@ import statistics
 import csv
 import matplotlib.pyplot as plt
 
+added = "_new"
+if len(sys.argv) > 1:
+    added = ""
+
+print(added)
+
+
+def open_txt(filename, tag="r"):
+    f = filename.replace(".txt", added + ".txt")
+    try:
+        file_handle = open(f, tag)
+    except:
+        file_handle = open(filename, tag)
+    return file_handle
+
+def open_result(filename, tag="r"):
+    f = filename.replace("results_", "results_" + added)
+    try:
+        file_handle = open(f, tag)
+    except:
+        file_handle = open(filename, tag)
+    return file_handle
+
 gt = 0.5
 
 def stan_accuracy(T, var_name, gt, benchmark_name):
-    file_handle = open(f"baselines/stan/or/results_{T}.txt", "r")
+    file_handle = open_result(f"baselines/stan/or/results_{T}.txt", "r")
     lines = file_handle.readlines()
 
     answer = 0
@@ -17,15 +40,11 @@ def stan_accuracy(T, var_name, gt, benchmark_name):
         if current != []:
             if current[0] == var_name:
                 answer = float(current[1])
-
-    handle2 = open("../stan_results.txt", "a")
-    handle2.writelines(benchmark_name + "," + var_name + "," + str(abs(gt - answer)) + "\n")
-    handle2.close()
-    print(answer)
+    # print(answer)
     return abs(gt - answer)
 
 def Dice_accuracy(T, result_file, gt, position, flag):
-    file_handle = open(f"benchmarks/or/results_{T}.txt", "r")
+    file_handle = open_result(f"benchmarks/or/results_{T}.txt", "r")
     lines = file_handle.readlines()
     
     min_error = 100000000
@@ -63,7 +82,7 @@ def WebPPL_accuracy(T, method, gt):
     else:
         number = 16
     filename = f"baselines/webppl/or_{T}"+"/output_"+method+"_"+str(number)+".txt"
-    file_handle = open(filename, "r")
+    file_handle = open_txt(filename, "r")
 
     lines = file_handle.readlines()
     for i in lines:
@@ -89,7 +108,7 @@ stan_res = []
 for i in stan_files:
     stan_res.append(stan_accuracy(i, "prior1", gt, f"or_{i}"))
 
-print(stan_res)
+# print(stan_res)
 
 # Collecting HyBit numbers
 dice_files2 = [i for i in range(5, 55, 5)]
@@ -110,7 +129,7 @@ smc_res = []
 for i in webppl_files2:
     smc_res.append(WebPPL_accuracy(i, "SMC", gt))
 
-print(mcmc_res, smc_res)
+# print(mcmc_res, smc_res)
 
 # gubpi numbers
 
