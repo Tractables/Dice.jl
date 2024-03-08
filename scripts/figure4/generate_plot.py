@@ -38,7 +38,7 @@ ax.plot([i for i in np.arange(-8, 8, 0.015625)], hybit_data, color="purple")
 ax.legend(["HyBit", "Stan HMC Run 1", "Stan HMC Run 2"])
 ax.set_xlabel("mu1")
 
-fig.savefig("multimodal_hmc.pdf", bbox_inches='tight')
+fig.savefig("results/multimodal_hmc.pdf", bbox_inches='tight')
 
 fig, ax = plt.subplots()
 plt.rcParams["figure.figsize"] = [4.5, 4.50]
@@ -81,7 +81,7 @@ ax.legend(["HyBit", "MCMC MH Run 1", "MCMC MH Run 2"])
 ax.set_xlabel("mu1")
 ax.set_ylabel("pr(mu1)")
 
-fig.savefig("multimodal_mcmc_mh.pdf", bbox_inches='tight')
+fig.savefig("results/multimodal_mcmc_mh.pdf", bbox_inches='tight')
 
 fig, ax = plt.subplots()
 plt.rcParams["figure.figsize"] = [4.5, 4.50]
@@ -113,7 +113,7 @@ ax.plot([i for i in np.arange(-8, 8, 0.015625)], hybit_data, color="purple")
 ax.legend(["HyBit", "SMC Run"])
 ax.set_xlabel("mu1")
 
-fig.savefig("multimodal_smc.pdf", bbox_inches='tight')
+fig.savefig("results/multimodal_smc.pdf", bbox_inches='tight')
 
 file = open("benchmarks/multimodal/multimodal/analysis_mu1.txt")
 data = file.readlines()
@@ -146,4 +146,4 @@ scale_y = 100
 ticks_y = ticker.FuncFormatter(lambda x, pos: '{0:g}'.format(x/scale_y))
 ax.yaxis.set_major_formatter(ticks_y)
 
-fig.savefig("multimodal_aqua.pdf", bbox_inches='tight')
+fig.savefig("results/multimodal_aqua.pdf", bbox_inches='tight')

@@ -202,7 +202,7 @@ for i in table:
 
 
 
-print(tabulate(table))
+print(tabulate(table, floatfmt=(".2f", ".2f", ".2f", ".2f")))
 
 
 
