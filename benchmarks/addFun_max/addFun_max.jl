@@ -22,7 +22,7 @@ end)
 
 p = t.value
 
-io = open(string("./benchmarks/addFun_max/results.txt"), "a")
+io = open(string("./benchmarks/addFun_max/results_new.txt"), "a")
 @show bits, pieces, p, t.time
 writedlm(io, [bits pieces p t.time], ",")  
 close(io)

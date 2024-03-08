@@ -36,7 +36,7 @@ end)
 
 p = t.value
 
-io = open(string("./benchmarks/clickGraph/results.txt"), "a")
+io = open(string("./benchmarks/clickGraph/results_new.txt"), "a")
 @show bits, p, t.time
 writedlm(io, [bits p t.time], ",")  
 close(io)

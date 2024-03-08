@@ -28,7 +28,7 @@ end;ignore_errors=true)
 p = t.value
 
 
-io = open(string("./benchmarks/pi/results.txt"), "a")
+io = open(string("./benchmarks/pi/results_new.txt"), "a")
 @show b, p[1.0], t.time
 writedlm(io, [b p[1.0] t.time], ",")  
 close(io)

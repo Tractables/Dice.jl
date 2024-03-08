@@ -42,7 +42,7 @@ end)
 
 p = t.value
 
-io = open(string("./benchmarks/normal_mixture_theta/results.txt"), "a")
+io = open(string("./benchmarks/normal_mixture_theta/results_new.txt"), "a")
 @show bits, pieces, p, flag, t.time
 writedlm(io, [bits pieces p flag t.time], ",")  
 close(io)

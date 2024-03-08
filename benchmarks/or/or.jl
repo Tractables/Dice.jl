@@ -43,7 +43,7 @@ t = @timed expectation(@dice begin
 end)
     
 p = t.value
-io = open(string("./benchmarks/or/results_")*string(n_vars)*string("_new.txt"), "a")
+io = open(string("./benchmarks/or/results_new")*string(n_vars)*string(".txt"), "a")
 @show bits, pieces, p, t.time
 writedlm(io, [bits pieces p t.time], ",")  
 close(io)

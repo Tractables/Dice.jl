@@ -38,7 +38,7 @@ t = @timed expectation(@dice begin
 
 p = t.value
 
-io = open(string("./benchmarks/zeroone_w2/results.txt"), "a")
+io = open(string("./benchmarks/zeroone_w2/results_new.txt"), "a")
 @show bits, p, flag, t.time
 writedlm(io, [bits p flag t.time], ",")  
 close(io)

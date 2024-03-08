@@ -5,7 +5,7 @@ import statistics
 import csv
 import matplotlib.pyplot as plt
 
-filehandle = open("./mini-experiments/expectation_variance/exp_var.txt")
+filehandle = open("./mini-experiments/expectation_variance/exp_var_new.txt")
 lines = filehandle.readlines()
 
 plt.rcParams["figure.figsize"] = [5.50, 3.50]

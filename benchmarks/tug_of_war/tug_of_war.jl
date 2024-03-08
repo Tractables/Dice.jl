@@ -37,7 +37,7 @@ t = @timed pr(@dice begin
 
 p = t.value
 
-io = open(string("./benchmarks/tug_of_war/results.txt"), "a")
+io = open(string("./benchmarks/tug_of_war/results_new.txt"), "a")
 @show bits, pieces, p[1.0], t.time
 writedlm(io, [bits pieces p[1.0] t.time], ",")  
 close(io)
