@@ -5,4 +5,4 @@ code = @dice begin
             b = a < DFiP(0.0)
             b
 end
-pr(code)
+@show pr(code)
