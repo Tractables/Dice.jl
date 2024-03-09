@@ -2,19 +2,21 @@ flatten = Iterators.flatten
 
 function typebased_rbt_to_coq(p, adnodes_vals, io)
     w(s) = thousandths(adnodes_vals[s])
-    red_wt_key(sz) = if p.color_by_size "red_sz$(sz)" else "red" end
-    red_wt(sz) = w(red_wt_key(sz))
-    leaf_wt_key(sz) = "leaf_sz$(sz)"
-    leaf_wt(sz) = w(leaf_wt_key(sz))
+    ap(s, rp) = if rp || !p.use_parent_color "$(s)_redparent" else "$(s)_blackparent" end
+    red_wt_key(sz, rp) = ap(if p.color_by_size "red_sz$(sz)" else "red" end, rp)
+    red_wt(sz, rp) = w(red_wt_key(sz, rp))
+    leaf_wt_key(sz, rp) = ap("leaf_sz$(sz)", rp)
+    leaf_wt(sz, rp) = w(leaf_wt_key(sz, rp))
 
     expected_keys = Set(
         flatten(
             if p.learn_leaf_weights
-                ([red_wt_key(sz),leaf_wt_key(sz)])
+                ([red_wt_key(sz, rp),leaf_wt_key(sz, rp)])
             else
-                ([red_wt_key(sz)])
+                ([red_wt_key(sz, rp)])
             end
-            for sz in 1:p.size
+            for (sz, rp) in Base.product(1:p.size, [false, true])
+            if (sz, rp) != (p.size, true)
         ))
     @soft_assert io issetequal(keys(adnodes_vals), expected_keys) "$(adnodes_vals) $(expected_keys)"
     """
@@ -44,21 +46,29 @@ Fixpoint get {a: Type} (l : list (nat * a)) (target_key : nat) (default : a): a 
 Definition manual_gen_tree :=
     fun s : nat =>
     (let
-       fix arb_aux (size : nat) : G Tree :=
-         let weight_red := get [
-          $(
-            join(["($(sz), $(red_wt(sz)))" for sz in 1:p.size], "; ")
-          )
-         ] s 0 in
+       fix arb_aux (size : nat) (parent_color : Color) : G Tree :=
+         let weight_red := match parent_color with 
+         | R =>
+          get [
+            $(join(["($(sz), $(red_wt(sz, true)))" for sz in 1:p.size - 1], "; "))
+          ] s 0
+         | B =>
+          get [
+            $(join(["($(sz), $(red_wt(sz, false)))" for sz in 1:p.size], "; "))
+          ] s 0
+         end in
          let weight_leaf := $(
-          if p.learn_leaf_weights
-          "get [
-          $(
-            join(["($(sz), $(leaf_wt(sz)))" for sz in 1:p.size], "; ")
-          )
-         ] s 0"
-          else "500" end
-         ) in
+if p.learn_leaf_weights "match parent_color with 
+         | R =>
+          get [
+            $(join(["($(sz), $(leaf_wt(sz, true)))" for sz in 1:p.size - 1], "; "))
+          ] s 0
+         | B =>
+          get [
+            $(join(["($(sz), $(leaf_wt(sz, false)))" for sz in 1:p.size], "; "))
+          ] s 0
+         end"
+else "500" end) in
          match size with
          | 0 => returnGen E
          | S size' =>
@@ -66,20 +76,20 @@ Definition manual_gen_tree :=
              (1000 - weight_leaf,
              bindGen (freq [ (weight_red, returnGen R); (1000-weight_red, returnGen B)])
                (fun p0 : Color =>
-                bindGen (arb_aux size')
+                bindGen (arb_aux size' p0)
                   (fun p1 : Tree =>
                    bindGen arbitrary
                      (fun p2 : Z =>
                       bindGen arbitrary
                         (fun p3 : Z =>
-                         bindGen (arb_aux size')
+                         bindGen (arb_aux size' p0)
                            (fun p4 : Tree => returnGen (T p0 p1 p2 p3 p4)))))))]
          end in
      arb_aux) s.
 
 #[global]
 Instance genTree : GenSized (Tree) := 
-  {| arbitrarySized n := manual_gen_tree n |}.
+  {| arbitrarySized n := manual_gen_tree n B |}.
 
 (* --------------------- Tests --------------------- *)
 
