@@ -77,34 +77,64 @@ end
 
 function train!(
     var_vals::Valuation,
+    loss_lrs::Vector{<:Pair{<:ADNode, <:Real}};
+    epochs::Integer,
+    append_last_loss=true,
+    stop_if_inf_or_nan=true,
+)
+    # Unzip
+    losses = ADNode[]
+    lrs = Real[]
+    for (loss, lr) in loss_lrs
+        push!(losses, loss)
+        push!(lrs, lr)
+    end
+
+    # Expand
+    l = LogPrExpander(WMC(BDDCompiler(bool_roots(losses))))
+    losses = [expand_logprs(l, loss) for loss in losses]
+
+    curves = [[] for _ in 1:length(losses)]
+    function update_curves(vals)
+        for (i, loss) in enumerate(losses)
+            push!(curves[i], vals[loss])
+        end
+    end
+
+    for _ in 1:epochs
+        vals, derivs = differentiate(
+            var_vals,
+            Derivs(loss => lr for (loss, lr) in zip(losses, lrs))
+        )
+
+        if stop_if_inf_or_nan && any(isinf(vals[loss]) || isnan(vals[loss]) for loss in losses)
+            update_curves(vals)
+            return curves
+        end
+
+        # update vars
+        for (adnode, d) in derivs
+            if adnode isa Var
+                var_vals[adnode] -= d
+            end
+        end
+
+        update_curves(vals)
+    end
+
+    append_last_loss && update_curves(compute(var_vals, losses))
+    curves
+end
+
+function train!(
+    var_vals::Valuation,
     loss::ADNode;
     epochs::Integer,
     learning_rate::Real,
     append_last_loss=true,
     stop_if_inf_or_nan=true,
 )
-    losses = []
-    l = LogPrExpander(WMC(BDDCompiler(bool_roots([loss]))))
-    loss = expand_logprs(l, loss)
-    for _ in 1:epochs
-        vals, derivs = differentiate(var_vals, Derivs(loss => 1))
-
-        if stop_if_inf_or_nan && (isinf(vals[loss]) || isnan(vals[loss]))
-            push!(losses, vals[loss])
-            return losses
-        end
-
-        # update vars
-        for (adnode, d) in derivs
-            if adnode isa Var
-                var_vals[adnode] -= d * learning_rate
-            end
-        end
-
-        push!(losses, vals[loss])
-    end
-    append_last_loss && push!(losses, compute_mixed(var_vals, loss))
-    losses
+    train!(var_vals, [loss => learning_rate]; epochs, append_last_loss, stop_if_inf_or_nan)[1]
 end
 
 function collect_flips(bools)
