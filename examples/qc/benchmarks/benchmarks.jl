@@ -63,14 +63,14 @@ end
 emit_stats(m::SimpleLossMgr, tag) = m.emit_stats(tag)
 train!(m::SimpleLossMgr; epochs, learning_rate) = m.train!(; epochs, learning_rate)
 
-function save_learning_curve(out_dir, learning_curve)
-    open(joinpath(out_dir, "learning_curve.csv"), "w") do file
+function save_learning_curve(out_dir, learning_curve, name)
+    open(joinpath(out_dir, "$(name).csv"), "w") do file
         xs = 0:length(learning_curve)-1
         for (epoch, logpr) in zip(xs, learning_curve)
             println(file, "$(epoch)\t$(logpr)")
         end
         plot(xs, learning_curve)
-        savefig(joinpath(out_dir, "learning_curve.svg"))
+        savefig(joinpath(out_dir, "$(name).svg"))
     end
 end
 
@@ -86,7 +86,7 @@ function create_simple_loss_manager(loss, io, out_dir, var_vals)
         println(io, "  $(time_train) seconds")
         println(io)
 
-        save_learning_curve(out_dir, learning_curve)
+        save_learning_curve(out_dir, learning_curve, "loss")
     end
     SimpleLossMgr(emit_stats, f_train, loss)
 end
@@ -95,6 +95,8 @@ function train_via_sampling_entropy!(io, out_dir, var_vals, e; epochs, learning_
     learning_rate = learning_rate / samples_per_batch
 
     learning_curve = []
+    additional_learning_curve = []
+
     time_sample = 0
     time_step = 0
     println_flush(io, "Training...")
@@ -119,13 +121,18 @@ function train_via_sampling_entropy!(io, out_dir, var_vals, e; epochs, learning_
         last_batch = epochs_done + epochs_this_batch == epochs
 
         println_flush(io, "Stepping...")
-        time_step_here = @elapsed subcurve = Dice.train!(var_vals,
-            loss + (additional_loss * additional_loss_lr / learning_rate)
-            ; epochs=epochs_this_batch, learning_rate, append_last_loss=last_batch)
+        time_step_here = @elapsed subcurve, additional_subcurve = Dice.train!(
+            var_vals,
+            [loss => learning_rate, additional_loss => additional_loss_lr];
+            epochs=epochs_this_batch, append_last_loss=last_batch)
         time_step += time_step_here
         append!(learning_curve, subcurve)
+        append!(additional_learning_curve, additional_subcurve)
         println(io, "  $(time_step_here) seconds")
-        if isinf(last(learning_curve)) || isnan(last(learning_curve))
+        if (isinf(last(learning_curve)) || isnan(last(learning_curve))
+            || isinf(last(additional_learning_curve))
+            || isnan(last(additional_learning_curve))
+        )
             println(io, "Stopping early due to Inf/NaN loss")
             break
         end
@@ -135,7 +142,8 @@ function train_via_sampling_entropy!(io, out_dir, var_vals, e; epochs, learning_
     println(io, "Step time:    $(time_step) seconds")
     println(io)
 
-    save_learning_curve(out_dir, learning_curve)
+    save_learning_curve(out_dir, learning_curve, "sampling_loss")
+    save_learning_curve(out_dir, additional_learning_curve, "additional_loss")
 end
 
 ##################################
