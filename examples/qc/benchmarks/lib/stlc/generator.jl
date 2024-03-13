@@ -106,7 +106,7 @@ function tb_gen_expr(rs::RunState, sz::Integer, ty_sz, track_return)
                 DistVar(DistNat(0)), # really, this is arbitrary
                 DistBoolean(true), # really, this is arbitrary
                 begin
-                    typ = tb_gen_type(ty_sz) # TODO
+                    typ = tb_gen_type(rs, ty_sz) # TODO
                     e = tb_gen_expr(rs, sz′, ty_sz, track_return)
                     DistAbs(typ, e)
                 end,
