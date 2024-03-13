@@ -2,12 +2,12 @@ export sample, sample_as_dist
 using DirectedAcyclicGraphs: foldup
 
 """Run vanilla rejection sampling without any compilation"""
-function sample(x; evidence=true)
+function sample(rng, x; evidence=true)
     while true
         vcache = Dict()
         fl(n::Flip) = begin
             if !haskey(vcache, n)
-                vcache[n] = rand() < n.prob
+                vcache[n] = rand(rng) < n.prob
             end
             vcache[n]
         end
@@ -48,7 +48,7 @@ function sample(x; evidence=true)
     end
 end
 
-function sample_as_dist(var_vals, x; evidence=true)
+function sample_as_dist(rng, var_vals, x; evidence=true)
     a = ADComputer(var_vals)
     while true
         vcache = Dict()
@@ -59,7 +59,7 @@ function sample_as_dist(var_vals, x; evidence=true)
                 else
                     n.prob
                 end
-                vcache[n] = rand() < p
+                vcache[n] = rand(rng) < p
             end
             vcache[n]
         end
