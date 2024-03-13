@@ -1,4 +1,8 @@
+include("lib/lib.jl")
+
 using Plots
+using Random
+
 ENV["GKSwstype"] = "100" # prevent plots from displaying
 
 abstract type Benchmark end
@@ -16,35 +20,32 @@ struct BenchmarkMgr
 end
 
 function create_benchmark_manager(
-    io::IO, 
-    out_dir::String,
-    var_vals::Valuation, 
+    rs::RunState,
     generation_params::GenerationParams{T},
     loss_params::LossParams{T}
 ) where T
-    println_flush(io, "Building generation computation graph...")
-    time_build_generation = @elapsed generation = generate(generation_params)
-    println_flush(io, "  $(time_build_generation) seconds")
-    println_flush(io)
+    println_flush(rs.io, "Building generation computation graph...")
+    time_build_generation = @elapsed generation = generate(rs, generation_params)
+    println_flush(rs.io, "  $(time_build_generation) seconds")
+    println_flush(rs.io)
 
-    loss_mgr = create_loss_manager(loss_params, io, out_dir, var_vals, generation)
+    loss_mgr = create_loss_manager(rs, loss_params, generation)
 
-    function emit_stats(s::String)
-        println_flush(io, "Parameter values ($(s)):")
-        showln(io, var_vals)
+    function f_emit_stats(s::String)
+        println_flush(rs.io, "Parameter values ($(s)):")
+        showln(rs.io, rs.var_vals)
 
-        generation_emit_stats(generation, io, out_dir, s, var_vals)
-        loss_mgr.emit_stats(s)
-
-        generation_params_emit_stats(generation_params, io, out_dir, s, var_vals)
+        generation_emit_stats(rs, generation, s)
+        emit_stats(loss_mgr, s)
+        generation_params_emit_stats(rs, generation_params, s)
     end
 
-    BenchmarkMgr(emit_stats, loss_mgr)
+    BenchmarkMgr(f_emit_stats, loss_mgr)
 end
 
-function generation_params_emit_stats(generation_params, io, out_dir, s, var_vals)
-    println_flush(io, "Default generation_params_emit_stats")
-    println_flush(io)
+function generation_params_emit_stats(rs::RunState, generation_params, s)
+    println_flush(rs.io, "Default generation_params_emit_stats")
+    println_flush(rs.io)
 end
 
 struct LossMgrImpl <: LossMgr
@@ -74,24 +75,24 @@ function save_learning_curve(out_dir, learning_curve, name)
     end
 end
 
-function create_simple_loss_manager(loss, io, out_dir, var_vals)
+function create_simple_loss_manager(rs, loss)
     function emit_stats(tag)
-        loss_val = compute_mixed(var_vals, loss)
-        println(io, "Loss ($(tag)): $(loss_val)")
-        println(io)
+        loss_val = compute_mixed(rs.var_vals, loss)
+        println(rs.io, "Loss ($(tag)): $(loss_val)")
+        println(rs.io)
     end
     function f_train(; epochs, learning_rate)
-        println_flush(io, "Training...")
-        time_train = @elapsed learning_curve = Dice.train!(var_vals, loss; epochs, learning_rate)
-        println(io, "  $(time_train) seconds")
-        println(io)
+        println_flush(rs.io, "Training...")
+        time_train = @elapsed learning_curve = Dice.train!(rs.var_vals, loss; epochs, learning_rate)
+        println(rs.io, "  $(time_train) seconds")
+        println(rs.io)
 
-        save_learning_curve(out_dir, learning_curve, "loss")
+        save_learning_curve(rs.out_dir, learning_curve, "loss")
     end
     SimpleLossMgr(emit_stats, f_train, loss)
 end
 
-function train_via_sampling_entropy!(io, out_dir, var_vals, e; epochs, learning_rate, resampling_frequency, samples_per_batch, consider, ignore, additional_loss, additional_loss_lr)
+function train_via_sampling_entropy!(rs, e; epochs, learning_rate, resampling_frequency, samples_per_batch, consider, ignore, additional_loss, additional_loss_lr)
     learning_rate = learning_rate / samples_per_batch
 
     learning_curve = []
@@ -99,16 +100,16 @@ function train_via_sampling_entropy!(io, out_dir, var_vals, e; epochs, learning_
 
     time_sample = 0
     time_step = 0
-    println_flush(io, "Training...")
+    println_flush(rs.io, "Training...")
     for epochs_done in 0:resampling_frequency:epochs-1
-        println_flush(io, "Sampling...")
-        time_sample_here = @elapsed samples = with_concrete_ad_flips(var_vals, e) do
-            [sample_as_dist(Valuation(), e) for _ in 1:samples_per_batch]
+        println_flush(rs.io, "Sampling...")
+        time_sample_here = @elapsed samples = with_concrete_ad_flips(rs.var_vals, e) do
+            [sample_as_dist(rs.rng, Valuation(), e) for _ in 1:samples_per_batch]
         end
         time_sample += time_sample_here
-        println(io, "  $(time_sample_here) seconds")
+        println(rs.io, "  $(time_sample_here) seconds")
 
-        loss = -sum(
+        loss = sum(
             LogPr(prob_equals(e, sample))
             for sample in samples
             if consider(sample)
@@ -120,30 +121,30 @@ function train_via_sampling_entropy!(io, out_dir, var_vals, e; epochs, learning_
         epochs_this_batch = min(epochs - epochs_done, resampling_frequency)
         last_batch = epochs_done + epochs_this_batch == epochs
 
-        println_flush(io, "Stepping...")
+        println_flush(rs.io, "Stepping...")
         time_step_here = @elapsed subcurve, additional_subcurve = Dice.train!(
-            var_vals,
+            rs.var_vals,
             [loss => learning_rate, additional_loss => additional_loss_lr];
             epochs=epochs_this_batch, append_last_loss=last_batch)
         time_step += time_step_here
         append!(learning_curve, subcurve)
         append!(additional_learning_curve, additional_subcurve)
-        println(io, "  $(time_step_here) seconds")
+        println(rs.io, "  $(time_step_here) seconds")
         if (isinf(last(learning_curve)) || isnan(last(learning_curve))
             || isinf(last(additional_learning_curve))
             || isnan(last(additional_learning_curve))
         )
-            println(io, "Stopping early due to Inf/NaN loss")
+            println(rs.io, "Stopping early due to Inf/NaN loss")
             break
         end
 
     end
-    println(io, "Sample time:  $(time_sample) seconds")
-    println(io, "Step time:    $(time_step) seconds")
-    println(io)
+    println(rs.io, "Sample time:  $(time_sample) seconds")
+    println(rs.io, "Step time:    $(time_step) seconds")
+    println(rs.io)
 
-    save_learning_curve(out_dir, learning_curve, "sampling_loss")
-    save_learning_curve(out_dir, additional_learning_curve, "additional_loss")
+    save_learning_curve(rs.out_dir, learning_curve, "sampling_loss")
+    save_learning_curve(rs.out_dir, additional_learning_curve, "additional_loss")
 end
 
 ##################################
@@ -155,13 +156,13 @@ struct STLCGeneration <: Generation{STLC}
     e::DistI{Opt{DistI{Expr}}}
     constructors_overapproximation::Vector{DistI{Opt{DistI{Expr}}}}
 end
-function generation_emit_stats(g::STLCGeneration, io::IO, out_dir::String, s::String, var_vals::Valuation)
-    println_flush(io, "Saving samples...")
-    time_sample = @elapsed with_concrete_ad_flips(var_vals, g.e) do
-        save_samples(joinpath(out_dir, "terms_$(s).txt"), g.e; io=io)
+function generation_emit_stats(rs::RunState, g::STLCGeneration, s::String)
+    println_flush(rs.io, "Saving samples...")
+    time_sample = @elapsed with_concrete_ad_flips(rs.var_vals, g.e) do
+        save_samples(joinpath(rs.out_dir, "terms_$(s).txt"), g.e; io=rs.io)
     end
-    println(io, "  $(time_sample) seconds")
-    println(io)
+    println(rs.io, "  $(time_sample) seconds")
+    println(rs.io)
 end
 
 ##################################
@@ -172,8 +173,8 @@ struct BespokeSTLCGenerator <: GenerationParams{STLC}
     param_vars_by_size::Bool
     size::Integer
     ty_size::Integer
-    BespokeSTLCGenerator(;param_vars_by_size, size, ty_size) = new(param_vars_by_size, size, ty_size)
 end
+BespokeSTLCGenerator(;param_vars_by_size, size, ty_size) = BespokeSTLCGenerator(param_vars_by_size, size, ty_size)
 function to_subpath(p::BespokeSTLCGenerator)
     [
         "stlc",
@@ -182,15 +183,16 @@ function to_subpath(p::BespokeSTLCGenerator)
         "sz=$(p.size)-tysz=$(p.ty_size)",
     ]
 end
-function generate(p::BespokeSTLCGenerator)
+function generate(rs::RunState, p::BespokeSTLCGenerator)
     constructors_overapproximation = []
     function add_ctor(v::DistI{Opt{DistI{Expr}}})
         push!(constructors_overapproximation, v)
         v
     end
     e = gen_expr(
+        rs,
         DistNil(DistI{Typ}),
-        gen_type(p.ty_size, p.param_vars_by_size),
+        gen_type(rs, p.ty_size, p.param_vars_by_size),
         p.size,
         p.ty_size,
         p.param_vars_by_size,
@@ -199,19 +201,19 @@ function generate(p::BespokeSTLCGenerator)
     STLCGeneration(e, constructors_overapproximation)
 end
 
-function generation_params_emit_stats(p::BespokeSTLCGenerator, io, out_dir, s, var_vals)
+function generation_params_emit_stats(rs::RunState, p::BespokeSTLCGenerator, s)
     if p == BespokeSTLCGenerator(param_vars_by_size=true,size=5,ty_size=2)
-        path = joinpath(out_dir, "$(s)_Generator.v")
+        path = joinpath(rs.out_dir, "$(s)_Generator.v")
         open(path, "w") do file
-            vals = compute(var_vals, values(adnodes_of_interest))
-            adnodes_vals = Dict(s => vals[adnode] for (s, adnode) in adnodes_of_interest)
+            vals = compute(rs.var_vals, values(rs.adnodes_of_interest))
+            adnodes_vals = Dict(s => vals[adnode] for (s, adnode) in rs.adnodes_of_interest)
             println(file, bespoke_stlc_to_coq(adnodes_vals))
         end
-        println_flush(io, "Saved Coq generator to $(path)")
+        println_flush(rs.io, "Saved Coq generator to $(path)")
     else
-        println_flush(io, "Translation back to Coq not defined")
+        println_flush(rs.io, "Translation back to Coq not defined")
     end
-    println_flush(io)
+    println_flush(rs.io)
 end
 
 ##################################
@@ -221,8 +223,8 @@ end
 struct TypeBasedSTLCGenerator <: GenerationParams{STLC}
     size::Integer
     ty_size::Integer
-    TypeBasedSTLCGenerator(; size, ty_size) = new(size, ty_size)
 end
+TypeBasedSTLCGenerator(; size, ty_size) = TypeBasedSTLCGenerator(size, ty_size)
 function to_subpath(p::TypeBasedSTLCGenerator)
     [
         "stlc",
@@ -230,17 +232,13 @@ function to_subpath(p::TypeBasedSTLCGenerator)
         "sz=$(p.size)-tysz=$(p.ty_size)",
     ]
 end
-function generate(p::TypeBasedSTLCGenerator)
+function generate(rs::RunState, p::TypeBasedSTLCGenerator)
     constructors_overapproximation = []
     function add_ctor(v::DistI{Expr})
         push!(constructors_overapproximation, DistSome(v))
         v
     end
-    e = tb_gen_expr(
-        p.size,
-        p.ty_size,
-        add_ctor,
-    )
+    e = tb_gen_expr(rs, p.size, p.ty_size, add_ctor)
     STLCGeneration(DistSome(e), constructors_overapproximation)
 end
 
@@ -250,15 +248,15 @@ end
 
 struct ApproxSTLCConstructorEntropy <: SimpleLossParams{STLC} end
 to_subpath(::ApproxSTLCConstructorEntropy) = ["approx_entropy"]
-function create_loss_manager(p::ApproxSTLCConstructorEntropy, io, out_dir, var_vals, generation)
-    println_flush(io, "Building computation graph for $(p)...")
+function create_loss_manager(rs::RunState, p::ApproxSTLCConstructorEntropy, generation)
+    println_flush(rs.io, "Building computation graph for $(p)...")
     time_build_loss = @elapsed loss = sum(
         neg_entropy(opt_ctor_to_id(ctor), values(stlc_ctor_to_id), ignore_non_support=true)
         for ctor in generation.constructors_overapproximation
     )
-    println(io, "  $(time_build_loss) seconds")
-    println(io)
-    create_simple_loss_manager(loss, io, out_dir, var_vals)
+    println(rs.io, "  $(time_build_loss) seconds")
+    println(rs.io)
+    create_simple_loss_manager(rs, loss)
 end
 
 ##################################
@@ -268,15 +266,15 @@ end
 struct SamplingSTLCEntropy <: LossParams{STLC}
     resampling_frequency::Integer
     samples_per_batch::Integer
-    function SamplingSTLCEntropy(; resampling_frequency, samples_per_batch)
-        new(resampling_frequency, samples_per_batch)
-    end
+end
+function SamplingSTLCEntropy(; resampling_frequency, samples_per_batch)
+    SamplingSTLCEntropy(resampling_frequency, samples_per_batch)
 end
 to_subpath(p::SamplingSTLCEntropy) = ["sampling_entropy", "freq=$(p.resampling_frequency),spb=$(p.samples_per_batch)"]
-function create_loss_manager(p::SamplingSTLCEntropy, io, out_dir, var_vals, g::STLCGeneration)
+function create_loss_manager(rs::RunState, p::SamplingSTLCEntropy, g::STLCGeneration)
     function train!(; epochs, learning_rate)
         train_via_sampling_entropy!(
-            io, out_dir, var_vals, g.e; epochs, learning_rate,
+            rs.io, rs.out_dir, rs.var_vals, g.e; epochs, learning_rate,
             resampling_frequency=p.resampling_frequency, samples_per_batch=p.samples_per_batch,
             consider=_->true,
             ignore=_->false,
@@ -289,8 +287,8 @@ end
 
 struct NullLoss{T} <: SimpleLossParams{T} end
 to_subpath(::NullLoss) = ["null"]
-function create_loss_manager(::NullLoss{T}, io, out_dir, var_vals, g::Generation{T}) where T
-    create_simple_loss_manager(Dice.Constant(0), io, out_dir, var_vals)
+function create_loss_manager(rs::RunState, ::NullLoss{T}, ::Generation{T}) where T
+    create_simple_loss_manager(rs, Dice.Constant(0))
 end
 
 ##################################
@@ -300,21 +298,21 @@ end
 struct SamplingSTLCConstructorEntropy <: LossParams{STLC}
     resampling_frequency::Integer
     samples_per_batch::Integer
-    function SamplingSTLCConstructorEntropy(; resampling_frequency, samples_per_batch)
-        new(resampling_frequency, samples_per_batch)
-    end
+end
+function SamplingSTLCConstructorEntropy(; resampling_frequency, samples_per_batch)
+    SamplingSTLCConstructorEntropy(resampling_frequency, samples_per_batch)
 end
 to_subpath(p::SamplingSTLCConstructorEntropy) = ["sampling_ctor_entropy", "freq=$(p.resampling_frequency),spb=$(p.samples_per_batch)"]
-function create_loss_manager(p::SamplingSTLCConstructorEntropy, io, out_dir, var_vals, g::STLCGeneration)
-    println_flush(io, "Building random_ctor graph...")
+function create_loss_manager(rs::RunState, p::SamplingSTLCConstructorEntropy, g::STLCGeneration)
+    println_flush(rs.io, "Building random_ctor graph...")
     time_build_random_ctor = @elapsed random_ctor = match(g.e, [
         "Some" => e -> choice(collect_constructors(e)),
         "None" => () -> DistInt32(-1),
     ])
-    println(io, "  $(time_build_random_ctor) seconds")
+    println(rs.io, "  $(time_build_random_ctor) seconds")
     function train!(; epochs, learning_rate)
         train_via_sampling_entropy!(
-            io, out_dir, var_vals, random_ctor; epochs, learning_rate,
+            rs.io, random_ctor; epochs, learning_rate,
             resampling_frequency=p.resampling_frequency, samples_per_batch=p.samples_per_batch,
             consider=s->any(prob_equals(s, x)===true for x in values(stlc_ctor_to_id)),
             ignore=s->prob_equals(s, DistInt32(-1))===true,
@@ -331,8 +329,8 @@ end
 
 struct STLCConstructorEntropy <: SimpleLossParams{STLC} end
 to_subpath(::STLCConstructorEntropy) = ["ctor_entropy"]
-function create_loss_manager(p::STLCConstructorEntropy, io, out_dir, var_vals, generation::STLCGeneration)
-    println_flush(io, "Building computation graph for $(p)...")
+function create_loss_manager(rs::RunState, p::STLCConstructorEntropy, generation::STLCGeneration)
+    println_flush(rs.io, "Building computation graph for $(p)...")
     time_build_loss = @elapsed begin
         random_term = match(generation.e, [
             "Some" => e -> DistSome(choice(collect_constructors(e))),
@@ -340,9 +338,9 @@ function create_loss_manager(p::STLCConstructorEntropy, io, out_dir, var_vals, g
         ])
         loss = neg_entropy(random_term, Set([DistSome(i) for i in values(stlc_ctor_to_id)]))
     end
-    println(io, "  $(time_build_loss) seconds")
-    println(io)
-    create_simple_loss_manager(loss, io, out_dir, var_vals)
+    println(rs.io, "  $(time_build_loss) seconds")
+    println(rs.io)
+    create_simple_loss_manager(rs, loss)
 end
 
 ##################################
@@ -354,7 +352,7 @@ struct BSTGeneration <: Generation{BST}
     t::DistI{Tree}
     constructors_overapproximation::Vector{DistI{Tree}}
 end
-function generation_emit_stats(g::BSTGeneration, io::IO, out_dir::String, s::String, var_vals::Valuation)
+function generation_emit_stats(rs::RunState, g::BSTGeneration, s::String)
 end
 
 ##################################
@@ -377,8 +375,8 @@ end
 struct BespokeBSTGenerator <: GenerationParams{BST}
     size::Integer
     vals::BSTValues
-    BespokeBSTGenerator(; size, vals) = new(size, vals)
 end
+BespokeBSTGenerator(; size, vals) = BespokeBSTGenerator(size, vals)
 function to_subpath(p::BespokeBSTGenerator)
     [
         "bst",
@@ -387,18 +385,18 @@ function to_subpath(p::BespokeBSTGenerator)
         "sz=$(p.size)",
     ]
 end
-function generate(p::BespokeBSTGenerator)
+function generate(rs::RunState, p::BespokeBSTGenerator)
     constructors_overapproximation = []
     function add_ctor(v::DistI{Tree})
         push!(constructors_overapproximation, v)
         v
     end
     t = if p.vals == BSTDummyVals
-        gen_tree_dummy_vals(p.size, add_ctor)
+        gen_tree_dummy_vals(rs, p.size, add_ctor)
     elseif p.vals == BSTApproxVals
-        gen_tree(p.size, DistNat(0), DistNat(40), true, add_ctor)
+        gen_tree(rs, p.size, DistNat(0), DistNat(40), true, add_ctor)
     elseif p.vals == BSTActualVals
-        gen_tree(p.size, DistNat(0), DistNat(40), false, add_ctor)
+        gen_tree(rs, p.size, DistNat(0), DistNat(40), false, add_ctor)
     else
         error()
     end
@@ -412,8 +410,8 @@ end
 
 struct TypeBasedBSTGenerator <: GenerationParams{BST}
     size::Integer
-    TypeBasedBSTGenerator(; size) = new(size)
 end
+TypeBasedBSTGenerator(; size) = TypeBasedBSTGenerator(size)
 function to_subpath(p::TypeBasedBSTGenerator)
     [
         "bst",
@@ -421,13 +419,13 @@ function to_subpath(p::TypeBasedBSTGenerator)
         "sz=$(p.size)",
     ]
 end
-function generate(p::TypeBasedBSTGenerator)
+function generate(rs::RunState, p::TypeBasedBSTGenerator)
     constructors_overapproximation = []
     function add_ctor(v::DistI{Tree})
         push!(constructors_overapproximation, v)
         v
     end
-    t = typebased_gen_tree(p.size, add_ctor)
+    t = typebased_gen_tree(rs, p.size, add_ctor)
     BSTGeneration(t, constructors_overapproximation)
 end
 
@@ -438,15 +436,15 @@ end
 struct SamplingBSTEntropy <: LossParams{BST}
     resampling_frequency::Integer
     samples_per_batch::Integer
-    function SamplingBSTEntropy(; resampling_frequency, samples_per_batch)
-        new(resampling_frequency, samples_per_batch)
-    end
+end
+function SamplingBSTEntropy(; resampling_frequency, samples_per_batch)
+    SamplingBSTEntropy(resampling_frequency, samples_per_batch)
 end
 to_subpath(p::SamplingBSTEntropy) = ["sampling_entropy", "freq=$(p.resampling_frequency),spb=$(p.samples_per_batch)"]
-function create_loss_manager(p::SamplingBSTEntropy, io, out_dir, var_vals, g::BSTGeneration)
+function create_loss_manager(rs::RunState, p::SamplingBSTEntropy, g::BSTGeneration)
     function train!(; epochs, learning_rate)
         train_via_sampling_entropy!(
-            io, out_dir, var_vals, g.t; epochs, learning_rate,
+            rs, g.t; epochs, learning_rate,
             resampling_frequency=p.resampling_frequency, samples_per_batch=p.samples_per_batch,
             consider=_->true,
             ignore=_->false,
@@ -463,15 +461,15 @@ end
 
 struct ApproxBSTConstructorEntropy <: SimpleLossParams{BST} end
 to_subpath(::ApproxBSTConstructorEntropy) = ["approx_ctor_entropy"]
-function create_loss_manager(p::ApproxBSTConstructorEntropy, io, out_dir, var_vals, generation::BSTGeneration)
-    println_flush(io, "Building computation graph for $(p)...")
+function create_loss_manager(rs::RunState, p::ApproxBSTConstructorEntropy, generation::BSTGeneration)
+    println_flush(rs.io, "Building computation graph for $(p)...")
     time_build_loss = @elapsed loss = sum(
         neg_entropy(ctor_to_id(ctor), values(bst_ctor_to_id), ignore_non_support=true)
         for ctor in generation.constructors_overapproximation
     )
-    println(io, "  $(time_build_loss) seconds")
-    println(io)
-    create_simple_loss_manager(loss, io, out_dir, var_vals)
+    println(rs.io, "  $(time_build_loss) seconds")
+    println(rs.io)
+    create_simple_loss_manager(rs, loss)
 end
 
 ##################################
@@ -517,24 +515,24 @@ struct MLELossParams{T} <: SimpleLossParams{T}
     MLELossParams(; metric::Metric{T}, target_dist) where T = new{T}(metric, target_dist)
 end
 to_subpath(p::MLELossParams) = [name(p.metric), name(p.target_dist)]
-function create_loss_manager(p::MLELossParams, io, out_dir, var_vals, generation)
-    println_flush(io, "Building computation graph for $(p)...")
+function create_loss_manager(rs::RunState, p::MLELossParams, generation)
+    println_flush(rs.io, "Building computation graph for $(p)...")
     time_build_loss = @elapsed begin
         metric = compute_metric(p.metric, generation)
         loss = metric_loss(metric, p.target_dist)
     end
-    println(io, "  $(time_build_loss) seconds")
-    println(io)
+    println(rs.io, "  $(time_build_loss) seconds")
+    println(rs.io)
 
-    mgr = create_simple_loss_manager(loss, io, out_dir, var_vals)
+    mgr = create_simple_loss_manager(rs, loss)
 
     # Also save distribution of metric being trained
     function f_emit′(tag)
-        println_flush(io, "Saving $(tag) distribution...")
-        time_infer = @elapsed metric_dist = pr_mixed(var_vals)(metric)
-        println(io, "  $(time_infer) seconds")
-        save_metric_dist(joinpath(out_dir, "dist_$(name(p.metric))_$(tag).csv"), metric_dist; io)
-        println(io)
+        println_flush(rs.io, "Saving $(tag) distribution...")
+        time_infer = @elapsed metric_dist = pr_mixed(rs.var_vals)(metric)
+        println(rs.io, "  $(time_infer) seconds")
+        save_metric_dist(joinpath(rs.out_dir, "dist_$(name(p.metric))_$(tag).csv"), metric_dist; rs.io)
+        println(rs.io)
 
         emit_stats(mgr, tag)
     end
@@ -598,15 +596,15 @@ function to_subpath(p::MixedLossParams)
         "_AND_"
     )]
 end
-function create_loss_manager(p::MixedLossParams{T}, io, out_dir, var_vals, generation::Generation{T}) where T
+function create_loss_manager(rs::RunState, p::MixedLossParams{T}, generation::Generation{T}) where T
     mixed_loss = Dice.Constant(0)
     mgrs = SimpleLossMgr[]
     for (subp, weight) in p.weighted_losses
-        mgr::SimpleLossMgr = create_loss_manager(subp, io, out_dir, var_vals, generation)
+        mgr::SimpleLossMgr = create_loss_manager(rs, subp, generation)
         push!(mgrs, mgr)
         mixed_loss += Dice.Constant(weight) * mgr.loss
     end
-    mgr = create_simple_loss_manager(mixed_loss, io, out_dir, var_vals)
+    mgr = create_simple_loss_manager(rs, mixed_loss)
 
     # also emit for submgrs
     function emit_stats(tag)
@@ -626,7 +624,7 @@ abstract type RBT <: Benchmark end
 struct RBTGeneration <: Generation{RBT}
     t::DistI{RBTree}
 end
-function generation_emit_stats(g::RBTGeneration, io::IO, out_dir::String, s::String, var_vals::Valuation)
+function generation_emit_stats(::RunState, g::RBTGeneration, s::String)
 end
 
 ##################################
@@ -638,9 +636,9 @@ struct TypeBasedRBTGenerator <: GenerationParams{RBT}
     color_by_size::Bool
     learn_leaf_weights::Bool
     use_parent_color::Bool
-    TypeBasedRBTGenerator(; size, color_by_size, learn_leaf_weights, use_parent_color) =
-        new(size, color_by_size, learn_leaf_weights, use_parent_color)
 end
+TypeBasedRBTGenerator(; size, color_by_size, learn_leaf_weights, use_parent_color) =
+    TypeBasedRBTGenerator(size, color_by_size, learn_leaf_weights, use_parent_color)
 function to_subpath(p::TypeBasedRBTGenerator)
     [
         "rbt",
@@ -651,17 +649,17 @@ function to_subpath(p::TypeBasedRBTGenerator)
         "use_parent_color=$(p.use_parent_color)",
     ]
 end
-function generate(p::TypeBasedRBTGenerator)
-    RBTGeneration(tb_gen_rbt(p, p.size, false))
+function generate(rs::RunState, p::TypeBasedRBTGenerator)
+    RBTGeneration(tb_gen_rbt(rs, p, p.size, false))
 end
-function generation_params_emit_stats(p::TypeBasedRBTGenerator, io, out_dir, s, var_vals)
-    path = joinpath(out_dir, "$(s)_Generator.v")
+function generation_params_emit_stats(rs::RunState, p::TypeBasedRBTGenerator, s)
+    path = joinpath(rs.out_dir, "$(s)_Generator.v")
     open(path, "w") do file
-        vals = compute(var_vals, values(adnodes_of_interest))
-        adnodes_vals = Dict(s => vals[adnode] for (s, adnode) in adnodes_of_interest)
-        println(file, typebased_rbt_to_coq(p, adnodes_vals, io))
+        vals = compute(rs.var_vals, values(rs.adnodes_of_interest))
+        adnodes_vals = Dict(s => vals[adnode] for (s, adnode) in rs.adnodes_of_interest)
+        println(file, typebased_rbt_to_coq(p, adnodes_vals, rs.io))
     end
-    println_flush(io, "Saved Coq generator to $(path)")
+    println_flush(rs.io, "Saved Coq generator to $(path)")
 end
 
 abstract type Property{T} end
@@ -670,25 +668,25 @@ struct SatisfyPropertyLoss{T} <: SimpleLossParams{T}
     property::Property{T}
 end
 to_subpath(p::SatisfyPropertyLoss) = [name(p.property)]
-function create_loss_manager(p::SatisfyPropertyLoss, io, out_dir, var_vals, generation)
-    println_flush(io, "Building computation graph for $(p)...")
+function create_loss_manager(rs::RunState, p::SatisfyPropertyLoss, generation)
+    println_flush(rs.io, "Building computation graph for $(p)...")
     time_build_loss = @elapsed begin
         meets_property = check_property(p.property, generation)
         loss = -LogPr(meets_property)
     end
-    println(io, "  $(time_build_loss) seconds")
-    println(io)
+    println(rs.io, "  $(time_build_loss) seconds")
+    println(rs.io)
 
-    mgr = create_simple_loss_manager(loss, io, out_dir, var_vals)
+    mgr = create_simple_loss_manager(rs, loss)
 
     # Also print probability that property is met
     function f_emit′(tag)
-        println_flush(io, "Checking pr property met...")
-        time_infer = @elapsed p_meets = pr_mixed(var_vals)(meets_property)[true]
-        println(io, "  $(time_infer) seconds")
+        println_flush(rs.io, "Checking pr property met...")
+        time_infer = @elapsed p_meets = pr_mixed(rs.var_vals)(meets_property)[true]
+        println(rs.io, "  $(time_infer) seconds")
 
-        println_flush(io, "Pr meets property: $(p_meets)")
-        println_flush(io)
+        println_flush(rs.io, "Pr meets property: $(p_meets)")
+        println_flush(rs.io)
 
         emit_stats(mgr, tag)
     end
@@ -740,11 +738,11 @@ to_subpath(p::SamplingRBTEntropy) = [
     "additional_loss=$(join(to_subpath(p.additional_loss_params),"-"))",
     "allr=$(p.additional_loss_lr)",
 ]
-function create_loss_manager(p::SamplingRBTEntropy, io, out_dir, var_vals, g::RBTGeneration)
-    mgr::SimpleLossMgr = create_loss_manager(p.additional_loss_params, io, out_dir, var_vals, g)
+function create_loss_manager(rs::RunState, p::SamplingRBTEntropy, g::RBTGeneration)
+    mgr::SimpleLossMgr = create_loss_manager(rs, p.additional_loss_params, g)
     function train!(; epochs, learning_rate)
         train_via_sampling_entropy!(
-            io, out_dir, var_vals, g.t; epochs, learning_rate,
+            rs, g.t; epochs, learning_rate,
             resampling_frequency=p.resampling_frequency, samples_per_batch=p.samples_per_batch,
             consider=_->true,
             ignore=_->false,
@@ -757,6 +755,6 @@ end
 
 struct NullLoss{T} <: SimpleLossParams{T} end
 to_subpath(::NullLoss) = ["null"]
-function create_loss_manager(::NullLoss{T}, io, out_dir, var_vals, g::Generation{T}) where T
-    create_simple_loss_manager(Dice.Constant(0), io, out_dir, var_vals)
+function create_loss_manager(rs::RunState, ::NullLoss{T}) where T
+    create_simple_loss_manager(rs, Dice.Constant(0))
 end

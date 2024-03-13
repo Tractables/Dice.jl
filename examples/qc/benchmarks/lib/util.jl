@@ -1,20 +1,20 @@
-function backtrack_for(name, opts::Vector{DistI{Opt{T}}})::DistI{Opt{T}} where T
+function backtrack_for(rs, name, opts::Vector{DistI{Opt{T}}})::DistI{Opt{T}} where T
     first_some(T, shuffle_for(name, opts))
 end
 
-function shuffle_for(name, xs)
+function shuffle_for(rs, name, xs)
     # Hand-build shuffle for lengths 2 and 3
     @dice_ite if length(xs) == 2
-        pr_var2 = register_weight!("$(name)_pr_var2")
+        pr_var2 = register_weight!(rs, "$(name)_pr_var2")
         if flip(pr_var2)
             [xs[1], xs[2]]
         else
             [xs[2], xs[1]]
         end
     elseif length(xs) == 3
-        var = register_weight!("$(name)_var")
-        app = register_weight!("$(name)_app")
-        val = register_weight!("$(name)_abs")
+        var = register_weight!(rs, "$(name)_var")
+        app = register_weight!(rs, "$(name)_app")
+        val = register_weight!(rs, "$(name)_abs")
         if flip(var / (var + app + val))
             # var is first
             if flip(app / (app + val))
@@ -73,8 +73,8 @@ function map(::Type{RetT}) where RetT
     end
 end
 
-function frequency_for(name, xs)
-    weights = [register_weight!("$(name)_$(i)") for i in 1:length(xs)]
+function frequency_for(rs, name, xs)
+    weights = [register_weight!(rs, "$(name)_$(i)") for i in 1:length(xs)]
     res = last(xs)
     weight_sum = last(weights)
     for i in length(xs) - 1 : -1 : 1
@@ -190,3 +190,33 @@ atexit() do
         exit(1)
     end
 end
+
+function register_weight!(rs, s)
+    var = Var("$(s)_before_sigmoid")
+    if !haskey(rs.var_vals, var) || rs.var_vals[var] == 0
+        rs.var_vals[var] = 0
+    else
+        println("WARNING: not registering fresh weight for $(s)")
+    end
+    # if random_value
+    #     rs.var_vals[var] = inverse_sigmoid(rand(rs.rng))
+    # end
+    weight = sigmoid(var)
+    rs.adnodes_of_interest[s] = weight
+    weight
+end
+
+function print_adnodes_of_interest(rs::RunState, s::String)
+    println_flush(rs.io, "ADNodes of interest ($(s)):")
+    vals = compute(rs.var_vals, values(rs.adnodes_of_interest))
+    d = Dict(s => vals[adnode] for (s, adnode) in rs.adnodes_of_interest)
+    showln(rs.io, d)
+end
+
+function println_loud(rs::RunState, x)
+    for io in Set([rs.io, stdout])
+        println_flush(io, x)
+    end
+end
+
+println_loud(rs) = println_loud(rs, "")
