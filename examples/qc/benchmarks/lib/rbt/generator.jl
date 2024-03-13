@@ -41,15 +41,15 @@ Coq < Coq < Coq < GenSizedTree =
 |}
      : GenSized Tree
 ==#
-function tb_gen_rbt(p, sz, parent_red)
+function tb_gen_rbt(rs, p, sz, parent_red)
     if sz == 0
         DistRBE()
     else
         flip_leaf = if p.learn_leaf_weights
             @dice_ite if parent_red | !p.use_parent_color
-                flip(register_weight!("leaf_sz$(sz)_redparent"))
+                flip(register_weight!(rs, "leaf_sz$(sz)_redparent"))
             else
-                flip(register_weight!("leaf_sz$(sz)_blackparent"))
+                flip(register_weight!(rs, "leaf_sz$(sz)_blackparent"))
             end
         else
             flip(.5)
@@ -58,15 +58,15 @@ function tb_gen_rbt(p, sz, parent_red)
             DistRBE()
         else
             flip_red = @dice_ite if parent_red | !p.use_parent_color
-                flip(register_weight!(if p.color_by_size "red_sz$(sz)_redparent" else "red_redparent" end))
+                flip(register_weight!(rs, if p.color_by_size "red_sz$(sz)_redparent" else "red_redparent" end))
             else
-                flip(register_weight!(if p.color_by_size "red_sz$(sz)_blackparent" else "red_blackparent" end))
+                flip(register_weight!(rs, if p.color_by_size "red_sz$(sz)_blackparent" else "red_blackparent" end))
             end
             color = if flip_red DistRed() else DistBlack() end
             k = DistInt32(0)
             v = DistInt32(0)
-            l = tb_gen_rbt(p, sz - 1, flip_red)
-            r = tb_gen_rbt(p, sz - 1, flip_red)
+            l = tb_gen_rbt(rs, p, sz - 1, flip_red)
+            r = tb_gen_rbt(rs, p, sz - 1, flip_red)
             DistRBT(color, l, k, v, r)
         end
     end
