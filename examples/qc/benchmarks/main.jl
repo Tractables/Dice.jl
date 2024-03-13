@@ -1,45 +1,41 @@
 include("benchmarks.jl")
 
 GENERATION_PARAMS_LIST = [
-    TypeBasedRBTGenerator(size=2, color_by_size=true, learn_leaf_weights=true, use_parent_color=true),
+    TypeBasedRBTGenerator(size=2,color_by_size=true,learn_leaf_weights=true,use_parent_color=true),
 ]
 
-LOSS_PARAMS_LIST = [
-    SamplingRBTEntropy(
-        resampling_frequency=5,
-        samples_per_batch=1000,
-        additional_loss_params=NullLoss{RBT}(),
-        additional_loss_lr=0.,
-    ),
-    SamplingRBTEntropy(
-        resampling_frequency=5,
-        samples_per_batch=1000,
-        additional_loss_params=SatisfyPropertyLoss(MultipleInvariants([
-            BookkeepingInvariant(),
-            BalanceInvariant(),
-        ])),
-        additional_loss_lr=0.0003,
-    ),
+LOSS_CONFIG_WEIGHT_PAIRS_LIST = [
+    [
+        SamplingEntropy{RBT}(resampling_frequency=5, samples_per_batch=1000) => 0.3,
+    ],
+    [
+        SamplingEntropy{RBT}(resampling_frequency=5, samples_per_batch=1000) => 0.3,
+        SatisfyPropertyLoss(MultipleInvariants([
+            BookkeepingInvariant(), BalanceInvariant(),
+        ])) => 0.0003,
+    ],
 ]
 
-LEARNING_RATE_LIST = [0.3]
 EPOCHS_LIST = [20]
 
 SEED = 0
 TAG = "pre_v12_neg_refac"
 
 for (
-    generation_params, loss_params, learning_rate, epochs
+    generation_params, loss_config_weight_pairs, epochs
 ) in Base.product(
-    GENERATION_PARAMS_LIST, LOSS_PARAMS_LIST, LEARNING_RATE_LIST, EPOCHS_LIST
+    GENERATION_PARAMS_LIST, LOSS_CONFIG_WEIGHT_PAIRS_LIST, EPOCHS_LIST
 )
     out_dir = joinpath(
         vcat(
             ["examples/qc/benchmarks/output"],
             [TAG],
             to_subpath(generation_params),
-            to_subpath(loss_params),
-            ["epochs=$(epochs)-learning_rate=$(learning_rate)"],
+            vcat([
+                vcat(to_subpath(c), ["$(w)"])
+                for (c, w) in loss_config_weight_pairs
+            ]...),
+            ["epochs=$(epochs)"],
         )
     )
     log_path = joinpath(out_dir, "log.log")
@@ -58,21 +54,15 @@ for (
     println_loud(rs, "== Config ==")
     println_loud(rs, "TAG: $(TAG)")
     println_loud(rs, generation_params)
-    println_loud(rs, loss_params)
+    println_loud(rs, loss_config_weight_pairs)
     println_loud(rs, "Epochs: $(epochs)")
-    println_loud(rs, "Learning rate: $(learning_rate)")
     println_loud(rs, "DistNat: $(DistNat)")
     println_loud(rs, "SEED: $(SEED)")
     println_loud(rs)
     println("Logging to $(log_path)")
     println()
 
-    mgr = create_benchmark_manager(rs, generation_params, loss_params)
-    print_adnodes_of_interest(rs, "initial")
-    mgr.emit_stats("initial")
-    mgr.loss_mgr.train!(; epochs, learning_rate)
-    print_adnodes_of_interest(rs, "trained")
-    mgr.emit_stats("trained")
+    run_benchmark(rs, generation_params, loss_config_weight_pairs, epochs)
     t′ = now()
 
     println_loud(rs, t′)

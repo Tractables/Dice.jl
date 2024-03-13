@@ -7,40 +7,75 @@ ENV["GKSwstype"] = "100" # prevent plots from displaying
 
 abstract type Benchmark end
 abstract type GenerationParams{T} end
-abstract type LossParams{T} end
-abstract type SimpleLossParams{T} <: LossParams{T} end
+abstract type LossConfig{T} end
 abstract type LossMgr end
 
 abstract type Generation{T} end
 
-struct BenchmarkMgr
-    emit_stats::Function # tag::String -> ()
-    # train!::Function # epochs::Integer -> learning_rate::Real -> learning_curve::Vector{<:Real}
-    loss_mgr
-end
-
-function create_benchmark_manager(
+function run_benchmark(
     rs::RunState,
     generation_params::GenerationParams{T},
-    loss_params::LossParams{T}
+    loss_config_weight_pairs::AbstractVector{<:Pair{<:LossConfig{T}, <:Real}},
+    epochs::Integer
 ) where T
     println_flush(rs.io, "Building generation computation graph...")
     time_build_generation = @elapsed generation = generate(rs, generation_params)
     println_flush(rs.io, "  $(time_build_generation) seconds")
     println_flush(rs.io)
 
-    loss_mgr = create_loss_manager(rs, loss_params, generation)
+    loss_configs, loss_weights = zip(loss_config_weight_pairs...)
+    loss_mgrs = [
+        create_loss_manager(rs, loss_config, generation)
+        for loss_config in loss_configs
+    ]
+    curves = [[] for _ in loss_configs]
 
-    function f_emit_stats(s::String)
+    function emit_stats(s::String)
+        print_adnodes_of_interest(rs, s)
+
         println_flush(rs.io, "Parameter values ($(s)):")
         showln(rs.io, rs.var_vals)
 
         generation_emit_stats(rs, generation, s)
-        emit_stats(loss_mgr, s)
         generation_params_emit_stats(rs, generation_params, s)
     end
 
-    BenchmarkMgr(f_emit_stats, loss_mgr)
+    emit_stats("initial")
+
+    for epoch in 1:epochs
+        losses = [produce_loss(rs, m, epoch) for m in loss_mgrs]
+        function update_curves(vals)
+            for (i, loss) in enumerate(losses)
+                push!(curves[i], vals[loss])
+            end
+        end
+
+        vals, derivs = differentiate(
+            rs.var_vals,
+            Derivs(loss => w for (loss, w) in zip(losses, loss_weights))
+        )
+        update_curves(vals)
+
+        if any(isinf(vals[loss]) || isnan(vals[loss]) for loss in losses)
+            break
+        end
+
+        # update vars
+        for (adnode, d) in derivs
+            if adnode isa Var
+                rs.var_vals[adnode] -= d
+            end
+        end
+
+        # append last loss
+        epoch == epochs && update_curves(compute(rs.var_vals, losses))
+    end
+
+    emit_stats("trained")
+
+    for (loss_config, curve) in zip(loss_configs, curves)
+        save_learning_curve(rs.out_dir, curve, join(to_subpath(loss_config), "_"))
+    end
 end
 
 function generation_params_emit_stats(rs::RunState, generation_params, s)
@@ -48,21 +83,54 @@ function generation_params_emit_stats(rs::RunState, generation_params, s)
     println_flush(rs.io)
 end
 
-struct LossMgrImpl <: LossMgr
-    emit_stats::Function # tag::String -> ()
-    train!::Function # epochs::Integer -> learning_rate::Real -> learning_curve::Vector{<:Real}
-end
-emit_stats(m::LossMgrImpl, tag) = m.emit_stats(tag)
-train!(m::LossMgrImpl; epochs, learning_rate) = m.train!(; epochs, learning_rate)
-
-
 struct SimpleLossMgr <: LossMgr
-    emit_stats::Function # tag::String -> ()
-    train!::Function # epochs::Integer -> learning_rate::Real -> learning_curve::Vector{<:Real}
     loss::ADNode
+    function SimpleLossMgr(loss::ADNode)
+        # TODO: share an expander?
+        l = Dice.LogPrExpander(WMC(BDDCompiler(Dice.bool_roots([loss]))))
+        loss = Dice.expand_logprs(l, loss)
+        new(loss)
+    end
 end
-emit_stats(m::SimpleLossMgr, tag) = m.emit_stats(tag)
-train!(m::SimpleLossMgr; epochs, learning_rate) = m.train!(; epochs, learning_rate)
+produce_loss(rs::RunState, m::SimpleLossMgr, epoch::Integer) = m.loss
+
+struct SamplingEntropy{T} <: LossConfig{T}
+    resampling_frequency::Integer
+    samples_per_batch::Integer
+end
+
+mutable struct SamplingEntropyLossMgr <: LossMgr
+    p::SamplingEntropy
+    val::Dist
+    consider
+    ignore
+    current_loss::Union{Nothing,ADNode}
+    SamplingEntropyLossMgr(p, val, consider, ignore) = new(p, val, consider, ignore, nothing)
+end
+function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
+    if (epoch - 1) % m.p.resampling_frequency == 0
+        println_flush(rs.io, "Sampling...")
+        time_sample = @elapsed samples = with_concrete_ad_flips(rs.var_vals, m.val) do
+            [sample_as_dist(rs.rng, Valuation(), m.val) for _ in 1:m.p.samples_per_batch]
+        end
+        println(rs.io, "  $(time_sample) seconds")
+
+        loss = sum(
+            LogPr(prob_equals(m.val, sample))
+            for sample in samples
+            if m.consider(sample)
+        )
+        for sample in samples
+            @assert m.consider(sample) ^ m.ignore(sample)
+        end
+        l = Dice.LogPrExpander(WMC(BDDCompiler(Dice.bool_roots([loss]))))
+        loss = Dice.expand_logprs(l, loss) / m.p.samples_per_batch
+        m.current_loss = loss
+    end
+
+    @assert !isnothing(m.current_loss)
+    m.current_loss
+end
 
 function save_learning_curve(out_dir, learning_curve, name)
     open(joinpath(out_dir, "$(name).csv"), "w") do file
@@ -73,78 +141,6 @@ function save_learning_curve(out_dir, learning_curve, name)
         plot(xs, learning_curve)
         savefig(joinpath(out_dir, "$(name).svg"))
     end
-end
-
-function create_simple_loss_manager(rs, loss)
-    function emit_stats(tag)
-        loss_val = compute_mixed(rs.var_vals, loss)
-        println(rs.io, "Loss ($(tag)): $(loss_val)")
-        println(rs.io)
-    end
-    function f_train(; epochs, learning_rate)
-        println_flush(rs.io, "Training...")
-        time_train = @elapsed learning_curve = Dice.train!(rs.var_vals, loss; epochs, learning_rate)
-        println(rs.io, "  $(time_train) seconds")
-        println(rs.io)
-
-        save_learning_curve(rs.out_dir, learning_curve, "loss")
-    end
-    SimpleLossMgr(emit_stats, f_train, loss)
-end
-
-function train_via_sampling_entropy!(rs, e; epochs, learning_rate, resampling_frequency, samples_per_batch, consider, ignore, additional_loss, additional_loss_lr)
-    learning_rate = learning_rate / samples_per_batch
-
-    learning_curve = []
-    additional_learning_curve = []
-
-    time_sample = 0
-    time_step = 0
-    println_flush(rs.io, "Training...")
-    for epochs_done in 0:resampling_frequency:epochs-1
-        println_flush(rs.io, "Sampling...")
-        time_sample_here = @elapsed samples = with_concrete_ad_flips(rs.var_vals, e) do
-            [sample_as_dist(rs.rng, Valuation(), e) for _ in 1:samples_per_batch]
-        end
-        time_sample += time_sample_here
-        println(rs.io, "  $(time_sample_here) seconds")
-
-        loss = sum(
-            LogPr(prob_equals(e, sample))
-            for sample in samples
-            if consider(sample)
-        )
-        for sample in samples
-            @assert consider(sample) ^ ignore(sample)
-        end
-
-        epochs_this_batch = min(epochs - epochs_done, resampling_frequency)
-        last_batch = epochs_done + epochs_this_batch == epochs
-
-        println_flush(rs.io, "Stepping...")
-        time_step_here = @elapsed subcurve, additional_subcurve = Dice.train!(
-            rs.var_vals,
-            [loss => learning_rate, additional_loss => additional_loss_lr];
-            epochs=epochs_this_batch, append_last_loss=last_batch)
-        time_step += time_step_here
-        append!(learning_curve, subcurve)
-        append!(additional_learning_curve, additional_subcurve)
-        println(rs.io, "  $(time_step_here) seconds")
-        if (isinf(last(learning_curve)) || isnan(last(learning_curve))
-            || isinf(last(additional_learning_curve))
-            || isnan(last(additional_learning_curve))
-        )
-            println(rs.io, "Stopping early due to Inf/NaN loss")
-            break
-        end
-
-    end
-    println(rs.io, "Sample time:  $(time_sample) seconds")
-    println(rs.io, "Step time:    $(time_step) seconds")
-    println(rs.io)
-
-    save_learning_curve(rs.out_dir, learning_curve, "sampling_loss")
-    save_learning_curve(rs.out_dir, additional_learning_curve, "additional_loss")
 end
 
 ##################################
@@ -164,6 +160,7 @@ function generation_emit_stats(rs::RunState, g::STLCGeneration, s::String)
     println(rs.io, "  $(time_sample) seconds")
     println(rs.io)
 end
+value(g::STLCGeneration) = g.e
 
 ##################################
 # Bespoke STLC generator
@@ -246,7 +243,7 @@ end
 # Approx STLC constructor entropy loss
 ##################################
 
-struct ApproxSTLCConstructorEntropy <: SimpleLossParams{STLC} end
+struct ApproxSTLCConstructorEntropy <: LossConfig{STLC} end
 to_subpath(::ApproxSTLCConstructorEntropy) = ["approx_entropy"]
 function create_loss_manager(rs::RunState, p::ApproxSTLCConstructorEntropy, generation)
     println_flush(rs.io, "Building computation graph for $(p)...")
@@ -256,46 +253,26 @@ function create_loss_manager(rs::RunState, p::ApproxSTLCConstructorEntropy, gene
     )
     println(rs.io, "  $(time_build_loss) seconds")
     println(rs.io)
-    create_simple_loss_manager(rs, loss)
+    SimpleLossMgr(loss)
 end
 
 ##################################
 # Sampling STLC entropy loss
 ##################################
 
-struct SamplingSTLCEntropy <: LossParams{STLC}
-    resampling_frequency::Integer
-    samples_per_batch::Integer
+function SamplingEntropy{T}(; resampling_frequency, samples_per_batch) where T
+    SamplingEntropy{T}(resampling_frequency, samples_per_batch)
 end
-function SamplingSTLCEntropy(; resampling_frequency, samples_per_batch)
-    SamplingSTLCEntropy(resampling_frequency, samples_per_batch)
-end
-to_subpath(p::SamplingSTLCEntropy) = ["sampling_entropy", "freq=$(p.resampling_frequency),spb=$(p.samples_per_batch)"]
-function create_loss_manager(rs::RunState, p::SamplingSTLCEntropy, g::STLCGeneration)
-    function train!(; epochs, learning_rate)
-        train_via_sampling_entropy!(
-            rs.io, rs.out_dir, rs.var_vals, g.e; epochs, learning_rate,
-            resampling_frequency=p.resampling_frequency, samples_per_batch=p.samples_per_batch,
-            consider=_->true,
-            ignore=_->false,
-            additional_loss=Dice.Constant(0),
-            additional_loss_lr=0,
-        )
-    end
-    LossMgrImpl(_ -> nothing, train!)
-end
-
-struct NullLoss{T} <: SimpleLossParams{T} end
-to_subpath(::NullLoss) = ["null"]
-function create_loss_manager(rs::RunState, ::NullLoss{T}, ::Generation{T}) where T
-    create_simple_loss_manager(rs, Dice.Constant(0))
+to_subpath(p::SamplingEntropy) = ["sampling_entropy", "freq=$(p.resampling_frequency),spb=$(p.samples_per_batch)"]
+function create_loss_manager(::RunState, p::SamplingEntropy{T}, g::Generation{T}) where T
+    SamplingEntropyLossMgr(p, value(g), _->true, _->false)
 end
 
 ##################################
 # Sampling STLC constructor entropy loss
 ##################################
 
-struct SamplingSTLCConstructorEntropy <: LossParams{STLC}
+struct SamplingSTLCConstructorEntropy <: LossConfig{STLC}
     resampling_frequency::Integer
     samples_per_batch::Integer
 end
@@ -310,24 +287,17 @@ function create_loss_manager(rs::RunState, p::SamplingSTLCConstructorEntropy, g:
         "None" => () -> DistInt32(-1),
     ])
     println(rs.io, "  $(time_build_random_ctor) seconds")
-    function train!(; epochs, learning_rate)
-        train_via_sampling_entropy!(
-            rs.io, random_ctor; epochs, learning_rate,
-            resampling_frequency=p.resampling_frequency, samples_per_batch=p.samples_per_batch,
-            consider=s->any(prob_equals(s, x)===true for x in values(stlc_ctor_to_id)),
-            ignore=s->prob_equals(s, DistInt32(-1))===true,
-            additional_loss=Dice.Constant(0),
-            additional_loss_lr=0,
-        )
-    end
-    LossMgrImpl(_ -> nothing, train!)
+
+    SamplingEntropyLossMgr(p, random_ctor,
+        s->any(prob_equals(s, x)===true for x in values(stlc_ctor_to_id)),
+        s->prob_equals(s, DistInt32(-1))===true)
 end
 
 ##################################
 # Exact STLC constructor entropy loss
 ##################################
 
-struct STLCConstructorEntropy <: SimpleLossParams{STLC} end
+struct STLCConstructorEntropy <: LossConfig{STLC} end
 to_subpath(::STLCConstructorEntropy) = ["ctor_entropy"]
 function create_loss_manager(rs::RunState, p::STLCConstructorEntropy, generation::STLCGeneration)
     println_flush(rs.io, "Building computation graph for $(p)...")
@@ -340,7 +310,8 @@ function create_loss_manager(rs::RunState, p::STLCConstructorEntropy, generation
     end
     println(rs.io, "  $(time_build_loss) seconds")
     println(rs.io)
-    create_simple_loss_manager(rs, loss)
+
+    SimpleLossMgr(loss)
 end
 
 ##################################
@@ -354,6 +325,7 @@ struct BSTGeneration <: Generation{BST}
 end
 function generation_emit_stats(rs::RunState, g::BSTGeneration, s::String)
 end
+value(g::BSTGeneration) = g.t
 
 ##################################
 # Bespoke BST generator
@@ -430,36 +402,10 @@ function generate(rs::RunState, p::TypeBasedBSTGenerator)
 end
 
 ##################################
-# Sampling BST entropy loss
-##################################
-
-struct SamplingBSTEntropy <: LossParams{BST}
-    resampling_frequency::Integer
-    samples_per_batch::Integer
-end
-function SamplingBSTEntropy(; resampling_frequency, samples_per_batch)
-    SamplingBSTEntropy(resampling_frequency, samples_per_batch)
-end
-to_subpath(p::SamplingBSTEntropy) = ["sampling_entropy", "freq=$(p.resampling_frequency),spb=$(p.samples_per_batch)"]
-function create_loss_manager(rs::RunState, p::SamplingBSTEntropy, g::BSTGeneration)
-    function train!(; epochs, learning_rate)
-        train_via_sampling_entropy!(
-            rs, g.t; epochs, learning_rate,
-            resampling_frequency=p.resampling_frequency, samples_per_batch=p.samples_per_batch,
-            consider=_->true,
-            ignore=_->false,
-            additional_loss=Dice.Constant(0),
-            additional_loss_lr=0,
-        )
-    end
-    LossMgrImpl(_ -> nothing, train!)
-end
-
-##################################
 # Approx BST constructor entropy loss
 ##################################
 
-struct ApproxBSTConstructorEntropy <: SimpleLossParams{BST} end
+struct ApproxBSTConstructorEntropy <: LossConfig{BST} end
 to_subpath(::ApproxBSTConstructorEntropy) = ["approx_ctor_entropy"]
 function create_loss_manager(rs::RunState, p::ApproxBSTConstructorEntropy, generation::BSTGeneration)
     println_flush(rs.io, "Building computation graph for $(p)...")
@@ -476,7 +422,7 @@ end
 # Sampling BST constructor entropy loss
 ##################################
 
-# struct SamplingBSTConstructorEntropy <: LossParams{BST}
+# struct SamplingBSTConstructorEntropy <: LossConfig{BST}
 #     resampling_frequency::Integer
 #     samples_per_batch::Integer
 #     function SamplingBSTConstructorEntropy(; resampling_frequency, samples_per_batch)
@@ -509,13 +455,13 @@ end
 abstract type Metric{T} end
 abstract type TargetDist end
 
-struct MLELossParams{T} <: SimpleLossParams{T}
+struct MLELossConfig{T} <: LossConfig{T}
     metric::Metric{T}
     target_dist::TargetDist
-    MLELossParams(; metric::Metric{T}, target_dist) where T = new{T}(metric, target_dist)
+    MLELossConfig(; metric::Metric{T}, target_dist) where T = new{T}(metric, target_dist)
 end
-to_subpath(p::MLELossParams) = [name(p.metric), name(p.target_dist)]
-function create_loss_manager(rs::RunState, p::MLELossParams, generation)
+to_subpath(p::MLELossConfig) = [name(p.metric), name(p.target_dist)]
+function create_loss_manager(rs::RunState, p::MLELossConfig, generation)
     println_flush(rs.io, "Building computation graph for $(p)...")
     time_build_loss = @elapsed begin
         metric = compute_metric(p.metric, generation)
@@ -524,19 +470,19 @@ function create_loss_manager(rs::RunState, p::MLELossParams, generation)
     println(rs.io, "  $(time_build_loss) seconds")
     println(rs.io)
 
-    mgr = create_simple_loss_manager(rs, loss)
+    SimpleLossMgr(loss)
 
-    # Also save distribution of metric being trained
-    function f_emit′(tag)
-        println_flush(rs.io, "Saving $(tag) distribution...")
-        time_infer = @elapsed metric_dist = pr_mixed(rs.var_vals)(metric)
-        println(rs.io, "  $(time_infer) seconds")
-        save_metric_dist(joinpath(rs.out_dir, "dist_$(name(p.metric))_$(tag).csv"), metric_dist; rs.io)
-        println(rs.io)
+    # TODO: fix. allow us to register_stats! to rs, or create MLELossMgr
+    # # Also save distribution of metric being trained
+    # function f_emit′(tag)
+    #     println_flush(rs.io, "Saving $(tag) distribution...")
+    #     time_infer = @elapsed metric_dist = pr_mixed(rs.var_vals)(metric)
+    #     println(rs.io, "  $(time_infer) seconds")
+    #     save_metric_dist(joinpath(rs.out_dir, "dist_$(name(p.metric))_$(tag).csv"), metric_dist; rs.io)
+    #     println(rs.io)
 
-        emit_stats(mgr, tag)
-    end
-    SimpleLossMgr(f_emit′, mgr.train!, mgr.loss)
+    #     emit_stats(mgr, tag)
+    # end
 end
 
 struct TreeSize <: Metric{BST} end
@@ -579,43 +525,6 @@ function metric_loss(metric::Dist, ::Target4321)
         BoolToMax(prob_equals(metric, DistUInt32(3)), weight=.1),
     ])
 end
-
-##################################
-# Mixed loss
-##################################
-
-struct MixedLossParams{T} <: SimpleLossParams{T}
-    weighted_losses::Vector{<:Pair{<:SimpleLossParams{T}, <:Real}}
-end
-function to_subpath(p::MixedLossParams)
-    [join(
-        [
-            "$(join(to_subpath(loss), "_"))_w$(weight)"
-            for (loss, weight) in p.weighted_losses
-        ],
-        "_AND_"
-    )]
-end
-function create_loss_manager(rs::RunState, p::MixedLossParams{T}, generation::Generation{T}) where T
-    mixed_loss = Dice.Constant(0)
-    mgrs = SimpleLossMgr[]
-    for (subp, weight) in p.weighted_losses
-        mgr::SimpleLossMgr = create_loss_manager(rs, subp, generation)
-        push!(mgrs, mgr)
-        mixed_loss += Dice.Constant(weight) * mgr.loss
-    end
-    mgr = create_simple_loss_manager(rs, mixed_loss)
-
-    # also emit for submgrs
-    function emit_stats(tag)
-        mgr.emit_stats(tag)
-        for submgr in mgrs
-            submgr.emit_stats(tag)
-        end
-    end
-    SimpleLossMgr(emit_stats, mgr.train!, mgr.loss)
-end
-
 ##################################
 # RBT generation
 ##################################
@@ -626,6 +535,7 @@ struct RBTGeneration <: Generation{RBT}
 end
 function generation_emit_stats(::RunState, g::RBTGeneration, s::String)
 end
+value(g::RBTGeneration) = g.t
 
 ##################################
 # Type-based RBT generator
@@ -664,7 +574,7 @@ end
 
 abstract type Property{T} end
 
-struct SatisfyPropertyLoss{T} <: SimpleLossParams{T}
+struct SatisfyPropertyLoss{T} <: LossConfig{T}
     property::Property{T}
 end
 to_subpath(p::SatisfyPropertyLoss) = [name(p.property)]
@@ -677,20 +587,20 @@ function create_loss_manager(rs::RunState, p::SatisfyPropertyLoss, generation)
     println(rs.io, "  $(time_build_loss) seconds")
     println(rs.io)
 
-    mgr = create_simple_loss_manager(rs, loss)
+    SimpleLossMgr(loss)
 
-    # Also print probability that property is met
-    function f_emit′(tag)
-        println_flush(rs.io, "Checking pr property met...")
-        time_infer = @elapsed p_meets = pr_mixed(rs.var_vals)(meets_property)[true]
-        println(rs.io, "  $(time_infer) seconds")
+    # TODO: fix
+    # # Also print probability that property is met
+    # function f_emit′(tag)
+    #     println_flush(rs.io, "Checking pr property met...")
+    #     time_infer = @elapsed p_meets = pr_mixed(rs.var_vals)(meets_property)[true]
+    #     println(rs.io, "  $(time_infer) seconds")
 
-        println_flush(rs.io, "Pr meets property: $(p_meets)")
-        println_flush(rs.io)
+    #     println_flush(rs.io, "Pr meets property: $(p_meets)")
+    #     println_flush(rs.io)
 
-        emit_stats(mgr, tag)
-    end
-    SimpleLossMgr(f_emit′, mgr.train!, mgr.loss)
+    #     emit_stats(mgr, tag)
+    # end
 end
 
 struct BookkeepingInvariant <: Property{RBT} end
@@ -718,43 +628,3 @@ check_property(p::MultipleInvariants{T}, g::Generation{T}) where T =
     ])
 name(p::MultipleInvariants{T}) where T =
     join([name(property) for property in p.properties], "AND")
-
-##################################
-# Sampling RBT entropy loss
-##################################
-
-struct SamplingRBTEntropy <: LossParams{RBT}
-    resampling_frequency::Integer
-    samples_per_batch::Integer
-    additional_loss_params::SimpleLossParams{RBT}
-    additional_loss_lr::Real
-end
-function SamplingRBTEntropy(; resampling_frequency, samples_per_batch, additional_loss_params, additional_loss_lr)
-    SamplingRBTEntropy(resampling_frequency, samples_per_batch, additional_loss_params, additional_loss_lr)
-end
-to_subpath(p::SamplingRBTEntropy) = [
-    "sampling_entropy",
-    "freq=$(p.resampling_frequency),spb=$(p.samples_per_batch)",
-    "additional_loss=$(join(to_subpath(p.additional_loss_params),"-"))",
-    "allr=$(p.additional_loss_lr)",
-]
-function create_loss_manager(rs::RunState, p::SamplingRBTEntropy, g::RBTGeneration)
-    mgr::SimpleLossMgr = create_loss_manager(rs, p.additional_loss_params, g)
-    function train!(; epochs, learning_rate)
-        train_via_sampling_entropy!(
-            rs, g.t; epochs, learning_rate,
-            resampling_frequency=p.resampling_frequency, samples_per_batch=p.samples_per_batch,
-            consider=_->true,
-            ignore=_->false,
-            additional_loss=mgr.loss,
-            additional_loss_lr=p.additional_loss_lr,
-        )
-    end
-    LossMgrImpl(tag -> emit_stats(mgr, tag), train!)
-end
-
-struct NullLoss{T} <: SimpleLossParams{T} end
-to_subpath(::NullLoss) = ["null"]
-function create_loss_manager(rs::RunState, ::NullLoss{T}) where T
-    create_simple_loss_manager(rs, Dice.Constant(0))
-end
