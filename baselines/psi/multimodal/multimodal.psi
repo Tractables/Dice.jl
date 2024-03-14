@@ -1,0 +1,10 @@
+def main(){
+	μ₁:=uniform(-16,16);
+	μ₂:=uniform(-16,16);
+	datapts:=[5,5,5,5,5,5,-5,-5,-5];
+	for i in 0..datapts.length{
+		y:=if flip(2/3) then gauss(μ₁,1) else gauss(μ₂,1);
+		cobserve(y,datapts[i]);
+	}
+	return μ₁;
+}

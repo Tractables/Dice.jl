@@ -1,0 +1,194 @@
+Mathematica 14.0.0 Kernel for Linux x86 (64-bit)
+Copyright 1988-2023 Wolfram Research, Inc.
+
+In[1]:= 
+NIntegrate::inumr: 
+                                           2
+                      -(25/2) + 5 xi1 - xi1 /2      2
+   The integrand (49 E                         Sqrt[--] 
+                                                    Pi
+                                             5                  xi2
+                        49 <<2>> (1 - Erf[------- - Sqrt[2] - -------])
+                                          Sqrt[2]             Sqrt[2]
+        Boole[Integrate[----------------------------------------------- - 
+                                             6561
+            49 <<3>>
+            --------, {xi2, <<2>>}] == 0] 
+              6561
+                    5                  xi1
+        (1 - Erf[------- - Sqrt[2] - -------])) / 6561 + <<1>> has evaluated
+                 Sqrt[2]             Sqrt[2]
+     to non-numerical values for all sampling points in the region with
+     boundaries {{-Infinity, 0}}.
+
+NIntegrate::inumr: 
+                                           2
+                      -(25/2) + 5 xi1 - xi1 /2      2
+   The integrand (49 E                         Sqrt[--] 
+                                                    Pi
+                                             5                  xi2
+                        49 <<2>> (1 - Erf[------- - Sqrt[2] - -------])
+                                          Sqrt[2]             Sqrt[2]
+        Boole[Integrate[----------------------------------------------- - 
+                                             6561
+            49 <<3>>
+            --------, {xi2, <<2>>}] == 0] 
+              6561
+                    5                  xi1
+        (1 - Erf[------- - Sqrt[2] - -------])) / 6561 + <<1>> has evaluated
+                 Sqrt[2]             Sqrt[2]
+     to non-numerical values for all sampling points in the region with
+     boundaries {{-Infinity, 0}}.
+
+NIntegrate::inumr: 
+                                           2
+                      -(25/2) + 5 xi1 - xi1 /2      2
+   The integrand (49 E                         Sqrt[--] 
+                                                    Pi
+                                             5                  xi2
+                        49 <<2>> (1 - Erf[------- - Sqrt[2] - -------])
+                                          Sqrt[2]             Sqrt[2]
+        Boole[Integrate[----------------------------------------------- - 
+                                             6561
+            49 <<3>>
+            --------, {xi2, <<2>>}] == 0] 
+              6561
+                    5                  xi1
+        (1 - Erf[------- - Sqrt[2] - -------])) / 6561 + <<1>> has evaluated
+                 Sqrt[2]             Sqrt[2]
+     to non-numerical values for all sampling points in the region with
+     boundaries {{-Infinity, 0}}.
+
+General::stop: Further output of NIntegrate::inumr
+     will be suppressed during this calculation.
+
+N::meprec: Internal precision limit $MaxExtraPrecision = 50.
+     reached while evaluating <<1>>.
+
+                                                            2
+                                       -(25/2) + 5 xi1 - xi1 /2      2
+Out[1]= (0.01258720892 NIntegrate[(49 E                         Sqrt[--] 
+                                                                     Pi
+ 
+                                                      2
+                                 -(25/2) + 5 xi2 - xi2 /2      2
+>           Boole[Integrate[(49 E                         Sqrt[--] 
+                                                               Pi
+ 
+                               5                  xi2
+>                  (1 - Erf[------- - Sqrt[2] - -------])) / 6561 - 
+                            Sqrt[2]             Sqrt[2]
+ 
+                                          2
+                     -(25/2) + 5 xi2 - xi2 /2      2
+>               (49 E                         Sqrt[--] 
+                                                   Pi
+ 
+                               5                  xi2
+>                  (1 - Erf[------- + Sqrt[2] - -------])) / 6561, 
+                            Sqrt[2]             Sqrt[2]
+ 
+>              {xi2, -Infinity, Infinity}] != 0] 
+ 
+                        5                  xi1
+>           (1 - Erf[------- - Sqrt[2] - -------])) / 6561 - 
+                     Sqrt[2]             Sqrt[2]
+ 
+                                   2
+              -(25/2) + 5 xi1 - xi1 /2      2
+>        (49 E                         Sqrt[--] 
+                                            Pi
+ 
+                                                      2
+                                 -(25/2) + 5 xi2 - xi2 /2      2
+>           Boole[Integrate[(49 E                         Sqrt[--] 
+                                                               Pi
+ 
+                               5                  xi2
+>                  (1 - Erf[------- - Sqrt[2] - -------])) / 6561 - 
+                            Sqrt[2]             Sqrt[2]
+ 
+                                          2
+                     -(25/2) + 5 xi2 - xi2 /2      2
+>               (49 E                         Sqrt[--] 
+                                                   Pi
+ 
+                               5                  xi2
+>                  (1 - Erf[------- + Sqrt[2] - -------])) / 6561, 
+                            Sqrt[2]             Sqrt[2]
+ 
+>              {xi2, -Infinity, Infinity}] != 0] 
+ 
+                        5                  xi1
+>           (1 - Erf[------- + Sqrt[2] - -------])) / 6561, 
+                     Sqrt[2]             Sqrt[2]
+ 
+>       {xi1, -Infinity, Infinity}, WorkingPrecision -> 20., 
+ 
+>       AccuracyGoal -> Infinity, PrecisionGoal -> 10.]) / 
+ 
+>    (0.0006337513134 - 0.02517441784 
+ 
+                                             2
+                        -(25/2) + 5 xi1 - xi1 /2      2
+>       NIntegrate[(49 E                         Sqrt[--] 
+                                                      Pi
+ 
+                                                       2
+                                  -(25/2) + 5 xi2 - xi2 /2      2
+>            Boole[Integrate[(49 E                         Sqrt[--] 
+                                                                Pi
+ 
+                                5                  xi2
+>                   (1 - Erf[------- - Sqrt[2] - -------])) / 6561 - 
+                             Sqrt[2]             Sqrt[2]
+ 
+                                           2
+                      -(25/2) + 5 xi2 - xi2 /2      2
+>                (49 E                         Sqrt[--] 
+                                                    Pi
+ 
+                                5                  xi2
+>                   (1 - Erf[------- + Sqrt[2] - -------])) / 6561, 
+                             Sqrt[2]             Sqrt[2]
+ 
+>               {xi2, -Infinity, Infinity}] == 0] 
+ 
+                         5                  xi1
+>            (1 - Erf[------- - Sqrt[2] - -------])) / 6561 - 
+                      Sqrt[2]             Sqrt[2]
+ 
+                                    2
+               -(25/2) + 5 xi1 - xi1 /2      2
+>         (49 E                         Sqrt[--] 
+                                             Pi
+ 
+                                                       2
+                                  -(25/2) + 5 xi2 - xi2 /2      2
+>            Boole[Integrate[(49 E                         Sqrt[--] 
+                                                                Pi
+ 
+                                5                  xi2
+>                   (1 - Erf[------- - Sqrt[2] - -------])) / 6561 - 
+                             Sqrt[2]             Sqrt[2]
+ 
+                                           2
+                      -(25/2) + 5 xi2 - xi2 /2      2
+>                (49 E                         Sqrt[--] 
+                                                    Pi
+ 
+                                5                  xi2
+>                   (1 - Erf[------- + Sqrt[2] - -------])) / 6561, 
+                             Sqrt[2]             Sqrt[2]
+ 
+>               {xi2, -Infinity, Infinity}] == 0] 
+ 
+                         5                  xi1
+>            (1 - Erf[------- + Sqrt[2] - -------])) / 6561, 
+                      Sqrt[2]             Sqrt[2]
+ 
+>        {xi1, -Infinity, Infinity}, WorkingPrecision -> 20., 
+ 
+>        AccuracyGoal -> Infinity, PrecisionGoal -> 10.])
+
+In[2]:= 

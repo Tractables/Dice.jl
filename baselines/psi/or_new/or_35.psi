@@ -1,0 +1,14 @@
+def main(){
+    T:=35;
+    gene_occurrence₀:=beta(1,1);
+    diabetes:=flip(gene_occurrence₀);
+    for i in 1..T{
+        gene_occurrenceᵢ:=beta(1,1);
+        diabetes|=flip(gene_occurrenceᵢ);
+    }
+    blood_sugar1:=if diabetes then gauss(80, 2) else gauss(135, 2);
+    cobserve(blood_sugar1, 79);
+    blood_sugar2:=if diabetes then gauss(80,2) else gauss(135, 2);
+    cobserve(blood_sugar2, 136);
+    return Expectation(gene_occurrence₀);
+}

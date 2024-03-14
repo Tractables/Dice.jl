@@ -1,0 +1,7 @@
+Mathematica 14.0.0 Kernel for Linux x86 (64-bit)
+Copyright 1988-2023 Wolfram Research, Inc.
+
+In[1]:= 
+Out[1]= 0.5000000000
+
+In[2]:= 

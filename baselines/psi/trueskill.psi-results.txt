@@ -1,0 +1,23 @@
+Mathematica 14.0.0 Kernel for Linux x86 (64-bit)
+Copyright 1988-2023 Wolfram Research, Inc.
+
+In[1]:= 
+NIntegrate::inumr: 
+                                      2      2
+                            -(1/6) xi1  - xi2 /2          xi1   xi2
+                           E                     (1 + Erf[--- - ---])
+                                                           2     2
+   The integrand Integrate[------------------------------------------ + 
+                                          4 Sqrt[3] Pi
+      <<1>>, {xi2, -Infinity, Infinity}] has evaluated to non-numerical values
+     for all sampling points in the region with boundaries {{-Infinity, 0}}.
+
+NIntegrate::inumr: 
+                                      2      2
+                            -(1/6) xi1  - xi2 /2          xi1   xi2
+                           E                     (1 + Erf[--- - ---])
+                                                           2     2
+   The integrand Integrate[------------------------------------------ + 
+                                          4 Sqrt[3] Pi
+      <<1>>, {xi2, -Infinity, Infinity}] has evaluated to non-numerical values
+     for all sampling points in the region with boundaries {{-Infinity, 0}}.
