@@ -64,6 +64,7 @@ function run_benchmark(
         for (adnode, d) in derivs
             if adnode isa Var
                 rs.var_vals[adnode] -= d
+                println(rs.io, "$(adnode) $(-d)")
             end
         end
 
@@ -105,9 +106,19 @@ mutable struct SamplingEntropyLossMgr <: LossMgr
     consider
     ignore
     current_loss::Union{Nothing,ADNode}
-    SamplingEntropyLossMgr(p, val, consider, ignore) = new(p, val, consider, ignore, nothing)
+    current_samples
+    SamplingEntropyLossMgr(p, val, consider, ignore) = new(p, val, consider, ignore, nothing, nothing)
 end
 function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
+    samples_path = joinpath(rs.out_dir, "samples.csv")
+    dist_path = joinpath(rs.out_dir, "dist.csv")
+
+    clear_file(path) = open(path, "w") do f end
+    if epoch == 1
+        clear_file(samples_path)
+        clear_file(dist_path)
+    end
+
     if (epoch - 1) % m.p.resampling_frequency == 0
         println_flush(rs.io, "Sampling...")
         time_sample = @elapsed samples = with_concrete_ad_flips(rs.var_vals, m.val) do
@@ -126,6 +137,35 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
         l = Dice.LogPrExpander(WMC(BDDCompiler(Dice.bool_roots([loss]))))
         loss = Dice.expand_logprs(l, loss) / m.p.samples_per_batch
         m.current_loss = loss
+        m.current_samples = samples
+    end
+
+    d = pr_mixed(rs.var_vals)(m.val)
+    open(dist_path, "a") do f
+        println(f, join([d[i] for i in 0:7],"\t"))
+    end
+    open(samples_path, "a") do f
+        println(f, join([
+            # sum(1 for s in samples if prob_equals(s, DistUInt{3}(i)) === true; init=0)
+            count(s -> prob_equals(s, DistUInt{3}(i)) === true, m.current_samples)
+            for i in 0:7
+        ], "\t"))
+    end
+
+    if epoch == 10000
+        for path in [samples_path, dist_path]
+            open(path, "r") do f
+                v = [[parse(Float64, s) for s in split(line,"\t")] for line in readlines(f)]
+                # v = [[parse(Real, String(s)) for s in split(line,"\t")] for line in readlines(f)]
+                mat = mapreduce(permutedims, vcat, v)
+                # println(stderr, typeof(mat))
+                torow(v) = reshape(v, 1, length(v))
+                areaplot(mat, labels=torow(["$(i)" for i in 0:7]),
+                # palette=:lightrainbow)
+                palette=cgrad(:thermal))
+                savefig("$(path).svg")
+            end
+        end
     end
 
     @assert !isnothing(m.current_loss)
@@ -143,24 +183,23 @@ function save_learning_curve(out_dir, learning_curve, name)
     end
 end
 
-abstract type ThreeBools <: Benchmark end
-struct ThreeBoolsGeneration <: Generation{ThreeBools}
-    e::Tuple{AnyBool, AnyBool, AnyBool}
+abstract type Bools{W} <: Benchmark end
+struct BoolsGeneration{W} <: Generation{Bools{W}}
+    v::DistUInt{W}
 end
-value(g::ThreeBoolsGeneration) = g.e
-function generation_emit_stats(rs::RunState, g::ThreeBoolsGeneration, s::String)
+value(g::BoolsGeneration) = g.v
+function generation_emit_stats(rs::RunState, g::BoolsGeneration, s::String)
 end
 
-struct FlipFlipFlip <: GenerationParams{ThreeBools} end
-function to_subpath(::FlipFlipFlip)
-    ["flipflipflip"]
+struct Flips{W} <: GenerationParams{Bools{W}} end
+function to_subpath(::Flips)
+    ["flips"]
 end
-function generate(rs::RunState, ::FlipFlipFlip)
-    ThreeBoolsGeneration((
-        flip(register_weight!(rs, "f1", random_value=true)),
-        flip(register_weight!(rs, "f2", random_value=true)),
-        flip(register_weight!(rs, "f3", random_value=true)),
-    ))
+function generate(rs::RunState, ::Flips{W}) where W
+    BoolsGeneration(DistUInt{W}([
+        flip(register_weight!(rs, "f$(i)", random_value=true))
+        for i in 1:W
+    ]))
 end
 
 ##################################
@@ -283,7 +322,7 @@ end
 function SamplingEntropy{T}(; resampling_frequency, samples_per_batch) where T
     SamplingEntropy{T}(resampling_frequency, samples_per_batch)
 end
-to_subpath(p::SamplingEntropy) = ["sampling_entropy", "freq=$(p.resampling_frequency),spb=$(p.samples_per_batch)"]
+to_subpath(p::SamplingEntropy) = ["sampling_entropy", "freq=$(p.resampling_frequency)-spb=$(p.samples_per_batch)"]
 function create_loss_manager(::RunState, p::SamplingEntropy{T}, g::Generation{T}) where T
     SamplingEntropyLossMgr(p, value(g), _->true, _->false)
 end
@@ -299,7 +338,7 @@ end
 function SamplingSTLCConstructorEntropy(; resampling_frequency, samples_per_batch)
     SamplingSTLCConstructorEntropy(resampling_frequency, samples_per_batch)
 end
-to_subpath(p::SamplingSTLCConstructorEntropy) = ["sampling_ctor_entropy", "freq=$(p.resampling_frequency),spb=$(p.samples_per_batch)"]
+to_subpath(p::SamplingSTLCConstructorEntropy) = ["sampling_ctor_entropy", "freq=$(p.resampling_frequency)-spb=$(p.samples_per_batch)"]
 function create_loss_manager(rs::RunState, p::SamplingSTLCConstructorEntropy, g::STLCGeneration)
     println_flush(rs.io, "Building random_ctor graph...")
     time_build_random_ctor = @elapsed random_ctor = match(g.e, [

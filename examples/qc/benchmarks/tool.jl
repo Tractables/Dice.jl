@@ -1,6 +1,14 @@
 include("benchmarks.jl")
 
 ## PARSE ARGS
+if isempty(ARGS)
+    as = ["-f", "Flips{3}()", "Pair{SamplingEntropy{Bools{3}},Float64}[SamplingEntropy{Bools{3}}(20,100)=>0.3]", "10000"]
+    empty!(ARGS)
+    for a in as
+        push!(ARGS, a)
+    end
+end
+
 args = ARGS
 allow_overwrite = "-f" ∈ args
 args = filter(a -> a != "-f", args)
@@ -21,7 +29,7 @@ end
 generation_params, loss_config_weight_pairs, epochs = evaled_args
 
 SEED = 0
-TAG = "fff_v12"
+TAG = "neg_fff_v12"
 
 out_dir = joinpath(
     vcat(
@@ -47,7 +55,7 @@ rs = RunState(Valuation(), Dict{String,ADNode}(), open(log_path, "w"), out_dir, 
 
 commit = strip(cmd_out(`git rev-parse --short HEAD`))
 t = now()
-println_loud(rs, "$(t) $(commit) $(join(ARGS, " "))")
+println_loud(rs, "$(t) $(commit) $(ARGS)")
 println_loud(rs, "== Config ==")
 println_loud(rs, "TAG: $(TAG)")
 println_loud(rs, generation_params)
