@@ -106,9 +106,9 @@ function train!(
             var_vals,
             Derivs(loss => lr for (loss, lr) in zip(losses, lrs))
         )
+        update_curves(vals)
 
         if stop_if_inf_or_nan && any(isinf(vals[loss]) || isnan(vals[loss]) for loss in losses)
-            update_curves(vals)
             return curves
         end
 
@@ -118,8 +118,6 @@ function train!(
                 var_vals[adnode] -= d
             end
         end
-
-        update_curves(vals)
     end
 
     append_last_loss && update_curves(compute(var_vals, losses))
