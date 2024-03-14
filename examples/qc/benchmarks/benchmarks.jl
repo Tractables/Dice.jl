@@ -143,6 +143,24 @@ function save_learning_curve(out_dir, learning_curve, name)
     end
 end
 
+abstract type ThreeBools <: Benchmark end
+struct ThreeBoolsGeneration <: Generation{ThreeBools}
+    e::Tuple{AnyBool, AnyBool, AnyBool}
+end
+value(g::ThreeBoolsGeneration) = g.e
+
+struct FlipFlipFlip <: GenerationParams{ThreeBools} end
+function to_subpath(::FlipFlipFlip)
+    ["flipflipflip"]
+end
+function generate(rs::RunState, ::FlipFlipFlip)
+    ThreeBoolsGeneration((
+        register_weight!(rs, "f1", random_value=true),
+        register_weight!(rs, "f2", random_value=true),
+        register_weight!(rs, "f3", random_value=true),
+    ))
+end
+
 ##################################
 # STLC generation
 ##################################
