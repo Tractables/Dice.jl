@@ -1,5 +1,5 @@
 function backtrack_for(rs, name, opts::Vector{DistI{Opt{T}}})::DistI{Opt{T}} where T
-    first_some(T, shuffle_for(name, opts))
+    first_some(T, shuffle_for(rs, name, opts))
 end
 
 function shuffle_for(rs, name, xs)
@@ -191,16 +191,16 @@ atexit() do
     end
 end
 
-function register_weight!(rs, s)
+function register_weight!(rs, s; random_value=false)
     var = Var("$(s)_before_sigmoid")
     if !haskey(rs.var_vals, var) || rs.var_vals[var] == 0
         rs.var_vals[var] = 0
     else
         println("WARNING: not registering fresh weight for $(s)")
     end
-    # if random_value
-    #     rs.var_vals[var] = inverse_sigmoid(rand(rs.rng))
-    # end
+    if random_value
+        rs.var_vals[var] = inverse_sigmoid(rand(rs.rng))
+    end
     weight = sigmoid(var)
     rs.adnodes_of_interest[s] = weight
     weight

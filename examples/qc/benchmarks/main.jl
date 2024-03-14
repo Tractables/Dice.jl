@@ -1,71 +1,55 @@
 include("benchmarks.jl")
 
-GENERATION_PARAMS_LIST = [
-    TypeBasedRBTGenerator(size=2,color_by_size=true,learn_leaf_weights=true,use_parent_color=true),
-]
 
-LOSS_CONFIG_WEIGHT_PAIRS_LIST = [
-    [
-        SamplingEntropy{RBT}(resampling_frequency=5, samples_per_batch=1000) => 0.3,
-    ],
-    [
-        SamplingEntropy{RBT}(resampling_frequency=5, samples_per_batch=1000) => 0.3,
-        SatisfyPropertyLoss(MultipleInvariants([
-            BookkeepingInvariant(), BalanceInvariant(),
-        ])) => 0.0003,
-    ],
-]
+# GENERATION_PARAMS_LIST = [
+#     TypeBasedRBTGenerator(size=5,color_by_size=true,learn_leaf_weights=false,use_parent_color=true),
+#     TypeBasedRBTGenerator(size=5,color_by_size=true,learn_leaf_weights=false,use_parent_color=false),
+# ]
+# LR_LIST = [0.1, 0.3, 1, 3, 10, 30, 100, 300]
+# LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
+#     (
+#         [
+#             SamplingEntropy{RBT}(resampling_frequency=2, samples_per_batch=10000) => lr,
+#         ]
+#         for lr in LR_LIST
+#     ),
+# ]))
+# EPOCHS_LIST = [100_000]
 
-EPOCHS_LIST = [20]
+GENERATION_PARAMS_LIST = [FlipFlipFlip()]
+LR_LIST = [0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300]
+LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
+    (
+        [
+            SamplingEntropy{ThreeBools}(resampling_frequency=2, samples_per_batch=10000) => lr,
+        ]
+        for lr in LR_LIST
+    ),
+]))
+EPOCHS_LIST = [100_000]
 
-SEED = 0
-TAG = "pre_v12_neg_refac"
+TOOL_PATH = "examples/qc/benchmarks/tool.jl"
 
-for (
-    generation_params, loss_config_weight_pairs, epochs
-) in Base.product(
-    GENERATION_PARAMS_LIST, LOSS_CONFIG_WEIGHT_PAIRS_LIST, EPOCHS_LIST
-)
-    out_dir = joinpath(
-        vcat(
-            ["examples/qc/benchmarks/output"],
-            [TAG],
-            to_subpath(generation_params),
-            vcat([
-                vcat(to_subpath(c), ["$(w)"])
-                for (c, w) in loss_config_weight_pairs
-            ]...),
-            ["epochs=$(epochs)"],
-        )
-    )
-    log_path = joinpath(out_dir, "log.log")
-    if isfile(log_path) && "-f" ∉ ARGS
-        println("Error: Log already exists at the following path:")
-        println(log_path)
-        println()
-        continue
+@sync for (p, lcws, epochs) in Base.product(GENERATION_PARAMS_LIST, LOSS_CONFIG_WEIGHT_PAIRS_LIST, EPOCHS_LIST)
+    flags = join([s for s in ARGS if startswith(s, "-")], " ")
+    lcws_s = replace(string(lcws), " "=>"")
+    p_s = replace(string(p), " "=>"")
+    s = "julia --project $(TOOL_PATH) $(flags) $(p_s) $(lcws_s) $(epochs)"
+    cmd = Cmd(Cmd(convert(Vector{String}, split(s))), ignorestatus=true)
+    println(s)
+    out = IOBuffer()
+    err = IOBuffer()
+    @async begin
+        proc = run(pipeline(cmd; stdout=out, stderr=err),)
+        if proc.exitcode != 0
+            println()
+            so = String(take!(out))
+            se = String(take!(err))
+            println("FAILED: $(s)\nSTDOUT ===\n$(so)\nSTDERR ===\n$(se)\n")
+        else
+            se = String(take!(err))
+            println(se)
+        end
     end
-    mkpath(out_dir)
-    rs = RunState(Valuation(), Dict{String,ADNode}(), open(log_path, "w"), out_dir, MersenneTwister(SEED))
-
-    commit = strip(cmd_out(`git rev-parse --short HEAD`))
-    t = now()
-    println_loud(rs, "$(t) $(commit) $(join(ARGS, " "))")
-    println_loud(rs, "== Config ==")
-    println_loud(rs, "TAG: $(TAG)")
-    println_loud(rs, generation_params)
-    println_loud(rs, loss_config_weight_pairs)
-    println_loud(rs, "Epochs: $(epochs)")
-    println_loud(rs, "DistNat: $(DistNat)")
-    println_loud(rs, "SEED: $(SEED)")
-    println_loud(rs)
-    println("Logging to $(log_path)")
-    println()
-
-    run_benchmark(rs, generation_params, loss_config_weight_pairs, epochs)
-    t′ = now()
-
-    println_loud(rs, t′)
-    println_loud(rs, "Total time elapsed: $(canonicalize(t′ - t))")
-    # include("dump_loss_graph.jl")
 end
+
