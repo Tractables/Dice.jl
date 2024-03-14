@@ -101,7 +101,7 @@ end
 
 mutable struct SamplingEntropyLossMgr <: LossMgr
     p::SamplingEntropy
-    val::Dist
+    val
     consider
     ignore
     current_loss::Union{Nothing,ADNode}
@@ -148,6 +148,8 @@ struct ThreeBoolsGeneration <: Generation{ThreeBools}
     e::Tuple{AnyBool, AnyBool, AnyBool}
 end
 value(g::ThreeBoolsGeneration) = g.e
+function generation_emit_stats(rs::RunState, g::ThreeBoolsGeneration, s::String)
+end
 
 struct FlipFlipFlip <: GenerationParams{ThreeBools} end
 function to_subpath(::FlipFlipFlip)
@@ -155,9 +157,9 @@ function to_subpath(::FlipFlipFlip)
 end
 function generate(rs::RunState, ::FlipFlipFlip)
     ThreeBoolsGeneration((
-        register_weight!(rs, "f1", random_value=true),
-        register_weight!(rs, "f2", random_value=true),
-        register_weight!(rs, "f3", random_value=true),
+        flip(register_weight!(rs, "f1", random_value=true)),
+        flip(register_weight!(rs, "f2", random_value=true)),
+        flip(register_weight!(rs, "f3", random_value=true)),
     ))
 end
 

@@ -21,12 +21,12 @@ LR_LIST = [0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
-            SamplingEntropy{ThreeBools}(resampling_frequency=2, samples_per_batch=10000) => lr,
+            SamplingEntropy{ThreeBools}(resampling_frequency=2, samples_per_batch=1) => lr,
         ]
         for lr in LR_LIST
     ),
 ]))
-EPOCHS_LIST = [100_000]
+EPOCHS_LIST = [1000]
 
 TOOL_PATH = "examples/qc/benchmarks/tool.jl"
 
