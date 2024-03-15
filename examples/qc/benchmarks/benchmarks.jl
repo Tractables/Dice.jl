@@ -64,7 +64,7 @@ function run_benchmark(
         for (adnode, d) in derivs
             if adnode isa Var
                 rs.var_vals[adnode] -= d
-                println(rs.io, "$(adnode) $(-d)")
+                # println(rs.io, "$(adnode) $(-d)")
             end
         end
 
@@ -86,14 +86,29 @@ end
 
 struct SimpleLossMgr <: LossMgr
     loss::ADNode
-    function SimpleLossMgr(loss::ADNode)
+    val
+    function SimpleLossMgr(loss::ADNode, val)
         # TODO: share an expander?
         l = Dice.LogPrExpander(WMC(BDDCompiler(Dice.bool_roots([loss]))))
         loss = Dice.expand_logprs(l, loss)
-        new(loss)
+        new(loss, val)
     end
 end
-produce_loss(rs::RunState, m::SimpleLossMgr, epoch::Integer) = m.loss
+function produce_loss(rs::RunState, m::SimpleLossMgr, epoch::Integer)
+    dist_path = joinpath(rs.out_dir, "dist.csv")
+    if epoch == 1
+        clear_file(dist_path)
+    end
+    d = pr_mixed(rs.var_vals)(m.val)
+    open(dist_path, "a") do f
+        println(f, join([d[i] for i in 0:7],"\t"))
+    end
+    if epoch == 10000
+        mk_areaplot(dist_path)
+    end
+    m.loss
+end
+
 
 struct SamplingEntropy{T} <: LossConfig{T}
     resampling_frequency::Integer
@@ -109,22 +124,34 @@ mutable struct SamplingEntropyLossMgr <: LossMgr
     current_samples
     SamplingEntropyLossMgr(p, val, consider, ignore) = new(p, val, consider, ignore, nothing, nothing)
 end
-function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
-    samples_path = joinpath(rs.out_dir, "samples.csv")
-    dist_path = joinpath(rs.out_dir, "dist.csv")
 
-    clear_file(path) = open(path, "w") do f end
-    if epoch == 1
-        clear_file(samples_path)
-        clear_file(dist_path)
+function save_areaplot(path, v)
+    mat = mapreduce(permutedims, vcat, v)
+    torow(v) = reshape(v, 1, length(v))
+    areaplot(
+        mat,
+        labels=torow(["$(i)" for i in 0:size(mat, 2)]),
+        # palette=:lightrainbow)
+        palette=cgrad(:thermal)
+    )
+    savefig("$(path).svg")
+end
+
+function mk_areaplot(path)
+    open(path, "r") do f
+        v = [[parse(Float64, s) for s in split(line,"\t")] for line in readlines(f)]
+        save_areaplot(path, v)
     end
+end
 
+clear_file(path) = open(path, "w") do f end
+function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
     if (epoch - 1) % m.p.resampling_frequency == 0
-        println_flush(rs.io, "Sampling...")
+        # println_flush(rs.io, "Sampling...")
         time_sample = @elapsed samples = with_concrete_ad_flips(rs.var_vals, m.val) do
             [sample_as_dist(rs.rng, Valuation(), m.val) for _ in 1:m.p.samples_per_batch]
         end
-        println(rs.io, "  $(time_sample) seconds")
+        # println(rs.io, "  $(time_sample) seconds")
 
         loss = sum(
             LogPr(prob_equals(m.val, sample))
@@ -140,6 +167,12 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
         m.current_samples = samples
     end
 
+    samples_path = joinpath(rs.out_dir, "samples.csv")
+    dist_path = joinpath(rs.out_dir, "dist.csv")
+    if epoch == 1
+        clear_file(samples_path)
+        clear_file(dist_path)
+    end
     d = pr_mixed(rs.var_vals)(m.val)
     open(dist_path, "a") do f
         println(f, join([d[i] for i in 0:7],"\t"))
@@ -151,21 +184,9 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
             for i in 0:7
         ], "\t"))
     end
-
     if epoch == 10000
-        for path in [samples_path, dist_path]
-            open(path, "r") do f
-                v = [[parse(Float64, s) for s in split(line,"\t")] for line in readlines(f)]
-                # v = [[parse(Real, String(s)) for s in split(line,"\t")] for line in readlines(f)]
-                mat = mapreduce(permutedims, vcat, v)
-                # println(stderr, typeof(mat))
-                torow(v) = reshape(v, 1, length(v))
-                areaplot(mat, labels=torow(["$(i)" for i in 0:7]),
-                # palette=:lightrainbow)
-                palette=cgrad(:thermal))
-                savefig("$(path).svg")
-            end
-        end
+        mk_areaplot(samples_path)
+        mk_areaplot(dist_path)
     end
 
     @assert !isnothing(m.current_loss)
@@ -201,6 +222,19 @@ function generate(rs::RunState, ::Flips{W}) where W
         for i in 1:W
     ]))
 end
+
+struct BoolsExactEntropy{W} <: LossConfig{Bools{W}} end
+to_subpath(::BoolsExactEntropy) = ["exact_entropy"]
+function create_loss_manager(rs::RunState, p::BoolsExactEntropy{W}, generation) where W
+    println_flush(rs.io, "Building computation graph for $(p)...")
+    time_build_loss = @elapsed loss = 
+        neg_entropy(generation.v, [DistUInt{W}(i) for i in 0:2^W-1])
+    println(rs.io, "  $(time_build_loss) seconds")
+    println(rs.io)
+    SimpleLossMgr(loss, generation.v)
+end
+
+
 
 ##################################
 # STLC generation
