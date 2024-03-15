@@ -17,16 +17,18 @@ include("benchmarks.jl")
 # EPOCHS_LIST = [100_000]
 
 GENERATION_PARAMS_LIST = [Flips{3}()]
-LR_LIST = [0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300]
+# LR_LIST = [0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300]
+LR_LIST = [0.0001, 0.0002, 0.0005, 0.001, 0.002, 0.005, 0.01, 0.02, 0.05, 0.1, 0.2, 0.5, 1, 3, 10, 30, 100]
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
-            SamplingEntropy{Bools{3}}(resampling_frequency=1000, samples_per_batch=100) => lr,
+            BoolsExactEntropy{3}() => lr,
+            # SamplingEntropy{Bools{3}}(resampling_frequency=1, samples_per_batch=10_000) => lr,
         ]
         for lr in LR_LIST
     ),
 ]))
-EPOCHS_LIST = [10000]
+EPOCHS_LIST = [100_000]
 
 TOOL_PATH = "examples/qc/benchmarks/tool.jl"
 
