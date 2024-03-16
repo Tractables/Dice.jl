@@ -57,7 +57,8 @@ function run_benchmark(
         update_curves(vals)
 
         if any(isinf(vals[loss]) || isnan(vals[loss]) for loss in losses)
-            break
+            continue
+            # break
         end
 
         # update vars
@@ -95,17 +96,17 @@ struct SimpleLossMgr <: LossMgr
     end
 end
 function produce_loss(rs::RunState, m::SimpleLossMgr, epoch::Integer)
-    dist_path = joinpath(rs.out_dir, "dist.csv")
-    if epoch == 1
-        clear_file(dist_path)
-    end
-    d = pr_mixed(rs.var_vals)(m.val)
-    open(dist_path, "a") do f
-        println(f, join([d[i] for i in 0:7],"\t"))
-    end
-    if epoch == 10000
-        mk_areaplot(dist_path)
-    end
+    # dist_path = joinpath(rs.out_dir, "dist.csv")
+    # if epoch == 1
+    #     clear_file(dist_path)
+    # end
+    # d = pr_mixed(rs.var_vals)(m.val)
+    # open(dist_path, "a") do f
+    #     println(f, join([d[i] for i in 0:7],"\t"))
+    # end
+    # if epoch == EPOCHS
+    #     mk_areaplot(dist_path)
+    # end
     m.loss
 end
 
@@ -148,13 +149,12 @@ clear_file(path) = open(path, "w") do f end
 function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
     if (epoch - 1) % m.p.resampling_frequency == 0
         # println_flush(rs.io, "Sampling...")
-        time_sample = @elapsed samples = with_concrete_ad_flips(rs.var_vals, m.val) do
-            [sample_as_dist(rs.rng, Valuation(), m.val) for _ in 1:m.p.samples_per_batch]
-        end
+        temperature = 10 * 0.99 ^ epoch
+        time_sample = @elapsed samples = [sample_as_dist(rs.rng, m.val; temperature) for _ in 1:m.p.samples_per_batch]
         # println(rs.io, "  $(time_sample) seconds")
 
         loss = sum(
-            LogPr(prob_equals(m.val, sample))
+            exp(LogPr(prob_equals(m.val, sample)))
             for sample in samples
             if m.consider(sample)
         )
@@ -167,25 +167,25 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
         m.current_samples = samples
     end
 
-    samples_path = joinpath(rs.out_dir, "samples.csv")
+    # samples_path = joinpath(rs.out_dir, "samples.csv")
     dist_path = joinpath(rs.out_dir, "dist.csv")
     if epoch == 1
-        clear_file(samples_path)
+        # clear_file(samples_path)
         clear_file(dist_path)
     end
     d = pr_mixed(rs.var_vals)(m.val)
     open(dist_path, "a") do f
         println(f, join([d[i] for i in 0:7],"\t"))
     end
-    open(samples_path, "a") do f
-        println(f, join([
-            # sum(1 for s in samples if prob_equals(s, DistUInt{3}(i)) === true; init=0)
-            count(s -> prob_equals(s, DistUInt{3}(i)) === true, m.current_samples)
-            for i in 0:7
-        ], "\t"))
-    end
-    if epoch == 10000
-        mk_areaplot(samples_path)
+    # open(samples_path, "a") do f
+    #     println(f, join([
+    #         # sum(1 for s in samples if prob_equals(s, DistUInt{3}(i)) === true; init=0)
+    #         count(s -> prob_equals(s, DistUInt{3}(i)) === true, m.current_samples)
+    #         for i in 0:7
+    #     ], "\t"))
+    # end
+    if epoch == EPOCHS
+        # mk_areaplot(samples_path)
         mk_areaplot(dist_path)
     end
 
