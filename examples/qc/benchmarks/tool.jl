@@ -28,8 +28,9 @@ for (i, (arg, expected_type)) in enumerate(zip(args, expected_types))
 end
 generation_params, loss_config_weight_pairs, epochs = evaled_args
 
+EPOCHS = epochs
 SEED = 0
-TAG = "neg_fff_v12"
+TAG = "gumbel"
 
 out_dir = joinpath(
     vcat(

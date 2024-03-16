@@ -1,4 +1,5 @@
 export ADNode, ADMatrix, Var, ad_map, sigmoid, deriv_sigmoid, inverse_sigmoid, to_graph
+using Distributions
 
 using Graphs
 
@@ -216,6 +217,19 @@ compute_inner(x::Transpose, call) = transpose(call(x.x))
 function backward(n::Transpose, vals, derivs)
     add_deriv(derivs, n.x, transpose(derivs[n]))
 end
+# mutable struct Gumbel <: ADNode
+#     p::ADNode
+#     rng::AbstractRNG
+# end
+# NodeType(::Type{Gumbel}) = Inner()
+# chidlren(x::Gumbel) = x.p
+# function compute_inner(x::Gumbel, call)
+#     pr_true = call(gumbel_proxy(x.p, x.rng))
+#     rand()
+# end
+# function backward(x::Gumbel, vals, derivs)
+#     backward(gumbel_proxy(x.p, x.rng), vals, derivs)
+# end
 
 # Give override for add_logprobs so logprob in wmc.jl is differentiable.
 # computes log(exp(x) + exp(y))
