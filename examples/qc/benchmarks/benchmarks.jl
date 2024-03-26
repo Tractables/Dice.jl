@@ -103,7 +103,7 @@ function produce_loss(rs::RunState, m::SimpleLossMgr, epoch::Integer)
     open(dist_path, "a") do f
         println(f, join([d[i] for i in 0:7],"\t"))
     end
-    if epoch == 10000
+    if epoch == EPOCHS
         mk_areaplot(dist_path)
     end
     m.loss
@@ -148,20 +148,28 @@ clear_file(path) = open(path, "w") do f end
 function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
     if (epoch - 1) % m.p.resampling_frequency == 0
         # println_flush(rs.io, "Sampling...")
+        a = ADComputer(rs.var_vals)
         time_sample = @elapsed samples = with_concrete_ad_flips(rs.var_vals, m.val) do
-            [sample_as_dist(rs.rng, Valuation(), m.val) for _ in 1:m.p.samples_per_batch]
+            [sample_as_dist(rs.rng, a, m.val) for _ in 1:m.p.samples_per_batch]
         end
-        # println(rs.io, "  $(time_sample) seconds")
+
+        l = Dice.LogPrExpander(WMC(BDDCompiler([
+            prob_equals(m.val,sample)
+            for sample in samples
+        ])))
 
         loss = sum(
-            LogPr(prob_equals(m.val, sample))
+            begin
+                lpr_eq = LogPr(prob_equals(m.val,sample))
+                lpr_eq_expanded = Dice.expand_logprs(l, lpr_eq)
+                lpr_eq * compute(a, lpr_eq_expanded)
+            end
             for sample in samples
             if m.consider(sample)
         )
         for sample in samples
             @assert m.consider(sample) ^ m.ignore(sample)
         end
-        l = Dice.LogPrExpander(WMC(BDDCompiler(Dice.bool_roots([loss]))))
         loss = Dice.expand_logprs(l, loss) / m.p.samples_per_batch
         m.current_loss = loss
         m.current_samples = samples
@@ -184,7 +192,7 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
             for i in 0:7
         ], "\t"))
     end
-    if epoch == 10000
+    if epoch == EPOCHS
         mk_areaplot(samples_path)
         mk_areaplot(dist_path)
     end
@@ -356,7 +364,7 @@ end
 function SamplingEntropy{T}(; resampling_frequency, samples_per_batch) where T
     SamplingEntropy{T}(resampling_frequency, samples_per_batch)
 end
-to_subpath(p::SamplingEntropy) = ["sampling_entropy", "freq=$(p.resampling_frequency)-spb=$(p.samples_per_batch)"]
+to_subpath(p::SamplingEntropy) = ["reinforce_sampling_entropy", "freq=$(p.resampling_frequency)-spb=$(p.samples_per_batch)"]
 function create_loss_manager(::RunState, p::SamplingEntropy{T}, g::Generation{T}) where T
     SamplingEntropyLossMgr(p, value(g), _->true, _->false)
 end

@@ -48,8 +48,7 @@ function sample(rng, x; evidence=true)
     end
 end
 
-function sample_as_dist(rng, var_vals, x; evidence=true)
-    a = ADComputer(var_vals)
+function sample_as_dist(rng, a, x; evidence=true)
     while true
         vcache = Dict()
         fl(n::Flip) = begin
