@@ -5,7 +5,7 @@ using BenchmarkTools
 
 
 pieces = 8
-io = open(string("./mini-experiments/expectation_variance/exp_var.txt"), "a")
+io = open(string("./mini-experiments/expectation_variance/exp_var_new.txt"), "w")
 for i = 1:15
     DFiP = DistFix{5+i, i}
     code = @dice begin

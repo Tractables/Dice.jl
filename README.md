@@ -93,7 +93,7 @@ The Julia package Dice makes available the following constructs
 
 * `@dice` macro that encapsulates the probabilistic program
 * `observe()` to condition on a Boolean random variable being true.
-* `DistFix{W, F}` as types to represent fixed point numbers with `W` bits, `F` bits being after the binary point.
+* `DistFix{W, F}` as types to represent fixed point numbers with `W` bits, `F` bits being after the binary point. If the floating point numbers passed as an argument to `DistFix{W, F}` are outside the range $$[-2^{W - F - 1}, 2^{W - F - 1} - 2^{-F}]$$, one would encounter an error.
 * `bitblast` to bitblast continuous density functions using linear pieces with the following signature.
 
 ```julia
