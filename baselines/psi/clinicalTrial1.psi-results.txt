@@ -1,2 +1,0 @@
-Mathematica 14.0.0 Kernel for Linux x86 (64-bit)
-Copyright 1988-2023 Wolfram Research, Inc.
