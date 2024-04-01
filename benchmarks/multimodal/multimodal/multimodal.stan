@@ -4,7 +4,7 @@ data {
 }
 parameters {
 	real mu1;
-	real:q mu2;
+	real mu2;
 }
 model {
 	mu1 ~ uniform(-16, 16);
