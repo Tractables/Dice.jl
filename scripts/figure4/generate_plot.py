@@ -159,7 +159,8 @@ file = open("benchmarks/multimodal/multimodal_6_256.txt", "r")
 hybit_data = file.readlines()
 hybit_data = [float(i)*640 for i in hybit_data[0:1024]]
 
-ax.plot(AQUA_x, [y*0.8680*640 for y in AQUA_y]) # 0.8680 for same discretization interval
+a = AQUA_x[1] - AQUA_x[0]
+ax.plot(AQUA_x, [y*0.015625*640/a for y in AQUA_y]) # 0.8680 for same discretization interval
 ax.plot([i for i in np.arange(-8, 8, 0.015625)], hybit_data, color="purple")
 
 plt.ylim(0, 18)

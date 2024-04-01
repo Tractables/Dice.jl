@@ -21,7 +21,7 @@ def open_txt(filename, tag="r"):
     return file_handle
 
 def open_result(filename, tag="r"):
-    f = filename.replace("results_", "results_" + added)
+    f = filename.replace("results", "result" + added)
     try:
         file_handle = open(f, tag)
     except:
