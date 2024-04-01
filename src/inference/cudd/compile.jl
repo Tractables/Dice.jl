@@ -29,6 +29,13 @@ function BDDCompiler()
     c
 end
 
+# It's okay if not all of these are actually actually roots (i.e. some are
+# descendants of others), because including a descendant will not change the set
+# of nodes that foreach_node(roots) considers.
+#
+# It may be problematic to add roots once we've started compiling, though.
+# Currently all users of this code add all roots at the start, but if this
+# changes, we need to think more about GC.
 function BDDCompiler(roots)
     c = BDDCompiler()
     add_roots!(c, roots)
