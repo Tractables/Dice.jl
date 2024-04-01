@@ -130,15 +130,15 @@ function preview_distribution(e; full_dist)
     end
 end
 
-function save_samples(filename, e; n_samples=200, io=stdout)
+function save_samples(rs, filename, e; n_samples=200)
     open(filename, "w") do file
         for _ in 1:n_samples
-            expr = sample(e)
+            expr = sample(rs.rng, e)
             println(file, opt_stlc_str(expr))
             typecheck_opt(expr)
         end
     end
-    println(io, "Saved samples to $(filename).")
+    println(rs.io, "Saved samples to $(filename).")
 end
 
 function println_flush(io, args...)
@@ -159,7 +159,7 @@ function cmd_out(cmd)
     String(take!(io))
 end
 
-thousandths(n) = Integer(round(n, digits=3) * 1000)
+thousandths(n) = if isnan(n) "nan" else Integer(round(n, digits=3) * 1000) end
 
 global _soft_assert_ever_triggered = Ref(false)
 

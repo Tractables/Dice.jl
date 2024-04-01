@@ -95,17 +95,18 @@ struct SimpleLossMgr <: LossMgr
     end
 end
 function produce_loss(rs::RunState, m::SimpleLossMgr, epoch::Integer)
-    dist_path = joinpath(rs.out_dir, "dist.csv")
-    if epoch == 1
-        clear_file(dist_path)
-    end
-    d = pr_mixed(rs.var_vals)(m.val)
-    open(dist_path, "a") do f
-        println(f, join([d[i] for i in 0:7],"\t"))
-    end
-    if epoch == EPOCHS
-        mk_areaplot(dist_path)
-    end
+    # dist_path = joinpath(rs.out_dir, "dist.csv")
+    # if epoch == 1
+    #     clear_file(dist_path)
+    # end
+    # d = pr_mixed(rs.var_vals)(m.val)
+    # open(dist_path, "a") do f
+    #     println(f, join([d[i] for i in 0:15],"\t"))
+    # end
+    # if epoch == EPOCHS
+    #     mk_areaplot(dist_path)
+    # end
+    
     m.loss
 end
 
@@ -131,6 +132,7 @@ function save_areaplot(path, v)
     areaplot(
         mat,
         labels=torow(["$(i)" for i in 0:size(mat, 2)]),
+        legend=false,
         # palette=:lightrainbow)
         palette=cgrad(:thermal)
     )
@@ -175,27 +177,26 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
         m.current_samples = samples
     end
 
-    samples_path = joinpath(rs.out_dir, "samples.csv")
-    dist_path = joinpath(rs.out_dir, "dist.csv")
-    if epoch == 1
-        clear_file(samples_path)
-        clear_file(dist_path)
-    end
-    d = pr_mixed(rs.var_vals)(m.val)
-    open(dist_path, "a") do f
-        println(f, join([d[i] for i in 0:7],"\t"))
-    end
-    open(samples_path, "a") do f
-        println(f, join([
-            # sum(1 for s in samples if prob_equals(s, DistUInt{3}(i)) === true; init=0)
-            count(s -> prob_equals(s, DistUInt{3}(i)) === true, m.current_samples)
-            for i in 0:7
-        ], "\t"))
-    end
-    if epoch == EPOCHS
-        mk_areaplot(samples_path)
-        mk_areaplot(dist_path)
-    end
+    # samples_path = joinpath(rs.out_dir, "samples.csv")
+    # dist_path = joinpath(rs.out_dir, "dist.csv")
+    # if epoch == 1
+    #     clear_file(samples_path)
+    #     clear_file(dist_path)
+    # end
+    # d = pr_mixed(rs.var_vals)(m.val)
+    # open(dist_path, "a") do f
+    #     println(f, join([d[i] for i in 0:15],"\t"))
+    # end
+    # open(samples_path, "a") do f
+    #     println(f, join([
+    #         count(s -> prob_equals(s, DistUInt{4}(i)) === true, m.current_samples)
+    #         for i in 0:15
+    #     ], "\t"))
+    # end
+    # if epoch == EPOCHS
+    #     mk_areaplot(samples_path)
+    #     mk_areaplot(dist_path)
+    # end
 
     @assert !isnothing(m.current_loss)
     m.current_loss
@@ -256,7 +257,7 @@ end
 function generation_emit_stats(rs::RunState, g::STLCGeneration, s::String)
     println_flush(rs.io, "Saving samples...")
     time_sample = @elapsed with_concrete_ad_flips(rs.var_vals, g.e) do
-        save_samples(joinpath(rs.out_dir, "terms_$(s).txt"), g.e; io=rs.io)
+        save_samples(rs, joinpath(rs.out_dir, "terms_$(s).txt"), g.e)
     end
     println(rs.io, "  $(time_sample) seconds")
     println(rs.io)
