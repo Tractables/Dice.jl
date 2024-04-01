@@ -13,6 +13,8 @@ struct RunState
 end
 
 include("util.jl")
+include("lruset/dist.jl")
+include("lruset/generator.jl")
 include("stlc/dist.jl")
 include("stlc/generator.jl")
 include("stlc/to_coq.jl")
