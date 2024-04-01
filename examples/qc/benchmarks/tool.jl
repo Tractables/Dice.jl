@@ -2,11 +2,23 @@ include("benchmarks.jl")
 
 ## PARSE ARGS
 if isempty(ARGS)
-    as = ["-f", "Flips{3}()", "Pair{SamplingEntropy{Bools{3}},Float64}[SamplingEntropy{Bools{3}}(20,100)=>0.3]", "10000"]
+    as = ["-f"]
+    push!(as, replace(string(
+        BespokeLRUSetTestcaseGenerator(5)
+    ), " "=>""))
+    push!(as, replace(string(
+        [
+            SamplingEntropy{LRUSetTestcase}(
+                resampling_frequency=1,
+                samples_per_batch=1,
+            ) => 0.01,
+        ]
+    ), " "=>""))
+    push!(as, string(
+        2
+    ))
     empty!(ARGS)
-    for a in as
-        push!(ARGS, a)
-    end
+    append!(ARGS, as)
 end
 
 args = ARGS

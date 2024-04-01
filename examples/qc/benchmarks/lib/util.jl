@@ -42,9 +42,9 @@ function shuffle_for(rs, name, xs)
     end
 end
 
-function frequency(xs)
-    sample_from(xs)
-end
+# function frequency(xs)
+#     sample_from(xs)
+# end
 
 function backtrack(xs)
     isempty(xs) && return DistNone()
@@ -73,8 +73,13 @@ function map(::Type{RetT}) where RetT
     end
 end
 
-function frequency_for(rs, name, xs)
-    weights = [register_weight!(rs, "$(name)_$(i)") for i in 1:length(xs)]
+function frequency(weights_xs)
+    weights, xs = [], []
+    for (weight, x) in weights_xs
+        push!(weights, weight)
+        push!(xs,x)
+    end
+
     res = last(xs)
     weight_sum = last(weights)
     for i in length(xs) - 1 : -1 : 1
@@ -86,6 +91,11 @@ function frequency_for(rs, name, xs)
         end
     end
     res
+end
+
+function frequency_for(rs, name, xs)
+    weights = [register_weight!(rs, "$(name)_$(i)") for i in 1:length(xs)]
+    frequency(collect(zip(xs, weights)))
 end
 
 function opt_stlc_str(ast)

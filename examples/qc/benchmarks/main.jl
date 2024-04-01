@@ -2,15 +2,18 @@ include("benchmarks.jl")
 
 
 GENERATION_PARAMS_LIST = [
-    BespokeSTLCGenerator(param_vars_by_size=true,size=5,ty_size=2),
+    # BespokeSTLCGenerator(param_vars_by_size=true,size=5,ty_size=2),
     # BespokeBSTGenerator(size=5, vals=BSTDummyVals),
     # TypeBasedBSTGenerator(size=5),
+    # TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=true, use_parent_color=false),
+    # TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=false, use_parent_color=true),
+    BespokeLRUSetTestcaseGenerator(5),
 ]
 LR_LIST = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10]
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
-            SamplingEntropy{STLC}(resampling_frequency=2, samples_per_batch=1_000) => lr,
+            SamplingEntropy{LRUSetTestcase}(resampling_frequency=2, samples_per_batch=100) => lr,
         ]
         for lr in LR_LIST
     ),

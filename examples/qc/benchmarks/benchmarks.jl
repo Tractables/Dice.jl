@@ -243,7 +243,41 @@ function create_loss_manager(rs::RunState, p::BoolsExactEntropy{W}, generation) 
     SimpleLossMgr(loss, generation.v)
 end
 
+##################################
+# LRUSetTestcase Generation
+##################################
+abstract type LRUSetTestcase <: Benchmark end
+struct LRUSetTestcaseGeneration <: Generation{LRUSetTestcase}
+    v::DistI{LRUS.Program}
+end
+value(g::LRUSetTestcaseGeneration) = g.v
+function generation_emit_stats(rs::RunState, g::LRUSetTestcaseGeneration, s::String)
+    p = pr_mixed(rs.var_vals)(prob_equals(
+        g.v,
+        LRUS.vec_to_program([
+            LRUS.Insert(DistInt32(0)),
+            LRUS.Insert(DistInt32(1)),
+            LRUS.Insert(DistInt32(0)),
+            LRUS.PopStale(),
+            LRUS.Contains(DistInt32(1)),
+        ]),
+    ))[true]
+    # 3 p 2 * 2 c 1 = 12 ways to make programs like the above
+    println(rs.io, "Pr of finding bug: $(12 * p)")
+    println()
+end
 
+struct BespokeLRUSetTestcaseGenerator <: GenerationParams{LRUSetTestcase}
+    size
+end
+function to_subpath(::BespokeLRUSetTestcaseGenerator)
+    ["BespokeLRUSetTestcaseGenerator"]
+end
+function generate(rs::RunState, p::BespokeLRUSetTestcaseGenerator)
+    LRUSetTestcaseGeneration(
+        bespoke_gen_lrusp(rs, p.size)
+    )
+end
 
 ##################################
 # STLC generation
