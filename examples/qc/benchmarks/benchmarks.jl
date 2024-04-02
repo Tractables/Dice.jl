@@ -29,6 +29,7 @@ function run_benchmark(
         for loss_config in loss_configs
     ]
     curves = [[] for _ in loss_configs]
+    al_curves = [[] for _ in loss_configs]
 
     function emit_stats(s::String)
         print_adnodes_of_interest(rs, s)
@@ -56,6 +57,15 @@ function run_benchmark(
         )
         update_curves(vals)
 
+        for (i, m) in enumerate(loss_mgrs)
+            if m isa SamplingEntropyLossMgr
+                a = ADComputer(Valuation())
+                a.vals = vals
+                al_val = compute(a, m.current_actual_loss)
+                push!(al_curves[i], al_val)
+            end
+        end
+
         if any(isinf(vals[loss]) || isnan(vals[loss]) for loss in losses)
             break
         end
@@ -76,6 +86,12 @@ function run_benchmark(
 
     for (loss_config, curve) in zip(loss_configs, curves)
         save_learning_curve(rs.out_dir, curve, join(to_subpath(loss_config), "_"))
+    end
+
+    for (al_curve, loss_config, m) in zip(al_curves, loss_configs, loss_mgrs)
+        if m isa SamplingEntropyLossMgr
+            save_learning_curve(out_dir, al_curve, "actual_loss_" * join(to_subpath(loss_config), "_"))
+        end
     end
 end
 
@@ -122,8 +138,10 @@ mutable struct SamplingEntropyLossMgr <: LossMgr
     consider
     ignore
     current_loss::Union{Nothing,ADNode}
+    current_actual_loss::Union{Nothing,ADNode}
     current_samples
-    SamplingEntropyLossMgr(p, val, consider, ignore) = new(p, val, consider, ignore, nothing, nothing)
+    SamplingEntropyLossMgr(p, val, consider, ignore) =
+        new(p, val, consider, ignore, nothing, nothing, nothing)
 end
 
 function save_areaplot(path, v)
@@ -160,11 +178,14 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
             for sample in samples
         ])))
 
-        loss = sum(
+        loss, actual_loss = sum(
             begin
                 lpr_eq = LogPr(prob_equals(m.val,sample))
                 lpr_eq_expanded = Dice.expand_logprs(l, lpr_eq)
-                lpr_eq * compute(a, lpr_eq_expanded)
+                [
+                    lpr_eq_expanded * compute(a, lpr_eq_expanded), 
+                    lpr_eq_expanded
+                ]
             end
             for sample in samples
             if m.consider(sample)
@@ -174,6 +195,7 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
         end
         loss = Dice.expand_logprs(l, loss) / m.p.samples_per_batch
         m.current_loss = loss
+        m.current_actual_loss = actual_loss
         m.current_samples = samples
     end
 
