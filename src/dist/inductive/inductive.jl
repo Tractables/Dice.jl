@@ -1,6 +1,6 @@
 # Distributions over inductively-defined types
 
-export InductiveType, DistI, construct, match, matches
+export InductiveType, DistI, construct, match, matches, @inductive
 
 abstract type InductiveType end
 
@@ -135,4 +135,38 @@ function prob_equals(x::DistI{T}, y::DistI{T}) where T
         )
     end
     res
+end
+
+# Usage:
+# @inductive Option Some(DistInt32) None()
+# @inductive List{T} Nil() Cons(T, DistI{List{T}})
+macro inductive(type, constructors...)
+    ty = esc(type)
+    plist = [
+        begin
+            @assert constructor.head == :call
+            constructor, args... = constructor.args
+            constructor => args
+        end
+        for constructor in constructors
+    ]
+    tvs = if type isa Expr && type.head == :curly map(esc, type.args[2:end]) else [] end
+    block = quote
+        struct $(ty) <: InductiveType end
+        function $(esc(:param_lists))(::Type{$(ty)})::Vector{Pair{String,Vector{Type}}} where {$(tvs...)}
+            [
+                $([
+                    :($(string(ctor)) => [$([esc(arg) for arg in args]...)])
+                    for (ctor, args) in plist
+                ]...)
+            ]
+        end
+    end
+    for (ctor, args) in plist
+        vars = [gensym("$(i)") for i in 1:length(args)]
+        push!(block.args,
+            :($(esc(ctor))($(vars...)) = construct($(ty), $(string(ctor)), [$(vars...)]))
+        )
+    end
+    block
 end
