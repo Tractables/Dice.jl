@@ -153,7 +153,7 @@ macro inductive(type, constructors...)
     tvs = if type isa Expr && type.head == :curly map(esc, type.args[2:end]) else [] end
     block = quote
         struct $(ty) <: InductiveType end
-        function $(esc(:param_lists))(::Type{$(ty)})::Vector{Pair{String,Vector{Type}}} where {$(tvs...)}
+        function $(esc(:param_lists))(::$(esc(:(Base.Type))){$(ty)})::$(esc(:(Base.Vector{Base.Pair{Base.String,Base.Vector{Base.Type}}}))) where {$(tvs...)}
             [
                 $([
                     :($(string(ctor)) => [$([esc(arg) for arg in args]...)])
@@ -164,8 +164,10 @@ macro inductive(type, constructors...)
     end
     for (ctor, args) in plist
         vars = [gensym("$(i)") for i in 1:length(args)]
+        vars_annotated = [:($(var)::$(esc(arg))) for (var, arg) in zip(vars, args)]
+        tvs_args = [:(::$(esc(:(Base.Type))){$(tv)}) for tv in tvs]
         push!(block.args,
-            :($(esc(ctor))($(vcat(tvs,vars)...)) = construct($(ty), $(string(ctor)), [$(vars...)]))
+            :($(esc(ctor))($(vcat(tvs_args,vars_annotated)...)) where {$(tvs...)}= construct($(ty), $(string(ctor)), [$(vars...)]))
         )
     end
     block

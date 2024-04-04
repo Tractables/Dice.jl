@@ -2,17 +2,18 @@ using Test
 using Dice
 
 @testset "Option test" begin
-    none_int = DistNone(DistUInt32)
-    none_string = DistNone(DistString)
+    none_int = Opt.None(DistUInt32)
+    none_string = Opt.None(DistString)
     @test_throws MethodError prob_equals(none_int, none_string)
 
-    dist = pr(prob_equals(none_int, DistNone(DistUInt32)))
+    dist = pr(prob_equals(none_int, Opt.None(DistUInt32)))
     @test dist[true] == 1
 
     probably_none = @dice_ite if flip(9/10)
-        DistNone(DistString)
+        Opt.None(DistString)
     else
-        DistSome(
+        Opt.Some(
+            DistString,
             @dice_ite if flip(2/3)
                 DistString("foo")
             else
@@ -32,8 +33,8 @@ end
 
 
 @testset "Right thunks called" begin
-    none_str = DistNone(DistString)
-    some_str = DistSome(DistString("hi"))
+    none_str = Opt.None(DistString)
+    some_str = Opt.Some(DistString, DistString("hi"))
 
     error_none1(x) = match(x, [
         "None" => ()  -> error()

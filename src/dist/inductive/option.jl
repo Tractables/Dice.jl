@@ -1,13 +1,8 @@
 
-export Opt, DistNone, DistSome
+export Opt
 
-struct Opt{T} <: InductiveType end
-function param_lists(::Type{Opt{T}})::Vector{Pair{String,Vector{Type}}} where T
-    [
-        "None" => [],
-        "Some" => [T],
-    ]
+module Opt
+    using Dice
+    import Dice: param_lists
+    @inductive T{A} None() Some(A)
 end
-
-DistNone(T) = construct(Opt{T}, "None",  [])
-DistSome(x::T) where T = construct(Opt{T}, "Some", [x])
