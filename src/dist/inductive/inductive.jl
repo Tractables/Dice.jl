@@ -165,7 +165,7 @@ macro inductive(type, constructors...)
     for (ctor, args) in plist
         vars = [gensym("$(i)") for i in 1:length(args)]
         push!(block.args,
-            :($(esc(ctor))($(vars...)) = construct($(ty), $(string(ctor)), [$(vars...)]))
+            :($(esc(ctor))($(vcat(tvs,vars)...)) = construct($(ty), $(string(ctor)), [$(vars...)]))
         )
     end
     block

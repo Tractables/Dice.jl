@@ -1,18 +1,7 @@
 # Define List
-export List, DistNil, DistCons, prob_append, concat, one_of
+export List, Nil, Cons, prob_append, concat, one_of
 
-struct List{T} <: InductiveType end
-
-function param_lists(::Type{List{T}})::Vector{Pair{String,Vector{Type}}} where T <: Union{Dist, AnyBool}
-    [
-        "Nil" => [],
-        "Cons" => [T, DistI{List{T}}],
-    ]
-end
-
-DistNil(T) = construct(List{T}, "Nil",  [])
-DistCons(x::T, xs::DistI{List{T}}) where T =
-    construct(List{T}, "Cons", [x, xs])
+@inductive List{T} Nil() Cons(T, DistI{List{T}})
 
 function Base.length(l::DistI{List{T}}) where T
     match(l, [
@@ -24,12 +13,12 @@ end
 function rev_concat(l::DistI{List{T}}, acc::DistI{List{T}}) where T
     match(l, [
         "Nil"  => ()      -> acc,
-        "Cons" => (x, xs) -> rev_concat(xs, DistCons(x, acc)),
+        "Cons" => (x, xs) -> rev_concat(xs, Cons(T, x, acc)),
     ]) 
 end
 
 function Base.reverse(l::DistI{List{T}}) where T
-    rev_concat(l, DistNil(T))
+    rev_concat(l, Nil(T))
 end
 
 function concat(l1::DistI{List{T}}, l2::DistI{List{T}}) where T
@@ -37,7 +26,7 @@ function concat(l1::DistI{List{T}}, l2::DistI{List{T}}) where T
 end
 
 function prob_append(l::DistI{List{T}}, x::T) where T
-    concat(l, DistCons(x, DistNil(T)))
+    concat(l, Cons(T, x, Nil(T)))
 end
 
 function one_of(l::DistI{List{T}})::DistI{Opt{T}} where T <: Dist
