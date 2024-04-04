@@ -58,7 +58,7 @@ end
     # Variables can also be matrices!
     # Transform by [1, 2] by what matrix to get closest to [-3, -3]?
     A = Var("A")
-    var_vals = Valuation(A => [[1 0]; [0 1]])
+    var_vals = Valuation(A => [[1. 0]; [0 1]])
     v = to_matrix([1, 2])
     v′ = A * v
     target_vec = to_matrix([-3, -3])

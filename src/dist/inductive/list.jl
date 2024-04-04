@@ -29,11 +29,11 @@ function prob_append(l::DistI{List{T}}, x::T) where T
     concat(l, Cons(T, x, Nil(T)))
 end
 
-function one_of(l::DistI{List{T}})::DistI{Opt{T}} where T <: Dist
+function one_of(l::DistI{List{T}})::DistI{Opt.T{T}} where T <: Dist
     match(l, [
-        "Nil" => () -> DistNone(T),
+        "Nil" => () -> Opt.None(T),
         "Cons" => (x, xs) -> @dice_ite if flip_reciprocal(length(l))
-            DistSome(x)
+            Opt.Some(T, x)
         else
             one_of(xs)
         end
