@@ -88,7 +88,7 @@ end
     cg = one_of(ifelse(flip(2/3), Nil(DistString), foo_bar))
     dist = pr(cg)
     @test sum(values(dist)) == 1
-    @test dist[("None", [])] ≈ 2/3
-    @test dist[("Some", ["foo"])] ≈ 1/6
-    @test dist[("Some", ["bar"])] ≈ 1/6
+    @test dist[(:None, [])] ≈ 2/3
+    @test dist[(:Some, ["foo"])] ≈ 1/6
+    @test dist[(:Some, ["bar"])] ≈ 1/6
 end

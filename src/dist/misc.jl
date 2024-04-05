@@ -29,7 +29,7 @@ function prob_equals(x::Tuple, y::Tuple)
 end
 
 tobits(x::Vector) = 
-    mapreduce(tobits, vcat, x)
+    collect(Iterators.flatten(map(tobits, x)))
 
 frombits(x::Vector, world) = 
     map(v -> frombits(v, world), x)

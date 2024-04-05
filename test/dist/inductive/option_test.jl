@@ -22,13 +22,13 @@ using Dice
         )
     end
     res = match(probably_none, [
-        "Some" => (s) -> s + DistString("bar"),
-        "None" => ()  -> DistString("impossible")
+        :Some => (s) -> s + DistString("bar"),
+        :None => () -> DistString("impossible")
     ])
     evid = !prob_equals(res, DistString("impossible"))
     @test pr(res, evidence=evid)["foobar"] ≈ 2/3
-    @test pr(matches(probably_none, "None"))[true] ≈ 9/10
-    @test pr(matches(probably_none, "Some"))[true] ≈ 1/10
+    @test pr(matches(probably_none, :None))[true] ≈ 9/10
+    @test pr(matches(probably_none, :Some))[true] ≈ 1/10
 end
 
 
@@ -37,21 +37,21 @@ end
     some_str = Opt.Some(DistString, DistString("hi"))
 
     error_none1(x) = match(x, [
-        "None" => ()  -> error()
-        "Some" => (_) -> DistUInt(5)
+        :None => ()  -> error()
+        :Some => (_) -> DistUInt(5)
     ])
     error_none2(x) = match(x, [
-        "Some" => (_) -> DistUInt(5)
-        "None" => ()  -> error()
+        :Some => (_) -> DistUInt(5)
+        :None => ()  -> error()
     ])
 
     error_some1(x) = match(x, [
-        "Some" => (_) -> error()
-        "None" => ()  -> DistUInt(5)
+        :Some => (_) -> error()
+        :None => ()  -> DistUInt(5)
     ])
     error_some2(x) = match(x, [
-        "None" => ()  -> DistUInt(5)
-        "Some" => (_) -> error()
+        :None => ()  -> DistUInt(5)
+        :Some => (_) -> error()
     ])
     
     @test_throws ErrorException error_none1(none_str)
