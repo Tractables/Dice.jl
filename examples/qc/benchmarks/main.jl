@@ -5,20 +5,21 @@ GENERATION_PARAMS_LIST = [
     # BespokeSTLCGenerator(param_vars_by_size=true,size=5,ty_size=2),
     # BespokeBSTGenerator(size=5, vals=BSTDummyVals),
     # TypeBasedBSTGenerator(size=5),
-    # TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=true, use_parent_color=false),
+    TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=true, use_parent_color=true),
     # TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=false, use_parent_color=true),
-    BespokeLRUSetTestcaseGenerator(5),
+    # BespokeLRUSetTestcaseGenerator(5),
 ]
-LR_LIST = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10]
+LR_LIST = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 0.15, 0.2, 0.25]
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
-            SamplingEntropy{LRUSetTestcase}(resampling_frequency=2, samples_per_batch=100) => lr,
+            SamplingEntropy{RBT}(resampling_frequency=2, samples_per_batch=100) => 0.01,
+            SatisfyPropertyLoss(MultipleInvariants([BookkeepingInvariant(),BalanceInvariant()])) => lr,
         ]
         for lr in LR_LIST
     ),
 ]))
-EPOCHS_LIST = [10_000]
+EPOCHS_LIST = [5_000]
 
 # N = 4
 # GENERATION_PARAMS_LIST = [Flips{N}()]
@@ -41,7 +42,7 @@ TOOL_PATH = "examples/qc/benchmarks/tool.jl"
     flags = join([s for s in ARGS if startswith(s, "-")], " ")
     lcws_s = replace(string(lcws), " "=>"")
     p_s = replace(string(p), " "=>"")
-    s = "julia --project $(TOOL_PATH) $(flags) $(p_s) $(lcws_s) $(epochs)"
+    s = "julia --project $(TOOL_PATH) $(flags) \"$(p_s)\" \"$(lcws_s)\" $(epochs)"
     cmd = Cmd(Cmd(convert(Vector{String}, split(s))), ignorestatus=true)
     println(s)
     out = IOBuffer()

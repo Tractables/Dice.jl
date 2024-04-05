@@ -270,7 +270,7 @@ end
 ##################################
 abstract type LRUSetTestcase <: Benchmark end
 struct LRUSetTestcaseGeneration <: Generation{LRUSetTestcase}
-    v::DistI{LRUS.Program}
+    v::LRUS.Program
 end
 value(g::LRUSetTestcaseGeneration) = g.v
 function generation_emit_stats(rs::RunState, g::LRUSetTestcaseGeneration, s::String)
@@ -307,8 +307,8 @@ end
 
 abstract type STLC <: Benchmark end
 struct STLCGeneration <: Generation{STLC}
-    e::DistI{Opt{DistI{Expr}}}
-    constructors_overapproximation::Vector{DistI{Opt{DistI{Expr}}}}
+    e::Opt.T{Expr.T}
+    constructors_overapproximation::Vector{Opt.T{Expr.T}}
 end
 function generation_emit_stats(rs::RunState, g::STLCGeneration, s::String)
     println_flush(rs.io, "Saving samples...")
@@ -340,13 +340,13 @@ function to_subpath(p::BespokeSTLCGenerator)
 end
 function generate(rs::RunState, p::BespokeSTLCGenerator)
     constructors_overapproximation = []
-    function add_ctor(v::DistI{Opt{DistI{Expr}}})
+    function add_ctor(v::Opt.T{Expr.T})
         push!(constructors_overapproximation, v)
         v
     end
     e = gen_expr(
         rs,
-        DistNil(DistI{Typ}),
+        DistNil(Typ),
         gen_type(rs, p.ty_size, p.param_vars_by_size),
         p.size,
         p.ty_size,
@@ -389,7 +389,7 @@ function to_subpath(p::TypeBasedSTLCGenerator)
 end
 function generate(rs::RunState, p::TypeBasedSTLCGenerator)
     constructors_overapproximation = []
-    function add_ctor(v::DistI{Expr})
+    function add_ctor(v::Expr.T)
         push!(constructors_overapproximation, DistSome(v))
         v
     end
@@ -411,7 +411,7 @@ function create_loss_manager(rs::RunState, p::ApproxSTLCConstructorEntropy, gene
     )
     println(rs.io, "  $(time_build_loss) seconds")
     println(rs.io)
-    SimpleLossMgr(loss)
+    SimpleLossMgr(loss, nothing)
 end
 
 ##################################
@@ -469,7 +469,7 @@ function create_loss_manager(rs::RunState, p::STLCConstructorEntropy, generation
     println(rs.io, "  $(time_build_loss) seconds")
     println(rs.io)
 
-    SimpleLossMgr(loss)
+    SimpleLossMgr(loss, nothing)
 end
 
 ##################################
@@ -478,8 +478,8 @@ end
 
 abstract type BST <: Benchmark end
 struct BSTGeneration <: Generation{BST}
-    t::DistI{Tree}
-    constructors_overapproximation::Vector{DistI{Tree}}
+    t::KVTree.T
+    constructors_overapproximation::Vector{KVTree.T}
 end
 function generation_emit_stats(rs::RunState, g::BSTGeneration, s::String)
 end
@@ -517,7 +517,7 @@ function to_subpath(p::BespokeBSTGenerator)
 end
 function generate(rs::RunState, p::BespokeBSTGenerator)
     constructors_overapproximation = []
-    function add_ctor(v::DistI{Tree})
+    function add_ctor(v::KVTree.T)
         push!(constructors_overapproximation, v)
         v
     end
@@ -551,7 +551,7 @@ function to_subpath(p::TypeBasedBSTGenerator)
 end
 function generate(rs::RunState, p::TypeBasedBSTGenerator)
     constructors_overapproximation = []
-    function add_ctor(v::DistI{Tree})
+    function add_ctor(v::KVTree.T)
         push!(constructors_overapproximation, v)
         v
     end
@@ -628,7 +628,7 @@ function create_loss_manager(rs::RunState, p::MLELossConfig, generation)
     println(rs.io, "  $(time_build_loss) seconds")
     println(rs.io)
 
-    SimpleLossMgr(loss)
+    SimpleLossMgr(loss, nothing)
 
     # TODO: fix. allow us to register_stats! to rs, or create MLELossMgr
     # # Also save distribution of metric being trained
@@ -689,7 +689,7 @@ end
 
 abstract type RBT <: Benchmark end
 struct RBTGeneration <: Generation{RBT}
-    t::DistI{RBTree}
+    t::ColorKVTree.T
 end
 function generation_emit_stats(::RunState, g::RBTGeneration, s::String)
 end
@@ -745,7 +745,7 @@ function create_loss_manager(rs::RunState, p::SatisfyPropertyLoss, generation)
     println(rs.io, "  $(time_build_loss) seconds")
     println(rs.io)
 
-    SimpleLossMgr(loss)
+    SimpleLossMgr(loss, nothing)
 
     # TODO: fix
     # # Also print probability that property is met
