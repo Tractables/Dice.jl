@@ -42,7 +42,7 @@ generation_params, loss_config_weight_pairs, epochs = evaled_args
 EPOCHS = epochs
 
 SEED = 0
-TAG = "v13"
+TAG = "test"
 
 out_dir = joinpath(
     vcat(
@@ -65,6 +65,8 @@ if isfile(log_path) && !allow_overwrite
 end
 mkpath(out_dir)
 rs = RunState(Valuation(), Dict{String,ADNode}(), open(log_path, "w"), out_dir, MersenneTwister(SEED))
+
+println(stderr, "Logging to $(log_path)\n")
 
 commit = strip(cmd_out(`git rev-parse --short HEAD`))
 t = now()

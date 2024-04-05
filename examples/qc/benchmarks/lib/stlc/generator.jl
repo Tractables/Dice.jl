@@ -2,12 +2,12 @@
 # https://github.com/jwshi21/etna/blob/main/bench-suite/Coq/STLC/Methods/BespokeGenerator.v
 
 
-Ctx = DistI{List{DistI{Typ}}}
+Ctx = List{Typ.T}
 
-function gen_var(ctx::Ctx, t::DistI{Typ}, p::DistNat, r::DistI{List{DistNat}})::DistI{List{DistNat}}
+function gen_var(ctx::Ctx, t::Typ.T, p::DistNat, r::List{DistNat})::List{DistNat}
     match(ctx, [
-        "Nil" => () -> r,
-        "Cons" => (t′, ctx′) -> @dice_ite if prob_equals(t, t′)
+        :Nil => () -> r,
+        :Cons => (t′, ctx′) -> @dice_ite if prob_equals(t, t′)
             gen_var(ctx′, t, p + DistNat(1), DistCons(p, r))
         else
             gen_var(ctx′, t, p + DistNat(1), r)
@@ -15,18 +15,18 @@ function gen_var(ctx::Ctx, t::DistI{Typ}, p::DistNat, r::DistI{List{DistNat}})::
     ])
 end
 
-function bind_opt(f, ma::DistI{Opt{T}})::DistI{<:Opt{<:Any}} where T
+function bind_opt(f, ma::Opt.T{T})::Opt.T{<:Any} where T
     match(ma, [
-        "None" => () -> DistNone(T) # TODO: should be DistNone(return type of f)
-        "Some" => f
+        :None => () -> DistNone(T) # TODO: should be DistNone(return type of f)
+        :Some => f
     ])
 end
 
 # TODO: try returning expr instead of opt extr? what does env do?
-function gen_zero(env::Ctx, tau::DistI{Typ})
+function gen_zero(env::Ctx, tau::Typ.T)
     match(tau, [
-        "TBool" => ()       -> DistSome(DistBoolean(flip(0.5))), # TODO: should this be constant for just learning structure?
-        "TFun"  => (T1, T2) -> bind_opt(gen_zero(DistCons(T1, env), T2)) do e
+        :TBool => ()       -> DistSome(DistBoolean(flip(0.5))), # TODO: should this be constant for just learning structure?
+        :TFun  => (T1, T2) -> bind_opt(gen_zero(DistCons(T1, env), T2)) do e
             DistSome(DistAbs(T1, e))
         end
     ])
@@ -45,14 +45,14 @@ function gen_bool()
     DistBoolean(flip(0.5))
 end
 
-function gen_expr(rs::RunState, env::Ctx, tau::DistI{Typ}, sz::Integer, gen_typ_sz::Integer, by_sz, track_return)::DistI{Opt{DistI{Expr}}}
+function gen_expr(rs::RunState, env::Ctx, tau::Typ.T, sz::Integer, gen_typ_sz::Integer, by_sz, track_return)::Opt.T{Expr.T}
     track_return(
         begin
             for_prefix = if by_sz "sz$(sz)_" else "" end
             if sz == 0
                 backtrack_for(rs, for_prefix * "zero", [
                     one_of(
-                        map(DistI{Expr})(
+                        map(Expr.T)(
                             DistVar,
                             gen_var(env, tau, zero(DistNat), DistNil(DistNat))
                         )
@@ -64,7 +64,7 @@ function gen_expr(rs::RunState, env::Ctx, tau::DistI{Typ}, sz::Integer, gen_typ_
                 backtrack_for(rs, for_prefix * "succ", [
                     # Var
                     one_of(
-                        map(DistI{Expr})(
+                        map(Expr)(
                             DistVar,
                             gen_var(env, tau, zero(DistNat), DistNil(DistNat))
                         )
@@ -80,8 +80,8 @@ function gen_expr(rs::RunState, env::Ctx, tau::DistI{Typ}, sz::Integer, gen_typ_
                     end,
                     # Value
                     match(tau, [
-                        "TBool" => () -> DistSome(gen_bool()),
-                        "TFun" => (T1, T2) ->
+                        :TBool => () -> DistSome(gen_bool()),
+                        :TFun => (T1, T2) ->
                             bind_opt(gen_expr(rs, DistCons(T1, env), T2, sz′, gen_typ_sz, by_sz, track_return)) do e
                                 DistSome(DistAbs(T1, e))
                             end

@@ -43,7 +43,7 @@ Coq < Coq < Coq < GenSizedTree =
 ==#
 function tb_gen_rbt(rs, p, sz, parent_red)
     if sz == 0
-        DistRBE()
+        ColorKVTree.Leaf()
     else
         flip_leaf = if p.learn_leaf_weights
             @dice_ite if parent_red | !p.use_parent_color
@@ -55,19 +55,19 @@ function tb_gen_rbt(rs, p, sz, parent_red)
             flip(.5)
         end
         @dice_ite if flip_leaf
-            DistRBE()
+            ColorKVTree.Leaf()
         else
             flip_red = @dice_ite if parent_red | !p.use_parent_color
                 flip(register_weight!(rs, if p.color_by_size "red_sz$(sz)_redparent" else "red_redparent" end))
             else
                 flip(register_weight!(rs, if p.color_by_size "red_sz$(sz)_blackparent" else "red_blackparent" end))
             end
-            color = if flip_red DistRed() else DistBlack() end
+            color = if flip_red Color.Red() else Color.Black() end
             k = DistInt32(0)
             v = DistInt32(0)
             l = tb_gen_rbt(rs, p, sz - 1, flip_red)
             r = tb_gen_rbt(rs, p, sz - 1, flip_red)
-            DistRBT(color, l, k, v, r)
+            ColorKVTree.Node(color, l, k, v, r)
         end
     end
 end

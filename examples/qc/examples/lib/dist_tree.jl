@@ -6,15 +6,15 @@ struct Tree{T} <: InductiveType end
 function param_lists(::Type{Tree{T}})::Vector{Pair{String,Vector{Type}}} where T <: Union{Dist, AnyBool}
     [
         "Leaf" => [],
-        "Branch" => [T, DistI{Tree{T}}, DistI{Tree{T}}],
+        "Branch" => [T, Tree{T}, Tree{T}],
     ]
 end
 
 DistLeaf(T)          = construct(Tree{T}, "Leaf",   [])
-DistBranch(x::T, l::DistI{Tree{T}}, r::DistI{Tree{T}}) where T =
+DistBranch(x::T, l::Tree{T}, r::Tree{T}) where T =
     construct(Tree{T}, "Branch", [x, l, r])
 
-function depth(l::DistI{Tree{T}}) where T
+function depth(l::Tree{T}) where T
     match(l, [
         "Leaf"    => ()      -> DistUInt32(0),
         "Branch"  => (x, l, r) -> begin

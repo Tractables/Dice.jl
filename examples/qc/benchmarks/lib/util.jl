@@ -1,4 +1,4 @@
-function backtrack_for(rs, name, opts::Vector{DistI{Opt{T}}})::DistI{Opt{T}} where T
+function backtrack_for(rs, name, opts::Vector{Opt.T{T}})::Opt.T{T} where T
     first_some(T, shuffle_for(rs, name, opts))
 end
 
@@ -65,7 +65,7 @@ end
 
 # Manually curry so we can have type be first arg and use "do"
 function map(::Type{RetT}) where RetT
-    function inner(f, l::DistI{List{T}}) where T
+    function inner(f, l::List{T}) where T
         match(l, [
             "Nil" => () -> DistNil(RetT),
             "Cons" => (x, xs) -> DistCons(f(x), map(RetT)(f, xs))

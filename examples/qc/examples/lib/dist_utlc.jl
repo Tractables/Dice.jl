@@ -6,8 +6,8 @@ struct DistUTLC <: InductiveType end
 function param_lists(::Type{DistUTLC})::Vector{Pair{String,Vector{Type}}}
     [
         "Var" => [DistString],
-        "App" => [DistI{DistUTLC}, DistI{DistUTLC}],
-        "Abs" => [DistString, DistI{DistUTLC}],
+        "App" => [DistUTLC, DistUTLC],
+        "Abs" => [DistString, DistUTLC],
     ]
 end
 
@@ -15,7 +15,7 @@ DistVar(s)      = construct(DistUTLC, "Var", [s,])
 DistApp(e1, e2) = construct(DistUTLC, "App", [e1, e2])
 DistAbs(s, e)   = construct(DistUTLC, "Abs", [s, e])
 
-function ast_depth(l::DistI{DistUTLC})
+function ast_depth(l::DistUTLC)
     match(l, [
         "Var"    => (s)      -> DistUInt32(0),
         "App"    => (e1, e2) -> begin
