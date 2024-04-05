@@ -2,11 +2,10 @@ export Nat, nat_ast_to_int
 
 module Nat
     using Dice
-    import Dice: param_lists
-    @inductive T Z() S(DistI{T})
+    @inductive T Z() S(T)
 end
 
-function DistI{Nat.T}(x)
+function Nat.T(x::Unsigned)
     res = DistZero()
     for _ in 1:x
         res = DistSucc(res)
@@ -14,9 +13,9 @@ function DistI{Nat.T}(x)
     res
 end
 
-Base.zero(::Type{DistI{Nat.T}}) = Nat.Z()
+Base.zero(::Type{Nat.T}) = Nat.Z()
 
-function Base.:(+)(x::DistI{Nat.T}, y::DistI{Nat.T})
+function Base.:(+)(x::Nat.T, y::Nat.T)
     match(y, [
         "Z" => () -> x
         "S" => y′ -> Nat.S(x) + y′
