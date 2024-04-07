@@ -182,10 +182,13 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
             begin
                 lpr_eq = LogPr(prob_equals(m.val,sample))
                 lpr_eq_expanded = Dice.expand_logprs(l, lpr_eq)
-                [
-                    lpr_eq_expanded * compute(a, lpr_eq_expanded), 
-                    lpr_eq_expanded
-                ]
+                meets_invs = satisfies_bookkeeping_invariant(sample) & satisfies_balance_invariant(sample)
+                @assert meets_invs isa Bool
+                if meets_invs
+                    [lpr_eq_expanded * compute(a, lpr_eq_expanded), lpr_eq_expanded]
+                else
+                    [Dice.Constant(0), Dice.Constant(0)]
+                end
             end
             for sample in samples
             if m.consider(sample)
