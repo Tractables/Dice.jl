@@ -42,7 +42,7 @@ generation_params, loss_config_weight_pairs, epochs = evaled_args
 EPOCHS = epochs
 
 SEED = 0
-TAG = "test"
+TAG = "qc14_cond_ent_better_loss"
 
 out_dir = joinpath(
     vcat(

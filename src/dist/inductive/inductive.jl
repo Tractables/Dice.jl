@@ -1,5 +1,5 @@
 # Distributions over inductively-defined types
-export @inductive, matches
+export @inductive, @match, matches
 
 # alternative to `nothing`, so `nothing` can be used as value
 _UNSET = gensym("unset")
@@ -89,6 +89,9 @@ function matches end
 # @inductive Option Some(DistInt32) None()
 # @inductive List{T} Nil() Cons(T, List{T})
 macro inductive(type, constructors...)
+    if length(constructors) == 1 && constructors[1].head == :vect
+        constructors = constructors[1].args
+    end
     ty = esc(type)
     plist = [
         begin
@@ -168,5 +171,25 @@ macro inductive(type, constructors...)
             end
             for (ctor_i, (ctor, args)) in enumerate(plist)
         ]...)
+    end
+end
+
+macro match(scrutinee, branches)
+    @assert branches.head == :vect || branches.head == :tuple
+    function branch_to_fn_pair(branch)
+        @assert branch.head == :->
+        pat, body = branch.args
+        @assert pat.head == :call
+        ctor, args... = pat.args
+        @assert all(isa(x, Symbol) for x in [ctor, args...])
+        esc(:(
+            $(QuoteNode(ctor)) =>
+            ($(args...),) -> $(body)
+        ))
+    end
+    quote
+        $(esc(Base.match))($(esc(scrutinee)), [$(
+            map(branch_to_fn_pair, branches.args)
+        ...)])
     end
 end

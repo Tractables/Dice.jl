@@ -14,10 +14,10 @@ module ColorKVTree
 end
 
 function tree_size(e::ColorKVTree.T)
-    match(e, [
-        :E => () -> DistUInt32(0),
-        :T => (c, l, k, v, r) -> DistUInt32(1) + tree_size(l) + tree_size(r),
-    ])
+    @match e [
+        Leaf() -> DistUInt32(0),
+        Node(c, l, k, v, r) -> DistUInt32(1) + tree_size(l) + tree_size(r),
+    ]
 end
 
 is_red(c::Color.T) = matches(c, :Red)
@@ -25,9 +25,9 @@ is_red(c::Color.T) = matches(c, :Red)
 # Check that all paths through the tree have the same number of black nodes
 function satisfies_bookkeeping_invariant(e::ColorKVTree.T)
     function black_height_and_valid(t::ColorKVTree.T)
-        match(t, [
-            :E => () -> (DistUInt32(1), true),
-            :T => (c, l, k, v, r) -> begin
+        @match t [
+            Leaf() -> (DistUInt32(1), true),
+            Node(c, l, k, v, r) -> begin
                 left_black_height, left_valid = black_height_and_valid(l)
                 right_black_height, right_valid = black_height_and_valid(r)
                 @dice_ite if left_valid & right_valid & prob_equals(left_black_height, right_black_height) 
@@ -36,7 +36,7 @@ function satisfies_bookkeeping_invariant(e::ColorKVTree.T)
                     DistUInt32(0), false
                 end
             end,
-        ])
+        ]
     end
     _black_height, valid = black_height_and_valid(e)
     valid
@@ -45,9 +45,9 @@ end
 # Check that all red nodes have black children
 function satisfies_balance_invariant(e::ColorKVTree.T)
     function color_and_valid(t::ColorKVTree.T)
-        match(t, [
-            :E => () -> (Black(), true),
-            :T => (c, l, k, v, r) -> begin
+        @match t [
+            Leaf() -> (Color.Black(), true),
+            Node(c, l, k, v, r) -> begin
                 left_color, left_valid = color_and_valid(l)
                 right_color, right_valid = color_and_valid(r)
                 @dice_ite if left_valid & right_valid & !(is_red(c) & (is_red(left_color) | is_red(right_color)))
@@ -56,15 +56,15 @@ function satisfies_balance_invariant(e::ColorKVTree.T)
                     c, false
                 end
             end,
-        ])
+        ]
     end
     _color, valid = color_and_valid(e)
     valid
 end
 
 function satisfies_black_root_invariant(t::ColorKVTree.T)
-    match(t, [
-        :E => () -> true,
-        :T => (c, l, k, v, r) -> !is_red(c)
-    ])
+    @match t [
+        Leaf() -> true,
+        Node(c, l, k, v, r) -> !is_red(c)
+    ]
 end
