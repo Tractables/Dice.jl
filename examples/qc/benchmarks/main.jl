@@ -6,18 +6,25 @@ GENERATION_PARAMS_LIST = [
     # BespokeBSTGenerator(size=5, vals=BSTDummyVals),
     # TypeBasedBSTGenerator(size=5),
     # TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=true, use_parent_color=true),
-    TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=false, use_parent_color=false),
-    TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=false, use_parent_color=true),
+    # TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=false, use_parent_color=false),
+    # TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=false, use_parent_color=true),
     TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=true, use_parent_color=false),
     TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=true, use_parent_color=true),
     # BespokeLRUSetTestcaseGenerator(5),
 ]
-LR_LIST = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 0.15, 0.2, 0.25]
+LR_LIST = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10]
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
-            SamplingEntropy{RBT}(resampling_frequency=2, samples_per_batch=100) => 0.01,
-            SatisfyPropertyLoss(MultipleInvariants([BookkeepingInvariant(),BalanceInvariant()])) => lr,
+            SamplingEntropy{RBT}(
+                resampling_frequency=2,
+                samples_per_batch=100,
+                property=MultipleInvariants([
+                    BookkeepingInvariant(),
+                    BalanceInvariant(),
+                ]),
+            ) => lr,
+            # SatisfyPropertyLoss(MultipleInvariants([BookkeepingInvariant(),BalanceInvariant()])) => lr,
         ]
         for lr in LR_LIST
     ),
