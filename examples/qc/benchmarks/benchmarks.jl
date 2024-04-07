@@ -12,6 +12,8 @@ abstract type LossMgr end
 
 abstract type Generation{T} end
 
+abstract type Property{T} end
+
 function run_benchmark(
     rs::RunState,
     generation_params::GenerationParams{T},
@@ -130,18 +132,17 @@ end
 struct SamplingEntropy{T} <: LossConfig{T}
     resampling_frequency::Integer
     samples_per_batch::Integer
+    property::Property{T}
 end
 
 mutable struct SamplingEntropyLossMgr <: LossMgr
     p::SamplingEntropy
     val
     consider
-    ignore
     current_loss::Union{Nothing,ADNode}
     current_actual_loss::Union{Nothing,ADNode}
     current_samples
-    SamplingEntropyLossMgr(p, val, consider, ignore) =
-        new(p, val, consider, ignore, nothing, nothing, nothing)
+    SamplingEntropyLossMgr(p, val, consider) = new(p, val, consider, nothing, nothing, nothing)
 end
 
 function save_areaplot(path, v)
@@ -167,10 +168,15 @@ end
 clear_file(path) = open(path, "w") do f end
 function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
     if (epoch - 1) % m.p.resampling_frequency == 0
-        # println_flush(rs.io, "Sampling...")
         a = ADComputer(rs.var_vals)
-        time_sample = @elapsed samples = with_concrete_ad_flips(rs.var_vals, m.val) do
-            [sample_as_dist(rs.rng, a, m.val) for _ in 1:m.p.samples_per_batch]
+        samples = []
+        @elapsed with_concrete_ad_flips(rs.var_vals, m.val) do
+            while length(samples) < m.p.samples_per_batch
+                sample = sample_as_dist(rs.rng, a, m.val)
+                if m.consider(sample)
+                    push!(samples, sample)
+                end
+            end
         end
 
         l = Dice.LogPrExpander(WMC(BDDCompiler([
@@ -182,21 +188,11 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
             begin
                 lpr_eq = LogPr(prob_equals(m.val,sample))
                 lpr_eq_expanded = Dice.expand_logprs(l, lpr_eq)
-                meets_invs = satisfies_bookkeeping_invariant(sample) & satisfies_balance_invariant(sample)
-                @assert meets_invs isa Bool
-                if meets_invs
-                    [lpr_eq_expanded * compute(a, lpr_eq_expanded), lpr_eq_expanded]
-                else
-                    [Dice.Constant(0), Dice.Constant(0)]
-                end
+                [lpr_eq_expanded * compute(a, lpr_eq_expanded), lpr_eq_expanded]
             end
             for sample in samples
-            if m.consider(sample)
         )
-        for sample in samples
-            @assert m.consider(sample) ^ m.ignore(sample)
-        end
-        loss = Dice.expand_logprs(l, loss) / m.p.samples_per_batch
+        loss = Dice.expand_logprs(l, loss) / length(samples)
         m.current_loss = loss
         m.current_actual_loss = actual_loss
         m.current_samples = samples
@@ -415,18 +411,6 @@ function create_loss_manager(rs::RunState, p::ApproxSTLCConstructorEntropy, gene
     println(rs.io, "  $(time_build_loss) seconds")
     println(rs.io)
     SimpleLossMgr(loss, nothing)
-end
-
-##################################
-# Sampling STLC entropy loss
-##################################
-
-function SamplingEntropy{T}(; resampling_frequency, samples_per_batch) where T
-    SamplingEntropy{T}(resampling_frequency, samples_per_batch)
-end
-to_subpath(p::SamplingEntropy) = ["reinforce_sampling_entropy", "freq=$(p.resampling_frequency)-spb=$(p.samples_per_batch)"]
-function create_loss_manager(::RunState, p::SamplingEntropy{T}, g::Generation{T}) where T
-    SamplingEntropyLossMgr(p, value(g), _->true, _->false)
 end
 
 ##################################
@@ -733,7 +717,9 @@ function generation_params_emit_stats(rs::RunState, p::TypeBasedRBTGenerator, s)
     println_flush(rs.io, "Saved Coq generator to $(path)")
 end
 
-abstract type Property{T} end
+##################################
+# Property loss
+##################################
 
 struct SatisfyPropertyLoss{T} <: LossConfig{T}
     property::Property{T}
@@ -742,7 +728,7 @@ to_subpath(p::SatisfyPropertyLoss) = [name(p.property)]
 function create_loss_manager(rs::RunState, p::SatisfyPropertyLoss, generation)
     println_flush(rs.io, "Building computation graph for $(p)...")
     time_build_loss = @elapsed begin
-        meets_property = check_property(p.property, generation)
+        meets_property = check_property(p.property, value(generation))
         loss = -LogPr(meets_property)
     end
     println(rs.io, "  $(time_build_loss) seconds")
@@ -765,27 +751,54 @@ function create_loss_manager(rs::RunState, p::SatisfyPropertyLoss, generation)
 end
 
 struct BookkeepingInvariant <: Property{RBT} end
-check_property(::BookkeepingInvariant, g::RBTGeneration) =
-    satisfies_bookkeeping_invariant(g.t)
+check_property(::BookkeepingInvariant, t::ColorKVTree.T) =
+    satisfies_bookkeeping_invariant(t)
 name(::BookkeepingInvariant) = "bookkeeping"
 
 struct BalanceInvariant <: Property{RBT} end
-check_property(::BalanceInvariant, g::RBTGeneration) =
-    satisfies_balance_invariant(g.t)
+check_property(::BalanceInvariant, t::ColorKVTree.T) =
+    satisfies_balance_invariant(t)
 name(::BalanceInvariant) = "balance"
 
 struct BlackRootInvariant <: Property{RBT} end
-check_property(::BlackRootInvariant, g::RBTGeneration) =
-    satisfies_black_root_invariant(g.t)
+check_property(::BlackRootInvariant, t::ColorKVTree.T) =
+    satisfies_black_root_invariant(t)
 name(::BlackRootInvariant) = "blackroot"
 
 struct MultipleInvariants{T} <: Property{T}
     properties::Vector{<:Property{T}}
 end
-check_property(p::MultipleInvariants{T}, g::Generation{T}) where T = 
+check_property(p::MultipleInvariants{T}, t) where T = 
     reduce(&, [
-        check_property(property, g)
+        check_property(property, t)
         for property in p.properties
     ])
 name(p::MultipleInvariants{T}) where T =
     join([name(property) for property in p.properties], "AND")
+
+struct TrueProperty{T} <: Property{T}
+end
+check_property(::TrueProperty{T}, _) where T = true
+name(::TrueProperty{T}) where T = "trueproperty"
+
+##################################
+# Sampling STLC entropy loss
+##################################
+
+function SamplingEntropy{T}(; resampling_frequency, samples_per_batch, property) where T
+    SamplingEntropy{T}(resampling_frequency, samples_per_batch, property)
+end
+
+to_subpath(p::SamplingEntropy) = [
+    "reinforce_sampling_entropy",
+    "freq=$(p.resampling_frequency)-spb=$(p.samples_per_batch)",
+    name(p.property),
+]
+function create_loss_manager(::RunState, p::SamplingEntropy{T}, g::Generation{T}) where T
+    function consider(sample)
+        c = check_property(p.property, sample)
+        @assert c isa Bool
+        c
+    end
+    SamplingEntropyLossMgr(p, value(g), consider)
+end
