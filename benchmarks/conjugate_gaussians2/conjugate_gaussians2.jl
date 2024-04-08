@@ -5,8 +5,8 @@ using BenchmarkTools
 using Plots
 
 if length(ARGS) == 0
-    bits = 16
-    pieces = 2048
+    bits = 15
+    pieces = 16
 else
     bits = parse(Int64, ARGS[1])
     pieces = parse(Int64, ARGS[2])

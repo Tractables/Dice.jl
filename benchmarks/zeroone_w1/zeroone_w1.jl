@@ -3,8 +3,8 @@ using Dice, Distributions
 using DelimitedFiles
 using BenchmarkTools
 
-if length(ARGS) == 1
-        bits = 8
+if length(ARGS) == 0
+    bits = 8
 else
     bits = parse(Int64, ARGS[1])
 end

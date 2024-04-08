@@ -3,7 +3,7 @@ using Dice, Distributions
 using DelimitedFiles
 using BenchmarkTools
 
-if length(ARGS) == 1
+if length(ARGS) == 0
     bits = 11
 else
     bits = parse(Int64, ARGS[1])

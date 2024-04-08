@@ -4,7 +4,7 @@ using DelimitedFiles
 using BenchmarkTools
 
 if length(ARGS) == 0
-    b = 9
+    b = 12
 else
     b = parse(Int64, ARGS[1])
 end
