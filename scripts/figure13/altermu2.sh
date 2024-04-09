@@ -1,6 +1,7 @@
 for (( i=0; i<=12; i++))
 do
-    ul=$(($i + 4))
+    temp=$(($i + 4)) 
+    ul=$(( temp > 12 ? 12 : temp))
     for (( j=0; j<=$ul; j++))
     do
         echo "bits $i pieces $((2**$j))"
