@@ -1,6 +1,0 @@
-def main(){
-	μ:=gauss(0,1);
-	cobserve(gauss(μ,1),8);
-	cobserve(gauss(μ,1),9);
-	return μ;
-}
