@@ -12,21 +12,24 @@ GENERATION_PARAMS_LIST = [
     TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=true, use_parent_color=true),
     # BespokeLRUSetTestcaseGenerator(5),
 ]
-LR_LIST = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10]
+LR_LIST = [0.001, 0.003, 0.01]
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
             SamplingEntropy{RBT}(
                 resampling_frequency=2,
-                samples_per_batch=100,
+                samples_per_batch=200,
+                # property=TrueProperty{RBT}(),
                 property=MultipleInvariants([
                     BookkeepingInvariant(),
                     BalanceInvariant(),
                 ]),
+                failure_penalty=fp,
             ) => lr,
             # SatisfyPropertyLoss(MultipleInvariants([BookkeepingInvariant(),BalanceInvariant()])) => lr,
         ]
         for lr in LR_LIST
+        for fp in [1., 3., 10., 30., 100.]
     ),
 ]))
 EPOCHS_LIST = [5_000]

@@ -1,6 +1,6 @@
 include("benchmarks.jl")
 
-TAG = "qc16_cond_ent_better_loss_rescaled"
+TAG = "v17_failure_penalty"
 
 ## PARSE ARGS
 if isempty(ARGS)
@@ -9,19 +9,23 @@ if isempty(ARGS)
     g_p = TypeBasedRBTGenerator(
         size=2, color_by_size=true, learn_leaf_weights=true, use_parent_color=true,
     )
+    lr = 0.01
+    fp = 2.
     l_p = [
-        SamplingEntropy{RBT}(
-            resampling_frequency=1,
-            samples_per_batch=1,
-            property=MultipleInvariants([
-                BookkeepingInvariant(),
-                BalanceInvariant(),
-            ]),
-        ) => 0.01,
+            SamplingEntropy{RBT}(
+                resampling_frequency=1,
+                samples_per_batch=200,
+                # property=TrueProperty{RBT}(),
+                property=MultipleInvariants([
+                    BookkeepingInvariant(),
+                    BalanceInvariant(),
+                ]),
+                failure_penalty=fp,
+            ) => lr,
     ]
     push!(as, replace(string(g_p), " "=>""))
     push!(as, replace(string(l_p), " "=>""))
-    push!(as, string(2))
+    push!(as, string(3))
     empty!(ARGS)
     append!(ARGS, as)
 end
