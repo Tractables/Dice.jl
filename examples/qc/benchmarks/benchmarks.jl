@@ -93,6 +93,7 @@ function run_benchmark(
     for (al_curve, loss_config, m) in zip(al_curves, loss_configs, loss_mgrs)
         if m isa SamplingEntropyLossMgr
             save_learning_curve(out_dir, al_curve, "actual_loss_" * join(to_subpath(loss_config), "_"))
+            save_learning_curve(out_dir, m.num_meeting, "meets_invariant_" * join(to_subpath(loss_config), "_"))
         end
     end
 end
@@ -133,16 +134,18 @@ struct SamplingEntropy{T} <: LossConfig{T}
     resampling_frequency::Integer
     samples_per_batch::Integer
     property::Property{T}
+    failure_penalty::Real
 end
 
 mutable struct SamplingEntropyLossMgr <: LossMgr
     p::SamplingEntropy
     val
     consider
+    num_meeting
     current_loss::Union{Nothing,ADNode}
     current_actual_loss::Union{Nothing,ADNode}
     current_samples
-    SamplingEntropyLossMgr(p, val, consider) = new(p, val, consider, nothing, nothing, nothing)
+    SamplingEntropyLossMgr(p, val, consider) = new(p, val, consider, [], nothing, nothing, nothing)
 end
 
 function save_areaplot(path, v)
@@ -184,14 +187,24 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
             for sample in samples
         ])))
 
+        num_meeting = 0
         loss, actual_loss = sum(
             begin
                 lpr_eq = LogPr(prob_equals(m.val,sample))
                 lpr_eq_expanded = Dice.expand_logprs(l, lpr_eq)
-                [lpr_eq_expanded * compute(a, lpr_eq_expanded), lpr_eq_expanded]
+                c = check_property(m.p.property, sample)
+                @assert c isa Bool
+                if c
+                    num_meeting += 1
+                    [lpr_eq_expanded * compute(a, lpr_eq_expanded), lpr_eq_expanded]
+                else
+                    [lpr_eq_expanded * compute(a, lpr_eq_expanded) * m.p.failure_penalty, lpr_eq_expanded]
+                end
             end
             for sample in samples
         )
+        push!(m.num_meeting, num_meeting / length(samples))
+
         loss = Dice.expand_logprs(l, loss) / length(samples)
         m.current_loss = loss
         m.current_actual_loss = actual_loss
@@ -785,20 +798,16 @@ name(::TrueProperty{T}) where T = "trueproperty"
 # Sampling STLC entropy loss
 ##################################
 
-function SamplingEntropy{T}(; resampling_frequency, samples_per_batch, property) where T
-    SamplingEntropy{T}(resampling_frequency, samples_per_batch, property)
+function SamplingEntropy{T}(; resampling_frequency, samples_per_batch, property, failure_penalty) where T
+    SamplingEntropy{T}(resampling_frequency, samples_per_batch, property, failure_penalty)
 end
 
 to_subpath(p::SamplingEntropy) = [
     "reinforce_sampling_entropy",
     "freq=$(p.resampling_frequency)-spb=$(p.samples_per_batch)",
-    name(p.property),
+    "prop=$(name(p.property))",
+    "failure_penalty=$(p.failure_penalty)",
 ]
 function create_loss_manager(::RunState, p::SamplingEntropy{T}, g::Generation{T}) where T
-    function consider(sample)
-        c = check_property(p.property, sample)
-        @assert c isa Bool
-        c
-    end
-    SamplingEntropyLossMgr(p, value(g), consider)
+    SamplingEntropyLossMgr(p, value(g), _->true)
 end
