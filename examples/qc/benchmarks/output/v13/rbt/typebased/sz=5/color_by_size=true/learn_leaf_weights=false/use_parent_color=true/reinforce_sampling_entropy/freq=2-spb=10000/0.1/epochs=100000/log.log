@@ -1,0 +1,19 @@
+2024-03-28T23:01:21.851 7ba7f49 ["-f", "TypeBasedRBTGenerator(5,true,false,true)", "Pair{SamplingEntropy{RBT},Float64}[SamplingEntropy{RBT}(2,10000)=>0.1]", "100000"]
+== Config ==
+TAG: v13
+TypeBasedRBTGenerator(5, true, false, true)
+Pair{SamplingEntropy{RBT}, Float64}[SamplingEntropy{RBT}(2, 10000) => 0.1]
+Epochs: 100000
+DistNat: DistUInt32
+SEED: 0
+
+Building generation computation graph...
+  2.609666 seconds
+
+ADNodes of interest (initial):
+Dict("red_sz3_blackparent" => 0.5, "red_sz5_blackparent" => 0.5, "red_sz4_blackparent" => 0.5, "red_sz1_redparent" => 0.5, "red_sz4_redparent" => 0.5, "red_sz3_redparent" => 0.5, "red_sz2_blackparent" => 0.5, "red_sz2_redparent" => 0.5, "red_sz1_blackparent" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz3_redparent_before_sigmoid") => 0, Var("red_sz3_blackparent_before_sigmoid") => 0, Var("red_sz5_blackparent_before_sigmoid") => 0, Var("red_sz4_redparent_before_sigmoid") => 0, Var("red_sz4_blackparent_before_sigmoid") => 0, Var("red_sz2_blackparent_before_sigmoid") => 0, Var("red_sz1_redparent_before_sigmoid") => 0, Var("red_sz1_blackparent_before_sigmoid") => 0, Var("red_sz2_redparent_before_sigmoid") => 0)
+
+Saved Coq generator to examples/qc/benchmarks/output/v13/rbt/typebased/sz=5/color_by_size=true/learn_leaf_weights=false/use_parent_color=true/reinforce_sampling_entropy/freq=2-spb=10000/0.1/epochs=100000/initial_Generator.v

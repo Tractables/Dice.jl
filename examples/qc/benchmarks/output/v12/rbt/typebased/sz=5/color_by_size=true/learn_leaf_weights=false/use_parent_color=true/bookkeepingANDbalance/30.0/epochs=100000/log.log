@@ -1,0 +1,31 @@
+2024-03-13T17:34:17.438 9a820f4 TypeBasedRBTGenerator(5,true,false,true) Pair{SatisfyPropertyLoss{RBT},Float64}[SatisfyPropertyLoss{RBT}(MultipleInvariants{RBT}(Property{RBT}[BookkeepingInvariant(),BalanceInvariant()]))=>30.0] 100000
+== Config ==
+TAG: v12
+TypeBasedRBTGenerator(5, true, false, true)
+Pair{SatisfyPropertyLoss{RBT}, Float64}[SatisfyPropertyLoss{RBT}(MultipleInvariants{RBT}(Property{RBT}[BookkeepingInvariant(), BalanceInvariant()])) => 30.0]
+Epochs: 100000
+DistNat: DistUInt32
+SEED: 0
+
+Building generation computation graph...
+  1.56577355 seconds
+
+Building computation graph for SatisfyPropertyLoss{RBT}(MultipleInvariants{RBT}(Property{RBT}[BookkeepingInvariant(), BalanceInvariant()]))...
+  2.919719688 seconds
+
+ADNodes of interest (initial):
+Dict("red_sz3_blackparent" => 0.5, "red_sz5_blackparent" => 0.5, "red_sz4_blackparent" => 0.5, "red_sz1_redparent" => 0.5, "red_sz4_redparent" => 0.5, "red_sz3_redparent" => 0.5, "red_sz2_blackparent" => 0.5, "red_sz2_redparent" => 0.5, "red_sz1_blackparent" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz3_redparent_before_sigmoid") => 0, Var("red_sz2_blackparent_before_sigmoid") => 0, Var("red_sz3_blackparent_before_sigmoid") => 0, Var("red_sz5_blackparent_before_sigmoid") => 0, Var("red_sz2_redparent_before_sigmoid") => 0, Var("red_sz4_redparent_before_sigmoid") => 0, Var("red_sz1_redparent_before_sigmoid") => 0, Var("red_sz4_blackparent_before_sigmoid") => 0, Var("red_sz1_blackparent_before_sigmoid") => 0)
+
+Saved Coq generator to examples/qc/benchmarks/output/v12/rbt/typebased/sz=5/color_by_size=true/learn_leaf_weights=false/use_parent_color=true/bookkeepingANDbalance/30.0/epochs=100000/initial_Generator.v
+ADNodes of interest (trained):
+Dict("red_sz3_blackparent" => 0.5804301803597809, "red_sz5_blackparent" => 3.6198465552285177e-6, "red_sz4_blackparent" => 0.9999969262145243, "red_sz1_redparent" => 0.4999937303326957, "red_sz4_redparent" => 0.2931654387391, "red_sz3_redparent" => 0.00033086865663036115, "red_sz2_blackparent" => 0.9991665161788417, "red_sz2_redparent" => 0.49995937566252663, "red_sz1_blackparent" => 0.5000411600465102)
+
+Parameter values (trained):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz3_redparent_before_sigmoid") => -8.013458145693763, Var("red_sz2_blackparent_before_sigmoid") => 7.089062435327686, Var("red_sz3_blackparent_before_sigmoid") => 0.3245395714652441, Var("red_sz5_blackparent_before_sigmoid") => -12.529075301230307, Var("red_sz2_redparent_before_sigmoid") => -0.00016249735025119542, Var("red_sz4_redparent_before_sigmoid") => -0.8800595504644542, Var("red_sz1_redparent_before_sigmoid") => -2.507866921864677e-5, Var("red_sz4_blackparent_before_sigmoid") => 12.692597628173894, Var("red_sz1_blackparent_before_sigmoid") => 0.00016464018641289076)
+
+Saved Coq generator to examples/qc/benchmarks/output/v12/rbt/typebased/sz=5/color_by_size=true/learn_leaf_weights=false/use_parent_color=true/bookkeepingANDbalance/30.0/epochs=100000/trained_Generator.v
+2024-03-13T17:44:31.732
+Total time elapsed: 10 minutes, 14 seconds, 294 milliseconds

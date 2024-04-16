@@ -1,0 +1,28 @@
+2024-03-28T23:01:07.094 7ba7f49 ["-f", "TypeBasedRBTGenerator(5,true,false,false)", "Pair{SamplingEntropy{RBT},Float64}[SamplingEntropy{RBT}(2,10000)=>300.0]", "100000"]
+== Config ==
+TAG: v13
+TypeBasedRBTGenerator(5, true, false, false)
+Pair{SamplingEntropy{RBT}, Float64}[SamplingEntropy{RBT}(2, 10000) => 300.0]
+Epochs: 100000
+DistNat: DistUInt32
+SEED: 0
+
+Building generation computation graph...
+  1.16135103 seconds
+
+ADNodes of interest (initial):
+Dict("red_sz1_redparent" => 0.5, "red_sz4_redparent" => 0.5, "red_sz3_redparent" => 0.5, "red_sz2_redparent" => 0.5, "red_sz5_redparent" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz3_redparent_before_sigmoid") => 0, Var("red_sz4_redparent_before_sigmoid") => 0, Var("red_sz5_redparent_before_sigmoid") => 0, Var("red_sz1_redparent_before_sigmoid") => 0, Var("red_sz2_redparent_before_sigmoid") => 0)
+
+Saved Coq generator to examples/qc/benchmarks/output/v13/rbt/typebased/sz=5/color_by_size=true/learn_leaf_weights=false/use_parent_color=false/reinforce_sampling_entropy/freq=2-spb=10000/300.0/epochs=100000/initial_Generator.v
+ADNodes of interest (trained):
+Dict("red_sz1_redparent" => 6.864254964948141e-258, "red_sz4_redparent" => NaN, "red_sz3_redparent" => 1.0, "red_sz2_redparent" => 1.0, "red_sz5_redparent" => 1.490519720901733e-302)
+
+Parameter values (trained):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz3_redparent_before_sigmoid") => 1103.6516874270078, Var("red_sz4_redparent_before_sigmoid") => NaN, Var("red_sz5_redparent_before_sigmoid") => -694.9815732190888, Var("red_sz1_redparent_before_sigmoid") => -592.140626485725, Var("red_sz2_redparent_before_sigmoid") => 1162.4078217990063)
+
+Saved Coq generator to examples/qc/benchmarks/output/v13/rbt/typebased/sz=5/color_by_size=true/learn_leaf_weights=false/use_parent_color=false/reinforce_sampling_entropy/freq=2-spb=10000/300.0/epochs=100000/trained_Generator.v
+2024-03-28T23:04:16.784
+Total time elapsed: 3 minutes, 9 seconds, 690 milliseconds

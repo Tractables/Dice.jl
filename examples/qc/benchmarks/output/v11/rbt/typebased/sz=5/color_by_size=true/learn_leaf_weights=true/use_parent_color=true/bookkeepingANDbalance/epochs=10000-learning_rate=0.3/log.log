@@ -1,0 +1,46 @@
+2024-03-10T18:28:54.640 eba9849 
+== Config ==
+TAG: v11
+TypeBasedRBTGenerator(5, true, true, true)
+SatisfyPropertyLoss{RBT}(MultipleInvariants{RBT}(Property{RBT}[BookkeepingInvariant(), BalanceInvariant()]))
+EPOCHS: 10000
+LEARNING_RATE: 0.3
+DistNat: DistUInt32
+
+Building generation computation graph...
+  1.435085971 seconds
+
+Building computation graph for SatisfyPropertyLoss{RBT}(MultipleInvariants{RBT}(Property{RBT}[BookkeepingInvariant(), BalanceInvariant()]))...
+  2.635753447 seconds
+
+ADNodes of interest (initial):
+Dict("leaf_sz2_redparent" => 0.5, "leaf_sz1_redparent" => 0.5, "red_sz3_blackparent" => 0.5, "leaf_sz5_blackparent" => 0.5, "leaf_sz3_blackparent" => 0.5, "red_sz1_blackparent" => 0.5, "red_sz3_redparent" => 0.5, "red_sz2_blackparent" => 0.5, "leaf_sz1_blackparent" => 0.5, "leaf_sz3_redparent" => 0.5, "red_sz5_blackparent" => 0.5, "red_sz4_blackparent" => 0.5, "leaf_sz4_redparent" => 0.5, "leaf_sz2_blackparent" => 0.5, "red_sz1_redparent" => 0.5, "red_sz4_redparent" => 0.5, "leaf_sz4_blackparent" => 0.5, "red_sz2_redparent" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("leaf_sz5_blackparent_before_sigmoid") => 0, Var("leaf_sz1_blackparent_before_sigmoid") => 0, Var("red_sz4_redparent_before_sigmoid") => 0, Var("red_sz5_blackparent_before_sigmoid") => 0, Var("red_sz3_blackparent_before_sigmoid") => 0, Var("red_sz1_redparent_before_sigmoid") => 0, Var("leaf_sz2_redparent_before_sigmoid") => 0, Var("red_sz2_redparent_before_sigmoid") => 0, Var("leaf_sz3_redparent_before_sigmoid") => 0, Var("red_sz2_blackparent_before_sigmoid") => 0, Var("leaf_sz4_blackparent_before_sigmoid") => 0, Var("red_sz1_blackparent_before_sigmoid") => 0, Var("red_sz4_blackparent_before_sigmoid") => 0, Var("leaf_sz3_blackparent_before_sigmoid") => 0, Var("leaf_sz1_redparent_before_sigmoid") => 0, Var("leaf_sz4_redparent_before_sigmoid") => 0, Var("red_sz3_redparent_before_sigmoid") => 0, Var("leaf_sz2_blackparent_before_sigmoid") => 0)
+
+Checking pr property met...
+  3.659608812 seconds
+Pr meets property: 0.6447941382057588
+
+Loss (initial): 0.43882417870300283
+
+Saved Coq generator to examples/qc/benchmarks/output/v11/rbt/typebased/sz=5/color_by_size=true/learn_leaf_weights=true/use_parent_color=true/bookkeepingANDbalance/epochs=10000-learning_rate=0.3/initial_Generator.v
+Training...
+  66.59875118 seconds
+
+ADNodes of interest (trained):
+Dict("leaf_sz2_redparent" => 0.5041161268135419, "leaf_sz1_redparent" => 0.500077749106081, "red_sz3_blackparent" => 0.5020554032502498, "leaf_sz5_blackparent" => 0.9984768831012489, "leaf_sz3_blackparent" => 0.5144937653912895, "red_sz1_blackparent" => 0.5000006791663794, "red_sz3_redparent" => 0.49983286798323423, "red_sz2_blackparent" => 0.5000388466587449, "leaf_sz1_blackparent" => 0.5000006791663794, "leaf_sz3_redparent" => 0.6360503704687303, "red_sz5_blackparent" => 0.4276449686664541, "red_sz4_blackparent" => 0.5705820141003471, "leaf_sz4_redparent" => 0.900378862974952, "leaf_sz2_blackparent" => 0.5002721435571007, "red_sz1_redparent" => 0.4999999916047337, "red_sz4_redparent" => 0.49532618042261395, "leaf_sz4_blackparent" => 0.902074012946013, "red_sz2_redparent" => 0.49999901901273036)
+
+Parameter values (trained):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("leaf_sz5_blackparent_before_sigmoid") => 6.485472174412424, Var("leaf_sz1_blackparent_before_sigmoid") => 2.71666551737113e-6, Var("red_sz4_redparent_before_sigmoid") => -0.018695822858999157, Var("red_sz5_blackparent_before_sigmoid") => -0.2914661441002155, Var("red_sz3_blackparent_before_sigmoid") => 0.0082216593130749, Var("red_sz1_redparent_before_sigmoid") => -3.358106527282527e-8, Var("leaf_sz2_redparent_before_sigmoid") => 0.016464879202509504, Var("red_sz2_redparent_before_sigmoid") => -3.9239490788704155e-6, Var("leaf_sz3_redparent_before_sigmoid") => 0.5582622814015743, Var("red_sz2_blackparent_before_sigmoid") => 0.0001553866352924405, Var("leaf_sz4_blackparent_before_sigmoid") => 2.2204846117656234, Var("red_sz1_blackparent_before_sigmoid") => 2.71666551737113e-6, Var("red_sz4_blackparent_before_sigmoid") => 0.28422614656587486, Var("leaf_sz3_blackparent_before_sigmoid") => 0.05799130812603785, Var("leaf_sz1_redparent_before_sigmoid") => 0.0003109964268307638, Var("leaf_sz4_redparent_before_sigmoid") => 2.201441272404798, Var("red_sz3_redparent_before_sigmoid") => -0.0006685280919617928, Var("leaf_sz2_blackparent_before_sigmoid") => 0.0010885743358988284)
+
+Checking pr property met...
+  0.028841214 seconds
+Pr meets property: 0.9997506649275899
+
+Loss (trained): 0.00024936616156709217
+
+Saved Coq generator to examples/qc/benchmarks/output/v11/rbt/typebased/sz=5/color_by_size=true/learn_leaf_weights=true/use_parent_color=true/bookkeepingANDbalance/epochs=10000-learning_rate=0.3/trained_Generator.v
+2024-03-10T18:30:30.654
+Total time elapsed: 1 minute, 36 seconds, 14 milliseconds

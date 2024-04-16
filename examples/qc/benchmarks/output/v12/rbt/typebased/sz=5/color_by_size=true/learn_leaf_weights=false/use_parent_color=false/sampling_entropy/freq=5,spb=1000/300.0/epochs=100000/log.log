@@ -1,0 +1,30 @@
+2024-03-13T17:34:17.141 9a820f4 TypeBasedRBTGenerator(5,true,false,false) Pair{SamplingEntropy{RBT},Float64}[SamplingEntropy{RBT}(5,1000)=>300.0] 100000
+== Config ==
+TAG: v12
+TypeBasedRBTGenerator(5, true, false, false)
+Pair{SamplingEntropy{RBT}, Float64}[SamplingEntropy{RBT}(5, 1000) => 300.0]
+Epochs: 100000
+DistNat: DistUInt32
+SEED: 0
+
+Building generation computation graph...
+  1.118762565 seconds
+
+ADNodes of interest (initial):
+Dict("red_sz1_redparent" => 0.5, "red_sz4_redparent" => 0.5, "red_sz3_redparent" => 0.5, "red_sz2_redparent" => 0.5, "red_sz5_redparent" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz3_redparent_before_sigmoid") => 0, Var("red_sz2_redparent_before_sigmoid") => 0, Var("red_sz4_redparent_before_sigmoid") => 0, Var("red_sz1_redparent_before_sigmoid") => 0, Var("red_sz5_redparent_before_sigmoid") => 0)
+
+Saved Coq generator to examples/qc/benchmarks/output/v12/rbt/typebased/sz=5/color_by_size=true/learn_leaf_weights=false/use_parent_color=false/sampling_entropy/freq=5,spb=1000/300.0/epochs=100000/initial_Generator.v
+Sampling...
+  3.829437644 seconds
+ADNodes of interest (trained):
+Dict("red_sz1_redparent" => 2.417615821507922e-32, "red_sz4_redparent" => 1.0, "red_sz3_redparent" => 2.0973879283682427e-21, "red_sz2_redparent" => 1.0, "red_sz5_redparent" => 1.0)
+
+Parameter values (trained):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("red_sz3_redparent_before_sigmoid") => -47.613594225995314, Var("red_sz2_redparent_before_sigmoid") => 81.76514293656787, Var("red_sz4_redparent_before_sigmoid") => 71.44221873852389, Var("red_sz1_redparent_before_sigmoid") => -72.79994111899113, Var("red_sz5_redparent_before_sigmoid") => 84.27167925909102)
+
+Saved Coq generator to examples/qc/benchmarks/output/v12/rbt/typebased/sz=5/color_by_size=true/learn_leaf_weights=false/use_parent_color=false/sampling_entropy/freq=5,spb=1000/300.0/epochs=100000/trained_Generator.v
+2024-03-13T17:34:53.343
+Total time elapsed: 36 seconds, 202 milliseconds

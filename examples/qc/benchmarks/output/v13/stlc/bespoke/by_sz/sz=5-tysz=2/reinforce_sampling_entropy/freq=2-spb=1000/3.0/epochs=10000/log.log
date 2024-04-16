@@ -1,0 +1,24 @@
+2024-03-30T15:56:43.339 7ba7f49 ["-f", "BespokeSTLCGenerator(true,5,2)", "Pair{SamplingEntropy{STLC},Float64}[SamplingEntropy{STLC}(2,1000)=>3.0]", "10000"]
+== Config ==
+TAG: v13
+BespokeSTLCGenerator(true, 5, 2)
+Pair{SamplingEntropy{STLC}, Float64}[SamplingEntropy{STLC}(2, 1000) => 3.0]
+Epochs: 10000
+DistNat: DistUInt32
+SEED: 0
+
+Building generation computation graph...
+  44.164119673 seconds
+
+ADNodes of interest (initial):
+Dict("tysz2_gen_type_tbool" => 0.5, "sz4_succ_var" => 0.5, "tysz1_gen_type_tbool" => 0.5, "sz0_zero_pr_var2" => 0.5, "sz2_succ_app" => 0.5, "sz4_succ_abs" => 0.5, "sz5_succ_var" => 0.5, "sz5_succ_abs" => 0.5, "sz2_succ_var" => 0.5, "sz1_succ_var" => 0.5, "sz1_succ_app" => 0.5, "sz1_succ_abs" => 0.5, "sz3_succ_abs" => 0.5, "sz3_succ_app" => 0.5, "sz5_succ_app" => 0.5, "sz4_succ_app" => 0.5, "sz2_succ_abs" => 0.5, "sz3_succ_var" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz3_succ_var_before_sigmoid") => 0, Var("tysz2_gen_type_tbool_before_sigmoid") => 0, Var("tysz1_gen_type_tbool_before_sigmoid") => 0, Var("sz2_succ_abs_before_sigmoid") => 0, Var("sz3_succ_abs_before_sigmoid") => 0, Var("sz0_zero_pr_var2_before_sigmoid") => 0, Var("sz4_succ_var_before_sigmoid") => 0, Var("sz4_succ_abs_before_sigmoid") => 0, Var("sz2_succ_app_before_sigmoid") => 0, Var("sz5_succ_abs_before_sigmoid") => 0, Var("sz5_succ_app_before_sigmoid") => 0, Var("sz1_succ_abs_before_sigmoid") => 0, Var("sz4_succ_app_before_sigmoid") => 0, Var("sz5_succ_var_before_sigmoid") => 0, Var("sz1_succ_var_before_sigmoid") => 0, Var("sz1_succ_app_before_sigmoid") => 0, Var("sz3_succ_app_before_sigmoid") => 0, Var("sz2_succ_var_before_sigmoid") => 0)
+
+Saving samples...
+Saved samples to examples/qc/benchmarks/output/v13/stlc/bespoke/by_sz/sz=5-tysz=2/reinforce_sampling_entropy/freq=2-spb=1000/3.0/epochs=10000/terms_initial.txt.
+  302.798589697 seconds
+
+Saved Coq generator to examples/qc/benchmarks/output/v13/stlc/bespoke/by_sz/sz=5-tysz=2/reinforce_sampling_entropy/freq=2-spb=1000/3.0/epochs=10000/initial_Generator.v
+

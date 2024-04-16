@@ -1,0 +1,30 @@
+2024-03-30T11:58:46.641 7ba7f49 ["TypeBasedBSTGenerator(5)", "Pair{SamplingEntropy{BST},Float64}[SamplingEntropy{BST}(2,1000)=>0.01]", "10000"]
+== Config ==
+TAG: v13
+TypeBasedBSTGenerator(5)
+Pair{SamplingEntropy{BST}, Float64}[SamplingEntropy{BST}(2, 1000) => 0.01]
+Epochs: 10000
+DistNat: DistUInt32
+SEED: 0
+
+Building generation computation graph...
+  1.031550366 seconds
+
+ADNodes of interest (initial):
+Dict("sz4" => 0.5, "sz5" => 0.5, "sz1" => 0.5, "sz2" => 0.5, "sz3" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz2_before_sigmoid") => 0, Var("sz1_before_sigmoid") => 0, Var("sz3_before_sigmoid") => 0, Var("sz4_before_sigmoid") => 0, Var("sz5_before_sigmoid") => 0)
+
+Default generation_params_emit_stats
+
+ADNodes of interest (trained):
+Dict("sz4" => 0.003501369289962538, "sz5" => 0.0014129427924046594, "sz1" => 0.49901283364576665, "sz2" => 0.19329704718738178, "sz3" => 0.03768459615948558)
+
+Parameter values (trained):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("sz2_before_sigmoid") => -1.4287274020013503, Var("sz1_before_sigmoid") => -0.00394867054756441, Var("sz3_before_sigmoid") => -3.240090838526296, Var("sz4_before_sigmoid") => -5.651093647862466, Var("sz5_before_sigmoid") => -6.560666720782919)
+
+Default generation_params_emit_stats
+
+2024-03-30T20:00:37.863
+Total time elapsed: 8 hours, 1 minute, 51 seconds, 222 milliseconds

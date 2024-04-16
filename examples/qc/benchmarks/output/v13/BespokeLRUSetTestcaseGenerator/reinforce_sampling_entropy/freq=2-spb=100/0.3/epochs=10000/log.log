@@ -1,0 +1,32 @@
+2024-04-01T22:08:48.353 3ba6235 ["-f", "BespokeLRUSetTestcaseGenerator(5)", "Pair{SamplingEntropy{LRUSetTestcase},Float64}[SamplingEntropy{LRUSetTestcase}(2,100)=>0.3]", "10000"]
+== Config ==
+TAG: v13
+BespokeLRUSetTestcaseGenerator(5)
+Pair{SamplingEntropy{LRUSetTestcase}, Float64}[SamplingEntropy{LRUSetTestcase}(2, 100) => 0.3]
+Epochs: 10000
+DistNat: DistUInt32
+SEED: 0
+
+Building generation computation graph...
+  1.406030926 seconds
+
+ADNodes of interest (initial):
+Dict("insert1" => 0.5, "popstale5" => 0.5, "insert4" => 0.5, "nil5" => 0.5, "popstale4" => 0.5, "insert5" => 0.5, "nil2" => 0.5, "popstale3" => 0.5, "contains2" => 0.5, "contains5" => 0.5, "popstale2" => 0.5, "nil4" => 0.5, "nil3" => 0.5, "contains3" => 0.5, "insert2" => 0.5, "insert3" => 0.5, "contains4" => 0.5, "nil1" => 0.5, "contains1" => 0.5, "popstale1" => 0.5)
+
+Parameter values (initial):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("nil5_before_sigmoid") => 0, Var("insert4_before_sigmoid") => 0, Var("contains2_before_sigmoid") => 0, Var("popstale4_before_sigmoid") => 0, Var("nil3_before_sigmoid") => 0, Var("popstale2_before_sigmoid") => 0, Var("insert2_before_sigmoid") => 0, Var("insert1_before_sigmoid") => 0, Var("contains1_before_sigmoid") => 0, Var("nil1_before_sigmoid") => 0, Var("contains3_before_sigmoid") => 0, Var("insert5_before_sigmoid") => 0, Var("nil4_before_sigmoid") => 0, Var("contains5_before_sigmoid") => 0, Var("popstale3_before_sigmoid") => 0, Var("nil2_before_sigmoid") => 0, Var("insert3_before_sigmoid") => 0, Var("popstale1_before_sigmoid") => 0, Var("contains4_before_sigmoid") => 0, Var("popstale5_before_sigmoid") => 0)
+
+Pr of finding bug: 1.9051973784484093e-5
+Default generation_params_emit_stats
+
+ADNodes of interest (trained):
+Dict("insert1" => 0.9331958631078737, "popstale5" => 0.44282277224536953, "insert4" => 0.9474921203387855, "nil5" => 0.0001348819270153811, "popstale4" => 0.42696687640482345, "insert5" => 0.923330057186869, "nil2" => 0.0329447524489477, "popstale3" => 0.19325954265934656, "contains2" => 0.9283954985357967, "contains5" => 0.944917158922381, "popstale2" => 0.18305773510874057, "nil4" => 0.000321223012478628, "nil3" => 0.005266994674156572, "contains3" => 0.9570680237232722, "insert2" => 0.9418615510158111, "insert3" => 0.8892493148154977, "contains4" => 0.9098517717511697, "nil1" => 0.15533401014451081, "contains1" => 0.9349144184624077, "popstale1" => 0.09985812183702612)
+
+Parameter values (trained):
+Dict{Var, Union{Real, AbstractMatrix{<:Real}}}(Var("nil5_before_sigmoid") => -8.910975885900921, Var("insert4_before_sigmoid") => 2.892855373536446, Var("contains2_before_sigmoid") => 2.562299884160549, Var("popstale4_before_sigmoid") => -0.29423708496811585, Var("nil3_before_sigmoid") => -5.241014435465369, Var("popstale2_before_sigmoid") => -1.4957668296735482, Var("insert2_before_sigmoid") => 2.7850310728144176, Var("insert1_before_sigmoid") => 2.6368500989718475, Var("contains1_before_sigmoid") => 2.6647519511168154, Var("nil1_before_sigmoid") => -1.693363568335048, Var("contains3_before_sigmoid") => 3.1042575530562067, Var("insert5_before_sigmoid") => 2.4884770106466405, Var("nil4_before_sigmoid") => -8.043053658516689, Var("contains5_before_sigmoid") => 2.8422590076750556, Var("popstale3_before_sigmoid") => -1.4289679362254384, Var("nil2_before_sigmoid") => -3.3794236364922146, Var("insert3_before_sigmoid") => 2.0830960446351052, Var("popstale1_before_sigmoid") => -2.19880199636865, Var("contains4_before_sigmoid") => 2.311826401969945, Var("popstale5_before_sigmoid") => -0.22971374465407998)
+
+Pr of finding bug: 0.00036819253544801355
+Default generation_params_emit_stats
+
+2024-04-01T22:30:49.928
+Total time elapsed: 22 minutes, 1 second, 575 milliseconds
