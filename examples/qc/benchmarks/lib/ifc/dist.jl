@@ -1,6 +1,8 @@
 using Dice
 
 @inductive Label L() M1() M2() H()
+all_labels = [L(), M1(), M2(), H()]
+bot = L()
 @inductive BinOpT BAdd() BMult() BJoin() BFlowsTo() Beq()
 
 RegId = DistInt32
@@ -77,6 +79,7 @@ opCodes = [
   OpMLab(),
 ]
 
+
 Mframe = Block = Tuple{DistInt32, Label}
 Imem = List{Instr}
 
@@ -93,17 +96,28 @@ RegSet = List{Register}
 @inductive StackFrame SF(PtrAtom, RegSet, RegId, Label)
 @inductive Stack ST(List{StackFrame})
 
+@inductive Memframe{A} Fr(Label, List{A})
 # Definition mem A := Map.t (list (memframe A)).
 # Definition memory := mem Atom.
 # (* Specialize the Memory frame declaration *)
 # Definition frame := memframe Atom.
 
-# @inductive SState St(Imem, Memory, Stack, RegSet, PtrAtom)
+@inductive SState St(Imem, Memory, Stack, RegSet, PtrAtom)
 
 @inductive Variation{A} Var_(Label, A, A)
 
-function tb_gen_BinOpT()
+@inductive Map{K,V} 
+
+# Variation{SState}
+
+Info = Tuple{Mframe, DistInt32, List{Tuple{Mframe, DistInt32}}, DistInt32}
+
+function gen_BinOpT(rs)
     frequency_for(rs, "BinOpT_weights", [
         BAdd(), BMult(), BJoin(), BFlowsTo(), Beq(),
     ])
+end
+
+function gen_label(rs)
+    frequency_for(rs, "label_weights", all_labels)
 end
