@@ -31,8 +31,8 @@ Import ListNotations.
 
 From RBT Require Import Impl Spec.
 
-Definition original_sz := 5.
-Definition new_sz := 8.
+Definition original_sz := $(p.size).
+Definition new_sz := $(p.size).
 
 (* Look up in list of backtrack weights *)
 Fixpoint get {a: Type} (l : list (nat * a)) (target_key : nat) (default : a): a :=
