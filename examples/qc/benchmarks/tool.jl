@@ -1,16 +1,15 @@
 include("benchmarks.jl")
 
-TAG = "v17_failure_penalty"
+TAG = "v18"
 
 ## PARSE ARGS
 if isempty(ARGS)
     TAG = "test"
     as = ["-f"]
     g_p = TypeBasedRBTGenerator(
-        size=2, color_by_size=true, learn_leaf_weights=true, use_parent_color=true,
+        size=12, color_by_size=true, learn_leaf_weights=true, use_parent_color=true,
     )
     lr = 0.01
-    fp = 2.
     l_p = [
             SamplingEntropy{RBT}(
                 resampling_frequency=1,
@@ -20,7 +19,6 @@ if isempty(ARGS)
                     BookkeepingInvariant(),
                     BalanceInvariant(),
                 ]),
-                failure_penalty=fp,
             ) => lr,
     ]
     push!(as, replace(string(g_p), " "=>""))
