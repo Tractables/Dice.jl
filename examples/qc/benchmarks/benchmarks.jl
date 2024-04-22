@@ -186,9 +186,9 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
         loss, actual_loss = sum(
             begin
                 lpr_eq = if m.p.ignore_nums
-                    LogPr(prob_equals(m.val,sample))
-                else
                     LogPr(eq_except_numbers(m.val, sample))
+                else
+                    LogPr(prob_equals(m.val,sample))
                 end
                 lpr_eq_expanded = Dice.expand_logprs(l, lpr_eq)
                 if m.consider(sample)
