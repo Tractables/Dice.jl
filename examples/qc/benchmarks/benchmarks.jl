@@ -135,6 +135,7 @@ struct SamplingEntropy{T} <: LossConfig{T}
     samples_per_batch::Integer
     property::Property{T}
     failure_penalty::Real
+    ignore_nums::Bool
 end
 
 mutable struct SamplingEntropyLossMgr <: LossMgr
@@ -184,7 +185,11 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
         num_meeting = 0
         loss, actual_loss = sum(
             begin
-                lpr_eq = LogPr(prob_equals(m.val,sample))
+                lpr_eq = if m.p.ignore_nums
+                    LogPr(prob_equals(m.val,sample))
+                else
+                    LogPr(eq_except_numbers(m.val, sample))
+                end
                 lpr_eq_expanded = Dice.expand_logprs(l, lpr_eq)
                 if m.consider(sample)
                     num_meeting += 1
@@ -770,6 +775,11 @@ check_property(::BlackRootInvariant, t::ColorKVTree.T) =
     satisfies_black_root_invariant(t)
 name(::BlackRootInvariant) = "blackroot"
 
+struct OrderInvariant <: Property{RBT} end
+check_property(::OrderInvariant, t::ColorKVTree.T) =
+    satisfies_order_invariant(t)
+name(::OrderInvariant) = "order"
+
 struct MultipleInvariants{T} <: Property{T}
     properties::Vector{<:Property{T}}
 end
@@ -790,8 +800,8 @@ name(::TrueProperty{T}) where T = "trueproperty"
 # Sampling STLC entropy loss
 ##################################
 
-function SamplingEntropy{T}(; resampling_frequency, samples_per_batch, property, failure_penalty) where T
-    SamplingEntropy{T}(resampling_frequency, samples_per_batch, property, failure_penalty)
+function SamplingEntropy{T}(; resampling_frequency, samples_per_batch, property, failure_penalty, ignore_nums) where T
+    SamplingEntropy{T}(resampling_frequency, samples_per_batch, property, failure_penalty, ignore_nums)
 end
 
 to_subpath(p::SamplingEntropy) = [
@@ -799,6 +809,7 @@ to_subpath(p::SamplingEntropy) = [
     "freq=$(p.resampling_frequency)-spb=$(p.samples_per_batch)",
     "prop=$(name(p.property))",
     "failure_penalty=$(p.failure_penalty)",
+    "ignore_nums=$(p.ignore_nums)",
 ]
 function create_loss_manager(::RunState, p::SamplingEntropy{T}, g::Generation{T}) where T
     function consider(sample)

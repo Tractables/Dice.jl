@@ -63,7 +63,7 @@ function tb_gen_rbt(rs, p, sz, parent_red)
                 flip(register_weight!(rs, if p.color_by_size "red_sz$(sz)_blackparent" else "red_blackparent" end))
             end
             color = if flip_red Color.Red() else Color.Black() end
-            k = DistInt32(0)
+            k = uniform(DistInt32, 0, 100)
             v = DistInt32(0)
             l = tb_gen_rbt(rs, p, sz - 1, flip_red)
             r = tb_gen_rbt(rs, p, sz - 1, flip_red)

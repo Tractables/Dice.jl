@@ -8,32 +8,38 @@ GENERATION_PARAMS_LIST = [
     # TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=true, use_parent_color=true),
     # TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=false, use_parent_color=false),
     # TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=false, use_parent_color=true),
-    TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=true, use_parent_color=false),
+    # TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=true, use_parent_color=false),
     TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=true, use_parent_color=true),
     # BespokeLRUSetTestcaseGenerator(5),
 ]
-LR_LIST = [0.001, 0.003, 0.01]
+LR_LIST = [0.001, 0.003, 0.01, 0.03, 0.1]
+FP_LIST = [0.]
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
             SamplingEntropy{RBT}(
                 resampling_frequency=2,
-                samples_per_batch=200,
+                samples_per_batch=50,
                 # property=TrueProperty{RBT}(),
                 property=MultipleInvariants([
                     BookkeepingInvariant(),
                     BalanceInvariant(),
                 ]),
                 failure_penalty=fp,
+                ignore_nums=ignore_nums,
             ) => lr,
             # SatisfyPropertyLoss(MultipleInvariants([BookkeepingInvariant(),BalanceInvariant()])) => lr,
         ]
         for lr in LR_LIST
-        for fp in [1., 3., 10., 30., 100.]
+        for fp in FP_LIST
+        for ignore_nums in [false, true]
     ),
 ]))
-EPOCHS_LIST = [5_000]
+EPOCHS_LIST = [2_000]
 
+@show GENERATION_PARAMS_LIST
+@show LOSS_CONFIG_WEIGHT_PAIRS_LIST
+@show EPOCHS_LIST
 # N = 4
 # GENERATION_PARAMS_LIST = [Flips{N}()]
 # # LR_LIST = [0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300]
