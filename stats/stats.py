@@ -6,12 +6,27 @@ from collections import Counter, defaultdict
 
 STRAT_DIR = "/space/tjoa/etna/workloads/Coq/RBT/Strategies/"
 OUT_DIR = "/space/tjoa/Dice.jl/stats"
-NUM_TESTS = 100_000
+NUM_TESTS = 10_000
 
 METRICS = ["size", "height"]
 
+# Put rows in this order and also assert that all these generators exist
+ORDER = [
+    "BespokeGenerator.v",
+    "TypeBasedGenerator.v",
+    "ManualTypeBased5Generator.v",
+    "CondEntropy5Generator.v",
+    "OrderGenerator.v",
+    "OrderIgnoreGenerator.v",
+    "NoRedRed5Generator.v",
+    "ManualTypeBased8Generator.v",
+    "CondEntropy8Generator.v",
+    "NoRedRed8Generator.v",
+]
 def main():
     metric_to_generator_to_counts = defaultdict(lambda: defaultdict(dict))
+    for filename in ORDER:
+        assert filename in os.listdir(STRAT_DIR)
     for filename in os.listdir(STRAT_DIR):
         if filename.endswith("Generator.v"):
             generator_path = os.path.join(STRAT_DIR, filename)
@@ -36,11 +51,12 @@ def main():
                 for valid in (True, False)
             ])
             file.write(metric + '\t' + '\t'.join(val_names) + '\n')
-            for generator, counts in generator_to_counts.items():
+            for generator in [*ORDER, *[x for x in generator_to_counts if x not in ORDER]]:
+                counts = generator_to_counts[generator]
                 tokens = [generator]
                 for val in vals:
                     tokens.append(
-                        str(counts.get(val, 0))
+                        str(counts.get(val, 0) / NUM_TESTS)
                     )
                 file.write('\t'.join(tokens) + "\n")
 
@@ -74,7 +90,7 @@ def collect_stats(path, filename, metric_to_generator_to_counts):
           match t with
           | Some t =>
             if isRBT t then
-                collect (show (f t)) true
+                collect (append "valid " (show (f t))) true
             else
                 collect (append "invalid " (show (f t))) true
           | None =>
@@ -85,7 +101,7 @@ def collect_stats(path, filename, metric_to_generator_to_counts):
     Definition collect {A : Type} `{_ : Show A}  (f : Tree -> A)  : Checker :=  
         forAll arbitrary (fun t =>
             if isRBT t then
-                collect (show (f t)) true
+                collect (append "valid " (show (f t))) true
             else
                 collect (append "invalid " (show (f t))) true
         ).
@@ -123,7 +139,9 @@ def collect_stats(path, filename, metric_to_generator_to_counts):
                 cts["failure"] += 1
                 raise NotImplementedError()
             else:
-                valid = "invalid" not in tokens
+                valid = '"valid' in tokens
+                invalid = '"invalid' in tokens
+                assert valid ^ invalid, line
                 def stripquotes(s):
                     if s.startswith('"') and s.endswith('"'):
                         return s[1:-1]
