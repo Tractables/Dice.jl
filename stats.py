@@ -6,19 +6,16 @@ from collections import Counter, defaultdict
 
 STRAT_DIR = "/space/tjoa/etna/workloads/Coq/RBT/Strategies/"
 OUT_DIR = "/space/tjoa/Dice.jl/stats"
-NUM_TESTS = 1000
+NUM_TESTS = 100_000
 
 METRICS = ["size", "height"]
-
-def eprint(*args, **kwargs):
-    print(*args, file=sys.stderr, **kwargs)
 
 def main():
     metric_to_generator_to_counts = defaultdict(lambda: defaultdict(dict))
     for filename in os.listdir(STRAT_DIR):
         if filename.endswith("Generator.v"):
             generator_path = os.path.join(STRAT_DIR, filename)
-            eprint(f"Collecting stats for {filename}")
+            print(f"Collecting stats for {filename}")
             collect_stats(generator_path, filename, metric_to_generator_to_counts)
     for metric, generator_to_counts in metric_to_generator_to_counts.items():
         max_val = max(
@@ -38,7 +35,7 @@ def main():
                 for v in range(0, max_val + 1)
                 for valid in (True, False)
             ])
-            file.write('\t' + '\t'.join(val_names) + '\n')
+            file.write(metric + '\t' + '\t'.join(val_names) + '\n')
             for generator, counts in generator_to_counts.items():
                 tokens = [generator]
                 for val in vals:
@@ -56,6 +53,7 @@ def lines_between(s, start, end):
     for line in s.split('\n'):
         if line.startswith(start):
             active = True
+            continue
         elif active and line.startswith(end):
             break
         elif active:
@@ -74,13 +72,24 @@ def collect_stats(path, filename, metric_to_generator_to_counts):
     Definition collect {A : Type} `{_ : Show A}  (f : Tree -> A)  : Checker :=  
         forAll arbitrary (fun t =>    
           match t with
-          | Some t' => collect (Some (f t')) (isRBT t' -=> true)
-          | None => collect None (false -=> true)
+          | Some t =>
+            if isRBT t then
+                collect (show (f t)) true
+            else
+                collect (append "invalid " (show (f t))) true
+          | None =>
+            collect (append "failure" "") true
           end)."""
     else:
         pgrm += """
     Definition collect {A : Type} `{_ : Show A}  (f : Tree -> A)  : Checker :=  
-        forAll arbitrary (fun t => collect (f t) (isRBT t -=> true))."""
+        forAll arbitrary (fun t =>
+            if isRBT t then
+                collect (show (f t)) true
+            else
+                collect (append "invalid " (show (f t))) true
+        ).
+        """
 
     pgrm += f"""
     Fixpoint height (t: Tree) : nat :=
@@ -101,6 +110,7 @@ def collect_stats(path, filename, metric_to_generator_to_counts):
         cmd,
         stdout=subprocess.PIPE,
         stderr=subprocess.DEVNULL,
+        # stderr=sys.stderr,
         input=pgrm,
         encoding="ascii",
     )
@@ -113,8 +123,13 @@ def collect_stats(path, filename, metric_to_generator_to_counts):
                 cts["failure"] += 1
                 raise NotImplementedError()
             else:
-                valid = "(Discarded)" not in tokens
-                cts[int(tokens[-1]), valid] = int(tokens[0])
+                valid = "invalid" not in tokens
+                def stripquotes(s):
+                    if s.startswith('"') and s.endswith('"'):
+                        return s[1:-1]
+                    assert s.endswith('"')
+                    return s[:-1]
+                cts[int(stripquotes(tokens[-1])), valid] = int(tokens[0])
         metric_to_generator_to_counts[metric][filename] = cts
 
 if __name__ == "__main__":
