@@ -68,3 +68,31 @@ function satisfies_black_root_invariant(t::ColorKVTree.T)
         Node(c, l, k, v, r) -> !is_red(c)
     ]
 end
+
+function satisfies_order_invariant(t::ColorKVTree.T)
+    function helper(t, lo, hi)
+        @match t [
+            Leaf() -> true,
+            Node(c, l, k, v, r) -> begin
+                (if isnothing(lo) true else lo < k end) &
+                (if isnothing(hi) true else k < hi end) &
+                helper(l, lo, k) &
+                helper(r, k, hi)
+            end
+        ]
+    end
+    helper(t, nothing, nothing)
+end
+
+function eq_except_numbers(x::ColorKVTree.T, y::ColorKVTree.T)
+    @match x [
+        Leaf() -> (@match y [
+            Leaf() -> true,
+            Node(yc, yl, yk, yv, yr) -> false,
+        ]),
+        Node(xc, xl, xk, xv, xr) -> (@match y [
+            Leaf() -> false,
+            Node(yc, yl, yk, yv, yr) -> prob_eq(xc, yc) & eq_except_numbers(xl, yl) & eq_except_numbers(xr, yr),
+        ]),
+    ]
+end
