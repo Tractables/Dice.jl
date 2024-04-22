@@ -134,6 +134,7 @@ struct SamplingEntropy{T} <: LossConfig{T}
     resampling_frequency::Integer
     samples_per_batch::Integer
     property::Property{T}
+    failure_penalty::Real
 end
 
 mutable struct SamplingEntropyLossMgr <: LossMgr
@@ -171,32 +172,30 @@ clear_file(path) = open(path, "w") do f end
 function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
     if (epoch - 1) % m.p.resampling_frequency == 0
         a = ADComputer(rs.var_vals)
-        samples = []
-        sample_attempts = 0
-        @elapsed with_concrete_ad_flips(rs.var_vals, m.val) do
-            while length(samples) < m.p.samples_per_batch
-                sample = sample_as_dist(rs.rng, a, m.val)
-                sample_attempts += 1
-                if m.consider(sample)
-                    push!(samples, sample)
-                end
-            end
+        samples = with_concrete_ad_flips(rs.var_vals, m.val) do
+            [sample_as_dist(rs.rng, a, m.val) for _ in 1:m.p.samples_per_batch]
         end
-        push!(m.num_meeting, length(samples) / sample_attempts)
 
         l = Dice.LogPrExpander(WMC(BDDCompiler([
             prob_equals(m.val,sample)
             for sample in samples
         ])))
 
+        num_meeting = 0
         loss, actual_loss = sum(
             begin
                 lpr_eq = LogPr(prob_equals(m.val,sample))
                 lpr_eq_expanded = Dice.expand_logprs(l, lpr_eq)
-                [lpr_eq_expanded * compute(a, lpr_eq_expanded), lpr_eq_expanded]
+                if m.consider(sample)
+                    num_meeting += 1
+                    [lpr_eq_expanded * compute(a, lpr_eq_expanded), lpr_eq_expanded]
+                else
+                    [Dice.Constant(m.p.failure_penalty), Dice.Constant(0)]
+                end
             end
             for sample in samples
         )
+        push!(m.num_meeting, num_meeting / length(samples))
 
         loss = Dice.expand_logprs(l, loss) / length(samples)
         m.current_loss = loss
@@ -791,14 +790,15 @@ name(::TrueProperty{T}) where T = "trueproperty"
 # Sampling STLC entropy loss
 ##################################
 
-function SamplingEntropy{T}(; resampling_frequency, samples_per_batch, property) where T
-    SamplingEntropy{T}(resampling_frequency, samples_per_batch, property)
+function SamplingEntropy{T}(; resampling_frequency, samples_per_batch, property, failure_penalty) where T
+    SamplingEntropy{T}(resampling_frequency, samples_per_batch, property, failure_penalty)
 end
 
 to_subpath(p::SamplingEntropy) = [
     "reinforce_sampling_entropy",
     "freq=$(p.resampling_frequency)-spb=$(p.samples_per_batch)",
     "prop=$(name(p.property))",
+    "failure_penalty=$(p.failure_penalty)",
 ]
 function create_loss_manager(::RunState, p::SamplingEntropy{T}, g::Generation{T}) where T
     function consider(sample)
