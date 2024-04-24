@@ -1,6 +1,6 @@
 include("benchmarks.jl")
 
-TAG = "v20_the_nums"
+TAG = "v21_the_nums"
 
 ## PARSE ARGS
 if isempty(ARGS)

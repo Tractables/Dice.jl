@@ -1,6 +1,5 @@
 include("benchmarks.jl")
 
-
 GENERATION_PARAMS_LIST = [
     # BespokeSTLCGenerator(param_vars_by_size=true,size=5,ty_size=2),
     # BespokeBSTGenerator(size=5, vals=BSTDummyVals),
@@ -14,16 +13,29 @@ GENERATION_PARAMS_LIST = [
 ]
 LR_LIST = [0.001, 0.003, 0.01, 0.03, 0.1]
 FP_LIST = [0.]
+RESAMPLING_FREQUENCY_LIST = [2]
+SAMPLES_PER_BATCH_LIST = [200]
+EPOCHS_LIST = [5_000]
+
+@show GENERATION_PARAMS_LIST
+@show LR_LIST
+@show FP_LIST
+@show RESAMPLING_FREQUENCY_LIST
+@show SAMPLES_PER_BATCH_LIST
+@show EPOCHS_LIST
+println()
+
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
             SamplingEntropy{RBT}(
-                resampling_frequency=2,
-                samples_per_batch=50,
+                resampling_frequency=resampling_frequency,
+                samples_per_batch=samples_per_batch,
                 # property=TrueProperty{RBT}(),
                 property=MultipleInvariants([
                     BookkeepingInvariant(),
                     BalanceInvariant(),
+                    OrderInvariant(),
                 ]),
                 failure_penalty=fp,
                 ignore_nums=ignore_nums,
@@ -32,14 +44,13 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
         ]
         for lr in LR_LIST
         for fp in FP_LIST
+        for resampling_frequency in RESAMPLING_FREQUENCY_LIST
+        for samples_per_batch in SAMPLES_PER_BATCH_LIST
         for ignore_nums in [false, true]
     ),
 ]))
-EPOCHS_LIST = [2_000]
 
-@show GENERATION_PARAMS_LIST
-@show LOSS_CONFIG_WEIGHT_PAIRS_LIST
-@show EPOCHS_LIST
+
 # N = 4
 # GENERATION_PARAMS_LIST = [Flips{N}()]
 # # LR_LIST = [0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1, 3, 10, 30, 100, 300]
@@ -65,17 +76,12 @@ TOOL_PATH = "examples/qc/benchmarks/tool.jl"
     cmd = Cmd(Cmd(convert(Vector{String}, split(s))), ignorestatus=true)
     println(s)
     out = IOBuffer()
-    err = IOBuffer()
     @async begin
-        proc = run(pipeline(cmd; stdout=out, stderr=err),)
+        proc = run(pipeline(cmd; stdout=out, stderr=stdout),)
         if proc.exitcode != 0
             println()
             so = String(take!(out))
-            se = String(take!(err))
-            println("FAILED: $(s)\nSTDOUT ===\n$(so)\nSTDERR ===\n$(se)\n")
-        else
-            se = String(take!(err))
-            println(se)
+            println("FAILED: $(s)\nSTDOUT ===\n$(so)\n\n")
         end
     end
 end
