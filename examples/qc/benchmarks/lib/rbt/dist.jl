@@ -92,7 +92,7 @@ function eq_except_numbers(x::ColorKVTree.T, y::ColorKVTree.T)
         ]),
         Node(xc, xl, xk, xv, xr) -> (@match y [
             Leaf() -> false,
-            Node(yc, yl, yk, yv, yr) -> prob_eq(xc, yc) & eq_except_numbers(xl, yl) & eq_except_numbers(xr, yr),
+            Node(yc, yl, yk, yv, yr) -> prob_equals(xc, yc) & eq_except_numbers(xl, yl) & eq_except_numbers(xr, yr),
         ]),
     ]
 end
