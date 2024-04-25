@@ -7,7 +7,11 @@ if isempty(ARGS)
     TAG = "test"
     as = ["-f"]
     g_p = TypeBasedRBTGenerator(
-        size=3, color_by_size=true, learn_leaf_weights=true, use_parent_color=true,
+        size=3,
+        leaf_dependents=[:size,:parent_color],
+        red_dependents=[:size,:parent_color],
+        num_dependents=[:size,:parent_color,:last_callsite],
+        intwidth=6,
     )
     lr = 0.01
     fp = 0.01

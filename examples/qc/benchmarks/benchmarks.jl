@@ -698,24 +698,26 @@ value(g::RBTGeneration) = g.t
 
 struct TypeBasedRBTGenerator <: GenerationParams{RBT}
     size::Integer
-    color_by_size::Bool
-    learn_leaf_weights::Bool
-    use_parent_color::Bool
+    leaf_dependents::Vector{Symbol}
+    red_dependents::Vector{Symbol}
+    num_dependents::Vector{Symbol}
+    intwidth::Integer
 end
-TypeBasedRBTGenerator(; size, color_by_size, learn_leaf_weights, use_parent_color) =
-    TypeBasedRBTGenerator(size, color_by_size, learn_leaf_weights, use_parent_color)
+TypeBasedRBTGenerator(; size, leaf_dependents, red_dependents, num_dependents, intwidth) =
+    TypeBasedRBTGenerator(size, leaf_dependents, red_dependents, num_dependents, intwidth)
 function to_subpath(p::TypeBasedRBTGenerator)
     [
         "rbt",
         "typebased",
         "sz=$(p.size)",
-        "color_by_size=$(p.color_by_size)",
-        "learn_leaf_weights=$(p.learn_leaf_weights)",
-        "use_parent_color=$(p.use_parent_color)",
+        "leaf_dependents=$(join(Base.map(string, p.leaf_dependents),"-"))",
+        "red_dependents=$(join(Base.map(string, p.red_dependents),"-"))",
+        "num_dependents=$(join(Base.map(string, p.num_dependents),"-"))",
+        "intwidth=$(p.intwidth)",
     ]
 end
 function generate(rs::RunState, p::TypeBasedRBTGenerator)
-    RBTGeneration(tb_gen_rbt(rs, p, p.size, Color.Black()))
+    RBTGeneration(tb_gen_rbt(rs, p, p.size, Color.Black(), 10))
 end
 function generation_params_emit_stats(rs::RunState, p::TypeBasedRBTGenerator, s)
     path = joinpath(rs.out_dir, "$(s)_Generator.v")

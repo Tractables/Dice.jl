@@ -64,11 +64,11 @@ function first_some(::Type{T}, xs) where T
 end
 
 # Manually curry so we can have type be first arg and use "do"
-function map(::Type{RetT}) where RetT
+function map_(::Type{RetT}) where RetT
     function inner(f, l::List{T}) where T
         match(l, [
             "Nil" => () -> DistNil(RetT),
-            "Cons" => (x, xs) -> DistCons(f(x), map(RetT)(f, xs))
+            "Cons" => (x, xs) -> DistCons(f(x), map_(RetT)(f, xs))
         ])
     end
 end
