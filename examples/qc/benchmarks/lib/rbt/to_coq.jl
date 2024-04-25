@@ -1,24 +1,43 @@
 flatten = Iterators.flatten
 
-function typebased_rbt_to_coq(p, adnodes_vals, io)
-    w(s) = thousandths(adnodes_vals[s])
-    ap(s, rp) = if rp || !p.use_parent_color "$(s)_redparent" else "$(s)_blackparent" end
-    red_wt_key(sz, rp) = ap(if p.color_by_size "red_sz$(sz)" else "red" end, rp)
-    red_wt(sz, rp) = w(red_wt_key(sz, rp))
-    leaf_wt_key(sz, rp) = ap("leaf_sz$(sz)", rp)
-    leaf_wt(sz, rp) = w(leaf_wt_key(sz, rp))
+function tocoq(i::Integer)
+    "$(i)"
+end
 
-    expected_keys = Set(
-        flatten(
-            if p.learn_leaf_weights
-                ([red_wt_key(sz, rp),leaf_wt_key(sz, rp)])
-            else
-                ([red_wt_key(sz, rp)])
-            end
-            for (sz, rp) in Base.product(1:p.size, [false, true])
-            if (sz, rp) != (p.size, true)
-        ))
-    @soft_assert io issetequal(keys(adnodes_vals), expected_keys) "$(adnodes_vals) $(expected_keys)"
+function tocoq(c::Color.T)
+    @match c [
+        Red() -> "R",
+        Black() -> "B",
+    ]
+end
+
+function typebased_rbt_to_coq(p, adnodes_vals, io)
+    leaf_cases = []
+    red_cases = []
+    for (name, val) in adnodes_vals
+        codeloc, case = split(name, "%%")
+        case = "(" * join([tocoq(eval(Meta.parse(x))) for x in split(case, "%")], ", ") * ")"
+        val = thousandths(val)
+        if codeloc == "leaf"
+            push!(leaf_cases, (case, val))
+        elseif codeloc == "red"
+            push!(red_cases, (case, val))
+        else
+            error()
+        end
+    end
+    sort!(leaf_cases)
+    sort!(red_cases)
+
+    leaf_scrutinees = if p.use_parent_color
+        ["size", "parent_color"]
+    else
+        ["size"]
+    end
+
+    red_scrutinees = []
+    p.color_by_size && push!(red_scrutinees, "size")
+    p.use_parent_color && push!(red_scrutinees, "parent_color")
     """
 Require Import ZArith.
 From QuickChick Require Import QuickChick.
@@ -31,45 +50,18 @@ Import ListNotations.
 
 From RBT Require Import Impl Spec.
 
-Definition original_sz := $(p.size).
-Definition new_sz := $(p.size).
-
-(* Look up in list of backtrack weights *)
-Fixpoint get {a: Type} (l : list (nat * a)) (target_key : nat) (default : a): a :=
-  match l with
-  | [] =>
-    (* This branch should never return *)
-    default
-  | (key, value) :: l' =>
-    if Nat.eqb (original_sz - key) (new_sz - target_key) then
-       value
-    else get l' target_key default
-  end.
-
 Definition manual_gen_tree :=
     fun s : nat =>
     (let
        fix arb_aux (size : nat) (parent_color : Color) : G Tree :=
-         let weight_red := match parent_color with 
-         | R =>
-          get [
-            $(join(["($(sz), $(red_wt(sz, true)))" for sz in 1:p.size - 1], "; "))
-          ] s 0
-         | B =>
-          get [
-            $(join(["($(sz), $(red_wt(sz, false)))" for sz in 1:p.size], "; "))
-          ] s 0
+         let weight_red := match ($(join(red_scrutinees, ","))) with
+$(join([" " ^ 9 * "| $(name) => $(w)" for (name, w) in red_cases], "\n"))
+         | _ => 500
          end in
          let weight_leaf := $(
-if p.learn_leaf_weights "match parent_color with 
-         | R =>
-          get [
-            $(join(["($(sz), $(leaf_wt(sz, true)))" for sz in 1:p.size - 1], "; "))
-          ] s 0
-         | B =>
-          get [
-            $(join(["($(sz), $(leaf_wt(sz, false)))" for sz in 1:p.size], "; "))
-          ] s 0
+if p.learn_leaf_weights "match ($(join(leaf_scrutinees, ","))) with 
+$(join([" " ^ 9 * "| $(name) => $(w)" for (name, w) in leaf_cases], "\n"))
+         | _ => 500
          end"
 else "500" end) in
          match size with
@@ -92,7 +84,7 @@ else "500" end) in
 
 #[global]
 Instance genTree : GenSized (Tree) := 
-  {| arbitrarySized n := manual_gen_tree new_sz B |}.
+  {| arbitrarySized n := manual_gen_tree $(p.size) B |}.
 
 (* --------------------- Tests --------------------- *)
 
