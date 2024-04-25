@@ -6,6 +6,13 @@ module Color
     using Dice
     @inductive T Red() Black()
 end
+function Base.string(c::Color.T)
+    @assert isdeterministic(c)
+    @match c [
+        Red() -> "Color.Red()",
+        Black() -> "Color.Black()",
+    ]
+end
 
 module ColorKVTree
     using Dice

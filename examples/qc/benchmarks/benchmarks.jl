@@ -715,7 +715,7 @@ function to_subpath(p::TypeBasedRBTGenerator)
     ]
 end
 function generate(rs::RunState, p::TypeBasedRBTGenerator)
-    RBTGeneration(tb_gen_rbt(rs, p, p.size, false))
+    RBTGeneration(tb_gen_rbt(rs, p, p.size, Color.Black()))
 end
 function generation_params_emit_stats(rs::RunState, p::TypeBasedRBTGenerator, s)
     path = joinpath(rs.out_dir, "$(s)_Generator.v")

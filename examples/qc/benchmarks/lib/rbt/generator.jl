@@ -41,32 +41,32 @@ Coq < Coq < Coq < GenSizedTree =
 |}
      : GenSized Tree
 ==#
-function tb_gen_rbt(rs, p, sz, parent_red)
+function tb_gen_rbt(rs, p, sz, parent_color)
     if sz == 0
         ColorKVTree.Leaf()
     else
         flip_leaf = if p.learn_leaf_weights
-            @dice_ite if parent_red | !p.use_parent_color
-                flip(register_weight!(rs, "leaf_sz$(sz)_redparent"))
+            leaf_group = if p.use_parent_color
+                [sz, parent_color]
             else
-                flip(register_weight!(rs, "leaf_sz$(sz)_blackparent"))
+                [sz]
             end
+            flip_for(rs, "leaf", leaf_group)
         else
             flip(.5)
         end
+
         @dice_ite if flip_leaf
             ColorKVTree.Leaf()
         else
-            flip_red = @dice_ite if parent_red | !p.use_parent_color
-                flip(register_weight!(rs, if p.color_by_size "red_sz$(sz)_redparent" else "red_redparent" end))
-            else
-                flip(register_weight!(rs, if p.color_by_size "red_sz$(sz)_blackparent" else "red_blackparent" end))
-            end
-            color = if flip_red Color.Red() else Color.Black() end
+            red_group = []
+            p.color_by_size && push!(red_group, sz)
+            p.use_parent_color && push!(red_group, parent_color)
+            color = @dice_ite if flip_for(rs, "red", red_group) Color.Red() else Color.Black() end
             k = uniform(DistInt32, 0, 100)
             v = DistInt32(0)
-            l = tb_gen_rbt(rs, p, sz - 1, flip_red)
-            r = tb_gen_rbt(rs, p, sz - 1, flip_red)
+            l = tb_gen_rbt(rs, p, sz - 1, color)
+            r = tb_gen_rbt(rs, p, sz - 1, color)
             ColorKVTree.Node(color, l, k, v, r)
         end
     end

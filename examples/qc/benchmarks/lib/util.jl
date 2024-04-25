@@ -230,3 +230,26 @@ function println_loud(rs::RunState, x)
 end
 
 println_loud(rs) = println_loud(rs, "")
+
+function flip_for(rs, name, dependents)
+    res = nothing
+    support = support_as_dist(dependents)
+    if isempty(support)
+        println(support)
+    end
+    @assert !isempty(support)
+    for dependents_vals in support
+        t = join([string(x) for x in dependents_vals], "%")
+        v = flip(register_weight!(rs, "$(name)%%$(t)"))
+        if isnothing(res)
+            res = v
+        else
+            res = @dice_ite if prob_equals(dependents, dependents_vals)
+                v
+            else
+                res
+            end
+        end
+    end
+    res
+end
