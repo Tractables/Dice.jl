@@ -8,14 +8,27 @@ GENERATION_PARAMS_LIST = [
     # TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=false, use_parent_color=false),
     # TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=false, use_parent_color=true),
     # TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=true, use_parent_color=false),
-    TypeBasedRBTGenerator(size=5, color_by_size=true, learn_leaf_weights=true, use_parent_color=true),
+    TypeBasedRBTGenerator(
+        size=5,
+        leaf_dependents=[:size,:parent_color],
+        red_dependents=[:size,:parent_color],
+        num_dependents=[:last_callsite],
+        intwidth=6,
+    ),
+    TypeBasedRBTGenerator(
+        size=5,
+        leaf_dependents=[:size,:parent_color,:last_callsite],
+        red_dependents=[:size,:parent_color,:last_callsite],
+        num_dependents=[:size,:parent_color,:last_callsite],
+        intwidth=6,
+    ),
     # BespokeLRUSetTestcaseGenerator(5),
 ]
 LR_LIST = [0.001, 0.003, 0.01, 0.03, 0.1]
 FP_LIST = [0.]
 RESAMPLING_FREQUENCY_LIST = [2]
-SAMPLES_PER_BATCH_LIST = [200]
-EPOCHS_LIST = [5_000]
+SAMPLES_PER_BATCH_LIST = [50, 200]
+EPOCHS_LIST = [2_000]
 
 @show GENERATION_PARAMS_LIST
 @show LR_LIST

@@ -1,72 +1,48 @@
-#==
-Coq < Coq < Coq < GenSizedColor = 
-{|
-  arbitrarySized :=
-    fun s : nat =>
-    (let
-       fix arb_aux (size : nat) : G Color :=
-         match size with
-         | 0 => oneOf [returnGen R; returnGen B]
-         | S _ => freq [ (1, returnGen R); (1, returnGen B)]
-         end in
-     arb_aux) s
-|}
-     : GenSized Color
-==#
+function twopowers(n)
+    [2^(i-1) for i in 1:n]
+end
 
-#==
-Coq < Coq < Coq < GenSizedTree = 
-{|
-  arbitrarySized :=
-    fun s : nat =>
-    (let
-       fix arb_aux (size : nat) : G Tree :=
-         match size with
-         | 0 => returnGen E
-         | S size' =>
-             freq [ (1, returnGen E);
-             (1,
-             bindGen arbitrary
-               (fun p0 : Color =>
-                bindGen (arb_aux size')
-                  (fun p1 : Tree =>
-                   bindGen arbitrary
-                     (fun p2 : Z =>
-                      bindGen arbitrary
-                        (fun p3 : Z =>
-                         bindGen (arb_aux size')
-                           (fun p4 : Tree => returnGen (T p0 p1 p2 p3 p4)))))))]
-         end in
-     arb_aux) s
-|}
-     : GenSized Tree
-==#
-function tb_gen_rbt(rs, p, sz, parent_color)
+function tb_gen_rbt(rs, p, sz, parent_color, last_callsite)
+    function dependent_to_val(dependent)
+        if dependent == :size
+            sz
+        elseif dependent == :parent_color
+            parent_color
+        elseif dependent == :last_callsite
+            last_callsite
+        else
+            error()
+        end
+    end
+    function dependents_to_flip(name, dependents)
+        if isnothing(dependents)
+            flip(.5)
+        else
+            group = collect(Base.map(dependent_to_val, dependents))
+            flip_for(rs, name, group)
+        end
+    end
+
     if sz == 0
         ColorKVTree.Leaf()
     else
-        flip_leaf = if p.learn_leaf_weights
-            leaf_group = if p.use_parent_color
-                [sz, parent_color]
-            else
-                [sz]
-            end
-            flip_for(rs, "leaf", leaf_group)
-        else
-            flip(.5)
-        end
-
+        flip_leaf = dependents_to_flip("leaf", p.leaf_dependents)
         @dice_ite if flip_leaf
             ColorKVTree.Leaf()
         else
-            red_group = []
-            p.color_by_size && push!(red_group, sz)
-            p.use_parent_color && push!(red_group, parent_color)
-            color = @dice_ite if flip_for(rs, "red", red_group) Color.Red() else Color.Black() end
-            k = uniform(DistInt32, 0, 100)
+            flip_red = dependents_to_flip("red", p.red_dependents)
+            color = @dice_ite if flip_red Color.Red() else Color.Black() end
+            k = sum(
+                @dice_ite if dependents_to_flip("num$(n)", p.num_dependents)
+                    DistInt32(n)
+                else
+                    DistInt32(0)
+                end
+                for n in twopowers(p.intwidth)
+            )
             v = DistInt32(0)
-            l = tb_gen_rbt(rs, p, sz - 1, color)
-            r = tb_gen_rbt(rs, p, sz - 1, color)
+            l = tb_gen_rbt(rs, p, sz - 1, color, 20)
+            r = tb_gen_rbt(rs, p, sz - 1, color, 30)
             ColorKVTree.Node(color, l, k, v, r)
         end
     end

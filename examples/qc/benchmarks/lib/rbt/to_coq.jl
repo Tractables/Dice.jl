@@ -14,6 +14,7 @@ end
 function typebased_rbt_to_coq(p, adnodes_vals, io)
     leaf_cases = []
     red_cases = []
+    num_cases = Dict()
     for (name, val) in adnodes_vals
         codeloc, case = split(name, "%%")
         case = "(" * join([tocoq(eval(Meta.parse(x))) for x in split(case, "%")], ", ") * ")"
@@ -22,22 +23,29 @@ function typebased_rbt_to_coq(p, adnodes_vals, io)
             push!(leaf_cases, (case, val))
         elseif codeloc == "red"
             push!(red_cases, (case, val))
+        elseif startswith(codeloc, "num")
+            n = parse(Int, codeloc[4:end])
+            push!(get!(num_cases, n, []), (case, val))
         else
             error()
         end
     end
-    sort!(leaf_cases)
-    sort!(red_cases)
 
-    leaf_scrutinees = if p.use_parent_color
-        ["size", "parent_color"]
-    else
-        ["size"]
+    function mk_match(dependents, cases)
+        cases = sort(cases)
+        if isnothing(dependents)
+            "500"
+        else
+            "match ($(join(map(string, dependents), ","))) with 
+$(join([" " ^ 9 * "| $(name) => $(w)" for (name, w) in cases], "\n"))
+         | _ => 500
+         end"
+        end
     end
+    
+    red_match = mk_match(p.red_dependents, red_cases)
+    leaf_match = mk_match(p.leaf_dependents, leaf_cases)
 
-    red_scrutinees = []
-    p.color_by_size && push!(red_scrutinees, "size")
-    p.use_parent_color && push!(red_scrutinees, "parent_color")
     """
 Require Import ZArith.
 From QuickChick Require Import QuickChick.
@@ -53,17 +61,16 @@ From RBT Require Import Impl Spec.
 Definition manual_gen_tree :=
     fun s : nat =>
     (let
-       fix arb_aux (size : nat) (parent_color : Color) : G Tree :=
-         let weight_red := match ($(join(red_scrutinees, ","))) with
-$(join([" " ^ 9 * "| $(name) => $(w)" for (name, w) in red_cases], "\n"))
-         | _ => 500
-         end in
-         let weight_leaf := $(
-if p.learn_leaf_weights "match ($(join(leaf_scrutinees, ","))) with 
-$(join([" " ^ 9 * "| $(name) => $(w)" for (name, w) in leaf_cases], "\n"))
-         | _ => 500
-         end"
-else "500" end) in
+       fix arb_aux (size : nat) (parent_color : Color) (last_callsite : nat) : G Tree :=
+         let weight_red := $(red_match) in
+         let weight_leaf := $(leaf_match) in
+$(
+    join(
+        ["         let weight_$(n) := $(mk_match(p.num_dependents, num_cases[n])) in"
+        for n in twopowers(p.intwidth)],
+        "\n"
+    )
+)
          match size with
          | 0 => returnGen E
          | S size' =>
@@ -71,20 +78,31 @@ else "500" end) in
              (1000 - weight_leaf,
              bindGen (freq [ (weight_red, returnGen R); (1000-weight_red, returnGen B)])
                (fun p0 : Color =>
-                bindGen (arb_aux size' p0)
+                bindGen (arb_aux size' p0 20)
                   (fun p1 : Tree =>
-                   bindGen arbitrary
-                     (fun p2 : Z =>
+
+$(
+    join(
+        [
+"bindGen (freq [ (weight_$(n), returnGen ($(n)%Z)); (1000-weight_$(n), returnGen 0%Z)])
+(fun n$(n) : Z => "
+        for n in twopowers(p.intwidth)],
+        "\n"
+    )
+)
                       bindGen arbitrary
                         (fun p3 : Z =>
-                         bindGen (arb_aux size' p0)
-                           (fun p4 : Tree => returnGen (T p0 p1 p2 p3 p4)))))))]
+let p2 := ($(join(["n$(n)" for n in twopowers(p.intwidth)], "+")))%Z in
+                         bindGen (arb_aux size' p0 30)
+                           (fun p4 : Tree => returnGen (T p0 p1 p2 p3 p4))
+                          $(")" ^ p.intwidth) 
+                           ))))]
          end in
      arb_aux) s.
 
 #[global]
 Instance genTree : GenSized (Tree) := 
-  {| arbitrarySized n := manual_gen_tree $(p.size) B |}.
+  {| arbitrarySized n := manual_gen_tree $(p.size) B 10 |}.
 
 (* --------------------- Tests --------------------- *)
 
