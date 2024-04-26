@@ -27,6 +27,17 @@ function tree_size(e::ColorKVTree.T)
     ]
 end
 
+function rbt_depth(e::ColorKVTree.T)
+    @match e [
+        Leaf() -> DistUInt32(0),
+        Node(c, l, k, v, r) -> begin
+            ldepth = rbt_depth(l)
+            rdepth = rbt_depth(r)
+            DistUInt32(1) + @dice_ite if ldepth > rdepth ldepth else rdepth end
+        end
+    ]
+end
+
 is_red(c::Color.T) = matches(c, :Red)
 
 # Check that all paths through the tree have the same number of black nodes

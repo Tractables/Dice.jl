@@ -1,6 +1,6 @@
 include("benchmarks.jl")
 
-TAG = "v22_learn_keys"
+TAG = "v24_uniform"
 
 ## PARSE ARGS
 if isempty(ARGS)
@@ -28,6 +28,7 @@ if isempty(ARGS)
                 failure_penalty=fp,
                 ignore_nums=true
             ) => lr,
+            MLELossConfig(RBTDepth(), Uniform()) => lr,
     ]
     push!(as, replace(string(g_p), " "=>""))
     push!(as, replace(string(l_p), " "=>""))

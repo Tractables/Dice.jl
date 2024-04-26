@@ -9,11 +9,11 @@ GENERATION_PARAMS_LIST = [
         intwidth=6,
     ),
 ]
-LR_LIST = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3]
+LR_LIST = [0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1., 3., 10.]
 FP_LIST = [0.]
 RESAMPLING_FREQUENCY_LIST = [2]
-SAMPLES_PER_BATCH_LIST = [50, 1_000]
-EPOCHS_LIST = [10_000]
+SAMPLES_PER_BATCH_LIST = [50, 200]
+EPOCHS_LIST = [4_000]
 
 @show GENERATION_PARAMS_LIST
 @show LR_LIST
@@ -37,7 +37,8 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
                 ]),
                 failure_penalty=fp,
                 ignore_nums=ignore_nums,
-            ) => lr,
+            ) => 0.01,
+            MLELossConfig(RBTDepth(), Uniform()) => lr,
             # SatisfyPropertyLoss(MultipleInvariants([BookkeepingInvariant(),BalanceInvariant()])) => lr,
         ]
         for lr in LR_LIST

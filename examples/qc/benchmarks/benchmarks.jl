@@ -604,83 +604,6 @@ end
 # end
 
 ##################################
-# MLE loss
-##################################
-
-abstract type Metric{T} end
-abstract type TargetDist end
-
-struct MLELossConfig{T} <: LossConfig{T}
-    metric::Metric{T}
-    target_dist::TargetDist
-    MLELossConfig(; metric::Metric{T}, target_dist) where T = new{T}(metric, target_dist)
-end
-to_subpath(p::MLELossConfig) = [name(p.metric), name(p.target_dist)]
-function create_loss_manager(rs::RunState, p::MLELossConfig, generation)
-    println_flush(rs.io, "Building computation graph for $(p)...")
-    time_build_loss = @elapsed begin
-        metric = compute_metric(p.metric, generation)
-        loss = metric_loss(metric, p.target_dist)
-    end
-    println(rs.io, "  $(time_build_loss) seconds")
-    println(rs.io)
-
-    SimpleLossMgr(loss, nothing)
-
-    # TODO: fix. allow us to register_stats! to rs, or create MLELossMgr
-    # # Also save distribution of metric being trained
-    # function f_emit′(tag)
-    #     println_flush(rs.io, "Saving $(tag) distribution...")
-    #     time_infer = @elapsed metric_dist = pr_mixed(rs.var_vals)(metric)
-    #     println(rs.io, "  $(time_infer) seconds")
-    #     save_metric_dist(joinpath(rs.out_dir, "dist_$(name(p.metric))_$(tag).csv"), metric_dist; rs.io)
-    #     println(rs.io)
-
-    #     emit_stats(mgr, tag)
-    # end
-end
-
-struct TreeSize <: Metric{BST} end
-compute_metric(::TreeSize, gen::BSTGeneration) = tree_size(gen.t)
-name(::TreeSize) = "tree_size"
-
-struct NumApps <: Metric{STLC} end
-compute_metric(::NumApps, gen::STLCGeneration) = num_apps(gen.e)
-name(::NumApps) = "num_apps"
-
-struct TermSize <: Metric{STLC} end
-compute_metric(::TermSize, gen::STLCGeneration) = term_size(gen.e)
-name(::TermSize) = "term_size"
-
-struct Uniform <: TargetDist end
-name(::Uniform) = "uniform"
-function metric_loss(metric::Dist, ::Uniform)
-    mle_loss([
-        BoolToMax(prob_equals(metric, DistUInt32(i)))
-        for i in support_mixed(metric)
-    ])
-end
-
-struct Linear <: TargetDist end
-name(::Linear) = "linear"
-function metric_loss(metric::Dist, ::Linear)
-    mle_loss([
-        BoolToMax(prob_equals(metric, DistUInt32(i)), weight=i)
-        for i in support_mixed(metric)
-    ])
-end
-
-struct Target4321 <: TargetDist end
-name(::Target4321) = "target4321"
-function metric_loss(metric::Dist, ::Target4321)
-    mle_loss([
-        BoolToMax(prob_equals(metric, DistUInt32(0)), weight=.4),
-        BoolToMax(prob_equals(metric, DistUInt32(1)), weight=.3),
-        BoolToMax(prob_equals(metric, DistUInt32(2)), weight=.2),
-        BoolToMax(prob_equals(metric, DistUInt32(3)), weight=.1),
-    ])
-end
-##################################
 # RBT generation
 ##################################
 
@@ -820,4 +743,86 @@ function create_loss_manager(::RunState, p::SamplingEntropy{T}, g::Generation{T}
         c
     end
     SamplingEntropyLossMgr(p, value(g), consider)
+end
+
+##################################
+# MLE loss
+##################################
+
+abstract type Metric{T} end
+abstract type TargetDist end
+
+struct MLELossConfig{T} <: LossConfig{T}
+    metric::Metric{T}
+    target_dist::TargetDist
+end
+MLELossConfig(; metric::Metric{T}, target_dist) where T = MLELossConfig{T}(metric, target_dist)
+to_subpath(p::MLELossConfig) = [name(p.metric), name(p.target_dist)]
+function create_loss_manager(rs::RunState, p::MLELossConfig, generation)
+    println_flush(rs.io, "Building computation graph for $(p)...")
+    time_build_loss = @elapsed begin
+        metric = compute_metric(p.metric, generation)
+        loss = metric_loss(metric, p.target_dist)
+    end
+    println(rs.io, "  $(time_build_loss) seconds")
+    println(rs.io)
+
+    SimpleLossMgr(loss, nothing)
+
+    # TODO: fix. allow us to register_stats! to rs, or create MLELossMgr
+    # # Also save distribution of metric being trained
+    # function f_emit′(tag)
+    #     println_flush(rs.io, "Saving $(tag) distribution...")
+    #     time_infer = @elapsed metric_dist = pr_mixed(rs.var_vals)(metric)
+    #     println(rs.io, "  $(time_infer) seconds")
+    #     save_metric_dist(joinpath(rs.out_dir, "dist_$(name(p.metric))_$(tag).csv"), metric_dist; rs.io)
+    #     println(rs.io)
+
+    #     emit_stats(mgr, tag)
+    # end
+end
+
+struct RBTDepth <: Metric{RBT} end
+compute_metric(::RBTDepth, gen::RBTGeneration) = rbt_depth(gen.t)
+name(::RBTDepth) = "rbt_depth"
+
+struct TreeSize <: Metric{BST} end
+compute_metric(::TreeSize, gen::BSTGeneration) = tree_size(gen.t)
+name(::TreeSize) = "tree_size"
+
+struct NumApps <: Metric{STLC} end
+compute_metric(::NumApps, gen::STLCGeneration) = num_apps(gen.e)
+name(::NumApps) = "num_apps"
+
+struct TermSize <: Metric{STLC} end
+compute_metric(::TermSize, gen::STLCGeneration) = term_size(gen.e)
+name(::TermSize) = "term_size"
+
+struct Uniform <: TargetDist end
+name(::Uniform) = "uniform"
+function metric_loss(metric::Dist, ::Uniform)
+    mle_loss([
+        BoolToMax(prob_equals(metric, DistUInt32(i)))
+        for i in support_mixed(metric)
+    ])
+end
+
+struct Linear <: TargetDist end
+name(::Linear) = "linear"
+function metric_loss(metric::Dist, ::Linear)
+    mle_loss([
+        BoolToMax(prob_equals(metric, DistUInt32(i)), weight=i)
+        for i in support_mixed(metric)
+    ])
+end
+
+struct Target4321 <: TargetDist end
+name(::Target4321) = "target4321"
+function metric_loss(metric::Dist, ::Target4321)
+    mle_loss([
+        BoolToMax(prob_equals(metric, DistUInt32(0)), weight=.4),
+        BoolToMax(prob_equals(metric, DistUInt32(1)), weight=.3),
+        BoolToMax(prob_equals(metric, DistUInt32(2)), weight=.2),
+        BoolToMax(prob_equals(metric, DistUInt32(3)), weight=.1),
+    ])
 end
