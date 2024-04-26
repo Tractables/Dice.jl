@@ -1,4 +1,4 @@
-export sample, sample_as_dist, support_as_dist
+export sample, sample_as_dist
 using DirectedAcyclicGraphs: foldup
 
 """Run vanilla rejection sampling without any compilation"""
@@ -102,80 +102,3 @@ end
 tobits(::Integer) = []
 frombits_as_dist(i::Integer, _) = i
 prob_equals(x::Integer, y::Integer) = x == y
-
-function support_as_dist(x; evidence=true)
-    vcache = Dict()
-    function call_with(f, key, val)
-        vcache[key] = val
-        f(val)
-        pop!(vcache, key)
-    end
-
-    # Call f with every value that x can take given existing assignments in
-    # vcache. When f(x_val) is called, frombits_as_dist(x, vcache) == x_val
-    function helper(f, n::Bool)
-        f(n)
-    end
-    function helper(f, n::Flip)
-        if haskey(vcache, n)
-            f(vcache[n])
-        else
-            call_with(f, n, false)
-            call_with(f, n, true)
-        end
-    end
-    function helper(f, n::DistAnd)
-        if haskey(vcache, n)
-            f(vcache[n])
-        else
-            helper(n.x) do x
-                helper(n.y) do y
-                    call_with(f, n, x && y)
-                end
-            end
-        end
-    end
-    function helper(f, n::DistOr)
-        if haskey(vcache, n)
-            f(vcache[n])
-        else
-            helper(n.x) do x
-                helper(n.y) do y
-                    call_with(f, n, x || y)
-                end
-            end
-        end
-    end
-    function helper(f, n::DistNot)
-        if haskey(vcache, n)
-            f(vcache[n])
-        else
-            helper(n.x) do x
-                call_with(f, n, !x)
-            end
-        end
-    end
-    function hv(f, v::Vector)
-        function hv_helper(i)
-        	if i > length(v)
-                f()
-            else
-        	    helper(v[i]) do x
-                    hv_helper(i+1)
-        		end
-        	end
-        end
-        hv_helper(1)
-    end
-    		
-    res = []
-    helper(evidence) do evidence
-        if evidence
-            bits = tobits(x)
-            hv(tobits(x)) do
-                push!(res, frombits_as_dist(x, vcache))
-            end
-        end
-    end
-    res
-end

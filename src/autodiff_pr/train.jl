@@ -166,15 +166,15 @@ function pr_mixed(var_vals)
     end
 end
 
-function support_mixed(dist)
+function support_mixed(args...; kwargs...)
     flip_to_original_prob = Dict()
-    for x in collect_flips(tobits(dist))
+    for x in collect_flips(tobits(args...))
         if x.prob isa ADNode
             flip_to_original_prob[x] = x.prob
             x.prob = 0.5
         end
     end
-    res = keys(pr(dist))
+    res = keys(pr(args...; kwargs...))
     for (x, prob) in flip_to_original_prob
         x.prob = prob
     end

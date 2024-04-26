@@ -1,6 +1,6 @@
 include("benchmarks.jl")
 
-TAG = "v21_the_nums"
+TAG = "v22_learn_keys"
 
 ## PARSE ARGS
 if isempty(ARGS)
@@ -60,7 +60,7 @@ SEED = 0
 
 out_dir = joinpath(
     vcat(
-        ["examples/qc/benchmarks/output"],
+        ["/space/tjoa/tuning-output"],
         [TAG],
         to_subpath(generation_params),
         vcat([

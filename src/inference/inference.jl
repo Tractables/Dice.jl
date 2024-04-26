@@ -36,7 +36,7 @@ function pr(queries::JointQuery...; kwargs...)
     length(queries) == 1 ? ans[1] : ans
 end
 
-function pr(queries...; kwargs...)
+function pr(queries...; as_dist::Bool=false, kwargs...)
     joint_queries = map(queries) do query
         JointQuery(tobits(query))
     end
@@ -44,10 +44,19 @@ function pr(queries...; kwargs...)
     ans = map(queries, queryworlds) do query, worlds
         dist = DefaultDict(0.0)
         for (world, p) in worlds
-            dist[frombits(query, world)] += p
+            key = if as_dist
+                frombits_as_dist(query, world)
+            else
+                frombits(query, world)
+            end
+            dist[key] += p
         end
-        DefaultOrderedDict(0., OrderedDict(sort(collect(dist); 
-                                by= t -> (-t[2], t[1]))))  # by decreasing probability
+        by = if as_dist
+            t -> -t[2]
+        else
+            t -> (-t[2], t[1])
+        end
+        DefaultOrderedDict(0., OrderedDict(sort(collect(dist); by)))  # by decreasing probability
     end
     length(queries) == 1 ? ans[1] : ans
 end

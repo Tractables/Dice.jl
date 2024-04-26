@@ -233,7 +233,7 @@ println_loud(rs) = println_loud(rs, "")
 
 function flip_for(rs, name, dependents)
     res = nothing
-    support = support_as_dist(dependents)
+    support = support_mixed(dependents; as_dist=true)
     if isempty(support)
         println(support)
     end

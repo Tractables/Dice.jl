@@ -15,6 +15,7 @@ Jive = "ba5e3d4b-8524-549f-bc71-e76ad9e9deed"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
 
 [compat]
 CUDD = "0.3"
