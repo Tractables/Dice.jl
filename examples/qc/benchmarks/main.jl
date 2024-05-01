@@ -1,19 +1,30 @@
 include("benchmarks.jl")
 
 GENERATION_PARAMS_LIST = [
-    TypeBasedRBTGenerator(
+    TypeBasedSTLCGenerator(
         size=5,
-        leaf_dependents=[:size,:parent_color,:last_callsite],
-        red_dependents=[:size,:parent_color,:last_callsite],
-        num_dependents=[:size,:parent_color,:last_callsite],
-        intwidth=6,
-    ),
+        ty_size=2,
+        dependents=[:size,:last_callsite],
+        ty_dependents=[:size,:last_callsite],
+    )
+    # TypeBasedRBTGenerator(
+    #     size=5,
+    #     leaf_dependents=[:size,:parent_color,:last_callsite],
+    #     red_dependents=[:size,:parent_color,:last_callsite],
+    #     num_dependents=[:size,:parent_color,:last_callsite],
+    #     intwidth=6,
+    # ),
 ]
-LR_LIST = [0.0001, 0.0003, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1., 3., 10.]
+LR_LIST = [0.0003, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1., 3.]
 FP_LIST = [0.]
 RESAMPLING_FREQUENCY_LIST = [2]
-SAMPLES_PER_BATCH_LIST = [50, 200]
-EPOCHS_LIST = [4_000]
+SAMPLES_PER_BATCH_LIST = [50]
+EPOCHS_LIST = [500]
+IGNORE_NUMS_LIST = [true]
+
+n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST, IGNORE_NUMS_LIST]))
+println(n_runs)
+@assert n_runs <= 36
 
 @show GENERATION_PARAMS_LIST
 @show LR_LIST
@@ -21,31 +32,38 @@ EPOCHS_LIST = [4_000]
 @show RESAMPLING_FREQUENCY_LIST
 @show SAMPLES_PER_BATCH_LIST
 @show EPOCHS_LIST
+@show IGNORE_NUMS_LIST
 println()
 
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
-            SamplingEntropy{RBT}(
+            SamplingEntropy{STLC}(
                 resampling_frequency=resampling_frequency,
                 samples_per_batch=samples_per_batch,
-                # property=TrueProperty{RBT}(),
-                property=MultipleInvariants([
-                    BookkeepingInvariant(),
-                    BalanceInvariant(),
-                    OrderInvariant(),
-                ]),
+                property=STLCWellTyped(),
                 failure_penalty=fp,
                 ignore_nums=ignore_nums,
-            ) => 0.01,
-            MLELossConfig(RBTDepth(), Uniform()) => lr,
+            ) => lr,
+            # SamplingEntropy{RBT}(
+            #     resampling_frequency=resampling_frequency,
+            #     samples_per_batch=samples_per_batch,
+            #     property=MultipleInvariants([
+            #         BookkeepingInvariant(),
+            #         BalanceInvariant(),
+            #         OrderInvariant(),
+            #     ]),
+            #     failure_penalty=fp,
+            #     ignore_nums=ignore_nums,
+            # ) => 0.01,
+            # MLELossConfig(RBTDepth(), Uniform()) => lr,
             # SatisfyPropertyLoss(MultipleInvariants([BookkeepingInvariant(),BalanceInvariant()])) => lr,
         ]
         for lr in LR_LIST
         for fp in FP_LIST
         for resampling_frequency in RESAMPLING_FREQUENCY_LIST
         for samples_per_batch in SAMPLES_PER_BATCH_LIST
-        for ignore_nums in [false, true]
+        for ignore_nums in IGNORE_NUMS_LIST
     ),
 ]))
 

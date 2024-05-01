@@ -1,6 +1,6 @@
 include("benchmarks.jl")
 
-TAG = "v24_uniform"
+TAG = "v25_stlctb"
 
 ## PARSE ARGS
 if isempty(ARGS)
