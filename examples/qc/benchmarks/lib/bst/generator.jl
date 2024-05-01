@@ -43,18 +43,40 @@ function gen_tree_dummy_vals(rs, s::Integer, track_return)
 end
 
 
-function typebased_gen_tree(rs, s::Integer, track_return)
+function typebased_gen_tree(rs, p, size::Integer, last_callsite, track_return)
+    function dependent_to_val(dependent)
+        if     dependent == :size          size
+        elseif dependent == :last_callsite last_callsite
+        else error() end
+    end
+    function dependents_to_flip(name, dependents)
+        if isnothing(dependents)
+            flip(.5)
+        else
+            group = collect(Base.map(dependent_to_val, dependents))
+            flip_for(rs, name, group)
+        end
+    end
+
     track_return(
-        @dice_ite if s == 0
+        @dice_ite if size == 0
             KVTree.Leaf()
         else
-            s′ = s - 1
-            if flip(register_weight!(rs, "sz$(s)"))
+            s′ = size - 1
+            if dependents_to_flip("leaf", p.leaf_dependents)
                 KVTree.Leaf()
             else
-                l = typebased_gen_tree(rs, s′, track_return)
-                r = typebased_gen_tree(rs, s′, track_return)
-                k = v = DistNat(0) # arbitrary
+                l = typebased_gen_tree(rs, p, s′, 10, track_return)
+                r = typebased_gen_tree(rs, p, s′, 11, track_return)
+                k = sum(
+                    @dice_ite if dependents_to_flip("num$(n)", p.num_dependents)
+                        DistUInt32(n)
+                    else
+                        DistUInt32(0)
+                    end
+                    for n in twopowers(p.intwidth)
+                )
+                v = DistNat(0) # arbitrary
                 KVTree.Node(l, k, v, r)
             end
         end

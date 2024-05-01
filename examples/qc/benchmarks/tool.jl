@@ -1,24 +1,25 @@
 include("benchmarks.jl")
 
-TAG = "v25_stlctb"
+TAG = "v26_bsttb"
 
 ## PARSE ARGS
 if isempty(ARGS)
     TAG = "test"
     as = ["-f"]
-    g_p = TypeBasedSTLCGenerator(
+    g_p = TypeBasedBSTGenerator(
         size=3,
-        ty_size=2,
-        dependents=[:size,:last_callsite],
-        ty_dependents=[:size,:last_callsite],
+        leaf_dependents=[:size,:last_callsite],
+        num_dependents=[:size,:last_callsite],
+        intwidth=6,
     )
     lr = 0.01
     fp = 0.01
     l_p = [
-            SamplingEntropy{STLC}(
+            SamplingEntropy{BST}(
                 resampling_frequency=1,
                 samples_per_batch=200,
-                property=STLCWellTyped(),
+                property=BSTOrderInvariant(),
+                # property=STLCWellTyped(),
                 # property=MultipleInvariants([
                 #     BookkeepingInvariant(),
                 #     BalanceInvariant(),

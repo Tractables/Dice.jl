@@ -191,7 +191,7 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
                     LogPr(prob_equals(m.val,sample))
                 end
                 lpr_eq_expanded = Dice.expand_logprs(l, lpr_eq)
-                diff_test_typecheck(sample, Dice.frombits(sample, Dict()))
+                # diff_test_typecheck(sample, Dice.frombits(sample, Dict()))
                 if m.consider(sample)
                     num_meeting += 1
                     [lpr_eq_expanded * compute(a, lpr_eq_expanded), lpr_eq_expanded]
@@ -550,13 +550,20 @@ end
 
 struct TypeBasedBSTGenerator <: GenerationParams{BST}
     size::Integer
+    leaf_dependents::Vector{Symbol}
+    num_dependents::Vector{Symbol}
+    intwidth::Integer
 end
-TypeBasedBSTGenerator(; size) = TypeBasedBSTGenerator(size)
+TypeBasedBSTGenerator(; size, leaf_dependents, num_dependents, intwidth) =
+  TypeBasedBSTGenerator(size, leaf_dependents, num_dependents, intwidth)
 function to_subpath(p::TypeBasedBSTGenerator)
     [
         "bst",
         "typebased",
         "sz=$(p.size)",
+        "leaf_dependents=$(join(Base.map(string, p.leaf_dependents),"-"))",
+        "num_dependents=$(join(Base.map(string, p.num_dependents),"-"))",
+        "intwidth=$(p.intwidth)",
     ]
 end
 function generate(rs::RunState, p::TypeBasedBSTGenerator)
@@ -565,8 +572,11 @@ function generate(rs::RunState, p::TypeBasedBSTGenerator)
         push!(constructors_overapproximation, v)
         v
     end
-    t = typebased_gen_tree(rs, p.size, add_ctor)
+    t = typebased_gen_tree(rs, p, p.size, 20, add_ctor)
     BSTGeneration(t, constructors_overapproximation)
+end
+function generation_params_emit_stats(rs::RunState, p::TypeBasedBSTGenerator, s)
+    save_coq_generator(rs, p, s, typebased_bst_to_coq)
 end
 
 ##################################
@@ -704,6 +714,15 @@ function check_property(::STLCWellTyped, e::Opt.T{Expr.T})
     ]
 end
 name(::STLCWellTyped)  = "stlcwelltyped"
+
+
+
+struct BSTOrderInvariant <: Property{BST} end
+check_property(::BSTOrderInvariant, t::KVTree.T) =
+    satisfies_order_invariant(t)
+name(::BSTOrderInvariant) = "order"
+
+
 
 struct BookkeepingInvariant <: Property{RBT} end
 check_property(::BookkeepingInvariant, t::ColorKVTree.T) =
