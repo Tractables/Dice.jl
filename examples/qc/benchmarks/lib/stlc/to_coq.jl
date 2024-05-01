@@ -1,4 +1,4 @@
-function bespoke_stlc_to_coq(adnodes_of_interest)
+function bespoke_stlc_to_coq(_p, adnodes_of_interest, _io)
     @assert issetequal(keys(adnodes_of_interest), ["sz1_succ_abs", "tysz2_gen_type_tbool", "sz3_succ_abs", "sz4_succ_var", "sz3_succ_app", "sz5_succ_app", "tysz1_gen_type_tbool", "sz0_zero_pr_var2", "sz2_succ_app", "sz4_succ_abs", "sz5_succ_var", "sz4_succ_app", "sz2_succ_abs", "sz5_succ_abs", "sz3_succ_var", "sz2_succ_var", "sz1_succ_var", "sz1_succ_app"])
     w(s) = thousandths(adnodes_of_interest[s])
     """

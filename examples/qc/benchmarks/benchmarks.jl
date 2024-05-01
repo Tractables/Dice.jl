@@ -191,6 +191,7 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
                     LogPr(prob_equals(m.val,sample))
                 end
                 lpr_eq_expanded = Dice.expand_logprs(l, lpr_eq)
+                diff_test_typecheck(sample, Dice.frombits(sample, Dict()))
                 if m.consider(sample)
                     num_meeting += 1
                     [lpr_eq_expanded * compute(a, lpr_eq_expanded), lpr_eq_expanded]
@@ -365,15 +366,20 @@ function generate(rs::RunState, p::BespokeSTLCGenerator)
     STLCGeneration(e, constructors_overapproximation)
 end
 
+function save_coq_generator(rs, p, s, f)
+    path = joinpath(rs.out_dir, "$(s)_Generator.v")
+    open(path, "w") do file
+        vals = compute(rs.var_vals, values(rs.adnodes_of_interest))
+        adnodes_vals = Dict(s => vals[adnode] for (s, adnode) in rs.adnodes_of_interest)
+        println(file, f(p, adnodes_vals, rs.io))
+    end
+    println_flush(rs.io, "Saved Coq generator to $(path)")
+end
+
 function generation_params_emit_stats(rs::RunState, p::BespokeSTLCGenerator, s)
+    path = joinpath(rs.out_dir, "$(s)_Generator.v")
     if p == BespokeSTLCGenerator(param_vars_by_size=true,size=5,ty_size=2)
-        path = joinpath(rs.out_dir, "$(s)_Generator.v")
-        open(path, "w") do file
-            vals = compute(rs.var_vals, values(rs.adnodes_of_interest))
-            adnodes_vals = Dict(s => vals[adnode] for (s, adnode) in rs.adnodes_of_interest)
-            println(file, bespoke_stlc_to_coq(adnodes_vals))
-        end
-        println_flush(rs.io, "Saved Coq generator to $(path)")
+        save_coq_generator(rs, p, s, bespoke_stlc_to_coq)
     else
         println_flush(rs.io, "Translation back to Coq not defined")
     end
@@ -387,23 +393,30 @@ end
 struct TypeBasedSTLCGenerator <: GenerationParams{STLC}
     size::Integer
     ty_size::Integer
+    dependents::Vector{Symbol}
+    ty_dependents::Vector{Symbol}
 end
-TypeBasedSTLCGenerator(; size, ty_size) = TypeBasedSTLCGenerator(size, ty_size)
+TypeBasedSTLCGenerator(; size, ty_size, dependents, ty_dependents) = TypeBasedSTLCGenerator(size, ty_size, dependents, ty_dependents)
 function to_subpath(p::TypeBasedSTLCGenerator)
     [
         "stlc",
         "typebased",
         "sz=$(p.size)-tysz=$(p.ty_size)",
+        "dependents=$(join(Base.map(string, p.dependents),"-"))",
+        "ty_dependents=$(join(Base.map(string, p.ty_dependents),"-"))",
     ]
 end
 function generate(rs::RunState, p::TypeBasedSTLCGenerator)
     constructors_overapproximation = []
     function add_ctor(v::Expr.T)
-        push!(constructors_overapproximation, DistSome(v))
+        push!(constructors_overapproximation, Opt.Some(Expr.T, v))
         v
     end
-    e = tb_gen_expr(rs, p.size, p.ty_size, add_ctor)
-    STLCGeneration(DistSome(e), constructors_overapproximation)
+    e = tb_gen_expr(rs, p, p.size, 20, add_ctor)
+    STLCGeneration(Opt.Some(Expr.T, e), constructors_overapproximation)
+end
+function generation_params_emit_stats(rs::RunState, p::TypeBasedSTLCGenerator, s)
+    save_coq_generator(rs, p, s, typebased_stlc_to_coq)
 end
 
 ##################################
@@ -643,13 +656,7 @@ function generate(rs::RunState, p::TypeBasedRBTGenerator)
     RBTGeneration(tb_gen_rbt(rs, p, p.size, Color.Black(), 10))
 end
 function generation_params_emit_stats(rs::RunState, p::TypeBasedRBTGenerator, s)
-    path = joinpath(rs.out_dir, "$(s)_Generator.v")
-    open(path, "w") do file
-        vals = compute(rs.var_vals, values(rs.adnodes_of_interest))
-        adnodes_vals = Dict(s => vals[adnode] for (s, adnode) in rs.adnodes_of_interest)
-        println(file, typebased_rbt_to_coq(p, adnodes_vals, rs.io))
-    end
-    println_flush(rs.io, "Saved Coq generator to $(path)")
+    save_coq_generator(rs, p, s, typebased_rbt_to_coq)
 end
 
 ##################################
@@ -684,6 +691,19 @@ function create_loss_manager(rs::RunState, p::SatisfyPropertyLoss, generation)
     #     emit_stats(mgr, tag)
     # end
 end
+
+struct STLCWellTyped <: Property{STLC} end
+function check_property(::STLCWellTyped, e::Opt.T{Expr.T})
+    @assert isdeterministic(e)
+    @match e [
+        Some(e) -> (@match typecheck(e) [
+            Some(_) -> true,
+            None() -> false,
+        ]),
+        None() -> false,
+    ]
+end
+name(::STLCWellTyped)  = "stlcwelltyped"
 
 struct BookkeepingInvariant <: Property{RBT} end
 check_property(::BookkeepingInvariant, t::ColorKVTree.T) =

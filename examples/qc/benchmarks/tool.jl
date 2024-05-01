@@ -6,29 +6,27 @@ TAG = "v24_uniform"
 if isempty(ARGS)
     TAG = "test"
     as = ["-f"]
-    g_p = TypeBasedRBTGenerator(
+    g_p = TypeBasedSTLCGenerator(
         size=3,
-        leaf_dependents=[:size,:parent_color],
-        red_dependents=[:size,:parent_color],
-        num_dependents=[:size,:parent_color,:last_callsite],
-        intwidth=6,
+        ty_size=2,
+        dependents=[:size,:last_callsite],
+        ty_dependents=[:size,:last_callsite],
     )
     lr = 0.01
     fp = 0.01
     l_p = [
-            SamplingEntropy{RBT}(
+            SamplingEntropy{STLC}(
                 resampling_frequency=1,
                 samples_per_batch=200,
-                # property=TrueProperty{RBT}(),
-                property=MultipleInvariants([
-                    BookkeepingInvariant(),
-                    BalanceInvariant(),
-                    OrderInvariant(),
-                ]),
+                property=STLCWellTyped(),
+                # property=MultipleInvariants([
+                #     BookkeepingInvariant(),
+                #     BalanceInvariant(),
+                #     OrderInvariant(),
+                # ]),
                 failure_penalty=fp,
                 ignore_nums=true
             ) => lr,
-            MLELossConfig(RBTDepth(), Uniform()) => lr,
     ]
     push!(as, replace(string(g_p), " "=>""))
     push!(as, replace(string(l_p), " "=>""))

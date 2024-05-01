@@ -73,18 +73,20 @@ function map_(::Type{RetT}) where RetT
     end
 end
 
-function frequency(weights_xs)
-    weights, xs = [], []
-    for (weight, x) in weights_xs
-        push!(weights, weight)
-        push!(xs,x)
-    end
-
-    res = last(xs)
+function freq_flips(weights)
     weight_sum = last(weights)
-    for i in length(xs) - 1 : -1 : 1
+    flips = Vector(undef, length(weights))
+    for i in length(weights) - 1 : -1 : 1
         weight_sum += weights[i]
-        res = @dice_ite if flip(weights[i] / weight_sum)
+        flips[i] = flip(weights[i] / weight_sum)
+    end
+    flips
+end
+
+function freq_choose(xs, flips)
+    res = last(xs)
+    for i in length(xs) - 1 : -1 : 1
+        res = @dice_ite if flips[i]
             xs[i]
         else
             res
@@ -93,16 +95,25 @@ function frequency(weights_xs)
     res
 end
 
+function frequency(weights_xs)
+    weights, xs = [], []
+    for (weight, x) in weights_xs
+        push!(weights, weight)
+        push!(xs,x)
+    end
+    freq_choose(xs, freq_flips(weights))
+end
+
 function frequency_for(rs, name, xs)
     weights = [register_weight!(rs, "$(name)_$(i)") for i in 1:length(xs)]
-    frequency(collect(zip(xs, weights)))
+    frequency(collect(zip(weights, xs)))
 end
 
 function opt_stlc_str(ast)
     name, children = ast
-    if name == "None"
+    if name == :None
         "None"
-    elseif name == "Some"
+    elseif name == :Some
         ast′, = children
         stlc_str(ast′)
     else
@@ -142,10 +153,13 @@ end
 
 function save_samples(rs, filename, e; n_samples=200)
     open(filename, "w") do file
+        a = ADComputer(rs.var_vals)
         for _ in 1:n_samples
-            expr = sample(rs.rng, e)
+            expr_dist = sample_as_dist(rs.rng, a, e)
+            expr = Dice.frombits(expr_dist, Dict())
+            diff_test_typecheck(expr_dist, expr)
             println(file, opt_stlc_str(expr))
-            typecheck_opt(expr)
+            # typecheck_opt(expr)
         end
     end
     println(rs.io, "Saved samples to $(filename).")
@@ -234,9 +248,6 @@ println_loud(rs) = println_loud(rs, "")
 function flip_for(rs, name, dependents)
     res = nothing
     support = support_mixed(dependents; as_dist=true)
-    if isempty(support)
-        println(support)
-    end
     @assert !isempty(support)
     for dependents_vals in support
         t = join([string(x) for x in dependents_vals], "%")
@@ -252,4 +263,39 @@ function flip_for(rs, name, dependents)
         end
     end
     res
+end
+
+function frequency_for(rs, name, dependents, casenames_xs)
+    casenames = []
+    xs = []
+    for (casename, x) in casenames_xs
+        push!(casenames, casename)
+        push!(xs, x)
+    end
+
+    res = nothing
+    support = support_mixed(dependents; as_dist=true)
+    @assert !isempty(support)
+    for dependents_vals in support
+        t = join([string(x) for x in dependents_vals], "%")
+        weights = [
+            register_weight!(rs, "$(name)_$(casename)%%$(t)")
+            for casename in casenames
+        ]
+        v = frequency(collect(zip(weights, xs)))
+        if isnothing(res)
+            res = v
+        else
+            res = @dice_ite if prob_equals(dependents, dependents_vals)
+                v
+            else
+                res
+            end
+        end
+    end
+    res
+end
+
+function tocoq(i::Integer)
+    "$(i)"
 end

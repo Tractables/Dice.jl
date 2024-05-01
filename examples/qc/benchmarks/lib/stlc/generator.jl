@@ -92,45 +92,58 @@ function gen_expr(rs::RunState, env::Ctx, tau::Typ.T, sz::Integer, gen_typ_sz::I
     )
 end
 
-function tb_gen_expr(rs::RunState, sz::Integer, ty_sz, track_return)
+
+function tb_gen_expr(rs::RunState, p, size::Integer, last_callsite, track_return)
+    function get_dependent_dist(dependent)
+        if     dependent == :size          size
+        elseif dependent == :last_callsite last_callsite
+        else   error() end
+    end
+    dependent_dists = [get_dependent_dist(d) for d in p.dependents]
     track_return(
-        if sz == 0
-            @dice_ite if flip(register_weight!(rs, "sz$(sz)_pvar"))
-                DistVar(DistNat(0)) # really, this is arbitrary
+        if size == 0
+            @dice_ite if flip_for(rs, "pvar", dependent_dists)
+                Expr.Var(DistNat(0)) # really, this is arbitrary
             else
-                DistBoolean(true) # really, this is arbitrary
+                Expr.Boolean(true) # really, this is arbitrary
             end
         else
-            sz′ = sz - 1
-            frequency_for(rs, "sz$(sz)_freq", [
-                DistVar(DistNat(0)), # really, this is arbitrary
-                DistBoolean(true), # really, this is arbitrary
-                begin
-                    typ = tb_gen_type(rs, ty_sz) # TODO
-                    e = tb_gen_expr(rs, sz′, ty_sz, track_return)
-                    DistAbs(typ, e)
+            sz′ = size - 1
+            frequency_for(rs, "freq", dependent_dists, [
+                "var" => Expr.Var(DistNat(0)), # really, this is arbitrary
+                "boolean" => Expr.Boolean(true), # really, this is arbitrary
+                "abs" => begin
+                    typ = tb_gen_type(rs, p, p.ty_size, 10) # TODO
+                    e = tb_gen_expr(rs, p, sz′, 11, track_return)
+                    Expr.Abs(typ, e)
                 end,
-                begin
-                    e1 = tb_gen_expr(rs, sz′, ty_sz, track_return)
-                    e2 = tb_gen_expr(rs, sz′, ty_sz, track_return)
-                    DistApp(e1, e2)
+                "app" => begin
+                    e1 = tb_gen_expr(rs, p, sz′, 12, track_return)
+                    e2 = tb_gen_expr(rs, p, sz′, 13, track_return)
+                    Expr.App(e1, e2)
                 end,
             ])
         end
     )
 end
 
-function tb_gen_type(rs::RunState, sz::Integer)
-    if sz == 0
-        DistTBool()
+function tb_gen_type(rs::RunState, p, size::Integer, last_callsite)
+    function get_dependent_dist(dependent)
+        if     dependent == :size          size
+        elseif dependent == :last_callsite last_callsite
+        else   error() end
+    end
+    dependent_dists = [get_dependent_dist(d) for d in p.ty_dependents]
+    if size == 0
+        Typ.TBool()
     else
-        sz′ = sz - 1
-        @dice_ite if flip(register_weight!(rs, "tysz$(sz)_ptbool"))
-            DistTBool()
+        sz′ = size - 1
+        @dice_ite if flip_for(rs, "ptbool", dependent_dists)
+            Typ.TBool()
         else
-            ty1 = tb_gen_type(rs, sz′)
-            ty2 = tb_gen_type(rs, sz′)
-            DistTFun(ty1, ty2)
+            ty1 = tb_gen_type(rs, p, sz′, 14)
+            ty2 = tb_gen_type(rs, p, sz′, 15)
+            Typ.TFun(ty1, ty2)
         end
     end
 end

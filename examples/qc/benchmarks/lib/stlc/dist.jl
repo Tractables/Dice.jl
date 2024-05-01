@@ -140,6 +140,80 @@ function get_error(ty)
     ty
 end
 
+function opt_map(f, x::Tuple)
+    name, children = x
+    if name == :Some
+        e, = children
+        f(e)
+    elseif name == :None
+        nothing
+    else
+        error()
+    end
+end
+
+function opt_map(f, x::Opt.T)
+    @match x [
+        None() -> nothing,
+        Some(x) -> f(x),
+    ]
+end
+
+function diff_test_typecheck(expr_dist, expr)
+    @assert isdeterministic(expr_dist)
+    opt_map(expr_dist) do expr_dist
+        opt_map(expr) do expr
+            ty1 = typecheck(expr)
+            ty2_dist = pr(typecheck(expr_dist))
+            @assert length(ty2_dist) == 1
+            ty2 = first(keys(ty2_dist))
+            if error_ty(ty1)
+                @assert ty2 == (:None, [])
+            else
+                @assert ty2 == (:Some, [ty1]) "$ty1 $ty2"
+            end
+        end
+    end
+end
+
+function to_int(x::DistUInt32)
+    dist = pr(x)
+    @assert length(dist) == 1
+    first(keys(dist))
+end
+
+function typecheck(ast::Expr.T, gamma, depth=0)::Opt.T{Typ.T}
+    @match ast [
+        Var(i) -> begin
+            var_depth = depth - to_int(i) - 1
+            haskey(gamma, var_depth) || return Opt.None(Typ.T)
+            Opt.Some(gamma[var_depth])
+        end,
+        Boolean(_) -> Opt.Some(Typ.TBool()),
+        Abs(t_in, e) -> begin
+            gamma′ = copy(gamma)
+            gamma′[depth] = t_in
+            Opt.map(Typ.T, typecheck(e, gamma′, depth + 1)) do t_out
+                Typ.TFun(t_in, t_out)
+            end
+        end,
+        App(e1, e2) -> begin
+            Opt.bind(Typ.T, typecheck(e1, gamma, depth)) do t1
+                @match t1 [
+                    TBool() -> Opt.None(Typ.T),
+                    TFun(t1_in, t1_out) -> Opt.bind(Typ.T, typecheck(e2, gamma, depth)) do t2
+                        if prob_equals(t1_in, t2)
+                            Opt.Some(t1_out)
+                        else
+                            Opt.None(Typ.T)
+                        end
+                    end,
+                ]
+            end
+        end,
+    ]
+end
+
 function typecheck_opt(ast)
     name, children = ast
     if name == :Some
@@ -159,7 +233,7 @@ end
 
 typecheck(ast) = typecheck(ast, Dict())
 
-function typecheck(ast, gamma, depth=0)
+function typecheck(ast::Tuple, gamma, depth=0)
     name, children = ast
     if name == :Var
         i, = children
@@ -195,4 +269,59 @@ function typecheck(ast, gamma, depth=0)
     else
         error("Bad node $(name)")
     end
+end
+
+function eq_except_numbers(x::Typ.T, y::Typ.T)
+    @match x [
+        TBool() -> (@match y [
+            TBool() -> true,
+            TFun(_, _) -> false,
+        ]),
+        TFun(a1, b1) -> (@match y [
+            TBool() -> false,
+            TFun(a2, b2) -> eq_except_numbers(a1, a2) & eq_except_numbers(b1, b2),
+        ]),
+    ]
+end
+
+function eq_except_numbers(x::Expr.T, y::Expr.T)
+    @match x [
+        Var(_) -> (@match y [
+            Var(_) -> true,
+            Boolean(_) -> false,
+            App(_, _) -> false,
+            Abs(_, _) -> false,
+        ]),
+        Boolean(_) -> (@match y [
+            Var(_) -> false,
+            Boolean(_) -> true,
+            App(_, _) -> false,
+            Abs(_, _) -> false,
+        ]),
+        App(f1, x1) -> (@match y [
+            Var(_) -> false,
+            Boolean(_) -> false,
+            App(f2, x2) -> eq_except_numbers(f1, f2) & eq_except_numbers(x1, x2),
+            Abs(_, _) -> false,
+        ]),
+        Abs(ty1, e1) -> (@match y [
+            Var(_) -> false,
+            Boolean(_) -> false,
+            App(_, _) -> false,
+            Abs(ty2, e2) -> eq_except_numbers(ty1, ty2) & eq_except_numbers(e1, e2),
+        ]),
+    ]
+end
+
+function eq_except_numbers(x::Opt.T{T}, y::Opt.T{T}) where T
+    @match x [
+        Some(xv) -> (@match y [
+            Some(yv) -> eq_except_numbers(xv, yv),
+            None() -> false,
+        ]),
+        None() -> (@match y [
+            Some(_) -> false,
+            None() -> true,
+        ])
+    ]
 end

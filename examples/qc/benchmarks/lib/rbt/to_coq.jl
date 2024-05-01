@@ -1,9 +1,5 @@
 flatten = Iterators.flatten
 
-function tocoq(i::Integer)
-    "$(i)"
-end
-
 function tocoq(c::Color.T)
     @match c [
         Red() -> "R",
