@@ -1,37 +1,107 @@
 #!/usr/bin/env python
 import subprocess
+import math
 import sys
 import os
+from datetime import datetime
 from collections import Counter, defaultdict
+from dataclasses import dataclass, field
+from typing import List, Callable
 
-STRAT_DIR = "/space/tjoa/etna/workloads/Coq/RBT/Strategies/"
-OUT_DIR = "/space/tjoa/Dice.jl/stats"
+WORKLOAD = "BST"
+STRAT_DIR = f"/space/tjoa/etna/workloads/Coq/{WORKLOAD}/Strategies/"
+OUT_DIR = f"/space/tjoa/Dice.jl/stats/{WORKLOAD}"
+COQ_PROJECT_DIR = f"/space/tjoa/etna/workloads/Coq/{WORKLOAD}"
 NUM_TESTS = 10_000
 
-METRICS = ["size", "height"]
-
-# Put rows in this order and also assert that all these generators exist
-ORDER = [
+ORDER_ONLY = False
+ORDER = [ # Put rows in this order and also assert that these generators exist
+    "ManualTypeBasedGenerator.v",
     "BespokeGenerator.v",
     "TypeBasedGenerator.v",
-    "ManualTypeBased5Generator.v",
-    "CondEntropy5Generator.v",
-    "OrderGenerator.v",
-    "OrderIgnoreGenerator.v",
-    "NoRedRed5Generator.v",
-    "ManualTypeBased8Generator.v",
-    "CondEntropy8Generator.v",
-    "NoRedRed8Generator.v",
 ]
+
+@dataclass
+class Workload:
+    type: str
+    generator: str
+    invariant_check: str
+    metrics: List[str]
+    extra_definitions: str
+    is_failing_generator: Callable[[str],bool]
+
+WORKLOADS = {
+    "STLC": Workload(
+        type="Expr",
+        generator="gSized",
+        invariant_check="isJust (mt %s)",
+        metrics=["sizeSTLC", "num_apps"],
+        extra_definitions="""
+            Fixpoint num_apps (e: Expr) : nat :=
+                match e with
+                | (Abs _ e) => num_apps e
+                | (App e1 e2) => 1 + num_apps e1 + num_apps e2
+                | _ => 0
+                end.""",
+        is_failing_generator=lambda filename: "Bespoke" in filename,
+    ),
+    "BST": Workload(
+        type="Tree",
+        generator="gSized",
+        invariant_check="isBST %s",
+        metrics=["size", "height"],
+        extra_definitions="""
+            Fixpoint height (t: Tree) : nat :=
+              match t with
+              | E => 0
+              | T l k v r => 1 + max (height l) (height r)
+              end.""",
+        is_failing_generator=lambda filename: False,
+    ),
+    "RBT": Workload(
+        type="Tree",
+        generator="arbitrary",
+        invariant_check="isRBT %s",
+        metrics=["size", "height"],
+        extra_definitions="""
+            Fixpoint height (t: Tree) : nat :=
+              match t with
+              | E => 0
+              | T c l k v r => 1 + max (height l) (height r)
+              end.""",
+        is_failing_generator=lambda filename: filename == "BespokeGenerator.v",
+    ),
+}
+
+
+workload = WORKLOADS[WORKLOAD]
+
 def main():
+    # List generators
+    generators = [
+        filename
+        for filename in os.listdir(STRAT_DIR)
+        if filename.endswith("Generator.v")
+        and not (ORDER_ONLY and filename not in ORDER)
+    ]
+    for generator in ORDER:
+        assert generator in generators, generator
+    def key(generator):
+        if generator in ORDER:
+            return ORDER.index(generator)
+        else:
+            return math.inf
+    generators.sort(key=key)
+
+    # Collect stats
     metric_to_generator_to_counts = defaultdict(lambda: defaultdict(dict))
-    for filename in ORDER:
-        assert filename in os.listdir(STRAT_DIR)
-    for filename in os.listdir(STRAT_DIR):
-        if filename.endswith("Generator.v"):
-            generator_path = os.path.join(STRAT_DIR, filename)
-            print(f"Collecting stats for {filename}")
-            collect_stats(generator_path, filename, metric_to_generator_to_counts)
+    for generator in generators:
+        path = os.path.join(STRAT_DIR, generator)
+        print(f"Collecting stats for {generator}")
+        collect_stats(path, generator, metric_to_generator_to_counts)
+
+    # Output stats
+    os.makedirs(OUT_DIR, exist_ok=True)
     for metric, generator_to_counts in metric_to_generator_to_counts.items():
         max_val = max(
             n
@@ -51,7 +121,7 @@ def main():
                 for valid in (True, False)
             ])
             file.write(metric + '\t' + '\t'.join(val_names) + '\n')
-            for generator in [*ORDER, *[x for x in generator_to_counts if x not in ORDER]]:
+            for generator in generators:
                 counts = generator_to_counts[generator]
                 tokens = [generator]
                 for val in vals:
@@ -60,9 +130,9 @@ def main():
                     )
                 file.write('\t'.join(tokens) + "\n")
 
-def readlines(path):
+def read(path):
     with open(path) as f:
-        return '\n'.join(f.readlines())
+        return f.read()
 
 def lines_between(s, start, end):
     active = False
@@ -81,15 +151,16 @@ def lines_between(s, start, end):
             raise f"Did not find {start}"
 
 def collect_stats(path, filename, metric_to_generator_to_counts):
-    pgrm = readlines(path)
-    may_fail = filename == "BespokeGenerator.v"
+    pgrm = read(path)
+    pgrm += workload.extra_definitions
+    may_fail = workload.is_failing_generator(filename)
     if may_fail:
         pgrm += """
-    Definition collect {A : Type} `{_ : Show A}  (f : Tree -> A)  : Checker :=  
-        forAll arbitrary (fun t =>    
+    Definition collect {A : Type} `{_ : Show A}  (f : """ + workload.type + """ -> A)  : Checker :=  
+        forAll """ + workload.generator + """ (fun (t : option """ + workload.type + """) =>
           match t with
           | Some t =>
-            if isRBT t then
+            if """ + (workload.invariant_check % "t") + """ then
                 collect (append "valid " (show (f t))) true
             else
                 collect (append "invalid " (show (f t))) true
@@ -98,40 +169,57 @@ def collect_stats(path, filename, metric_to_generator_to_counts):
           end)."""
     else:
         pgrm += """
-    Definition collect {A : Type} `{_ : Show A}  (f : Tree -> A)  : Checker :=  
-        forAll arbitrary (fun t =>
-            if isRBT t then
+    Definition collect {A : Type} `{_ : Show A} (f : """ + workload.type + """  -> A)  : Checker :=  
+        forAll """ + workload.generator + """ (fun (t : """ + workload.type + """) =>
+            if """ + (workload.invariant_check % "t") + """ then
                 collect (append "valid " (show (f t))) true
             else
                 collect (append "invalid " (show (f t))) true
         ).
         """
 
-    pgrm += f"""
-    Fixpoint height (t: Tree) : nat :=
-      match t with
-      | E => 0
-      | T c l k v r => 1 + max (height l) (height r)
-      end.
+    pgrm += f"""\nExtract Constant Test.defNumTests => "{NUM_TESTS}".\n"""
+    for metric in workload.metrics:
+        pgrm += f"QuickChick (collect {metric}).\n"
 
-    Extract Constant Test.defNumTests => "{NUM_TESTS}".
-
-    QuickChick (collect size).
-    QuickChick (collect height).
-    """
-
-    cmd = ["coqtop", "-Q", ".", "RBT"]
-    os.chdir("/space/tjoa/etna/workloads/Coq/RBT")
+    os.chdir(COQ_PROJECT_DIR)
+    cmd = ["coqtop", "-Q", ".", WORKLOAD]
     p = subprocess.run(
         cmd,
         stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-        # stderr=sys.stderr,
+        stderr=subprocess.PIPE,
         input=pgrm,
         encoding="ascii",
     )
+
+    # Check for errors
+    def remove_junk(s):
+        return s.replace("Coq < ","").replace("dec_type < ","")
+    if any(
+        remove_junk(s).strip()
+        for s in p.stderr.split('\n')
+    ):
+        now = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
+        pgrm_dump = f"/tmp/program{now}.v"
+        with open(pgrm_dump, "w") as file:
+            file.write(pgrm)
+        print(f"Wrote program to {pgrm_dump}")
+
+        print("STDERR =====")
+        last_line_blank = False
+        for s in p.stderr.split('\n'):
+            s = remove_junk(s)
+            # no double newlines
+            line_blank = len(s.strip()) == 0
+            if not (line_blank and last_line_blank):
+                print(s)
+            last_line_blank = line_blank
+
+        exit(1)
+
+
     assert p.returncode == 0
-    for metric in METRICS:
+    for metric in workload.metrics:
         cts = {}
         for line in lines_between(p.stdout, f"QuickChecking (collect {metric})", "+++"):
             tokens = line.split(' ')
