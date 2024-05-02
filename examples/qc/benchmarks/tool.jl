@@ -1,17 +1,24 @@
 include("benchmarks.jl")
 
 TAG = "v26_bsttb"
+OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS
 if isempty(ARGS)
     TAG = "test"
     as = ["-f"]
     g_p = TypeBasedBSTGenerator(
-        size=3,
+        size=5,
         leaf_dependents=[:size,:last_callsite],
         num_dependents=[:size,:last_callsite],
         intwidth=6,
     )
+    # g_p = TypeBasedSTLCGenerator(
+    #     size=5,
+    #     ty_size=2,
+    #     dependents=[:size,:last_callsite],
+    #     ty_dependents=[:size,:last_callsite],
+    # )
     lr = 0.01
     fp = 0.01
     l_p = [
@@ -60,7 +67,7 @@ SEED = 0
 
 out_dir = joinpath(
     vcat(
-        ["/space/tjoa/tuning-output"],
+        [OUT_TOP_DIR],
         [TAG],
         to_subpath(generation_params),
         vcat([

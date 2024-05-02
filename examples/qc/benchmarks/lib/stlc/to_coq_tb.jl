@@ -71,18 +71,17 @@ Fixpoint manual_gen_expr (size : nat) (last_callsite : nat) : G Expr :=
            (fun p1 : Expr => returnGen (App p0 p1))))]
   end.
 
-#[global]
-Instance genExpr : GenSized (Expr) := 
-  {| arbitrarySized n := manual_gen_expr n 20 |}.
+Definition gSized :=
+  manual_gen_expr $(p.size) 20.
   
 Definition test_prop_SinglePreserve :=
-  forAll arbitrary (fun (e: Expr) =>
+  forAll gSized (fun (e: Expr) =>
     prop_SinglePreserve e).
 
 (*! QuickChick test_prop_SinglePreserve. *)
   
 Definition test_prop_MultiPreserve :=
-  forAll arbitrary (fun (e: Expr) =>
+  forAll gSized (fun (e: Expr) =>
     prop_MultiPreserve e).
   
 (*! QuickChick test_prop_MultiPreserve. *)

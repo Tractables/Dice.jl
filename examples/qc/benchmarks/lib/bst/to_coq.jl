@@ -69,9 +69,8 @@ let p1 := $(join(["n$(n)" for n in twopowers(p.intwidth)], "+")) in
                  ))]
   end.
 
-#[global]
-Instance genTree : GenSized (Tree) := 
-  {| arbitrarySized n := manual_gen_tree $(p.size) 20 |}.
+Definition gSized : G Tree :=
+  manual_gen_tree $(p.size) 20.
 
 Definition manual_shrink_tree := 
     fun x : Tree =>
@@ -97,7 +96,7 @@ Instance shrTree : Shrink (Tree) :=
   {| shrink x := manual_shrink_tree x |}.
 
 Definition test_prop_InsertValid   :=
-  forAll arbitrary (fun (t: Tree)  =>
+  forAll gSized (fun (t: Tree)  =>
   forAll arbitrary (fun (k: nat)  =>
   forAll arbitrary (fun (v: nat) =>
   prop_InsertValid t k v)))
@@ -106,7 +105,7 @@ Definition test_prop_InsertValid   :=
 (*! QuickChick test_prop_InsertValid. *)
 
 Definition test_prop_DeleteValid   :=
-  forAll arbitrary (fun (t: Tree)  =>
+  forAll gSized (fun (t: Tree)  =>
   forAll arbitrary (fun (k: nat) =>
   prop_DeleteValid t k))
 .
@@ -115,15 +114,15 @@ Definition test_prop_DeleteValid   :=
 
 
 Definition test_prop_UnionValid    :=
-  forAll arbitrary (fun (t1: Tree)  =>
-  forAll arbitrary (fun (t2: Tree) =>
+  forAll gSized (fun (t1: Tree)  =>
+  forAll gSized (fun (t2: Tree) =>
   prop_UnionValid t1 t2))
 .
 
 (*! QuickChick test_prop_UnionValid. *)
 
 Definition test_prop_InsertPost    :=
-  forAll arbitrary (fun (t: Tree)  =>
+  forAll gSized (fun (t: Tree)  =>
   forAll arbitrary (fun (k: nat)  =>
   forAll arbitrary (fun (k': nat)  =>
   forAll arbitrary (fun (v: nat) =>
@@ -133,7 +132,7 @@ Definition test_prop_InsertPost    :=
 (*! QuickChick test_prop_InsertPost. *)
 
 Definition test_prop_DeletePost    :=
-  forAll arbitrary (fun (t: Tree)  =>
+  forAll gSized (fun (t: Tree)  =>
   forAll arbitrary (fun (k: nat)  =>
   forAll arbitrary (fun (k': nat) =>
   prop_DeletePost t k k')))
@@ -142,8 +141,8 @@ Definition test_prop_DeletePost    :=
 (*! QuickChick test_prop_DeletePost. *)
 
 Definition test_prop_UnionPost   :=
-  forAll arbitrary (fun (t: Tree)  =>
-  forAll arbitrary (fun (t': Tree)  =>
+  forAll gSized (fun (t: Tree)  =>
+  forAll gSized (fun (t': Tree)  =>
   forAll arbitrary (fun (k: nat) =>
   prop_UnionPost t t' k)))
 .
@@ -151,7 +150,7 @@ Definition test_prop_UnionPost   :=
 (*! QuickChick test_prop_UnionPost. *)
 
 Definition test_prop_InsertModel   :=
-  forAll arbitrary (fun (t: Tree)  =>
+  forAll gSized (fun (t: Tree)  =>
   forAll arbitrary (fun (k: nat)  =>
   forAll arbitrary (fun (v: nat) =>
   prop_InsertModel t k v)))
@@ -160,7 +159,7 @@ Definition test_prop_InsertModel   :=
 (*! QuickChick test_prop_InsertModel. *)
 
 Definition test_prop_DeleteModel   :=
-  forAll arbitrary (fun (t: Tree)  =>
+  forAll gSized (fun (t: Tree)  =>
   forAll arbitrary (fun (k: nat) =>
   prop_DeleteModel t k))
 .
@@ -168,15 +167,15 @@ Definition test_prop_DeleteModel   :=
 (*! QuickChick test_prop_DeleteModel. *)
 
 Definition test_prop_UnionModel    :=
-  forAll arbitrary (fun (t: Tree)  =>
-  forAll arbitrary (fun (t': Tree) =>
+  forAll gSized (fun (t: Tree)  =>
+  forAll gSized (fun (t': Tree) =>
   prop_UnionModel t t'))
 .
 
 (*! QuickChick test_prop_UnionModel. *)
 
 Definition test_prop_InsertInsert    :=
-  forAll arbitrary (fun (t: Tree)  =>
+  forAll gSized (fun (t: Tree)  =>
   forAll arbitrary (fun (k: nat)  =>
   forAll arbitrary (fun (k': nat)  =>
   forAll arbitrary (fun (v: nat)  =>
@@ -187,7 +186,7 @@ Definition test_prop_InsertInsert    :=
 (*! QuickChick test_prop_InsertInsert. *)
 
 Definition test_prop_InsertDelete    :=
-  forAll arbitrary (fun (t: Tree)  =>
+  forAll gSized (fun (t: Tree)  =>
   forAll arbitrary (fun (k: nat)  =>
   forAll arbitrary (fun (k': nat)  =>
   forAll arbitrary (fun (v: nat) =>
@@ -197,8 +196,8 @@ Definition test_prop_InsertDelete    :=
 (*! QuickChick test_prop_InsertDelete. *)
 
 Definition test_prop_InsertUnion   :=
-  forAll arbitrary (fun (t: Tree)  =>
-  forAll arbitrary (fun (t': Tree)  =>
+  forAll gSized (fun (t: Tree)  =>
+  forAll gSized (fun (t': Tree)  =>
   forAll arbitrary (fun (k: nat)  =>
   forAll arbitrary (fun (v: nat) =>
   prop_InsertUnion t t' k v))))
@@ -207,7 +206,7 @@ Definition test_prop_InsertUnion   :=
 (*! QuickChick test_prop_InsertUnion. *)
 
 Definition test_prop_DeleteInsert    :=
-  forAll arbitrary (fun (t: Tree)  =>
+  forAll gSized (fun (t: Tree)  =>
   forAll arbitrary (fun (k: nat)  =>
   forAll arbitrary (fun (k': nat)  =>
   forAll arbitrary (fun (v': nat) =>
@@ -217,7 +216,7 @@ Definition test_prop_DeleteInsert    :=
 (*! QuickChick test_prop_DeleteInsert. *)
 
 Definition test_prop_DeleteDelete    :=
-  forAllShrink arbitrary shrink (fun (t: Tree)  =>
+  forAllShrink gSized shrink (fun (t: Tree)  =>
   forAllShrink arbitrary shrink (fun (k: nat)  =>
   forAllShrink arbitrary shrink (fun (k': nat) =>
   whenFail' (fun tt => show (t, k, k', delete k t, delete k' t, delete k (delete k' t), delete k' (delete k t)))
@@ -227,8 +226,8 @@ Definition test_prop_DeleteDelete    :=
 (*! QuickChick test_prop_DeleteDelete. *)
 
 Definition test_prop_DeleteUnion   :=
-  forAll arbitrary (fun (t: Tree)  =>
-  forAll arbitrary (fun (t': Tree)  =>
+  forAll gSized (fun (t: Tree)  =>
+  forAll gSized (fun (t': Tree)  =>
   forAll arbitrary (fun (k: nat) =>
   prop_DeleteUnion t t' k)))
 .
@@ -236,8 +235,8 @@ Definition test_prop_DeleteUnion   :=
 (*! QuickChick test_prop_DeleteUnion. *)
 
 Definition test_prop_UnionDeleteInsert   :=
-  forAll arbitrary (fun (t :Tree)  =>
-  forAll arbitrary (fun (t': Tree)  =>
+  forAll gSized (fun (t :Tree)  =>
+  forAll gSized (fun (t': Tree)  =>
   forAll arbitrary (fun (k: nat)  =>
   forAll arbitrary (fun (v: nat) =>
   prop_UnionDeleteInsert t t' k v))))
@@ -246,16 +245,16 @@ Definition test_prop_UnionDeleteInsert   :=
 (*! QuickChick test_prop_UnionDeleteInsert. *)
 
 Definition test_prop_UnionUnionIdem    :=
-  forAll arbitrary (fun (t: Tree) =>
+  forAll gSized (fun (t: Tree) =>
   prop_UnionUnionIdem t)
 .
 
 (*! QuickChick test_prop_UnionUnionIdem. *)
 
 Definition test_prop_UnionUnionAssoc   :=
-  forAll arbitrary (fun (t1: Tree)  =>
-  forAll arbitrary (fun (t2: Tree)  =>
-  forAll arbitrary (fun (t3: Tree) =>
+  forAll gSized (fun (t1: Tree)  =>
+  forAll gSized (fun (t2: Tree)  =>
+  forAll gSized (fun (t3: Tree) =>
   prop_UnionUnionAssoc t1 t2 t3)))
 .
 
