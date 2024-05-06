@@ -39,9 +39,9 @@ Fixpoint manual_gen_tree (size : nat) (last_callsite : nat) : G Tree :=
   | S size' =>
       let weight_leaf := $(mk_match(p.leaf_dependents, "leaf")) in
       freq [
-      (1,
+      (weight_leaf,
       returnGen E);
-      (1,
+      (1000-weight_leaf,
       bindGen (manual_gen_tree size' 10)
         (fun p0 : Tree =>
 $(

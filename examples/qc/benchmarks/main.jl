@@ -7,6 +7,12 @@ GENERATION_PARAMS_LIST = [
         dependents=[:size,:last_callsite],
         ty_dependents=[:size,:last_callsite],
     )
+    # TypeBasedBSTGenerator(
+    #     size=5,
+    #     leaf_dependents=[:size,:last_callsite],
+    #     num_dependents=[:size,:last_callsite],
+    #     intwidth=6,
+    # )
     # TypeBasedRBTGenerator(
     #     size=5,
     #     leaf_dependents=[:size,:parent_color,:last_callsite],
@@ -20,9 +26,9 @@ FP_LIST = [0.]
 RESAMPLING_FREQUENCY_LIST = [2]
 SAMPLES_PER_BATCH_LIST = [200]
 EPOCHS_LIST = [2000]
-IGNORE_NUMS_LIST = [true]
+EQ_LIST = [:prob_equals]
 
-n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST, IGNORE_NUMS_LIST]))
+n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST]))
 println(n_runs)
 @assert n_runs <= 36
 
@@ -32,19 +38,28 @@ println(n_runs)
 @show RESAMPLING_FREQUENCY_LIST
 @show SAMPLES_PER_BATCH_LIST
 @show EPOCHS_LIST
-@show IGNORE_NUMS_LIST
+@show EQ_LIST
 println()
 
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
+            # MLELossConfig{STLC}(NumApps(), Linear()),
             SamplingEntropy{STLC}(
                 resampling_frequency=resampling_frequency,
                 samples_per_batch=samples_per_batch,
-                property=STLCWellTyped(),
+                property=TrueProperty{STLC}(),
+                # property=STLCWellTyped(),
+                eq=eq,
                 failure_penalty=fp,
-                ignore_nums=ignore_nums,
             ) => lr,
+            # SamplingEntropy{BST}(
+            #     resampling_frequency=resampling_frequency,
+            #     samples_per_batch=samples_per_batch,
+            #     property=BSTOrderInvariant(),
+            #     eq=eq,
+            #     failure_penalty=fp,
+            # ) => lr,
             # SamplingEntropy{RBT}(
             #     resampling_frequency=resampling_frequency,
             #     samples_per_batch=samples_per_batch,
@@ -63,7 +78,7 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
         for fp in FP_LIST
         for resampling_frequency in RESAMPLING_FREQUENCY_LIST
         for samples_per_batch in SAMPLES_PER_BATCH_LIST
-        for ignore_nums in IGNORE_NUMS_LIST
+        for eq in EQ_LIST
     ),
 ]))
 

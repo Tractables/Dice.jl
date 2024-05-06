@@ -134,8 +134,8 @@ struct SamplingEntropy{T} <: LossConfig{T}
     resampling_frequency::Integer
     samples_per_batch::Integer
     property::Property{T}
+    eq::Symbol
     failure_penalty::Real
-    ignore_nums::Bool
 end
 
 mutable struct SamplingEntropyLossMgr <: LossMgr
@@ -183,13 +183,13 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
         ])))
 
         num_meeting = 0
+        f_eq = if m.p.eq == :eq_num_apps eq_num_apps
+        elseif m.p.eq == :eq_except_numbers eq_except_numbers
+        elseif m.p.eq == :prob_equals prob_equals
+        else error() end
         loss, actual_loss = sum(
             begin
-                lpr_eq = if m.p.ignore_nums
-                    LogPr(eq_except_numbers(m.val, sample))
-                else
-                    LogPr(prob_equals(m.val,sample))
-                end
+                lpr_eq = LogPr(f_eq(m.val, sample))
                 lpr_eq_expanded = Dice.expand_logprs(l, lpr_eq)
                 # diff_test_typecheck(sample, Dice.frombits(sample, Dict()))
                 if m.consider(sample)
@@ -764,16 +764,16 @@ name(::TrueProperty{T}) where T = "trueproperty"
 # Sampling STLC entropy loss
 ##################################
 
-function SamplingEntropy{T}(; resampling_frequency, samples_per_batch, property, failure_penalty, ignore_nums) where T
-    SamplingEntropy{T}(resampling_frequency, samples_per_batch, property, failure_penalty, ignore_nums)
+function SamplingEntropy{T}(; resampling_frequency, samples_per_batch, property, eq, failure_penalty) where T
+    SamplingEntropy{T}(resampling_frequency, samples_per_batch, property, eq, failure_penalty)
 end
 
 to_subpath(p::SamplingEntropy) = [
     "reinforce_sampling_entropy",
     "freq=$(p.resampling_frequency)-spb=$(p.samples_per_batch)",
+    "eq=$(string(p.eq))",
     "prop=$(name(p.property))",
     "failure_penalty=$(p.failure_penalty)",
-    "ignore_nums=$(p.ignore_nums)",
 ]
 function create_loss_manager(::RunState, p::SamplingEntropy{T}, g::Generation{T}) where T
     function consider(sample)

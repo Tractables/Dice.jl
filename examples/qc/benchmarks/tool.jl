@@ -1,40 +1,35 @@
 include("benchmarks.jl")
 
-TAG = "v26_bsttb"
+TAG = "v27_unifapps"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS
 if isempty(ARGS)
     TAG = "test"
     as = ["-f"]
-    g_p = TypeBasedBSTGenerator(
-        size=5,
-        leaf_dependents=[:size,:last_callsite],
-        num_dependents=[:size,:last_callsite],
-        intwidth=6,
-    )
-    # g_p = TypeBasedSTLCGenerator(
+    # g_p = TypeBasedBSTGenerator(
     #     size=5,
-    #     ty_size=2,
-    #     dependents=[:size,:last_callsite],
-    #     ty_dependents=[:size,:last_callsite],
+    #     leaf_dependents=[:size,:last_callsite],
+    #     num_dependents=[:size,:last_callsite],
+    #     intwidth=6,
     # )
+    g_p = TypeBasedSTLCGenerator(
+        size=5,
+        ty_size=2,
+        dependents=[:size,:last_callsite],
+        ty_dependents=[:size,:last_callsite],
+    )
     lr = 0.01
     fp = 0.01
     l_p = [
-            SamplingEntropy{BST}(
-                resampling_frequency=1,
-                samples_per_batch=200,
-                property=BSTOrderInvariant(),
-                # property=STLCWellTyped(),
-                # property=MultipleInvariants([
-                #     BookkeepingInvariant(),
-                #     BalanceInvariant(),
-                #     OrderInvariant(),
-                # ]),
-                failure_penalty=fp,
-                ignore_nums=true
-            ) => lr,
+        SamplingEntropy{STLC}(
+            resampling_frequency=1,
+            samples_per_batch=50,
+            property=STLCWellTyped(),
+            eq=:eq_num_apps,
+            failure_penalty=fp,
+        ) => lr,
+        # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
     ]
     push!(as, replace(string(g_p), " "=>""))
     push!(as, replace(string(l_p), " "=>""))

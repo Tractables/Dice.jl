@@ -325,3 +325,16 @@ function eq_except_numbers(x::Opt.T{T}, y::Opt.T{T}) where T
         ])
     ]
 end
+
+function eq_num_apps(x::Opt.T{T}, y::Opt.T{T}) where T
+    @match x [
+        Some(xv) -> (@match y [
+            Some(yv) -> prob_equals(num_apps(xv), num_apps(yv)),
+            None() -> false,
+        ]),
+        None() -> (@match y [
+            Some(_) -> false,
+            None() -> true,
+        ])
+    ]
+end
