@@ -110,10 +110,20 @@ function tb_gen_expr(rs::RunState, p, size::Integer, last_callsite, track_return
         else
             sz′ = size - 1
             frequency_for(rs, "freq", dependent_dists, [
-                "var" => Expr.Var(DistNat(0)), # really, this is arbitrary
-                "boolean" => Expr.Boolean(true), # really, this is arbitrary
+                "var" => begin
+                    n = sum(
+                        @dice_ite if flip_for(rs, "num$(n)", dependent_dists)
+                            DistUInt32(n)
+                        else
+                            DistUInt32(0)
+                        end
+                        for n in twopowers(p.intwidth)
+                    )
+                    Expr.Var(n)
+                end,
+                "boolean" => Expr.Boolean(flip_for(rs, "ptrue", dependent_dists)),
                 "abs" => begin
-                    typ = tb_gen_type(rs, p, p.ty_size, 10) # TODO
+                    typ = tb_gen_type(rs, p, p.ty_size, 10)
                     e = tb_gen_expr(rs, p, sz′, 11, track_return)
                     Expr.Abs(typ, e)
                 end,

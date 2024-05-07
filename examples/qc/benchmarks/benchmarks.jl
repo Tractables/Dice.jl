@@ -395,8 +395,9 @@ struct TypeBasedSTLCGenerator <: GenerationParams{STLC}
     ty_size::Integer
     dependents::Vector{Symbol}
     ty_dependents::Vector{Symbol}
+    intwidth::Integer
 end
-TypeBasedSTLCGenerator(; size, ty_size, dependents, ty_dependents) = TypeBasedSTLCGenerator(size, ty_size, dependents, ty_dependents)
+TypeBasedSTLCGenerator(; size, ty_size, dependents, ty_dependents, intwidth) = TypeBasedSTLCGenerator(size, ty_size, dependents, ty_dependents, intwidth)
 function to_subpath(p::TypeBasedSTLCGenerator)
     [
         "stlc",
@@ -404,6 +405,7 @@ function to_subpath(p::TypeBasedSTLCGenerator)
         "sz=$(p.size)-tysz=$(p.ty_size)",
         "dependents=$(join(Base.map(string, p.dependents),"-"))",
         "ty_dependents=$(join(Base.map(string, p.ty_dependents),"-"))",
+        "intwidth=$(p.intwidth)",
     ]
 end
 function generate(rs::RunState, p::TypeBasedSTLCGenerator)

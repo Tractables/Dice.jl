@@ -1,6 +1,6 @@
 include("benchmarks.jl")
 
-TAG = "v27_unifapps"
+TAG = "v28_stlc"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS
@@ -14,10 +14,11 @@ if isempty(ARGS)
     #     intwidth=6,
     # )
     g_p = TypeBasedSTLCGenerator(
-        size=5,
+        size=3,
         ty_size=2,
         dependents=[:size,:last_callsite],
         ty_dependents=[:size,:last_callsite],
+        intwidth=6,
     )
     lr = 0.01
     fp = 0.01
@@ -26,7 +27,7 @@ if isempty(ARGS)
             resampling_frequency=1,
             samples_per_batch=50,
             property=STLCWellTyped(),
-            eq=:eq_num_apps,
+            eq=:prob_equals,
             failure_penalty=fp,
         ) => lr,
         # MLELossConfig{STLC}(NumApps(), Linear()) => lr,

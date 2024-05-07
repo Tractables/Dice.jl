@@ -6,6 +6,7 @@ GENERATION_PARAMS_LIST = [
         ty_size=2,
         dependents=[:size,:last_callsite],
         ty_dependents=[:size,:last_callsite],
+        intwidth=6,
     )
     # TypeBasedBSTGenerator(
     #     size=5,
@@ -48,8 +49,7 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
             SamplingEntropy{STLC}(
                 resampling_frequency=resampling_frequency,
                 samples_per_batch=samples_per_batch,
-                property=TrueProperty{STLC}(),
-                # property=STLCWellTyped(),
+                property=STLCWellTyped(),
                 eq=eq,
                 failure_penalty=fp,
             ) => lr,
