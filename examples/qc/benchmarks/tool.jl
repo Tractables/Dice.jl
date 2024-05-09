@@ -1,6 +1,6 @@
 include("benchmarks.jl")
 
-TAG = "v28_stlc"
+TAG = "v28_stlc_stack"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS
@@ -16,8 +16,9 @@ if isempty(ARGS)
     g_p = TypeBasedSTLCGenerator(
         size=3,
         ty_size=2,
-        dependents=[:size,:last_callsite],
-        ty_dependents=[:size,:last_callsite],
+        dependents=[:size,:stack_tail],
+        ty_dependents=[:size,:stack_tail],
+        stack_size=2,
         intwidth=6,
     )
     lr = 0.01

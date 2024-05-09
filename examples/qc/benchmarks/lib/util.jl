@@ -1,3 +1,19 @@
+function empty_stack(p)
+    Tuple(0 for _ in 1:p.stack_size)
+end
+
+function update_stack_tail(p, stack_tail, loc)
+    @assert loc != 0
+    Tuple(
+        if i == p.stack_size
+            loc
+        else
+            stack_tail[i + 1]
+        end
+        for i in 1:p.stack_size
+    )
+end
+
 function backtrack_for(rs, name, opts::Vector{Opt.T{T}})::Opt.T{T} where T
     first_some(T, shuffle_for(rs, name, opts))
 end
@@ -298,4 +314,8 @@ end
 
 function tocoq(i::Integer)
     "$(i)"
+end
+
+function tocoq(v::Tuple)
+    "($(join([tocoq(x) for x in v], ", ")))"
 end

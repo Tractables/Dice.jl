@@ -92,11 +92,10 @@ function gen_expr(rs::RunState, env::Ctx, tau::Typ.T, sz::Integer, gen_typ_sz::I
     )
 end
 
-
-function tb_gen_expr(rs::RunState, p, size::Integer, last_callsite, track_return)
+function tb_gen_expr(rs::RunState, p, size::Integer, stack_tail, track_return)
     function get_dependent_dist(dependent)
         if     dependent == :size          size
-        elseif dependent == :last_callsite last_callsite
+        elseif dependent == :stack_tail    stack_tail
         else   error() end
     end
     dependent_dists = [get_dependent_dist(d) for d in p.dependents]
@@ -123,13 +122,13 @@ function tb_gen_expr(rs::RunState, p, size::Integer, last_callsite, track_return
                 end,
                 "boolean" => Expr.Boolean(flip_for(rs, "ptrue", dependent_dists)),
                 "abs" => begin
-                    typ = tb_gen_type(rs, p, p.ty_size, 10)
-                    e = tb_gen_expr(rs, p, sz′, 11, track_return)
+                    typ = tb_gen_type(rs, p, p.ty_size, update_stack_tail(p, stack_tail, 10))
+                    e = tb_gen_expr(rs, p, sz′, update_stack_tail(p, stack_tail, 11), track_return)
                     Expr.Abs(typ, e)
                 end,
                 "app" => begin
-                    e1 = tb_gen_expr(rs, p, sz′, 12, track_return)
-                    e2 = tb_gen_expr(rs, p, sz′, 13, track_return)
+                    e1 = tb_gen_expr(rs, p, sz′, update_stack_tail(p, stack_tail, 12), track_return)
+                    e2 = tb_gen_expr(rs, p, sz′, update_stack_tail(p, stack_tail, 13), track_return)
                     Expr.App(e1, e2)
                 end,
             ])
@@ -137,10 +136,10 @@ function tb_gen_expr(rs::RunState, p, size::Integer, last_callsite, track_return
     )
 end
 
-function tb_gen_type(rs::RunState, p, size::Integer, last_callsite)
+function tb_gen_type(rs::RunState, p, size::Integer, stack_tail)
     function get_dependent_dist(dependent)
         if     dependent == :size          size
-        elseif dependent == :last_callsite last_callsite
+        elseif dependent == :stack_tail    stack_tail
         else   error() end
     end
     dependent_dists = [get_dependent_dist(d) for d in p.ty_dependents]
@@ -151,8 +150,8 @@ function tb_gen_type(rs::RunState, p, size::Integer, last_callsite)
         @dice_ite if flip_for(rs, "ptbool", dependent_dists)
             Typ.TBool()
         else
-            ty1 = tb_gen_type(rs, p, sz′, 14)
-            ty2 = tb_gen_type(rs, p, sz′, 15)
+            ty1 = tb_gen_type(rs, p, sz′, update_stack_tail(p, stack_tail, 14))
+            ty2 = tb_gen_type(rs, p, sz′, update_stack_tail(p, stack_tail, 15))
             Typ.TFun(ty1, ty2)
         end
     end

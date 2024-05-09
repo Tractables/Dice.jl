@@ -1,13 +1,21 @@
 include("benchmarks.jl")
 
 GENERATION_PARAMS_LIST = [
+    # TypeBasedSTLCGenerator(
+    #     size=5,
+    #     ty_size=2,
+    #     dependents=[:size,:last_callsite],
+    #     ty_dependents=[:size,:last_callsite],
+    #     intwidth=4,
+    # ),
     TypeBasedSTLCGenerator(
         size=5,
         ty_size=2,
-        dependents=[:size,:last_callsite],
-        ty_dependents=[:size,:last_callsite],
+        dependents=[:size,:stack_tail],
+        ty_dependents=[:size,:stack_tail],
+        stack_size=2,
         intwidth=6,
-    )
+    ),
     # TypeBasedBSTGenerator(
     #     size=5,
     #     leaf_dependents=[:size,:last_callsite],
@@ -22,7 +30,7 @@ GENERATION_PARAMS_LIST = [
     #     intwidth=6,
     # ),
 ]
-LR_LIST = [0.0003, 0.001, 0.003, 0.01, 0.03, 0.1, 0.3, 1., 3.]
+LR_LIST = [0.03, 0.1, 0.3]
 FP_LIST = [0.]
 RESAMPLING_FREQUENCY_LIST = [2]
 SAMPLES_PER_BATCH_LIST = [200]
