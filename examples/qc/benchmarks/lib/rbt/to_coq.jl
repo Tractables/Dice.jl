@@ -8,39 +8,40 @@ function tocoq(c::Color.T)
 end
 
 function typebased_rbt_to_coq(p, adnodes_vals, io)
-    leaf_cases = []
-    red_cases = []
-    num_cases = Dict()
+    expected_matchid(s) = s in ["leaf", "red", ["num$(n)" for n in twopowers(p.intwidth)]...]
+
+    matchid_to_cases = Dict()
     for (name, val) in adnodes_vals
-        codeloc, case = split(name, "%%")
+        matchid, case = split(name, "%%")
+        @assert expected_matchid(matchid)
         case = "(" * join([tocoq(eval(Meta.parse(x))) for x in split(case, "%")], ", ") * ")"
         val = thousandths(val)
-        if codeloc == "leaf"
-            push!(leaf_cases, (case, val))
-        elseif codeloc == "red"
-            push!(red_cases, (case, val))
-        elseif startswith(codeloc, "num")
-            n = parse(Int, codeloc[4:end])
-            push!(get!(num_cases, n, []), (case, val))
+        push!(get!(matchid_to_cases, matchid, []), (case, val))
+    end
+
+    function dependent_to_code(sym)
+        if sym == :stack_tail
+            "($(join(["stack$(i)" for i in 1:p.stack_size], ", ")))"
         else
-            error()
+            string(sym)
         end
     end
 
-    function mk_match(dependents, cases)
+    function mk_match(dependents, matchid)
+        cases = matchid_to_cases[matchid]
         cases = sort(cases)
         if isnothing(dependents)
             "500"
         else
-            "match ($(join(map(string, dependents), ","))) with 
+            "match ($(join(map(dependent_to_code, dependents), ","))) with 
 $(join([" " ^ 9 * "| $(name) => $(w)" for (name, w) in cases], "\n"))
          | _ => 500
          end"
         end
     end
-    
-    red_match = mk_match(p.red_dependents, red_cases)
-    leaf_match = mk_match(p.leaf_dependents, leaf_cases)
+
+    stack_vars = ["(stack$(i) : nat)" for i in 1:p.stack_size]
+    update_stack_vars(loc) = join(stack_vars[2:end], " ") * " $(loc)"
 
     """
 Require Import ZArith.
@@ -54,51 +55,39 @@ Import ListNotations.
 
 From RBT Require Import Impl Spec.
 
-Definition manual_gen_tree :=
-    fun s : nat =>
-    (let
-       fix arb_aux (size : nat) (parent_color : Color) (last_callsite : nat) : G Tree :=
-         let weight_red := $(red_match) in
-         let weight_leaf := $(leaf_match) in
+Fixpoint manual_gen_tree (size : nat) (parent_color : Color) $(join(stack_vars, " ")) :=
+    let weight_red := $(mk_match(p.red_dependents, "red")) in
+    let weight_leaf := $(mk_match(p.leaf_dependents, "leaf")) in
+    match size with
+    | 0 => returnGen E
+    | S size' =>
+        freq [ (weight_leaf, returnGen E);
+        (1000 - weight_leaf,
+        bindGen (freq [ (weight_red, returnGen R); (1000-weight_red, returnGen B)])
+          (fun p0 : Color =>
+           bindGen (manual_gen_tree size' p0 $(update_stack_vars(10)))
+             (fun p1 : Tree =>
 $(
     join(
-        ["         let weight_$(n) := $(mk_match(p.num_dependents, num_cases[n])) in"
+        ["         let weight_$(n) := $(mk_match(p.num_dependents, "num$(n)")) in
+        bindGen (freq [ (weight_$(n), returnGen ($(n)%Z)); (1000-weight_$(n), returnGen 0%Z)])
+        (fun n$(n) : Z =>  "
         for n in twopowers(p.intwidth)],
         "\n"
     )
 )
-         match size with
-         | 0 => returnGen E
-         | S size' =>
-             freq [ (weight_leaf, returnGen E);
-             (1000 - weight_leaf,
-             bindGen (freq [ (weight_red, returnGen R); (1000-weight_red, returnGen B)])
-               (fun p0 : Color =>
-                bindGen (arb_aux size' p0 20)
-                  (fun p1 : Tree =>
-
-$(
-    join(
-        [
-"bindGen (freq [ (weight_$(n), returnGen ($(n)%Z)); (1000-weight_$(n), returnGen 0%Z)])
-(fun n$(n) : Z => "
-        for n in twopowers(p.intwidth)],
-        "\n"
-    )
-)
-                      bindGen arbitrary
-                        (fun p3 : Z =>
 let p2 := ($(join(["n$(n)" for n in twopowers(p.intwidth)], "+")))%Z in
-                         bindGen (arb_aux size' p0 30)
-                           (fun p4 : Tree => returnGen (T p0 p1 p2 p3 p4))
-                          $(")" ^ p.intwidth) 
-                           ))))]
-         end in
-     arb_aux) s.
+                  bindGen arbitrary
+                    (fun p3 : Z =>
+                     bindGen (manual_gen_tree size' p0 $(update_stack_vars(11)))
+                       (fun p4 : Tree => returnGen (T p0 p1 p2 p3 p4))
+                      $(")" ^ p.intwidth) 
+                       ))))]
+         end.
 
 #[global]
 Instance genTree : GenSized (Tree) := 
-  {| arbitrarySized n := manual_gen_tree $(p.size) B 10 |}.
+  {| arbitrarySized n := manual_gen_tree $(p.size) B$(" 0" ^ p.stack_size) |}.
 
 (* --------------------- Tests --------------------- *)
 

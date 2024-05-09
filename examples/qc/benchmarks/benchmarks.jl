@@ -652,10 +652,11 @@ struct TypeBasedRBTGenerator <: GenerationParams{RBT}
     leaf_dependents::Vector{Symbol}
     red_dependents::Vector{Symbol}
     num_dependents::Vector{Symbol}
+    stack_size::Integer
     intwidth::Integer
 end
-TypeBasedRBTGenerator(; size, leaf_dependents, red_dependents, num_dependents, intwidth) =
-    TypeBasedRBTGenerator(size, leaf_dependents, red_dependents, num_dependents, intwidth)
+TypeBasedRBTGenerator(; size, leaf_dependents, red_dependents, num_dependents, stack_size, intwidth) =
+    TypeBasedRBTGenerator(size, leaf_dependents, red_dependents, num_dependents, stack_size, intwidth)
 function to_subpath(p::TypeBasedRBTGenerator)
     [
         "rbt",
@@ -664,11 +665,12 @@ function to_subpath(p::TypeBasedRBTGenerator)
         "leaf_dependents=$(join(Base.map(string, p.leaf_dependents),"-"))",
         "red_dependents=$(join(Base.map(string, p.red_dependents),"-"))",
         "num_dependents=$(join(Base.map(string, p.num_dependents),"-"))",
+        "stack_size=$(p.stack_size)",
         "intwidth=$(p.intwidth)",
     ]
 end
 function generate(rs::RunState, p::TypeBasedRBTGenerator)
-    RBTGeneration(tb_gen_rbt(rs, p, p.size, Color.Black(), 10))
+    RBTGeneration(tb_gen_rbt(rs, p, p.size, Color.Black(), empty_stack(p)))
 end
 function generation_params_emit_stats(rs::RunState, p::TypeBasedRBTGenerator, s)
     save_coq_generator(rs, p, s, typebased_rbt_to_coq)

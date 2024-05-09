@@ -8,27 +8,28 @@ GENERATION_PARAMS_LIST = [
     #     ty_dependents=[:size,:last_callsite],
     #     intwidth=4,
     # ),
-    TypeBasedSTLCGenerator(
-        size=5,
-        ty_size=2,
-        dependents=[:size,:stack_tail],
-        ty_dependents=[:size,:stack_tail],
-        stack_size=2,
-        intwidth=6,
-    ),
+    # TypeBasedSTLCGenerator(
+    #     size=5,
+    #     ty_size=2,
+    #     dependents=[:size,:stack_tail],
+    #     ty_dependents=[:size,:stack_tail],
+    #     stack_size=2,
+    #     intwidth=6,
+    # ),
     # TypeBasedBSTGenerator(
     #     size=5,
     #     leaf_dependents=[:size,:last_callsite],
     #     num_dependents=[:size,:last_callsite],
     #     intwidth=6,
     # )
-    # TypeBasedRBTGenerator(
-    #     size=5,
-    #     leaf_dependents=[:size,:parent_color,:last_callsite],
-    #     red_dependents=[:size,:parent_color,:last_callsite],
-    #     num_dependents=[:size,:parent_color,:last_callsite],
-    #     intwidth=6,
-    # ),
+    TypeBasedRBTGenerator(
+        size=5,
+        leaf_dependents=[:size,:parent_color,:stack_tail],
+        red_dependents=[:size,:parent_color,:stack_tail],
+        num_dependents=[:size,:parent_color,:stack_tail],
+        stack_size=2,
+        intwidth=6,
+    ),
 ]
 LR_LIST = [0.03, 0.1, 0.3]
 FP_LIST = [0.]
@@ -54,13 +55,13 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
             # MLELossConfig{STLC}(NumApps(), Linear()),
-            SamplingEntropy{STLC}(
-                resampling_frequency=resampling_frequency,
-                samples_per_batch=samples_per_batch,
-                property=STLCWellTyped(),
-                eq=eq,
-                failure_penalty=fp,
-            ) => lr,
+            # SamplingEntropy{STLC}(
+            #     resampling_frequency=resampling_frequency,
+            #     samples_per_batch=samples_per_batch,
+            #     property=STLCWellTyped(),
+            #     eq=eq,
+            #     failure_penalty=fp,
+            # ) => lr,
             # SamplingEntropy{BST}(
             #     resampling_frequency=resampling_frequency,
             #     samples_per_batch=samples_per_batch,
@@ -68,17 +69,17 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
             #     eq=eq,
             #     failure_penalty=fp,
             # ) => lr,
-            # SamplingEntropy{RBT}(
-            #     resampling_frequency=resampling_frequency,
-            #     samples_per_batch=samples_per_batch,
-            #     property=MultipleInvariants([
-            #         BookkeepingInvariant(),
-            #         BalanceInvariant(),
-            #         OrderInvariant(),
-            #     ]),
-            #     failure_penalty=fp,
-            #     ignore_nums=ignore_nums,
-            # ) => 0.01,
+            SamplingEntropy{RBT}(
+                resampling_frequency=resampling_frequency,
+                samples_per_batch=samples_per_batch,
+                property=MultipleInvariants([
+                    BookkeepingInvariant(),
+                    BalanceInvariant(),
+                    OrderInvariant(),
+                ]),
+                failure_penalty=fp,
+                eq=:prob_equals,
+            ) => 0.01,
             # MLELossConfig(RBTDepth(), Uniform()) => lr,
             # SatisfyPropertyLoss(MultipleInvariants([BookkeepingInvariant(),BalanceInvariant()])) => lr,
         ]

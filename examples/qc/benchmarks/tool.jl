@@ -1,6 +1,6 @@
 include("benchmarks.jl")
 
-TAG = "v28_stlc_stack"
+TAG = "v29_rbt_stack"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS
@@ -13,21 +13,34 @@ if isempty(ARGS)
     #     num_dependents=[:size,:last_callsite],
     #     intwidth=6,
     # )
-    g_p = TypeBasedSTLCGenerator(
+    # g_p = TypeBasedSTLCGenerator(
+    #     size=3,
+    #     ty_size=2,
+    #     dependents=[:size,:stack_tail],
+    #     ty_dependents=[:size,:stack_tail],
+    #     stack_size=2,
+    #     intwidth=6,
+    # )
+    g_p = TypeBasedRBTGenerator(
         size=3,
-        ty_size=2,
-        dependents=[:size,:stack_tail],
-        ty_dependents=[:size,:stack_tail],
+        leaf_dependents=[:size,:parent_color,:stack_tail],
+        red_dependents=[:size,:parent_color,:stack_tail],
+        num_dependents=[:size,:parent_color,:stack_tail],
         stack_size=2,
         intwidth=6,
     )
     lr = 0.01
     fp = 0.01
     l_p = [
-        SamplingEntropy{STLC}(
+        SamplingEntropy{RBT}(
             resampling_frequency=1,
             samples_per_batch=50,
-            property=STLCWellTyped(),
+            # property=STLCWellTyped(),
+            property=MultipleInvariants([
+                BookkeepingInvariant(),
+                BalanceInvariant(),
+                OrderInvariant(),
+            ]),
             eq=:prob_equals,
             failure_penalty=fp,
         ) => lr,
