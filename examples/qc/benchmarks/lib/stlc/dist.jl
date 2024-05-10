@@ -313,10 +313,52 @@ function eq_except_numbers(x::Expr.T, y::Expr.T)
     ]
 end
 
+function eq_structure(x::Expr.T, y::Expr.T)
+    @match x [
+        Var(_) -> (@match y [
+            Var(_) -> true,
+            Boolean(_) -> false,
+            App(_, _) -> false,
+            Abs(_, _) -> false,
+        ]),
+        Boolean(_) -> (@match y [
+            Var(_) -> false,
+            Boolean(_) -> true,
+            App(_, _) -> false,
+            Abs(_, _) -> false,
+        ]),
+        App(f1, x1) -> (@match y [
+            Var(_) -> false,
+            Boolean(_) -> false,
+            App(f2, x2) -> eq_structure(f1, f2) & eq_structure(x1, x2),
+            Abs(_, _) -> false,
+        ]),
+        Abs(_, e1) -> (@match y [
+            Var(_) -> false,
+            Boolean(_) -> false,
+            App(_, _) -> false,
+            Abs(_, e2) -> eq_structure(e1, e2),
+        ]),
+    ]
+end
+
 function eq_except_numbers(x::Opt.T{T}, y::Opt.T{T}) where T
     @match x [
         Some(xv) -> (@match y [
             Some(yv) -> eq_except_numbers(xv, yv),
+            None() -> false,
+        ]),
+        None() -> (@match y [
+            Some(_) -> false,
+            None() -> true,
+        ])
+    ]
+end
+
+function eq_structure(x::Opt.T{T}, y::Opt.T{T}) where T
+    @match x [
+        Some(xv) -> (@match y [
+            Some(yv) -> eq_structure(xv, yv),
             None() -> false,
         ]),
         None() -> (@match y [
@@ -338,3 +380,4 @@ function eq_num_apps(x::Opt.T{T}, y::Opt.T{T}) where T
         ])
     ]
 end
+

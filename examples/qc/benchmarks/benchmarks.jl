@@ -185,6 +185,7 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
         num_meeting = 0
         f_eq = if m.p.eq == :eq_num_apps eq_num_apps
         elseif m.p.eq == :eq_except_numbers eq_except_numbers
+        elseif m.p.eq == :eq_structure eq_structure
         elseif m.p.eq == :prob_equals prob_equals
         else error() end
         loss, actual_loss = sum(

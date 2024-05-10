@@ -1,6 +1,6 @@
 include("benchmarks.jl")
 
-TAG = "v29_rbt_stack"
+TAG = "v30_stlc_structure"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS
@@ -13,35 +13,35 @@ if isempty(ARGS)
     #     num_dependents=[:size,:last_callsite],
     #     intwidth=6,
     # )
-    # g_p = TypeBasedSTLCGenerator(
-    #     size=3,
-    #     ty_size=2,
-    #     dependents=[:size,:stack_tail],
-    #     ty_dependents=[:size,:stack_tail],
-    #     stack_size=2,
-    #     intwidth=6,
-    # )
-    g_p = TypeBasedRBTGenerator(
+    g_p = TypeBasedSTLCGenerator(
         size=3,
-        leaf_dependents=[:size,:parent_color,:stack_tail],
-        red_dependents=[:size,:parent_color,:stack_tail],
-        num_dependents=[:size,:parent_color,:stack_tail],
+        ty_size=2,
+        dependents=[:size,:stack_tail],
+        ty_dependents=[:size,:stack_tail],
         stack_size=2,
         intwidth=6,
     )
+    # g_p = TypeBasedRBTGenerator(
+    #     size=3,
+    #     leaf_dependents=[:size,:parent_color,:stack_tail],
+    #     red_dependents=[:size,:parent_color,:stack_tail],
+    #     num_dependents=[:size,:parent_color,:stack_tail],
+    #     stack_size=2,
+    #     intwidth=6,
+    # )
     lr = 0.01
     fp = 0.01
     l_p = [
-        SamplingEntropy{RBT}(
+        SamplingEntropy{STLC}(
             resampling_frequency=1,
             samples_per_batch=50,
-            # property=STLCWellTyped(),
-            property=MultipleInvariants([
-                BookkeepingInvariant(),
-                BalanceInvariant(),
-                OrderInvariant(),
-            ]),
-            eq=:prob_equals,
+            property=STLCWellTyped(),
+            # property=MultipleInvariants([
+            #     BookkeepingInvariant(),
+            #     BalanceInvariant(),
+            #     OrderInvariant(),
+            # ]),
+            eq=:eq_structure,
             failure_penalty=fp,
         ) => lr,
         # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
