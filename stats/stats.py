@@ -8,18 +8,17 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from typing import List, Callable
 
-WORKLOAD = "BST"
+WORKLOAD = "RBT"
+ORDER_ONLY = True
+ORDER = [ # Put rows in this order and also assert that these generators exist
+    # "EntropyGenerator.v",
+    "ConsiderStack3Generator.v",
+]
+
 STRAT_DIR = f"/space/tjoa/etna/workloads/Coq/{WORKLOAD}/Strategies/"
 OUT_DIR = f"/space/tjoa/Dice.jl/stats/{WORKLOAD}"
 COQ_PROJECT_DIR = f"/space/tjoa/etna/workloads/Coq/{WORKLOAD}"
 NUM_TESTS = 10_000
-
-ORDER_ONLY = False
-ORDER = [ # Put rows in this order and also assert that these generators exist
-    "ManualTypeBasedGenerator.v",
-    "BespokeGenerator.v",
-    "TypeBasedGenerator.v",
-]
 
 @dataclass
 class Workload:
@@ -114,7 +113,8 @@ def main():
             for n, valid in counts.keys()
         )
         assert min_val >= 0
-        with open(os.path.join(OUT_DIR, f"{metric}.csv"), "w") as file:
+        file_path = os.path.join(OUT_DIR, f"{metric}.csv")
+        with open(file_path, "w") as file:
             val_names, vals = zip(*[
                 (f"{v}" if valid else f"{v}!", (v, valid))
                 for v in range(0, max_val + 1)
@@ -129,6 +129,7 @@ def main():
                         str(counts.get(val, 0) / NUM_TESTS)
                     )
                 file.write('\t'.join(tokens) + "\n")
+        print(f"Write to {file_path}")
 
 def read(path):
     with open(path) as f:
