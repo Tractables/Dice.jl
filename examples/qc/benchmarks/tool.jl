@@ -1,6 +1,6 @@
 include("benchmarks.jl")
 
-TAG = "v31_stlc_sat"
+TAG = "v32_stlc_forgiveness"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS
@@ -49,6 +49,8 @@ if isempty(ARGS)
             # ]),
             eq=:eq_has_app,
             failure_penalty=fp,
+            forgiveness=0.1,
+            rand_forgiveness=false,
         ) => lr,
         # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
     ]

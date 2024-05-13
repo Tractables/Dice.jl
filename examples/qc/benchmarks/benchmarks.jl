@@ -136,6 +136,8 @@ struct SamplingEntropy{T} <: LossConfig{T}
     property::Property{T}
     eq::Symbol
     failure_penalty::Real
+    forgiveness::Real
+    rand_forgiveness::Bool
 end
 
 mutable struct SamplingEntropyLossMgr <: LossMgr
@@ -196,12 +198,30 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
                 lpr_eq = LogPr(f_eq(m.val, sample))
                 lpr_eq_expanded = Dice.expand_logprs(l, lpr_eq)
                 # diff_test_typecheck(sample, Dice.frombits(sample, Dict()))
-                if m.consider(sample)
+                meets = m.consider(sample)
+                if meets
                     num_meeting += 1
-                    [lpr_eq_expanded * compute(a, lpr_eq_expanded), lpr_eq_expanded]
-                else
-                    [Dice.Constant(m.p.failure_penalty), Dice.Constant(0)]
                 end
+
+                loss_here = Dice.Constant(0)
+                if meets || (m.p.rand_forgiveness && rand(rs.rng) < m.p.forgiveness)
+                    loss_here += lpr_eq_expanded * compute(a, lpr_eq_expanded)
+                elseif !meets && !m.p.rand_forgiveness
+                    loss_here += Dice.Constant(m.p.forgiveness) * lpr_eq_expanded * compute(a, lpr_eq_expanded)
+                end
+
+                actual_loss_here = if meets
+                    lpr_eq_expanded
+                else
+                    Dice.Constant(m.p.forgiveness) * lpr_eq_expanded
+                end
+
+                if !meets
+                    loss_here += Dice.Constant(m.p.failure_penalty)
+                    actual_loss_here += Dice.Constant(m.p.failure_penalty)
+                end
+
+                [loss_here, actual_loss_here]
             end
             for sample in samples
         )
@@ -825,8 +845,8 @@ name(::TrueProperty{T}) where T = "trueproperty"
 # Sampling STLC entropy loss
 ##################################
 
-function SamplingEntropy{T}(; resampling_frequency, samples_per_batch, property, eq, failure_penalty) where T
-    SamplingEntropy{T}(resampling_frequency, samples_per_batch, property, eq, failure_penalty)
+function SamplingEntropy{T}(; resampling_frequency, samples_per_batch, property, eq, failure_penalty, forgiveness, rand_forgiveness) where T
+    SamplingEntropy{T}(resampling_frequency, samples_per_batch, property, eq, failure_penalty, forgiveness, rand_forgiveness)
 end
 
 to_subpath(p::SamplingEntropy) = [
@@ -835,6 +855,8 @@ to_subpath(p::SamplingEntropy) = [
     "eq=$(string(p.eq))",
     "prop=$(name(p.property))",
     "failure_penalty=$(p.failure_penalty)",
+    "forgiveness=$(p.forgiveness)",
+    "rand_forgiveness=$(p.rand_forgiveness)"
 ]
 function create_loss_manager(::RunState, p::SamplingEntropy{T}, g::Generation{T}) where T
     function consider(sample)

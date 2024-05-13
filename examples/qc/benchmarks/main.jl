@@ -18,20 +18,24 @@ GENERATION_PARAMS_LIST = [
     #     intwidth=6,
     # ),
 ]
-LR_LIST = [0.03, 0.1, 0.3]
+LR_LIST = [0.3]
 FP_LIST = [0.]
+FORIGIVENESS_LIST = [0.01, 0.05, 0.1, 0.2, 0.5]
+RAND_FORIGIVENESS_LIST = [false, true]
 RESAMPLING_FREQUENCY_LIST = [2]
 SAMPLES_PER_BATCH_LIST = [200]
 EPOCHS_LIST = [2000]
 EQ_LIST = [:eq_has_app]
 
-n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST]))
+n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, FORIGIVENESS_LIST, RAND_FORIGIVENESS_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST]))
 println(n_runs)
 @assert n_runs <= 36
 
 @show GENERATION_PARAMS_LIST
 @show LR_LIST
 @show FP_LIST
+@show FORIGIVENESS_LIST
+@show RAND_FORIGIVENESS_LIST
 @show RESAMPLING_FREQUENCY_LIST
 @show SAMPLES_PER_BATCH_LIST
 @show EPOCHS_LIST
@@ -48,6 +52,8 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
                 property=STLCWellTyped(),
                 eq=eq,
                 failure_penalty=fp,
+                forgiveness=forgiveness,
+                rand_forgiveness=rand_forgiveness,
             ) => lr,
             # SamplingEntropy{BST}(
             #     resampling_frequency=resampling_frequency,
@@ -70,6 +76,8 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
         ]
         for lr in LR_LIST
         for fp in FP_LIST
+        for forgiveness in FORIGIVENESS_LIST
+        for rand_forgiveness in RAND_FORIGIVENESS_LIST
         for resampling_frequency in RESAMPLING_FREQUENCY_LIST
         for samples_per_batch in SAMPLES_PER_BATCH_LIST
         for eq in EQ_LIST
