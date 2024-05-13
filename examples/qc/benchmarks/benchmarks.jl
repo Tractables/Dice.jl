@@ -184,6 +184,9 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
 
         num_meeting = 0
         f_eq = if m.p.eq == :eq_num_apps eq_num_apps
+        elseif m.p.eq == :eq_has_app eq_has_app
+        elseif m.p.eq == :sat1_eq_num_apps begin (x, y) -> sat_eq_num_apps(x, y, 1) end
+        elseif m.p.eq == :sat2_eq_num_apps begin (x, y) -> sat_eq_num_apps(x, y, 2) end
         elseif m.p.eq == :eq_except_numbers eq_except_numbers
         elseif m.p.eq == :eq_structure eq_structure
         elseif m.p.eq == :prob_equals prob_equals
@@ -330,6 +333,56 @@ function generation_emit_stats(rs::RunState, g::STLCGeneration, s::String)
     println(rs.io)
 end
 value(g::STLCGeneration) = g.e
+
+##################################
+# DerivedGenerator
+##################################
+
+struct DerivedGenerator{T} <: GenerationParams{T}
+    root_ty::Type
+    init_size::Integer
+    stack_size::Integer
+    intwidth::Integer
+end
+DerivedGenerator{T}(; root_ty, init_size, stack_size, intwidth) where T =
+    DerivedGenerator{T}(root_ty, init_size, stack_size, intwidth)
+function to_subpath(p::DerivedGenerator{T}) where T
+    [
+        lowercase(string(T)),
+        "derived",
+        "root_ty=$(p.root_ty)",
+        "init_size=$(p.init_size)",
+        "stack_size=$(p.stack_size)",
+        "intwidth=$(p.intwidth)",
+    ]
+end
+function generate(rs::RunState, p::DerivedGenerator{T}) where T
+    constructors_overapproximation = []
+    function add_ctor(v::Opt.T{Expr.T})
+        push!(constructors_overapproximation, v)
+        v
+    end
+    e = generate(rs, p, add_ctor)
+    if T == STLC
+        STLCGeneration(e, constructors_overapproximation)
+    elseif T == BST
+        BSTGeneration(e, constructors_overapproximation)
+    elseif T == RBT
+        RBTGeneration(e)
+    else
+        error()
+    end
+end
+
+function save_coq_generator(rs, p, s, f)
+    path = joinpath(rs.out_dir, "$(s)_Generator.v")
+    open(path, "w") do file
+        vals = compute(rs.var_vals, values(rs.adnodes_of_interest))
+        adnodes_vals = Dict(s => vals[adnode] for (s, adnode) in rs.adnodes_of_interest)
+        println(file, f(p, adnodes_vals, rs.io))
+    end
+    println_flush(rs.io, "Saved Coq generator to $(path)")
+end
 
 ##################################
 # Bespoke STLC generator

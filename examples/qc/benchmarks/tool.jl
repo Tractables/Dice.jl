@@ -1,6 +1,6 @@
 include("benchmarks.jl")
 
-TAG = "v30_stlc_structure"
+TAG = "v31_stlc_sat"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS
@@ -13,8 +13,14 @@ if isempty(ARGS)
     #     num_dependents=[:size,:last_callsite],
     #     intwidth=6,
     # )
+    # g_p = DerivedGenerator{STLC}(
+    #     root_ty=Expr.T,
+    #     init_size=3,
+    #     stack_size=2,
+    #     intwidth=6,
+    # )
     g_p = TypeBasedSTLCGenerator(
-        size=3,
+        size=5,
         ty_size=2,
         dependents=[:size,:stack_tail],
         ty_dependents=[:size,:stack_tail],
@@ -41,7 +47,7 @@ if isempty(ARGS)
             #     BalanceInvariant(),
             #     OrderInvariant(),
             # ]),
-            eq=:eq_structure,
+            eq=:eq_has_app,
             failure_penalty=fp,
         ) => lr,
         # MLELossConfig{STLC}(NumApps(), Linear()) => lr,

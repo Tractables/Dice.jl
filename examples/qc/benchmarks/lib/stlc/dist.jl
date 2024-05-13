@@ -313,6 +313,15 @@ function eq_except_numbers(x::Expr.T, y::Expr.T)
     ]
 end
 
+function has_app(x::Expr.T)
+    @match x [
+        Var(_) -> false,
+        Boolean(_) -> false,
+        App(_, _) -> true,
+        Abs(_, e) -> has_app(e),
+    ]
+end
+
 function eq_structure(x::Expr.T, y::Expr.T)
     @match x [
         Var(_) -> (@match y [
@@ -381,3 +390,37 @@ function eq_num_apps(x::Opt.T{T}, y::Opt.T{T}) where T
     ]
 end
 
+function sat_num_apps(e::Expr.T, k::DistUInt32)
+    @match e [
+        Var(_) -> DistUInt32(0),
+        Boolean(_) -> DistUInt32(0),
+        App(f, x) -> min(min(DistUInt32(1), k) + sat_num_apps(f, k) + sat_num_apps(x, k), k),
+        Abs(_, e′) -> sat_num_apps(e′, k),
+    ]
+end
+
+function sat_eq_num_apps(x::Opt.T{T}, y::Opt.T{T}, k::Integer) where T
+    @match x [
+        Some(xv) -> (@match y [
+            Some(yv) -> prob_equals(sat_num_apps(xv, DistUInt32(k)), sat_num_apps(yv, DistUInt32(k))),
+            None() -> false,
+        ]),
+        None() -> (@match y [
+            Some(_) -> false,
+            None() -> true,
+        ])
+    ]
+end
+
+function eq_has_app(x::Opt.T{T}, y::Opt.T{T}) where T
+    @match x [
+        Some(xv) -> (@match y [
+            Some(yv) -> prob_equals(has_app(xv), has_app(yv)),
+            None() -> false,
+        ]),
+        None() -> (@match y [
+            Some(_) -> false,
+            None() -> true,
+        ])
+    ]
+end

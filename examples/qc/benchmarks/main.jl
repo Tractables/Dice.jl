@@ -23,7 +23,7 @@ FP_LIST = [0.]
 RESAMPLING_FREQUENCY_LIST = [2]
 SAMPLES_PER_BATCH_LIST = [200]
 EPOCHS_LIST = [2000]
-EQ_LIST = [:eq_structure]
+EQ_LIST = [:eq_has_app]
 
 n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST]))
 println(n_runs)
@@ -106,6 +106,7 @@ TOOL_PATH = "examples/qc/benchmarks/tool.jl"
         proc = run(pipeline(cmd; stdout=out, stderr=stdout),)
         if proc.exitcode != 0
             println()
+            println(proc.exitcode)
             so = String(take!(out))
             println("FAILED: $(s)\nSTDOUT ===\n$(so)\n\n")
         end
