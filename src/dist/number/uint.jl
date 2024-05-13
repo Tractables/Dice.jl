@@ -312,6 +312,20 @@ function overflow_sum(x::DistUInt{W}, y::DistUInt{W}) where W
     drop_bits(DistUInt{W}, z)
 end
 
+function Base.min(x::DistUInt{W}, y::DistUInt{W}) where W
+    DistUInt{W}([
+        a & b
+        for (a, b) in zip(x.bits, y.bits)
+    ])
+end
+
+function Base.max(x::DistUInt{W}, y::DistUInt{W}) where W
+    DistUInt{W}([
+        a | b
+        for (a, b) in zip(x.bits, y.bits)
+    ])
+end
+
 function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W
     z = Vector{AnyBool}(undef, W)
     borrow = false
