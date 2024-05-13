@@ -199,21 +199,14 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
                 lpr_eq_expanded = Dice.expand_logprs(l, lpr_eq)
                 # diff_test_typecheck(sample, Dice.frombits(sample, Dict()))
                 meets = m.consider(sample)
-                if meets
-                    num_meeting += 1
-                end
+                meets && num_meeting += 1
 
-                loss_here = Dice.Constant(0)
                 if meets || (m.p.rand_forgiveness && rand(rs.rng) < m.p.forgiveness)
-                    loss_here += lpr_eq_expanded * compute(a, lpr_eq_expanded)
+                    loss_here = lpr_eq_expanded * compute(a, lpr_eq_expanded)
+                    actual_loss_here = lpr_eq_expanded
                 elseif !meets && !m.p.rand_forgiveness
-                    loss_here += Dice.Constant(m.p.forgiveness) * lpr_eq_expanded * compute(a, lpr_eq_expanded)
-                end
-
-                actual_loss_here = if meets
-                    lpr_eq_expanded
-                else
-                    Dice.Constant(m.p.forgiveness) * lpr_eq_expanded
+                    loss_here = Dice.Constant(m.p.forgiveness) * lpr_eq_expanded * compute(a, lpr_eq_expanded)
+                    actual_loss_here = Dice.Constant(m.p.forgiveness) * lpr_eq_expanded
                 end
 
                 if !meets

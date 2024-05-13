@@ -47,7 +47,7 @@ if isempty(ARGS)
             #     BalanceInvariant(),
             #     OrderInvariant(),
             # ]),
-            eq=:eq_has_app,
+            eq=:prob_equals,
             failure_penalty=fp,
             forgiveness=0.1,
             rand_forgiveness=false,
