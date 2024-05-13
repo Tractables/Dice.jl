@@ -1,5 +1,5 @@
 # Distributions over inductively-defined types
-export @inductive, @match, matches
+export @inductive, @match, matches, variants
 
 # alternative to `nothing`, so `nothing` can be used as value
 _UNSET = gensym("unset")
@@ -85,6 +85,8 @@ end
 
 function matches end
 
+function variants end
+
 # Usage:
 # @inductive Option Some(DistInt32) None()
 # @inductive List{T} Nil() Cons(T, List{T})
@@ -131,6 +133,13 @@ macro inductive(type, constructors...)
 
         function $(esc(:(Dice.matches)))(x::$(ty), ctor) where {$(tvs...)}
             prob_equals(x.union.which, DistUInt32(dict[ctor]))
+        end
+
+        function $(esc(:(Dice.variants)))(::$(esc(:(Base.Type))){$(ty)}) where {$(tvs...)}
+            [$([
+                :($(QuoteNode(ctor)) => [$(map(esc, args)...)])
+                for (ctor, args) in plist
+            ]...)]
         end
 
         function $(esc(:(Dice.ifelse)))(c::$(esc(Dist{Bool})), x::$(ty), y::$(ty)) where {$(tvs...)}
