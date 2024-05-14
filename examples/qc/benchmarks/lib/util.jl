@@ -464,8 +464,8 @@ $(join([
 $(join([
 "        (* $(ctor) *) $(if length(variants2(ty, zero_case)) > 1 "
         (
-         $(mk_match("$(if zero_case "0_" else "" end)$(ty)_variant_$(ctor)"))," else "" end)
-$(sandwichjoin(
+         $(mk_match("$(if zero_case "0_" else "" end)$(ty)_variant_$(ctor)")),\n" else "" end)" * 
+"$(sandwichjoin(
                 Iterators.flatten([
                 if param == ty
                     ["\n        bindGen (gen_$(to_coq(param)) size' $(
@@ -497,7 +497,7 @@ $(sandwichjoin(
                 for (parami, param) in enumerate(params)
                 ]),
             middle="\n        returnGen ($(ctor) $(join(["p$(parami)" for parami in 1:length(params)], " ")))",
-            sep=""))$(if length(variants2(ty, zero_case)) > 1 ")\n" else "" end)"
+            sep=""))$(if length(variants2(ty, zero_case)) > 1 ")" else "" end)"
         for (ctor, params) in variants2(ty, zero_case)
     ], ";\n"))
     $(if length(variants2(ty, zero_case)) > 1 "]" else "" end)"
