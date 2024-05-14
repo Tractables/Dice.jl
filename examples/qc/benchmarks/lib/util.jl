@@ -461,29 +461,28 @@ Fixpoint gen_$(to_coq(ty)) (size : nat) $(join(stack_vars, " ")) : G $(to_coq(ty
 $(join([
 "  | $(if zero_case 0 else "S size'" end) => $(if length(variants2(ty, zero_case)) > 1 "
         freq [" else "" end)
-    $(join([
-"    (* $(ctor) *) $(if length(variants2(ty, zero_case)) > 1 "       (
-         $(mk_match("$(if zero_case "0_" else "" end)$(ty)_variant_$(ctor)")),
-         " else "" end)
-            $(sandwichjoin(
+$(join([
+"        (* $(ctor) *) $(if length(variants2(ty, zero_case)) > 1 "
+        (
+         $(mk_match("$(if zero_case "0_" else "" end)$(ty)_variant_$(ctor)"))," else "" end)
+$(sandwichjoin(
                 Iterators.flatten([
                 if param == ty
-                    ["bindGen (gen_$(to_coq(param)) size' $(
+                    ["\n        bindGen (gen_$(to_coq(param)) size' $(
                         update_stack_vars(type_ctor_parami_to_id[(ty, ctor, parami)])
                     )) (fun p$(parami) : $(to_coq(param)) =>" => ")"]
                 elseif param ∈ tys
-                    ["bindGen (gen_$(to_coq(param)) $(p.ty_sizes[param]) $(
+                    ["\n        bindGen (gen_$(to_coq(param)) $(p.ty_sizes[param]) $(
                         update_stack_vars(type_ctor_parami_to_id[(ty, ctor, parami)])
                     )) (fun p$(parami) : $(to_coq(param)) =>" => ")"]
                 elseif param == AnyBool
-                    ["let weight_true := $(mk_match("$(if zero_case "0_" else "" end)$(ty)_$(ctor)_$(parami)")) in
+                    ["\n        let weight_true := $(mk_match("$(if zero_case "0_" else "" end)$(ty)_$(ctor)_$(parami)")) in
         bindGen (freq [
             (weight_true, returnGen true);
             (1000-weight_true, returnGen false)
         ]) (fun p$(parami) : $(to_coq(param)) =>" => ")"]
                 elseif param == DistUInt32
-                    [
-                        "       let weight_$(n) := $(mk_match("$(if zero_case "0_" else "" end)$(ty)_$(ctor)_$(parami)_num$(n)")) in
+                    ["\n       let weight_$(n) := $(mk_match("$(if zero_case "0_" else "" end)$(ty)_$(ctor)_$(parami)_num$(n)")) in
         bindGen (freq [
             (weight_$(n), returnGen $(n));
             (1000-weight_$(n), returnGen 0)
@@ -497,10 +496,8 @@ $(join([
                 end
                 for (parami, param) in enumerate(params)
                 ]),
-            middle="returnGen ($(ctor) $(join(["p$(parami)" for parami in 1:length(params)], " ")))",
-            sep=""))
-    $(if length(variants2(ty, zero_case)) > 1 ")" else "" end)
-        "
+            middle="\n        returnGen ($(ctor) $(join(["p$(parami)" for parami in 1:length(params)], " ")))",
+            sep=""))$(if length(variants2(ty, zero_case)) > 1 ")\n" else "" end)"
         for (ctor, params) in variants2(ty, zero_case)
     ], ";\n"))
     $(if length(variants2(ty, zero_case)) > 1 "]" else "" end)"
