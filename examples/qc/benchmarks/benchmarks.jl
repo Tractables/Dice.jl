@@ -373,13 +373,12 @@ struct STLCGeneration <: Generation{STLC}
     constructors_overapproximation::Vector{Opt.T{Expr.T}}
 end
 function generation_emit_stats(rs::RunState, g::STLCGeneration, s::String)
-    # TODO: uncomment
-    # println_flush(rs.io, "Saving samples...")
-    # time_sample = @elapsed with_concrete_ad_flips(rs.var_vals, g.e) do
-    #     save_samples(rs, joinpath(rs.out_dir, "terms_$(s).txt"), g.e)
-    # end
-    # println(rs.io, "  $(time_sample) seconds")
-    # println(rs.io)
+    println_flush(rs.io, "Saving samples...")
+    time_sample = @elapsed with_concrete_ad_flips(rs.var_vals, g.e) do
+        save_samples(rs, joinpath(rs.out_dir, "terms_$(s).txt"), g.e)
+    end
+    println(rs.io, "  $(time_sample) seconds")
+    println(rs.io)
 end
 value(g::STLCGeneration) = g.e
 
