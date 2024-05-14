@@ -1,7 +1,7 @@
 include("benchmarks.jl")
 
-# TAG = "v32_stlc_forgiveness"
-TAG = "test"
+TAG = "v33_stlc_forgiveness_rand"
+# TAG = "test"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS
@@ -16,13 +16,13 @@ if isempty(ARGS)
     # )
     g_p = DerivedGenerator{STLC}(
         root_ty=Expr.T,
-        ty_sizes=Dict(Expr.T=>3, Typ.T=>2),
+        ty_sizes=Dict(Expr.T=>2, Typ.T=>1),
         stack_size=2,
         intwidth=6,
     )
     # g_p = TypeBasedSTLCGenerator(
-    #     size=5,
-    #     ty_size=2,
+    #     size=2,
+    #     ty_size=1,
     #     dependents=[:size,:stack_tail],
     #     ty_dependents=[:size,:stack_tail],
     #     stack_size=2,
@@ -36,28 +36,28 @@ if isempty(ARGS)
     #     stack_size=2,
     #     intwidth=6,
     # )
-    lr = 0.01
+    lr = 0.5
     fp = 0.01
     l_p = [
-        SamplingEntropy{STLC}(
-            resampling_frequency=1,
-            samples_per_batch=50,
-            property=STLCWellTyped(),
-            # property=MultipleInvariants([
-            #     BookkeepingInvariant(),
-            #     BalanceInvariant(),
-            #     OrderInvariant(),
-            # ]),
-            eq=:prob_equals,
-            failure_penalty=fp,
-            forgiveness=0.1,
-            rand_forgiveness=false,
-        ) => lr,
-        # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
+        # SamplingEntropy{STLC}(
+        #     resampling_frequency=1,
+        #     samples_per_batch=50,
+        #     property=STLCWellTyped(),
+        #     # property=MultipleInvariants([
+        #     #     BookkeepingInvariant(),
+        #     #     BalanceInvariant(),
+        #     #     OrderInvariant(),
+        #     # ]),
+        #     eq=:prob_equals,
+        #     failure_penalty=fp,
+        #     forgiveness=0.1,
+        #     rand_forgiveness=false,
+        # ) => lr,
+        MLELossConfig{STLC}(NumApps(), Linear()) => lr,
     ]
     push!(as, replace(string(g_p), " "=>""))
     push!(as, replace(string(l_p), " "=>""))
-    push!(as, string(3))
+    push!(as, string(10))
     empty!(ARGS)
     append!(ARGS, as)
 end

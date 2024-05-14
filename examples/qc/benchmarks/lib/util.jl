@@ -339,18 +339,22 @@ function collect_types(root_ty)
     end
     reverse!(tys) # top order
 
-    type_ctor_to_id = Dict()
+    type_ctor_parami_to_id = Dict()
     for ty in tys
-        for (ctor, _) in variants(ty)
-            type_ctor_to_id[(ty, ctor)] = length(type_ctor_to_id)
+        for (ctor, params) in variants(ty)
+            for (parami, param) in enumerate(params)
+                if param in tys
+                    type_ctor_parami_to_id[(ty, ctor, parami)] = length(type_ctor_parami_to_id) + 1
+                end
+            end
         end
     end
 
-    tys, type_ctor_to_id
+    tys, type_ctor_parami_to_id
 end
 
 function generate(rs::RunState, p, track_return)
-    tys, type_ctor_to_id = collect_types(p.root_ty)
+    tys, type_ctor_parami_to_id = collect_types(p.root_ty)
     type_to_gen = Dict()
     for ty in tys
         type_to_gen[ty] = (size, stack_tail) -> begin
@@ -363,19 +367,19 @@ function generate(rs::RunState, p, track_return)
                         # TODO: if recursing, pass values of sibling *enumlikes*
                         type_to_gen[param](
                             size - 1,
-                            update_stack_tail(p, stack_tail, type_ctor_to_id[(ty, ctor)])
+                            update_stack_tail(p, stack_tail, type_ctor_parami_to_id[(ty, ctor, parami)])
                         )
                     elseif param ∈ tys
                         # TODO: special-case enum like types
                         type_to_gen[param](
                             p.ty_sizes[param],
-                            update_stack_tail(p, stack_tail, type_ctor_to_id[(ty, ctor)])
+                            update_stack_tail(p, stack_tail, type_ctor_parami_to_id[(ty, ctor, parami)])
                         )
                     elseif param == AnyBool
-                        flip_for(rs, "$(zero_prefix)$(ty)_$(ctor)_$(i)", dependents)
+                        flip_for(rs, "$(zero_prefix)$(ty)_$(ctor)_$(parami)", dependents)
                     elseif param == DistUInt32
                          sum(
-                            @dice_ite if flip_for(rs, "$(zero_prefix)$(ty)_$(ctor)_$(i)_num$(n)", dependents)
+                            @dice_ite if flip_for(rs, "$(zero_prefix)$(ty)_$(ctor)_$(parami)_num$(n)", dependents)
                                 DistUInt32(n)
                             else
                                 DistUInt32(0)
@@ -385,7 +389,7 @@ function generate(rs::RunState, p, track_return)
                     else
                         error()
                     end
-                    for (i, param) in enumerate(params)
+                    for (parami, param) in enumerate(params)
                 ]...)
                 for (ctor, params) in variants(ty)
                 if size != 0 || all(param != ty for param in params) 
@@ -423,7 +427,7 @@ function derived_to_coq(p, adnodes_vals, io)
         push!(get!(matchid_to_cases, matchid, []), (case, val))
     end
 
-    tys, type_ctor_to_id = collect_types(p.root_ty)
+    tys, type_ctor_parami_to_id = collect_types(p.root_ty)
 
     workload = workload_of(typeof(p))
     generators = []
@@ -455,50 +459,46 @@ $(join([" " ^ 9 * "| $(name) => $(w)" for (name, w) in cases], "\n"))
 Fixpoint gen_$(to_coq(ty)) (size : nat) $(join(stack_vars, " ")) : G $(to_coq(ty)) :=
   match size with
 $(join([
-"  | $(if zero_case 0 else "S size'" end) => 
-    $(if length(variants2(ty, zero_case)) > 1 "freq [" else "" end)
+"  | $(if zero_case 0 else "S size'" end) => $(if length(variants2(ty, zero_case)) > 1 "
+        freq [" else "" end)
     $(join([
-"    (* $(ctor) *)
-
-    $(if length(variants2(ty, zero_case)) > 1
-        "(
+"    (* $(ctor) *) $(if length(variants2(ty, zero_case)) > 1 "       (
          $(mk_match("$(if zero_case "0_" else "" end)$(ty)_variant_$(ctor)")),
          " else "" end)
             $(sandwichjoin(
                 Iterators.flatten([
                 if param == ty
                     ["bindGen (gen_$(to_coq(param)) size' $(
-                        update_stack_vars(type_ctor_to_id[(ty, ctor)])
-                    )) (fun p$(i) : $(to_coq(param)) =>" => ")"]
+                        update_stack_vars(type_ctor_parami_to_id[(ty, ctor, parami)])
+                    )) (fun p$(parami) : $(to_coq(param)) =>" => ")"]
                 elseif param ∈ tys
                     ["bindGen (gen_$(to_coq(param)) $(p.ty_sizes[param]) $(
-                        update_stack_vars(type_ctor_to_id[(ty, ctor)])
-                    )) (fun p$(i) : $(to_coq(param)) =>" => ")"]
+                        update_stack_vars(type_ctor_parami_to_id[(ty, ctor, parami)])
+                    )) (fun p$(parami) : $(to_coq(param)) =>" => ")"]
                 elseif param == AnyBool
-                    ["let weight_true := $(mk_match("$(if zero_case "0_" else "" end)$(ty)_$(ctor)_$(i)")) in
-                    bindGen (freq [
-                        (weight_true, true);
-                        (1000-weight_true, false)
-                    ]) (fun p$(i) : $(to_coq(param)) =>" => ")"]
+                    ["let weight_true := $(mk_match("$(if zero_case "0_" else "" end)$(ty)_$(ctor)_$(parami)")) in
+        bindGen (freq [
+            (weight_true, returnGen true);
+            (1000-weight_true, returnGen false)
+        ]) (fun p$(parami) : $(to_coq(param)) =>" => ")"]
                 elseif param == DistUInt32
                     [
-                        "let weight_$(n) := $(mk_match("$(if zero_case "0_" else "" end)$(ty)_$(ctor)_$(i)_num$(n)")) in
-                        bindGen (freq [
-                            (weight_$(n), returnGen $(n));
-                            (1000-weight_$(n), returnGen 0)
-                        ])
-                        (fun n$(n) : nat => $(if j == p.intwidth "
-                        let p$(i) := $(join(["n$(n)" for n in twopowers(p.intwidth)], "+ ")) in " else "" end)
-                        " => ")"
+                        "       let weight_$(n) := $(mk_match("$(if zero_case "0_" else "" end)$(ty)_$(ctor)_$(parami)_num$(n)")) in
+        bindGen (freq [
+            (weight_$(n), returnGen $(n));
+            (1000-weight_$(n), returnGen 0)
+        ])
+        (fun n$(n) : nat => $(if j == p.intwidth "
+        let p$(parami) := $(join(["n$(n)" for n in twopowers(p.intwidth)], " + ")) in " else "" end)" => ")"
                         for (j, n) in enumerate(twopowers(p.intwidth))
                     ]
                 else
                     error()
                 end
-                for (i, param) in enumerate(params)
+                for (parami, param) in enumerate(params)
                 ]),
-            middle="returnGen ($(ctor) $(join(["p$(i)" for i in 1:length(params)], " ")))",
-            sep="\n"))
+            middle="returnGen ($(ctor) $(join(["p$(parami)" for parami in 1:length(params)], " ")))",
+            sep=""))
     $(if length(variants2(ty, zero_case)) > 1 ")" else "" end)
         "
         for (ctor, params) in variants2(ty, zero_case)
