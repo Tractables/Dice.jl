@@ -1,6 +1,7 @@
 include("benchmarks.jl")
 
-TAG = "v32_stlc_forgiveness"
+# TAG = "v32_stlc_forgiveness"
+TAG = "test"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS
@@ -13,20 +14,20 @@ if isempty(ARGS)
     #     num_dependents=[:size,:last_callsite],
     #     intwidth=6,
     # )
-    # g_p = DerivedGenerator{STLC}(
-    #     root_ty=Expr.T,
-    #     init_size=3,
-    #     stack_size=2,
-    #     intwidth=6,
-    # )
-    g_p = TypeBasedSTLCGenerator(
-        size=5,
-        ty_size=2,
-        dependents=[:size,:stack_tail],
-        ty_dependents=[:size,:stack_tail],
+    g_p = DerivedGenerator{STLC}(
+        root_ty=Expr.T,
+        ty_sizes=Dict(Expr.T=>3, Typ.T=>2),
         stack_size=2,
         intwidth=6,
     )
+    # g_p = TypeBasedSTLCGenerator(
+    #     size=5,
+    #     ty_size=2,
+    #     dependents=[:size,:stack_tail],
+    #     ty_dependents=[:size,:stack_tail],
+    #     stack_size=2,
+    #     intwidth=6,
+    # )
     # g_p = TypeBasedRBTGenerator(
     #     size=3,
     #     leaf_dependents=[:size,:parent_color,:stack_tail],

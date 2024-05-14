@@ -1,5 +1,5 @@
 function typebased_stlc_to_coq(p, adnodes_vals, io)
-    expected_matchid(s) = s in ["pvar", "ptbool", "freq_var", "freq_boolean", "freq_abs", "freq_app", "ptrue", ["num$(n)" for n in twopowers(p.intwidth)]...]
+    expected_matchid(s) = s in ["pvar", "ptbool", "freq_var", "freq_bool", "freq_abs", "freq_app", "ptrue", ["num$(n)" for n in twopowers(p.intwidth)]...]
 
     matchid_to_cases = Dict()
     for (name, val) in adnodes_vals
@@ -63,7 +63,7 @@ Fixpoint manual_gen_expr (size : nat) $(join(stack_vars, " ")) : G Expr :=
       (1000 - weight_var, bindGen arbitrary (fun p0 : bool => returnGen (Bool p0)))]
   | S size' =>
       let weight_var := $(mk_match(p.dependents, "freq_var")) in
-      let weight_boolean := $(mk_match(p.dependents, "freq_boolean")) in
+      let weight_bool := $(mk_match(p.dependents, "freq_bool")) in
       let weight_abs := $(mk_match(p.dependents, "freq_abs")) in
       let weight_app := $(mk_match(p.dependents, "freq_app")) in
       freq [
@@ -81,7 +81,7 @@ $(
         let p1 := $(join(["n$(n)" for n in twopowers(p.intwidth)], "+")) in
         returnGen (Var p1))
       $(")" ^ p.intwidth);
-      (weight_boolean,
+      (weight_bool,
         let weight_true := $(mk_match(p.dependents, "ptrue")) in
         freq [ (weight_true, returnGen (Bool true)); (1000 - weight_true, returnGen (Bool false))]
       );

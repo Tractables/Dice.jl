@@ -14,6 +14,10 @@ abstract type Generation{T} end
 
 abstract type Property{T} end
 
+function workload_of(::Type{<:GenerationParams{T}}) where T
+    T
+end
+
 function run_benchmark(
     rs::RunState,
     generation_params::GenerationParams{T},
@@ -201,12 +205,18 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
                 meets = m.consider(sample)
                 meets && (num_meeting += 1)
 
-                if meets || (m.p.rand_forgiveness && rand(rs.rng) < m.p.forgiveness)
-                    loss_here = lpr_eq_expanded * compute(a, lpr_eq_expanded)
-                    actual_loss_here = lpr_eq_expanded
+                loss_here, actual_loss_here = if meets || (m.p.rand_forgiveness && rand(rs.rng) < m.p.forgiveness)
+                    (
+                        lpr_eq_expanded * compute(a, lpr_eq_expanded),
+                        lpr_eq_expanded
+                    )
                 elseif !meets && !m.p.rand_forgiveness
-                    loss_here = Dice.Constant(m.p.forgiveness) * lpr_eq_expanded * compute(a, lpr_eq_expanded)
-                    actual_loss_here = Dice.Constant(m.p.forgiveness) * lpr_eq_expanded
+                    (
+                        Dice.Constant(m.p.forgiveness) * lpr_eq_expanded * compute(a, lpr_eq_expanded),
+                        Dice.Constant(m.p.forgiveness) * lpr_eq_expanded
+                    )
+                else
+                    Dice.Constant(0), Dice.Constant(0)
                 end
 
                 if !meets
@@ -333,17 +343,43 @@ end
 ##################################
 
 abstract type STLC <: Benchmark end
+function sandwich(::Type{STLC})
+    (
+        "From QuickChick Require Import QuickChick. Import QcNotation.
+From Coq Require Import Bool ZArith List. Import ListNotations.
+From ExtLib Require Import Monad.
+From ExtLib.Data.Monads Require Import OptionMonad.
+Import MonadNotation.
+
+From STLC Require Import Impl Spec.",
+"Definition test_prop_SinglePreserve :=
+forAll gSized (fun (e: Expr) =>
+  prop_SinglePreserve e).
+
+(*! QuickChick test_prop_SinglePreserve. *)
+
+Definition test_prop_MultiPreserve :=
+forAll gSized (fun (e: Expr) =>
+  prop_MultiPreserve e).
+
+(*! QuickChick test_prop_MultiPreserve. *)
+          "
+    )
+end
+
+
 struct STLCGeneration <: Generation{STLC}
     e::Opt.T{Expr.T}
     constructors_overapproximation::Vector{Opt.T{Expr.T}}
 end
 function generation_emit_stats(rs::RunState, g::STLCGeneration, s::String)
-    println_flush(rs.io, "Saving samples...")
-    time_sample = @elapsed with_concrete_ad_flips(rs.var_vals, g.e) do
-        save_samples(rs, joinpath(rs.out_dir, "terms_$(s).txt"), g.e)
-    end
-    println(rs.io, "  $(time_sample) seconds")
-    println(rs.io)
+    # TODO: uncomment
+    # println_flush(rs.io, "Saving samples...")
+    # time_sample = @elapsed with_concrete_ad_flips(rs.var_vals, g.e) do
+    #     save_samples(rs, joinpath(rs.out_dir, "terms_$(s).txt"), g.e)
+    # end
+    # println(rs.io, "  $(time_sample) seconds")
+    # println(rs.io)
 end
 value(g::STLCGeneration) = g.e
 
@@ -353,18 +389,18 @@ value(g::STLCGeneration) = g.e
 
 struct DerivedGenerator{T} <: GenerationParams{T}
     root_ty::Type
-    init_size::Integer
+    ty_sizes::Dict{Type, Integer}
     stack_size::Integer
     intwidth::Integer
 end
-DerivedGenerator{T}(; root_ty, init_size, stack_size, intwidth) where T =
-    DerivedGenerator{T}(root_ty, init_size, stack_size, intwidth)
+DerivedGenerator{T}(; root_ty, ty_sizes, stack_size, intwidth) where T =
+    DerivedGenerator{T}(root_ty, ty_sizes, stack_size, intwidth)
 function to_subpath(p::DerivedGenerator{T}) where T
     [
         lowercase(string(T)),
         "derived",
         "root_ty=$(p.root_ty)",
-        "init_size=$(p.init_size)",
+        "ty-sizes=$(join(["$(ty)-$(size)" for (ty, size) in p.ty_sizes],"-"))",
         "stack_size=$(p.stack_size)",
         "intwidth=$(p.intwidth)",
     ]
@@ -377,7 +413,7 @@ function generate(rs::RunState, p::DerivedGenerator{T}) where T
     end
     e = generate(rs, p, add_ctor)
     if T == STLC
-        STLCGeneration(e, constructors_overapproximation)
+        STLCGeneration(Opt.Some(e), constructors_overapproximation)
     elseif T == BST
         BSTGeneration(e, constructors_overapproximation)
     elseif T == RBT
@@ -385,6 +421,9 @@ function generate(rs::RunState, p::DerivedGenerator{T}) where T
     else
         error()
     end
+end
+function generation_params_emit_stats(rs::RunState, p::DerivedGenerator, s)
+    save_coq_generator(rs, p, s, derived_to_coq)
 end
 
 function save_coq_generator(rs, p, s, f)

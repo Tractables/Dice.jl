@@ -8,13 +8,16 @@ end
 module Expr
     using Dice
     using Main: DistNat, Typ
-    @inductive T Var(DistNat) Boolean(AnyBool) Abs(Typ.T, T) App(T, T)
+    @inductive T Var(DistNat) Bool(AnyBool) Abs(Typ.T, T) App(T, T)
 end
+
+to_coq(::Type{Expr.T}) = "Expr"
+to_coq(::Type{Typ.T}) = "Typ"
 
 function term_size(e::Expr.T)
     match(e, [
         :Var     => (i)        -> DistUInt32(1),
-        :Boolean => (b)        -> DistUInt32(1),
+        :Bool => (b)        -> DistUInt32(1),
         :App     => (f, x)     -> DistUInt32(1) + term_size(f) + term_size(x),
         :Abs     => (ty, e′)   -> DistUInt32(1) + term_size(e′),
     ])
@@ -37,7 +40,7 @@ end
 function num_apps(e::Expr.T)
     match(e, [
         :Var     => (i)        -> DistUInt32(0),
-        :Boolean => (b)        -> DistUInt32(0),
+        :Bool => (b)        -> DistUInt32(0),
         :App     => (f, x)    -> DistUInt32(1) + num_apps(f) + num_apps(x),
         :Abs     => (ty, e′)  -> num_apps(e′),
     ])
@@ -45,7 +48,7 @@ end
 
 stlc_ctor_to_id = Dict(
     :Var => DistInt32(0),
-    :Boolean => DistInt32(1),
+    :Bool => DistInt32(1),
     :App => DistInt32(2),
     :Abs => DistInt32(3),
 )
@@ -53,7 +56,7 @@ stlc_ctor_to_id = Dict(
 function ctor_to_id(ctor::Expr.T)
     match(ctor, [
         :Var => _ -> stlc_ctor_to_id[:Var]
-        :Boolean => _ -> stlc_ctor_to_id[:Boolean]
+        :Bool => _ -> stlc_ctor_to_id[:Bool]
         :App => (_, _) -> stlc_ctor_to_id[:App]
         :Abs => (_, _) -> stlc_ctor_to_id[:Abs]
     ])
@@ -69,7 +72,7 @@ end
 function collect_constructors(e)
     match(e, [
         :Var     => (i)        -> DistVector([stlc_ctor_to_id[:Var]]),
-        :Boolean => (b)        -> DistVector([stlc_ctor_to_id[:Boolean]]),
+        :Bool => (b)        -> DistVector([stlc_ctor_to_id[:Bool]]),
         :App     => (f, x)    -> prob_append(prob_extend(collect_constructors(f), collect_constructors(x)), stlc_ctor_to_id[:App]),
         :Abs     => (ty, e′)  -> prob_append(collect_constructors(e′), stlc_ctor_to_id[:Abs]),
     ])
@@ -114,7 +117,7 @@ function stlc_str(ast, depth=0, p=free)
         # i is the number of steps from the *top* of the env, see gen_var
         var_depth = depth - i - 1
         var_str(var_depth)
-    elseif name == :Boolean
+    elseif name == :Bool
         v, = children
         string(v)
     elseif name == :Abs
@@ -189,7 +192,7 @@ function typecheck(ast::Expr.T, gamma, depth=0)::Opt.T{Typ.T}
             haskey(gamma, var_depth) || return Opt.None(Typ.T)
             Opt.Some(gamma[var_depth])
         end,
-        Boolean(_) -> Opt.Some(Typ.TBool()),
+        Bool(_) -> Opt.Some(Typ.TBool()),
         Abs(t_in, e) -> begin
             gamma′ = copy(gamma)
             gamma′[depth] = t_in
@@ -243,7 +246,7 @@ function typecheck(ast::Tuple, gamma, depth=0)
             return "Unknown var $(var_str(var_depth))"
         end
         gamma[var_depth]
-    elseif name == :Boolean
+    elseif name == :Bool
         (:TBool, [])
     elseif name == :Abs
         t_in, e = children
@@ -288,25 +291,25 @@ function eq_except_numbers(x::Expr.T, y::Expr.T)
     @match x [
         Var(_) -> (@match y [
             Var(_) -> true,
-            Boolean(_) -> false,
+            Bool(_) -> false,
             App(_, _) -> false,
             Abs(_, _) -> false,
         ]),
-        Boolean(_) -> (@match y [
+        Bool(_) -> (@match y [
             Var(_) -> false,
-            Boolean(_) -> true,
+            Bool(_) -> true,
             App(_, _) -> false,
             Abs(_, _) -> false,
         ]),
         App(f1, x1) -> (@match y [
             Var(_) -> false,
-            Boolean(_) -> false,
+            Bool(_) -> false,
             App(f2, x2) -> eq_except_numbers(f1, f2) & eq_except_numbers(x1, x2),
             Abs(_, _) -> false,
         ]),
         Abs(ty1, e1) -> (@match y [
             Var(_) -> false,
-            Boolean(_) -> false,
+            Bool(_) -> false,
             App(_, _) -> false,
             Abs(ty2, e2) -> eq_except_numbers(ty1, ty2) & eq_except_numbers(e1, e2),
         ]),
@@ -316,7 +319,7 @@ end
 function has_app(x::Expr.T)
     @match x [
         Var(_) -> false,
-        Boolean(_) -> false,
+        Bool(_) -> false,
         App(_, _) -> true,
         Abs(_, e) -> has_app(e),
     ]
@@ -326,25 +329,25 @@ function eq_structure(x::Expr.T, y::Expr.T)
     @match x [
         Var(_) -> (@match y [
             Var(_) -> true,
-            Boolean(_) -> false,
+            Bool(_) -> false,
             App(_, _) -> false,
             Abs(_, _) -> false,
         ]),
-        Boolean(_) -> (@match y [
+        Bool(_) -> (@match y [
             Var(_) -> false,
-            Boolean(_) -> true,
+            Bool(_) -> true,
             App(_, _) -> false,
             Abs(_, _) -> false,
         ]),
         App(f1, x1) -> (@match y [
             Var(_) -> false,
-            Boolean(_) -> false,
+            Bool(_) -> false,
             App(f2, x2) -> eq_structure(f1, f2) & eq_structure(x1, x2),
             Abs(_, _) -> false,
         ]),
         Abs(_, e1) -> (@match y [
             Var(_) -> false,
-            Boolean(_) -> false,
+            Bool(_) -> false,
             App(_, _) -> false,
             Abs(_, e2) -> eq_structure(e1, e2),
         ]),
@@ -393,12 +396,13 @@ end
 function sat_num_apps(e::Expr.T, k::DistUInt32)
     @match e [
         Var(_) -> DistUInt32(0),
-        Boolean(_) -> DistUInt32(0),
+        Bool(_) -> DistUInt32(0),
         App(f, x) -> min(min(DistUInt32(1), k) + sat_num_apps(f, k) + sat_num_apps(x, k), k),
         Abs(_, e′) -> sat_num_apps(e′, k),
     ]
 end
 
+# TODO: why is saturating at 1 different than eq_has_app?
 function sat_eq_num_apps(x::Opt.T{T}, y::Opt.T{T}, k::Integer) where T
     @match x [
         Some(xv) -> (@match y [

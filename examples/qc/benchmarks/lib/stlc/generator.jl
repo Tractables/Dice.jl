@@ -104,7 +104,7 @@ function tb_gen_expr(rs::RunState, p, size::Integer, stack_tail, track_return)
             @dice_ite if flip_for(rs, "pvar", dependent_dists)
                 Expr.Var(DistNat(0)) # really, this is arbitrary
             else
-                Expr.Boolean(true) # really, this is arbitrary
+                Expr.Bool(true) # really, this is arbitrary
             end
         else
             sz′ = size - 1
@@ -120,7 +120,7 @@ function tb_gen_expr(rs::RunState, p, size::Integer, stack_tail, track_return)
                     )
                     Expr.Var(n)
                 end,
-                "boolean" => Expr.Boolean(flip_for(rs, "ptrue", dependent_dists)),
+                "bool" => Expr.Bool(flip_for(rs, "ptrue", dependent_dists)),
                 "abs" => begin
                     typ = tb_gen_type(rs, p, p.ty_size, update_stack_tail(p, stack_tail, 10))
                     e = tb_gen_expr(rs, p, sz′, update_stack_tail(p, stack_tail, 11), track_return)
