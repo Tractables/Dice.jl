@@ -137,7 +137,7 @@ macro inductive(type, constructors...)
 
         function $(esc(:(Dice.variants)))(::$(esc(:(Base.Type))){$(ty)}) where {$(tvs...)}
             [$([
-                :($(QuoteNode(ctor)) => [$(map(esc, args)...)])
+                :($(esc(ctor)) => [$(map(esc, args)...)])
                 for (ctor, args) in plist
             ]...)]
         end
