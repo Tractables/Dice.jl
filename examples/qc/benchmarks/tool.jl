@@ -6,7 +6,7 @@ OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS
 if isempty(ARGS)
-    TAG = "test"
+    TAG = "test2"
     as = ["-f"]
     # g_p = TypeBasedBSTGenerator(
     #     size=5,
@@ -16,10 +16,16 @@ if isempty(ARGS)
     # )
     g_p = DerivedGenerator{STLC}(
         root_ty=Expr.T,
-        ty_sizes=Dict(Expr.T=>2, Typ.T=>1),
-        stack_size=2,
-        intwidth=6,
+        ty_sizes=Dict(Expr.T=>1, Typ.T=>1),
+        stack_size=1,
+        intwidth=4,
     )
+    # g_p = DerivedGenerator{RBT}(
+    #     root_ty=ColorKVTree.t,
+    #     ty_sizes=Dict(ColorKVTree.t=>2),
+    #     stack_size=2,
+    #     intwidth=6,
+    # )
     # g_p = TypeBasedSTLCGenerator(
     #     size=2,
     #     ty_size=1,
@@ -53,7 +59,7 @@ if isempty(ARGS)
         #     forgiveness=0.1,
         #     rand_forgiveness=false,
         # ) => lr,
-        MLELossConfig{STLC}(NumApps(), Linear()) => lr,
+        MLELossConfig{STLC}(TermSize(), Linear()) => lr,
     ]
     push!(as, replace(string(g_p), " "=>""))
     push!(as, replace(string(l_p), " "=>""))

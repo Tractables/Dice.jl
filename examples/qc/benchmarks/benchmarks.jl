@@ -28,6 +28,8 @@ function run_benchmark(
     time_build_generation = @elapsed generation = generate(rs, generation_params)
     println_flush(rs.io, "  $(time_build_generation) seconds")
     println_flush(rs.io)
+    
+    generation_emit_stats(rs, generation, "test")
 
     loss_configs, loss_weights = zip(loss_config_weight_pairs...)
     loss_mgrs = [
@@ -374,11 +376,11 @@ struct STLCGeneration <: Generation{STLC}
 end
 function generation_emit_stats(rs::RunState, g::STLCGeneration, s::String)
     println_flush(rs.io, "Saving samples...")
-    time_sample = @elapsed with_concrete_ad_flips(rs.var_vals, g.e) do
-        save_samples(rs, joinpath(rs.out_dir, "terms_$(s).txt"), g.e)
-    end
-    println(rs.io, "  $(time_sample) seconds")
-    println(rs.io)
+    # time_sample = @elapsed with_concrete_ad_flips(rs.var_vals, g.e) do
+    #     save_samples(rs, joinpath(rs.out_dir, "terms_$(s).txt"), g.e)
+    # end
+    # println(rs.io, "  $(time_sample) seconds")
+    # println(rs.io)
 end
 value(g::STLCGeneration) = g.e
 
@@ -742,7 +744,7 @@ end
 
 abstract type RBT <: Benchmark end
 struct RBTGeneration <: Generation{RBT}
-    t::ColorKVTree.T
+    t::ColorKVTree.t
 end
 function generation_emit_stats(::RunState, g::RBTGeneration, s::String)
 end
@@ -837,22 +839,22 @@ name(::BSTOrderInvariant) = "order"
 
 
 struct BookkeepingInvariant <: Property{RBT} end
-check_property(::BookkeepingInvariant, t::ColorKVTree.T) =
+check_property(::BookkeepingInvariant, t::ColorKVTree.t) =
     satisfies_bookkeeping_invariant(t)
 name(::BookkeepingInvariant) = "bookkeeping"
 
 struct BalanceInvariant <: Property{RBT} end
-check_property(::BalanceInvariant, t::ColorKVTree.T) =
+check_property(::BalanceInvariant, t::ColorKVTree.t) =
     satisfies_balance_invariant(t)
 name(::BalanceInvariant) = "balance"
 
 struct BlackRootInvariant <: Property{RBT} end
-check_property(::BlackRootInvariant, t::ColorKVTree.T) =
+check_property(::BlackRootInvariant, t::ColorKVTree.t) =
     satisfies_black_root_invariant(t)
 name(::BlackRootInvariant) = "blackroot"
 
 struct OrderInvariant <: Property{RBT} end
-check_property(::OrderInvariant, t::ColorKVTree.T) =
+check_property(::OrderInvariant, t::ColorKVTree.t) =
     satisfies_order_invariant(t)
 name(::OrderInvariant) = "order"
 

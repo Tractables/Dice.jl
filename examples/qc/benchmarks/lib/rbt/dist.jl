@@ -4,33 +4,33 @@ using Dice
 
 module Color
     using Dice
-    @inductive T Red() Black()
+    @inductive T R() B()
 end
 function Base.string(c::Color.T)
     @assert isdeterministic(c)
     @match c [
-        Red() -> "Color.Red()",
-        Black() -> "Color.Black()",
+        R() -> "Color.R()",
+        B() -> "Color.B()",
     ]
 end
 
 module ColorKVTree
     using Dice
     using Main: DistNat, Color
-    @inductive T Leaf() Node(Color.T, T, DistInt32, DistInt32, T)
+    @inductive t E() T(Color.T, t, DistInt32, DistInt32, t)
 end
 
-function tree_size(e::ColorKVTree.T)
+function tree_size(e::ColorKVTree.t)
     @match e [
-        Leaf() -> DistUInt32(0),
-        Node(c, l, k, v, r) -> DistUInt32(1) + tree_size(l) + tree_size(r),
+        E() -> DistUInt32(0),
+        T(c, l, k, v, r) -> DistUInt32(1) + tree_size(l) + tree_size(r),
     ]
 end
 
-function rbt_depth(e::ColorKVTree.T)
+function rbt_depth(e::ColorKVTree.t)
     @match e [
-        Leaf() -> DistUInt32(0),
-        Node(c, l, k, v, r) -> begin
+        E() -> DistUInt32(0),
+        T(c, l, k, v, r) -> begin
             ldepth = rbt_depth(l)
             rdepth = rbt_depth(r)
             DistUInt32(1) + @dice_ite if ldepth > rdepth ldepth else rdepth end
@@ -38,14 +38,14 @@ function rbt_depth(e::ColorKVTree.T)
     ]
 end
 
-is_red(c::Color.T) = matches(c, :Red)
+is_red(c::Color.T) = matches(c, :R)
 
 # Check that all paths through the tree have the same number of black nodes
-function satisfies_bookkeeping_invariant(e::ColorKVTree.T)
-    function black_height_and_valid(t::ColorKVTree.T)
+function satisfies_bookkeeping_invariant(e::ColorKVTree.t)
+    function black_height_and_valid(t::ColorKVTree.t)
         @match t [
-            Leaf() -> (DistUInt32(1), true),
-            Node(c, l, k, v, r) -> begin
+            E() -> (DistUInt32(1), true),
+            T(c, l, k, v, r) -> begin
                 left_black_height, left_valid = black_height_and_valid(l)
                 right_black_height, right_valid = black_height_and_valid(r)
                 @dice_ite if left_valid & right_valid & prob_equals(left_black_height, right_black_height) 
@@ -61,11 +61,11 @@ function satisfies_bookkeeping_invariant(e::ColorKVTree.T)
 end
 
 # Check that all red nodes have black children
-function satisfies_balance_invariant(e::ColorKVTree.T)
-    function color_and_valid(t::ColorKVTree.T)
+function satisfies_balance_invariant(e::ColorKVTree.t)
+    function color_and_valid(t::ColorKVTree.t)
         @match t [
-            Leaf() -> (Color.Black(), true),
-            Node(c, l, k, v, r) -> begin
+            E() -> (Color.B(), true),
+            T(c, l, k, v, r) -> begin
                 left_color, left_valid = color_and_valid(l)
                 right_color, right_valid = color_and_valid(r)
                 @dice_ite if left_valid & right_valid & !(is_red(c) & (is_red(left_color) | is_red(right_color)))
@@ -80,18 +80,18 @@ function satisfies_balance_invariant(e::ColorKVTree.T)
     valid
 end
 
-function satisfies_black_root_invariant(t::ColorKVTree.T)
+function satisfies_black_root_invariant(t::ColorKVTree.t)
     @match t [
-        Leaf() -> true,
-        Node(c, l, k, v, r) -> !is_red(c)
+        E() -> true,
+        T(c, l, k, v, r) -> !is_red(c)
     ]
 end
 
-function satisfies_order_invariant(t::ColorKVTree.T)
+function satisfies_order_invariant(t::ColorKVTree.t)
     function helper(t, lo, hi)
         @match t [
-            Leaf() -> true,
-            Node(c, l, k, v, r) -> begin
+            E() -> true,
+            T(c, l, k, v, r) -> begin
                 (if isnothing(lo) true else lo < k end) &
                 (if isnothing(hi) true else k < hi end) &
                 helper(l, lo, k) &
@@ -102,15 +102,15 @@ function satisfies_order_invariant(t::ColorKVTree.T)
     helper(t, nothing, nothing)
 end
 
-function eq_except_numbers(x::ColorKVTree.T, y::ColorKVTree.T)
+function eq_except_numbers(x::ColorKVTree.t, y::ColorKVTree.t)
     @match x [
-        Leaf() -> (@match y [
-            Leaf() -> true,
-            Node(yc, yl, yk, yv, yr) -> false,
+        E() -> (@match y [
+            E() -> true,
+            T(yc, yl, yk, yv, yr) -> false,
         ]),
-        Node(xc, xl, xk, xv, xr) -> (@match y [
-            Leaf() -> false,
-            Node(yc, yl, yk, yv, yr) -> prob_equals(xc, yc) & eq_except_numbers(xl, yl) & eq_except_numbers(xr, yr),
+        T(xc, xl, xk, xv, xr) -> (@match y [
+            E() -> false,
+            T(yc, yl, yk, yv, yr) -> prob_equals(xc, yc) & eq_except_numbers(xl, yl) & eq_except_numbers(xr, yr),
         ]),
     ]
 end

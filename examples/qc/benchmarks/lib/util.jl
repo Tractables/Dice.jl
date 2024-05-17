@@ -317,7 +317,11 @@ function tocoq(i::Integer)
 end
 
 function tocoq(v::Tuple)
-    "($(join([tocoq(x) for x in v], ", ")))"
+    if v == ()
+        "tt"
+    else
+        "($(join([tocoq(x) for x in v], ", ")))"
+    end
 end
 
 
@@ -353,33 +357,74 @@ function collect_types(root_ty)
     tys, type_ctor_parami_to_id
 end
 
+variants2(ty, exclude_recursive) = if exclude_recursive
+    [
+        (ctor, params)
+        for (ctor, params) in variants(ty)
+        if !(ty in params)
+    ]
+else
+    variants(ty)
+end
+
 function generate(rs::RunState, p, track_return)
     tys, type_ctor_parami_to_id = collect_types(p.root_ty)
     type_to_gen = Dict()
     for ty in tys
-        type_to_gen[ty] = (size, stack_tail) -> begin
-            zero_prefix = if size == 0 "0_" else "" end 
-            dependents = (size, stack_tail)
-            frequency_for(rs,  "$(zero_prefix)$(ty)_variant", dependents, [
-                "$(ctor)" => ctor([
-                    if param == ty
-                        # TODO: special-case enum like types
-                        # TODO: if recursing, pass values of sibling *enumlikes*
+        type_to_gen[ty] = (leaf::Bool, chosen_varianti::DistUInt32, size, stack_tail) -> begin
+            @assert !leaf || size == -1
+            prefix = if leaf "leaf_" elseif size == 0 "0_" else "" end 
+            dependents = if leaf stack_tail else (size, stack_tail) end
+            zero_case()::Bool = if leaf
+                error("don't check zero_case() if leaf")
+            else
+                size == 0
+            end
+
+            res = nothing
+            for (varianti, (ctor, params)) in enumerate(variants(ty))
+                if leaf && ty in params
+                    continue
+                end
+                param_variantis = frequency_for(rs, "$(prefix)_$(ty)_$(ctor)_variantis", dependents, [
+                    "$(x)" => [DistUInt32(j) for j in x]
+                    for x in Iterators.product([
+                        [
+                            j
+                            for (j, (_, param_params)) in enumerate(variants(param))
+                            if !(param == ty && zero_case() && ty in param_params)
+                        ]
+                        for param in params
+                        if param ∈ tys
+                    ]...)
+                ])
+                param_variantis_idx = 0
+                alt = ctor([
+                    if param ∈ tys
+                        param_variantis_idx += 1
                         type_to_gen[param](
-                            size - 1,
-                            update_stack_tail(p, stack_tail, type_ctor_parami_to_id[(ty, ctor, parami)])
-                        )
-                    elseif param ∈ tys
-                        # TODO: special-case enum like types
-                        type_to_gen[param](
-                            p.ty_sizes[param],
+                            # leaf
+                            param == ty && zero_case(),
+                            # chosen variant
+                            param_variantis[param_variantis_idx],
+                            # size
+                            if param == ty
+                                if zero_case()
+                                    (-1)
+                                else
+                                    size - 1
+                                end
+                            else
+                                p.ty_sizes[param]
+                            end,
+                            # todo: include leaf/zero_case in call location
                             update_stack_tail(p, stack_tail, type_ctor_parami_to_id[(ty, ctor, parami)])
                         )
                     elseif param == AnyBool
-                        flip_for(rs, "$(zero_prefix)$(ty)_$(ctor)_$(parami)", dependents)
+                        flip_for(rs, "$(prefix)$(ty)_$(ctor)_$(parami)_true", dependents)
                     elseif param == DistUInt32
                          sum(
-                            @dice_ite if flip_for(rs, "$(zero_prefix)$(ty)_$(ctor)_$(parami)_num$(n)", dependents)
+                            @dice_ite if flip_for(rs, "$(prefix)$(ty)_$(ctor)_$(parami)_num$(n)", dependents)
                                 DistUInt32(n)
                             else
                                 DistUInt32(0)
@@ -391,12 +436,24 @@ function generate(rs::RunState, p, track_return)
                     end
                     for (parami, param) in enumerate(params)
                 ]...)
-                for (ctor, params) in variants(ty)
-                if size != 0 || all(param != ty for param in params) 
-            ])
+                if isnothing(res)
+                    res = alt
+                else
+                    res = @dice_ite if prob_equals(DistUInt32(varianti), chosen_varianti)
+                        alt
+                    else
+                        res
+                    end
+                end
+            end
+            res
         end
     end
-    type_to_gen[p.root_ty](p.ty_sizes[p.root_ty], empty_stack(p))
+    init_varianti = frequency_for(rs, "init_$(p.root_ty)_varianti", ((),), [
+        "$(i)" => DistUInt32(i)
+        for i in 1:length(variants(p.root_ty))
+    ])
+    type_to_gen[p.root_ty](false, init_varianti, p.ty_sizes[p.root_ty], empty_stack(p))
 end
 
 to_coq(::Type{DistUInt32}) = "nat"
@@ -430,88 +487,255 @@ function derived_to_coq(p, adnodes_vals, io)
     tys, type_ctor_parami_to_id = collect_types(p.root_ty)
 
     workload = workload_of(typeof(p))
-    generators = []
 
     stack_vars = ["(stack$(i) : nat)" for i in 1:p.stack_size]
-    function mk_match(matchid)
-        cases = matchid_to_cases[matchid]
-        cases = sort(cases)
-        "match (size, ($(join(stack_vars, ", ")))) with 
-$(join([" " ^ 9 * "| $(name) => $(w)" for (name, w) in cases], "\n"))
-         | _ => 500
-         end"
-    end
 
     update_stack_vars(loc) = join(stack_vars[2:end], " ") * " $(loc)"
-    variants2(ty, zero_case) = if zero_case
-        [
-            (ctor, params)
-            for (ctor, params) in variants(ty)
-            if all(param != ty for param in params) 
-        ]
-    else
-        variants(ty)
+
+    segments = []
+    # Emit line
+    indent = 0
+    function e!(s=""; indent_=nothing)
+        if isnothing(indent_)
+            indent_  = indent
+        end
+        segment = if s == ""
+            # don't indent empty line
+            ""
+        else
+            "  " ^ indent_ * s
+        end
+        isempty(segments) || println(last(segments))
+        push!(segments, segment)
     end
-
-
-    for ty in tys
-        push!(generators, "
-Fixpoint gen_$(to_coq(ty)) (size : nat) $(join(stack_vars, " ")) : G $(to_coq(ty)) :=
-  match size with
-$(join([
-"  | $(if zero_case 0 else "S size'" end) => $(if length(variants2(ty, zero_case)) > 1 "
-        freq [" else "" end)
-$(join([
-"        (* $(ctor) *) $(if length(variants2(ty, zero_case)) > 1 "
-        (
-         $(mk_match("$(if zero_case "0_" else "" end)$(ty)_variant_$(ctor)")),\n" else "" end)" * 
-"$(sandwichjoin(
-                Iterators.flatten([
-                if param == ty
-                    ["\n        bindGen (gen_$(to_coq(param)) size' $(
-                        update_stack_vars(type_ctor_parami_to_id[(ty, ctor, parami)])
-                    )) (fun p$(parami) : $(to_coq(param)) =>" => ")"]
-                elseif param ∈ tys
-                    ["\n        bindGen (gen_$(to_coq(param)) $(p.ty_sizes[param]) $(
-                        update_stack_vars(type_ctor_parami_to_id[(ty, ctor, parami)])
-                    )) (fun p$(parami) : $(to_coq(param)) =>" => ")"]
-                elseif param == AnyBool
-                    ["\n        let weight_true := $(mk_match("$(if zero_case "0_" else "" end)$(ty)_$(ctor)_$(parami)")) in
-        bindGen (freq [
-            (weight_true, returnGen true);
-            (1000-weight_true, returnGen false)
-        ]) (fun p$(parami) : $(to_coq(param)) =>" => ")"]
-                elseif param == DistUInt32
-                    ["\n       let weight_$(n) := $(mk_match("$(if zero_case "0_" else "" end)$(ty)_$(ctor)_$(parami)_num$(n)")) in
-        bindGen (freq [
-            (weight_$(n), returnGen $(n));
-            (1000-weight_$(n), returnGen 0)
-        ])
-        (fun n$(n) : nat => $(if j == p.intwidth "
-        let p$(parami) := $(join(["n$(n)" for n in twopowers(p.intwidth)], " + ")) in " else "" end)" => ")"
-                        for (j, n) in enumerate(twopowers(p.intwidth))
-                    ]
-                else
-                    error()
-                end
-                for (parami, param) in enumerate(params)
-                ]),
-            middle="\n        returnGen ($(ctor) $(join(["p$(parami)" for parami in 1:length(params)], " ")))",
-            sep=""))$(if length(variants2(ty, zero_case)) > 1 ")" else "" end)"
-        for (ctor, params) in variants2(ty, zero_case)
-    ], ";\n"))
-    $(if length(variants2(ty, zero_case)) > 1 "]" else "" end)"
-    for zero_case in [true, false]
-  ], "\n" ))
-    end.")
+    # Emit with outer indent
+    o!(s) = e!(s, indent_=indent-1)
+    # Append to last line
+    function a!(s)
+        @assert !isempty(segments)
+        segments[end] = segments[end] * s
     end
 
     before, after = sandwich(workload)
-    "$(before)
-    $(join(generators, "\n"))
+    e!(before)
+    e!()
 
-Definition gSized :=
-  gen_$(to_coq(p.root_ty)) $(p.ty_sizes[p.root_ty])$(" 0" ^ p.stack_size).
+    function for_indent(f, iter)
+        indent += 1
+        map(f, iter)
+        indent -= 1
+    end
 
-    $(after)"
+    function ematch!(matchid, leaf)
+        cases = matchid_to_cases[matchid]
+        cases = sort(cases)
+        if leaf
+            e!("match ($(join(stack_vars, ", "))) with ")
+        else
+            e!("match (size, ($(join(stack_vars, ", ")))) with ")
+        end
+        for (name, w) in cases
+            e!("| $(name) => $(w)")
+        end
+        e!("| _ => 500")
+        e!("end")
+    end
+
+    for_indent(tys) do ty
+        o!("Inductive $(to_coq(ty))_leaf_ctor : Type :=")
+        for (ctor, params) in variants(ty)
+            if !(ty in params)
+                e!("| Ctor_leaf_$(ctor) : $(to_coq(ty))_leaf_ctor")
+            end
+        end
+        a!(".")
+        e!()
+    end
+    sif(c, s) = if c s else "" end
+
+    for_indent(tys) do ty
+        o!("Inductive $(to_coq(ty))_ctor : Type :=")
+        for (ctor, _) in variants(ty)
+            e!("| Ctor_$(ctor) : $(to_coq(ty))_ctor")
+        end
+        a!(".")
+        e!()
+    end
+
+    join2(it, sep) = join(it, sep) * sep
+
+    for leaf in [true, false]
+        leaf_prefix = if leaf "leaf_" else "" end
+        for_indent(tys) do ty
+            if leaf
+                o!("Definition")
+            else
+                o!("Fixpoint")
+            end
+            a!(" gen_$(leaf_prefix)$(to_coq(ty)) ")
+            a!("(chosen_ctor : $(to_coq(ty))_$(leaf_prefix)ctor) ")
+            leaf || a!("(size : nat) ")
+            a!(join2(stack_vars, " "))
+            a!(": G $(to_coq(ty)) :=")
+
+            ty_variants = [
+                (ctor, params)
+                for (ctor, params) in variants(ty)
+                if !(leaf && ty in params)
+            ]
+            need_freq = length(ty_variants) > 1
+
+            leaf || e!("match size with")
+            zero_cases = if leaf begin [true] end else [true, false] end
+            for _zero_case in zero_cases
+                zero_case() = if leaf
+                    error("don't check zero_case() if leaf")
+                else
+                    _zero_case
+                end
+
+                prefix = if leaf "leaf_" elseif zero_case() "0_" else "" end
+                if !leaf
+                    indent += 1
+                    if zero_case()
+                        o!("| 0 =>")
+                    else
+                        o!("| S size' =>")
+                    end
+                end
+
+                e!("match chosen_ctor with")
+                for_indent(variants2(ty, leaf)) do (ctor, params)
+                    o!("| Ctor_$(leaf_prefix)$(ctor) =>")
+                    rparens_needed = 0
+                    need_variantis = any(
+                        (param in tys && param != ty)
+                        || (param == ty && !zero_case())
+                        for param in params
+                    )
+                    variantis_options = Iterators.product([
+                        [
+                            # If were generating ourself, and we have zero fuel, then don't choose another recursive constructor
+                            (j, "Ctor_$(if param == ty && zero_case() "leaf_" else "" end)$(param_ctor)")
+                            for (j, (param_ctor, param_params)) in enumerate(variants(param))
+                            if !(param == ty && zero_case() && ty in param_params)
+                        ]
+                        for param in params
+                        if param in tys
+                    ]...)
+                    if need_variantis
+                        e!("bindGen (freq [")
+                        for_indent(enumerate(variantis_options)) do (j, param_ctor_is_and_param_ctors)
+                            param_ctor_is = []
+                            param_ctors = []
+                            for (a, b) in param_ctor_is_and_param_ctors
+                                push!(param_ctor_is, a)
+                                push!(param_ctors, b)
+                            end
+
+
+                            if length(variantis_options) == 1
+                                e!("(* no alternatives, so lets just put this again *)")
+                                e!("(")
+                                indent += 1
+                                ematch!("$(prefix)_$(ty)_$(ctor)_variantis_$(Tuple(param_ctor_is))", leaf)
+                                a!(",")
+                                e!("($(join(param_ctors, ", ")))")
+                                indent -= 1
+                                e!(");")
+                            end
+
+                            e!("(")
+                            indent += 1
+                            ematch!("$(prefix)_$(ty)_$(ctor)_variantis_$(Tuple(param_ctor_is))", leaf)
+                            a!(",")
+                            e!("($(join(param_ctors, ", ")))")
+                            indent -= 1
+                            if j == length(variantis_options)
+                                e!(");")
+                            else
+                                e!(")")
+                            end
+                        end
+                        e!("]) (fun param_variantis =>")
+                        rparens_needed += 1
+                        
+                        e!("let '($(join(["param$(parami)_ctor" for (parami, param) in enumerate(params) if param in tys], ", "))) := param_variantis in")
+                    end
+                    for (parami, param) in enumerate(params)
+                        if param == ty
+                            e!("bindGen (gen_$(if zero_case() "leaf_" else "" end)$(to_coq(param))")
+                            a!(" param$(parami)_ctor")
+                            zero_case() || a!(" size'")
+                            a!(" $(update_stack_vars(type_ctor_parami_to_id[(ty, ctor, parami)])))")
+                            e!("(fun p$(parami) : $(to_coq(param)) =>")
+                            rparens_needed += 1
+                        elseif param ∈ tys
+                            e!("bindGen (gen_$(to_coq(param)) $(p.ty_sizes[param]) $(update_stack_vars(type_ctor_parami_to_id[(ty, ctor, parami)])))")
+                            e!("(fun p$(parami) : $(to_coq(param)) =>")
+                            rparens_needed += 1
+                        elseif param == AnyBool
+                            e!("let weight_true :=")
+                            ematch!("$(prefix)$(ty)_$(ctor)_$(parami)_true", leaf)
+                            e!("in")
+                            e!("bindGen (freq [")
+                            e!("  (weight_true, returnGen true);")
+                            e!("  (1000-weight_true, returnGen false)")
+                            e!("]) (fun p$(parami) : $(to_coq(param)) =>")
+                            rparens_needed += 1
+                        elseif param == DistUInt32
+                            for n in twopowers(p.intwidth)
+                                e!("let weight_$(n) :=")
+                                ematch!("$(prefix)$(ty)_$(ctor)_$(parami)_num$(n)", leaf)
+                                e!("in")
+                                e!("bindGen (freq [")
+                                e!("  (weight_$(n), returnGen $(n));")
+                                e!("  (1000-weight_$(n), returnGen 0)")
+                                e!("]) (fun n$(n) : nat =>")
+                                rparens_needed += 1
+                            end
+                            e!("let p$(parami) := $(join(["n$(n)" for n in twopowers(p.intwidth)], " + ")) in ")
+                        else
+                            error()
+                        end
+                    end
+                    e!("returnGen ($(ctor) $(join(["p$(parami)" for parami in 1:length(params)], " ")))")
+                    a!(")" ^ rparens_needed)
+                end
+                e!("end")
+            end
+            if !leaf
+                e!("end")
+                indent -= 1
+            end
+            a!(".")
+            e!()
+        end
+    end
+
+    e!("Definition gSized :=")
+    indent += 1
+    e!("bindGen (freq [")
+    indent += 1
+    for_indent(enumerate(variants(p.root_ty))) do (i, (ctor, params))
+        o!("(")
+        matchid = "init_$(p.root_ty)_varianti_$(i)"
+        cases = matchid_to_cases[matchid]
+        cases = sort(cases)
+        e!("match (tt) with ")
+        for (name, w) in cases
+            e!("| $(name) => $(w)")
+        end
+         e!("end")
+        a!(",")
+        e!("Ctor_$(ctor)")
+        o!(")")
+    end
+    indent -= 1
+    e!("]) (fun init_ctor =>")
+    e!("gen_$(to_coq(p.root_ty)) init_ctor $(p.ty_sizes[p.root_ty])$(" 0" ^ p.stack_size).")
+    a!(").")
+    e!()
+    e!(after)
+    join(segments, "\n")
 end
