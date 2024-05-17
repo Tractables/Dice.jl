@@ -547,16 +547,16 @@ function derived_to_coq(p, adnodes_vals, io)
             e!("| $(name) => $(w)")
         end
         if !(leaf && isempty(stack_vars))
-            e!("| _ => 500")
+            e!("| _ => 0")
         end
         e!("end")
     end
 
     for_indent(tys) do ty
-        o!("Inductive $(to_coq(ty))_leaf_ctor : Type :=")
+        o!("Inductive $(to_coq(ty))_leaf_ctor :=")
         for (ctor, params) in variants(ty)
             if !(ty in params)
-                e!("| Ctor_leaf_$(ctor) : $(to_coq(ty))_leaf_ctor")
+                e!("| Ctor_leaf_$(ctor)")
             end
         end
         a!(".")
@@ -565,9 +565,9 @@ function derived_to_coq(p, adnodes_vals, io)
     sif(c, s) = if c s else "" end
 
     for_indent(tys) do ty
-        o!("Inductive $(to_coq(ty))_ctor : Type :=")
+        o!("Inductive $(to_coq(ty))_ctor :=")
         for (ctor, _) in variants(ty)
-            e!("| Ctor_$(ctor) : $(to_coq(ty))_ctor")
+            e!("| Ctor_$(ctor)")
         end
         a!(".")
         e!()

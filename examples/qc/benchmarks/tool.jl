@@ -16,9 +16,9 @@ if isempty(ARGS)
     # )
     g_p = DerivedGenerator{STLC}(
         root_ty=Expr.T,
-        ty_sizes=Dict(Expr.T=>1, Typ.T=>1),
-        stack_size=0,
-        intwidth=2,
+        ty_sizes=Dict(Expr.T=>4, Typ.T=>1),
+        stack_size=2,
+        intwidth=6,
     )
     # g_p = DerivedGenerator{RBT}(
     #     root_ty=ColorKVTree.t,
