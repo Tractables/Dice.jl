@@ -1,6 +1,6 @@
 include("benchmarks.jl")
 
-TAG = "v33_stlc_forgiveness_rand"
+TAG = "v34_test_derived_stlc_unif_apps"
 # TAG = "test"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
@@ -59,7 +59,7 @@ if isempty(ARGS)
         #     forgiveness=0.1,
         #     rand_forgiveness=false,
         # ) => lr,
-        MLELossConfig{STLC}(TermSize(), Linear()) => lr,
+        MLELossConfig{STLC}(NumApps(), Linear()) => lr,
     ]
     push!(as, replace(string(g_p), " "=>""))
     push!(as, replace(string(l_p), " "=>""))

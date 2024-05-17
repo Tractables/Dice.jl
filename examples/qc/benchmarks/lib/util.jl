@@ -200,9 +200,9 @@ function cmd_out(cmd)
 end
 
 thousandths(n) = if isnan(n) "nan" else Integer(round(n, digits=3) * 1000) end
+hundredths(n) = if isnan(n) "nan" else Integer(round(n * 100)) end
 
 global _soft_assert_ever_triggered = Ref(false)
-
 
 function to_unquoted(e)
     io = IOBuffer()
@@ -480,7 +480,7 @@ function derived_to_coq(p, adnodes_vals, io)
     for (name, val) in adnodes_vals
         matchid, case = split(name, "%%")
         case = if case == "" "tt" else "(" * join([tocoq(eval(Meta.parse(x))) for x in split(case, "%")], ", ") * ")" end
-        val = thousandths(val)
+        val = hundredths(val)
         push!(get!(matchid_to_cases, matchid, []), (case, val))
     end
 
@@ -547,7 +547,7 @@ function derived_to_coq(p, adnodes_vals, io)
             e!("| $(name) => $(w)")
         end
         if !(leaf && isempty(stack_vars))
-            e!("| _ => 0")
+            e!("| _ => 500")
         end
         e!("end")
     end
@@ -572,6 +572,10 @@ function derived_to_coq(p, adnodes_vals, io)
         a!(".")
         e!()
     end
+
+    variantis_types_placeholder = "(* VARIANTIS TYPES GO HERE *)"
+    e!(variantis_types_placeholder)
+    variantis_types_needed = Set()
 
     join2(it, sep) = join(it, sep) * sep
 
@@ -623,6 +627,21 @@ function derived_to_coq(p, adnodes_vals, io)
                         param in tys
                         for param in params
                     )
+                    variantis_types = [
+                        "$(to_coq(param))_$(if param == ty && zero_case() "leaf_" else "" end)ctor"
+                        for param in params
+                        if param in tys
+                    ]
+                    if length(variantis_types) > 1
+                        push!(variantis_types_needed, variantis_types)
+                    end
+                    variantis_struct = join(variantis_types, "_")
+                    variantis_struct_ctor = if length(variantis_types) > 1
+                        "Mk$(variantis_struct) "
+                    else
+                        ""
+                    end
+
                     variantis_options = Iterators.product([
                         [
                             # If were generating ourself, and we have zero fuel, then don't choose another recursive constructor
@@ -643,14 +662,13 @@ function derived_to_coq(p, adnodes_vals, io)
                                 push!(param_ctors, b)
                             end
 
-
                             if length(variantis_options) == 1
                                 e!("(* no alternatives, so lets just put this again *)")
                                 e!("(")
                                 indent += 1
                                 ematch!("$(prefix)_$(ty)_$(ctor)_variantis_$(Tuple(param_ctor_is))", leaf)
                                 a!(",")
-                                e!("returnGen ($(join(param_ctors, ", ")))")
+                                e!("returnGen ($(variantis_struct_ctor)$(join(param_ctors, " ")))")
                                 indent -= 1
                                 e!(");")
                             end
@@ -659,7 +677,7 @@ function derived_to_coq(p, adnodes_vals, io)
                             indent += 1
                             ematch!("$(prefix)_$(ty)_$(ctor)_variantis_$(Tuple(param_ctor_is))", leaf)
                             a!(",")
-                            e!("returnGen ($(join(param_ctors, ", ")))")
+                            e!("returnGen ($(variantis_struct_ctor)$(join(param_ctors, " ")))")
                             indent -= 1
                             if j < length(variantis_options)
                                 e!(");")
@@ -670,7 +688,7 @@ function derived_to_coq(p, adnodes_vals, io)
                         e!("]) (fun param_variantis =>")
                         rparens_needed += 1
                         
-                        e!("let '($(join(["param$(parami)_ctor" for (parami, param) in enumerate(params) if param in tys], ", "))) := param_variantis in")
+                        e!("let '($(variantis_struct_ctor)$(join(["param$(parami)_ctor" for (parami, param) in enumerate(params) if param in tys], " "))) := param_variantis in")
                     end
                     for (parami, param) in enumerate(params)
                         if param == ty
@@ -757,5 +775,13 @@ function derived_to_coq(p, adnodes_vals, io)
     indent -= 1
     e!()
     e!(after)
-    join(segments, "\n")
+    result = join(segments, "\n")
+    replace(result, "$(variantis_types_placeholder)" => join([
+        begin
+            variantis_struct = join(variantis_types,"_")
+            "Inductive $(variantis_struct) :=
+  | Mk$(variantis_struct) : $(join(variantis_types," -> ")) -> $(variantis_struct)."
+        end
+        for variantis_types in variantis_types_needed
+    ], "\n"))
 end
