@@ -13,12 +13,14 @@ function Base.string(c::Color.T)
         B() -> "Color.B()",
     ]
 end
+to_coq(::Type{Color.T}) = "Color"
 
 module ColorKVTree
     using Dice
     using Main: DistNat, Color
     @inductive t E() T(Color.T, t, DistInt32, DistInt32, t)
 end
+to_coq(::Type{ColorKVTree.t}) = "Tree"
 
 function tree_size(e::ColorKVTree.t)
     @match e [

@@ -1,6 +1,8 @@
 include("benchmarks.jl")
 
-TAG = "v34_test_derived_stlc_unif_apps"
+TAG = "v34_stlc_derived_spec_structure_and_prob_eq"
+TAG = "v34_stlc_derived_unif_apps"
+TAG = "v34_rbt_derived"
 # TAG = "test"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
@@ -14,18 +16,18 @@ if isempty(ARGS)
     #     num_dependents=[:size,:last_callsite],
     #     intwidth=6,
     # )
-    g_p = DerivedGenerator{STLC}(
-        root_ty=Expr.T,
-        ty_sizes=Dict(Expr.T=>4, Typ.T=>1),
-        stack_size=2,
-        intwidth=6,
-    )
-    # g_p = DerivedGenerator{RBT}(
-    #     root_ty=ColorKVTree.t,
-    #     ty_sizes=Dict(ColorKVTree.t=>2),
+    # g_p = DerivedGenerator{STLC}(
+    #     root_ty=Expr.T,
+    #     ty_sizes=Dict(Expr.T=>4, Typ.T=>1),
     #     stack_size=2,
     #     intwidth=6,
     # )
+    g_p = DerivedGenerator{RBT}(
+        root_ty=ColorKVTree.t,
+        ty_sizes=Dict(ColorKVTree.t=>4, Color.T=>0),
+        stack_size=1,
+        intwidth=6,
+    )
     # g_p = TypeBasedSTLCGenerator(
     #     size=2,
     #     ty_size=1,
@@ -45,21 +47,29 @@ if isempty(ARGS)
     lr = 0.5
     fp = 0.01
     l_p = [
+        SamplingEntropy{RBT}(
+            resampling_frequency=1,
+            samples_per_batch=50,
+            property=MultipleInvariants([
+                BookkeepingInvariant(),
+                BalanceInvariant(),
+                OrderInvariant(),
+            ]),
+            eq=:prob_equals,
+            failure_penalty=fp,
+            forgiveness=0.1,
+            rand_forgiveness=false,
+        ) => lr,
         # SamplingEntropy{STLC}(
         #     resampling_frequency=1,
         #     samples_per_batch=50,
         #     property=STLCWellTyped(),
-        #     # property=MultipleInvariants([
-        #     #     BookkeepingInvariant(),
-        #     #     BalanceInvariant(),
-        #     #     OrderInvariant(),
-        #     # ]),
         #     eq=:prob_equals,
         #     failure_penalty=fp,
         #     forgiveness=0.1,
         #     rand_forgiveness=false,
         # ) => lr,
-        MLELossConfig{STLC}(NumApps(), Linear()) => lr,
+        # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
     ]
     push!(as, replace(string(g_p), " "=>""))
     push!(as, replace(string(l_p), " "=>""))

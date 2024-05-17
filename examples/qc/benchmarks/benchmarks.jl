@@ -743,6 +743,107 @@ end
 ##################################
 
 abstract type RBT <: Benchmark end
+function sandwich(::Type{RBT})
+    (
+        "Require Import ZArith.
+From QuickChick Require Import QuickChick.
+From ExtLib Require Import Monad.
+From ExtLib.Data.Monads Require Import OptionMonad.
+Import QcNotation.
+Import MonadNotation.
+From Coq Require Import List.
+Import ListNotations.
+
+From RBT Require Import Impl Spec.",
+"(* --------------------- Tests --------------------- *)
+
+Definition test_prop_InsertValid :=  
+    forAll gSized (fun t =>    
+    forAll arbitrary (fun k =>
+    forAll arbitrary (fun v =>
+        (prop_InsertValid t k v)))).
+
+(*! QuickChick test_prop_InsertValid. *)
+
+Definition test_prop_DeleteValid :=  
+    forAll gSized (fun t =>    
+    forAll arbitrary (fun k =>
+        prop_DeleteValid t k)).
+
+(*! QuickChick test_prop_DeleteValid. *)
+
+Definition test_prop_InsertPost :=  
+    forAll gSized (fun t =>    
+    forAll arbitrary (fun k =>
+    forAll arbitrary (fun k' =>
+     forAll arbitrary (fun v =>
+        prop_InsertPost t k k' v)))).
+
+(*! QuickChick test_prop_InsertPost. *)
+
+Definition test_prop_DeletePost := 
+    forAll gSized (fun t =>    
+    forAll arbitrary (fun k =>
+    forAll arbitrary (fun k' =>
+        prop_DeletePost t k k'))).
+
+(*! QuickChick test_prop_DeletePost. *)
+    
+Definition test_prop_InsertModel :=  
+    forAll gSized (fun t =>    
+    forAll arbitrary (fun k =>
+    forAll arbitrary (fun v =>
+        prop_InsertModel t k v))).
+
+(*! QuickChick test_prop_InsertModel. *)
+    
+Definition test_prop_DeleteModel :=  
+    forAll gSized (fun t =>    
+    forAll arbitrary (fun k =>
+            prop_DeleteModel t k)).
+
+(*! QuickChick test_prop_DeleteModel. *)
+
+Definition test_prop_InsertInsert :=  
+    forAll gSized (fun t =>    
+    forAll arbitrary (fun k =>
+    forAll arbitrary (fun k' =>
+    forAll arbitrary (fun v =>
+    forAll arbitrary (fun v' =>     
+        prop_InsertInsert t k k' v v'))))).
+
+(*! QuickChick test_prop_InsertInsert. *)
+    
+Definition test_prop_InsertDelete := 
+    forAll gSized (fun t =>    
+    forAll arbitrary (fun k =>
+    forAll arbitrary (fun k' =>
+    forAll arbitrary (fun v =>
+        prop_InsertDelete t k k' v)))).
+
+(*! QuickChick test_prop_InsertDelete. *)
+    
+Definition test_prop_DeleteInsert := 
+    forAll gSized (fun t =>    
+    forAll arbitrary (fun k =>
+    forAll arbitrary (fun k' =>
+    forAll arbitrary (fun v' =>
+        prop_DeleteInsert t k k' v')))).
+
+(*! QuickChick test_prop_DeleteInsert. *)
+    
+Definition test_prop_DeleteDelete :=  
+    forAll gSized (fun t =>    
+    forAll arbitrary (fun k =>
+    forAll arbitrary (fun k' =>
+        prop_DeleteDelete t k k'))).
+
+(*! QuickChick test_prop_DeleteDelete. *)
+          "
+    )
+end
+
+
 struct RBTGeneration <: Generation{RBT}
     t::ColorKVTree.t
 end

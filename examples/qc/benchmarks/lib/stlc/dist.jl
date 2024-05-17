@@ -274,6 +274,7 @@ function typecheck(ast::Tuple, gamma, depth=0)
     end
 end
 
+
 function eq_except_numbers(x::Typ.T, y::Typ.T)
     @match x [
         TBool() -> (@match y [
@@ -354,7 +355,7 @@ function eq_structure(x::Expr.T, y::Expr.T)
     ]
 end
 
-function eq_except_numbers(x::Opt.T{T}, y::Opt.T{T}) where T
+function eq_except_numbers(x::Opt.T{Expr.T}, y::Opt.T{Expr.T})
     @match x [
         Some(xv) -> (@match y [
             Some(yv) -> eq_except_numbers(xv, yv),
@@ -367,7 +368,7 @@ function eq_except_numbers(x::Opt.T{T}, y::Opt.T{T}) where T
     ]
 end
 
-function eq_structure(x::Opt.T{T}, y::Opt.T{T}) where T
+function eq_structure(x::Opt.T{Expr.T}, y::Opt.T{Expr.T})
     @match x [
         Some(xv) -> (@match y [
             Some(yv) -> eq_structure(xv, yv),
@@ -426,5 +427,21 @@ function eq_has_app(x::Opt.T{T}, y::Opt.T{T}) where T
             Some(_) -> false,
             None() -> true,
         ])
+    ]
+end
+
+function might_typecheck(x::Expr.T)
+    @match x [
+        Var(_) -> true,
+        Bool(_) -> false,
+        App(f2, x2) -> eq_structure(f1, f2) & eq_structure(x1, x2),
+        Abs(_, _) -> false,
+    ]
+end
+
+function might_typecheck(x::Opt.T{Expr.T})
+    @match x [
+        None() -> false,
+        Some(xv) -> might_typecheck(xv)
     ]
 end

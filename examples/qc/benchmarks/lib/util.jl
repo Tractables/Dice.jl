@@ -422,12 +422,12 @@ function generate(rs::RunState, p, track_return)
                         )
                     elseif param == AnyBool
                         flip_for(rs, "$(prefix)$(ty)_$(ctor)_$(parami)_true", dependents)
-                    elseif param == DistUInt32
+                    elseif param in [DistUInt32, DistInt32]
                          sum(
                             @dice_ite if flip_for(rs, "$(prefix)$(ty)_$(ctor)_$(parami)_num$(n)", dependents)
-                                DistUInt32(n)
+                                param(n)
                             else
-                                DistUInt32(0)
+                                param(0)
                             end
                             for n in twopowers(p.intwidth)
                         )
@@ -588,8 +588,8 @@ function derived_to_coq(p, adnodes_vals, io)
                 o!("Fixpoint")
             end
             a!(" gen_$(leaf_prefix)$(to_coq(ty)) ")
-            a!("(chosen_ctor : $(to_coq(ty))_$(leaf_prefix)ctor) ")
             leaf || a!("(size : nat) ")
+            a!("(chosen_ctor : $(to_coq(ty))_$(leaf_prefix)ctor) ")
             a!(join2(stack_vars, " "))
             a!(": G $(to_coq(ty)) :=")
 
@@ -693,15 +693,15 @@ function derived_to_coq(p, adnodes_vals, io)
                     for (parami, param) in enumerate(params)
                         if param == ty
                             e!("bindGen (gen_$(if zero_case() "leaf_" else "" end)$(to_coq(param))")
-                            a!(" param$(parami)_ctor")
                             zero_case() || a!(" size'")
+                            a!(" param$(parami)_ctor")
                             a!(" $(update_stack_vars(type_ctor_parami_to_id[(ty, ctor, parami)])))")
                             e!("(fun p$(parami) : $(to_coq(param)) =>")
                             rparens_needed += 1
                         elseif param ∈ tys
                             e!("bindGen (gen_$(to_coq(param))")
-                            a!(" param$(parami)_ctor")
                             a!(" $(p.ty_sizes[param])")
+                            a!(" param$(parami)_ctor")
                             a!(" $(update_stack_vars(type_ctor_parami_to_id[(ty, ctor, parami)])))")
                             e!("(fun p$(parami) : $(to_coq(param)) =>")
                             rparens_needed += 1
@@ -711,21 +711,30 @@ function derived_to_coq(p, adnodes_vals, io)
                             e!("in")
                             e!("bindGen (freq [")
                             e!("  (weight_true, returnGen true);")
-                            e!("  (1000-weight_true, returnGen false)")
+                            e!("  (100-weight_true, returnGen false)")
                             e!("]) (fun p$(parami) : $(to_coq(param)) =>")
                             rparens_needed += 1
-                        elseif param == DistUInt32
+                        elseif param in [DistUInt32, DistInt32]
                             for n in twopowers(p.intwidth)
                                 e!("let weight_$(n) :=")
                                 ematch!("$(prefix)$(ty)_$(ctor)_$(parami)_num$(n)", leaf)
                                 e!("in")
                                 e!("bindGen (freq [")
-                                e!("  (weight_$(n), returnGen $(n));")
-                                e!("  (1000-weight_$(n), returnGen 0)")
-                                e!("]) (fun n$(n) : nat =>")
+                                if param == DistUInt32
+                                    e!("  (weight_$(n), returnGen $(n));")
+                                    e!("  (100-weight_$(n), returnGen 0)")
+                                else
+                                    e!("  (weight_$(n), returnGen $(n)%Z);")
+                                    e!("  (100-weight_$(n), returnGen 0%Z)")
+                                end
+                                e!("]) (fun n$(n) =>")
                                 rparens_needed += 1
                             end
-                            e!("let p$(parami) := $(join(["n$(n)" for n in twopowers(p.intwidth)], " + ")) in ")
+                            if param == DistUInt32
+                                e!("let p$(parami) := $(join(["n$(n)" for n in twopowers(p.intwidth)], " + ")) in ")
+                            else
+                                e!("let p$(parami) := ($(join(["n$(n)" for n in twopowers(p.intwidth)], " + ")))%Z in ")
+                            end
                         else
                             error()
                         end
@@ -755,12 +764,10 @@ function derived_to_coq(p, adnodes_vals, io)
         o!("(")
         matchid = "init_$(p.root_ty)_varianti_$(i)"
         cases = matchid_to_cases[matchid]
-        cases = sort(cases)
-        e!("match (tt) with ")
+        @assert length(cases) == 1
         for (name, w) in cases
-            e!("| $(name) => $(w)")
+            e!("$(w)")
         end
-         e!("end")
         a!(",")
         e!("returnGen Ctor_$(ctor)")
         o!(")")
@@ -770,7 +777,7 @@ function derived_to_coq(p, adnodes_vals, io)
     end
     indent -= 1
     e!("]) (fun init_ctor =>")
-    e!("gen_$(to_coq(p.root_ty)) init_ctor $(p.ty_sizes[p.root_ty])$(" 0" ^ p.stack_size)")
+    e!("gen_$(to_coq(p.root_ty)) $(p.ty_sizes[p.root_ty]) init_ctor$(" 0" ^ p.stack_size)")
     a!(").")
     indent -= 1
     e!()
