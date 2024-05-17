@@ -479,7 +479,7 @@ function derived_to_coq(p, adnodes_vals, io)
     matchid_to_cases = Dict()
     for (name, val) in adnodes_vals
         matchid, case = split(name, "%%")
-        case = "(" * join([tocoq(eval(Meta.parse(x))) for x in split(case, "%")], ", ") * ")"
+        case = if case == "" "tt" else "(" * join([tocoq(eval(Meta.parse(x))) for x in split(case, "%")], ", ") * ")" end
         val = thousandths(val)
         push!(get!(matchid_to_cases, matchid, []), (case, val))
     end
@@ -490,7 +490,11 @@ function derived_to_coq(p, adnodes_vals, io)
 
     stack_vars = ["(stack$(i) : nat)" for i in 1:p.stack_size]
 
-    update_stack_vars(loc) = join(stack_vars[2:end], " ") * " $(loc)"
+    update_stack_vars(loc) = if p.stack_size == 0
+        ""
+    else
+        join(stack_vars[2:end], " ") * " $(loc)"
+    end
 
     segments = []
     # Emit line
@@ -505,7 +509,6 @@ function derived_to_coq(p, adnodes_vals, io)
         else
             "  " ^ indent_ * s
         end
-        isempty(segments) || println(last(segments))
         push!(segments, segment)
     end
     # Emit with outer indent
@@ -526,18 +529,26 @@ function derived_to_coq(p, adnodes_vals, io)
         indent -= 1
     end
 
+    coq_tuple(names) = if isempty(names)
+        "tt"
+    else
+        "($(join(names, ", ")))"
+    end
+
     function ematch!(matchid, leaf)
         cases = matchid_to_cases[matchid]
         cases = sort(cases)
         if leaf
-            e!("match ($(join(stack_vars, ", "))) with ")
+            e!("match $(coq_tuple(stack_vars)) with ")
         else
-            e!("match (size, ($(join(stack_vars, ", ")))) with ")
+            e!("match (size, $(coq_tuple(stack_vars))) with ")
         end
         for (name, w) in cases
             e!("| $(name) => $(w)")
         end
-        e!("| _ => 500")
+        if !(leaf && isempty(stack_vars))
+            e!("| _ => 500")
+        end
         e!("end")
     end
 
@@ -609,8 +620,7 @@ function derived_to_coq(p, adnodes_vals, io)
                     o!("| Ctor_$(leaf_prefix)$(ctor) =>")
                     rparens_needed = 0
                     need_variantis = any(
-                        (param in tys && param != ty)
-                        || (param == ty && !zero_case())
+                        param in tys
                         for param in params
                     )
                     variantis_options = Iterators.product([
@@ -640,7 +650,7 @@ function derived_to_coq(p, adnodes_vals, io)
                                 indent += 1
                                 ematch!("$(prefix)_$(ty)_$(ctor)_variantis_$(Tuple(param_ctor_is))", leaf)
                                 a!(",")
-                                e!("($(join(param_ctors, ", ")))")
+                                e!("returnGen ($(join(param_ctors, ", ")))")
                                 indent -= 1
                                 e!(");")
                             end
@@ -649,9 +659,9 @@ function derived_to_coq(p, adnodes_vals, io)
                             indent += 1
                             ematch!("$(prefix)_$(ty)_$(ctor)_variantis_$(Tuple(param_ctor_is))", leaf)
                             a!(",")
-                            e!("($(join(param_ctors, ", ")))")
+                            e!("returnGen ($(join(param_ctors, ", ")))")
                             indent -= 1
-                            if j == length(variantis_options)
+                            if j < length(variantis_options)
                                 e!(");")
                             else
                                 e!(")")
@@ -671,7 +681,10 @@ function derived_to_coq(p, adnodes_vals, io)
                             e!("(fun p$(parami) : $(to_coq(param)) =>")
                             rparens_needed += 1
                         elseif param ∈ tys
-                            e!("bindGen (gen_$(to_coq(param)) $(p.ty_sizes[param]) $(update_stack_vars(type_ctor_parami_to_id[(ty, ctor, parami)])))")
+                            e!("bindGen (gen_$(to_coq(param))")
+                            a!(" param$(parami)_ctor")
+                            a!(" $(p.ty_sizes[param])")
+                            a!(" $(update_stack_vars(type_ctor_parami_to_id[(ty, ctor, parami)])))")
                             e!("(fun p$(parami) : $(to_coq(param)) =>")
                             rparens_needed += 1
                         elseif param == AnyBool
@@ -702,11 +715,14 @@ function derived_to_coq(p, adnodes_vals, io)
                     e!("returnGen ($(ctor) $(join(["p$(parami)" for parami in 1:length(params)], " ")))")
                     a!(")" ^ rparens_needed)
                 end
+
+                if !leaf
+                    indent -= 1
+                end
                 e!("end")
             end
             if !leaf
                 e!("end")
-                indent -= 1
             end
             a!(".")
             e!()
@@ -728,13 +744,17 @@ function derived_to_coq(p, adnodes_vals, io)
         end
          e!("end")
         a!(",")
-        e!("Ctor_$(ctor)")
+        e!("returnGen Ctor_$(ctor)")
         o!(")")
+        if i < length(variants(p.root_ty))
+            a!(";")
+        end
     end
     indent -= 1
     e!("]) (fun init_ctor =>")
-    e!("gen_$(to_coq(p.root_ty)) init_ctor $(p.ty_sizes[p.root_ty])$(" 0" ^ p.stack_size).")
+    e!("gen_$(to_coq(p.root_ty)) init_ctor $(p.ty_sizes[p.root_ty])$(" 0" ^ p.stack_size)")
     a!(").")
+    indent -= 1
     e!()
     e!(after)
     join(segments, "\n")
