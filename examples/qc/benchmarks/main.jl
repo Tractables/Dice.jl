@@ -31,7 +31,7 @@ RAND_FORIGIVENESS_LIST = [true]
 RESAMPLING_FREQUENCY_LIST = [2]
 SAMPLES_PER_BATCH_LIST = [200]
 EPOCHS_LIST = [2000]
-EQ_LIST = [:prob_equals]
+EQ_LIST = [:prob_equals, :eq_structure]
 
 n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, FORIGIVENESS_LIST, RAND_FORIGIVENESS_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST]))
 println(n_runs)
@@ -51,16 +51,16 @@ println()
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
-            MLELossConfig{STLC}(NumApps(), Linear()) => lr,
-            # SamplingEntropy{STLC}(
-            #     resampling_frequency=resampling_frequency,
-            #     samples_per_batch=samples_per_batch,
-            #     property=STLCWellTyped(),
-            #     eq=eq,
-            #     failure_penalty=fp,
-            #     forgiveness=forgiveness,
-            #     rand_forgiveness=rand_forgiveness,
-            # ) => lr,
+            # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
+            SamplingEntropy{STLC}(
+                resampling_frequency=resampling_frequency,
+                samples_per_batch=samples_per_batch,
+                property=STLCWellTyped(),
+                eq=eq,
+                failure_penalty=fp,
+                forgiveness=forgiveness,
+                rand_forgiveness=rand_forgiveness,
+            ) => lr,
             # SamplingEntropy{BST}(
             #     resampling_frequency=resampling_frequency,
             #     samples_per_batch=samples_per_batch,
