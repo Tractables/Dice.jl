@@ -12,7 +12,7 @@ frombits(::Nothing, _) = nothing
 ##################################
 
 tobits(x::Tuple) = 
-    mapreduce(tobits, vcat, x)
+    mapreduce(tobits, vcat, x; init=[])
 
 frombits(x::Tuple, world) = 
     map(v -> frombits(v, world), x)
