@@ -415,7 +415,7 @@ function generate(rs::RunState, p, track_return)
                                     size - 1
                                 end
                             else
-                                p.ty_sizes[param]
+                                Dict(p.ty_sizes)[param]
                             end,
                             # todo: include leaf/zero_case in call location
                             update_stack_tail(p, stack_tail, type_ctor_parami_to_id[(ty, ctor, parami)])
@@ -453,7 +453,7 @@ function generate(rs::RunState, p, track_return)
         "$(i)" => DistUInt32(i)
         for i in 1:length(variants(p.root_ty))
     ])
-    type_to_gen[p.root_ty](false, init_varianti, p.ty_sizes[p.root_ty], empty_stack(p))
+    type_to_gen[p.root_ty](false, init_varianti, Dict(p.ty_sizes)[p.root_ty], empty_stack(p))
 end
 
 to_coq(::Type{DistUInt32}) = "nat"
@@ -700,7 +700,7 @@ function derived_to_coq(p, adnodes_vals, io)
                             rparens_needed += 1
                         elseif param ∈ tys
                             e!("bindGen (gen_$(to_coq(param))")
-                            a!(" $(p.ty_sizes[param])")
+                            a!(" $(Dict(p.ty_sizes)[param])")
                             a!(" param$(parami)_ctor")
                             a!(" $(update_stack_vars(type_ctor_parami_to_id[(ty, ctor, parami)])))")
                             e!("(fun p$(parami) : $(to_coq(param)) =>")
@@ -777,7 +777,7 @@ function derived_to_coq(p, adnodes_vals, io)
     end
     indent -= 1
     e!("]) (fun init_ctor =>")
-    e!("gen_$(to_coq(p.root_ty)) $(p.ty_sizes[p.root_ty]) init_ctor$(" 0" ^ p.stack_size)")
+    e!("gen_$(to_coq(p.root_ty)) $(Dict(p.ty_sizes)[p.root_ty]) init_ctor$(" 0" ^ p.stack_size)")
     a!(").")
     indent -= 1
     e!()

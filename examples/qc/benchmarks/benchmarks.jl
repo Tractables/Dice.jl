@@ -390,7 +390,7 @@ value(g::STLCGeneration) = g.e
 
 struct DerivedGenerator{T} <: GenerationParams{T}
     root_ty::Type
-    ty_sizes::Dict{Type, Integer}
+    ty_sizes::Vector{Pair{Type, Integer}}
     stack_size::Integer
     intwidth::Integer
 end
@@ -929,6 +929,13 @@ function check_property(::STLCWellTyped, e::Opt.T{Expr.T})
     ]
 end
 name(::STLCWellTyped)  = "stlcwelltyped"
+
+struct STLCMightType <: Property{STLC} end
+function check_property(::STLCMightType, e::Opt.T{Expr.T})
+    @assert isdeterministic(e)
+    might_typecheck(e)
+end
+name(::STLCMightType)  = "stlcmighttype"
 
 
 

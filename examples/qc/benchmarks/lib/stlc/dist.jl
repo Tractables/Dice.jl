@@ -430,18 +430,43 @@ function eq_has_app(x::Opt.T{T}, y::Opt.T{T}) where T
     ]
 end
 
-function might_typecheck(x::Expr.T)
+function might_typecheck(x::Expr.T, gamma, depth)
     @match x [
-        Var(_) -> true,
-        Bool(_) -> false,
-        App(f2, x2) -> eq_structure(f1, f2) & eq_structure(x1, x2),
-        Abs(_, _) -> false,
+        Var(i) -> begin
+            # var_depth = depth - i - 1
+            # if !haskey(gamma, var_depth)
+            #     return "Unknown var $(var_str(var_depth))"
+            # end
+            # gamma[var_depth]
+            :TypeVar # we leniently let this take any type it needs to
+        end,
+        Bool(_) -> :TBool,
+        App(e1, e2) -> begin
+            t1 = typecheck(e1, gamma, depth)
+            if t1 == :Error || t1 == :TBool
+                return :Error
+            end
+            if !(t1 in [:TFun, :TypeVar])
+                return :Error
+            end
+            # Really, should check that t2 matches function input ty of t1
+            typecheck(e2, gamma, depth)
+        end,
+        Abs(t_in, e) -> begin
+            gamma′ = copy(gamma)
+            gamma′[depth] = t_in
+            t1 = typecheck(e, gamma′, depth + 1)
+            if t1 == :Error
+                return :Error
+            end
+            :TFun
+        end,
     ]
 end
 
 function might_typecheck(x::Opt.T{Expr.T})
     @match x [
         None() -> false,
-        Some(xv) -> might_typecheck(xv)
+        Some(xv) -> might_typecheck(xv, Dict(), 0) != :Error
     ]
 end
