@@ -4,6 +4,7 @@ TAG = "v34_stlc_derived_spec_structure_and_prob_eq"
 TAG = "v34_stlc_derived_unif_apps"
 TAG = "v34_rbt_derived"
 TAG = "v36_stlc_might_fixed"
+TAG = "v37_stlc_might2" # this one is stricter
 # TAG = "test"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 

@@ -433,12 +433,12 @@ end
 function might_typecheck(x::Expr.T, gamma, depth)
     @match x [
         Var(i) -> begin
-            # i = Dice.frombits(i, Dict())
-            # var_depth = depth - i - 1
-            # if !haskey(gamma, var_depth)
-            #     return :Error
-            #     # return "Unknown var $(var_str(var_depth))"
-            # end
+            i = Dice.frombits(i, Dict())
+            var_depth = depth - i - 1
+            if !haskey(gamma, var_depth)
+                return :Error
+            end
+            # note that gamma is wrong! because we put dists in it
             # gamma[var_depth]
             :TypeVar # we leniently let this take any type it needs to
         end,
