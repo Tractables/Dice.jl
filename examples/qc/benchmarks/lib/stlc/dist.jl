@@ -433,16 +433,18 @@ end
 function might_typecheck(x::Expr.T, gamma, depth)
     @match x [
         Var(i) -> begin
+            # i = Dice.frombits(i, Dict())
             # var_depth = depth - i - 1
             # if !haskey(gamma, var_depth)
-            #     return "Unknown var $(var_str(var_depth))"
+            #     return :Error
+            #     # return "Unknown var $(var_str(var_depth))"
             # end
             # gamma[var_depth]
             :TypeVar # we leniently let this take any type it needs to
         end,
         Bool(_) -> :TBool,
         App(e1, e2) -> begin
-            t1 = typecheck(e1, gamma, depth)
+            t1 = might_typecheck(e1, gamma, depth)
             if t1 == :Error || t1 == :TBool
                 return :Error
             end
@@ -450,12 +452,16 @@ function might_typecheck(x::Expr.T, gamma, depth)
                 return :Error
             end
             # Really, should check that t2 matches function input ty of t1
-            typecheck(e2, gamma, depth)
+            t2 = might_typecheck(e2, gamma, depth)
+            if t2 == :Error
+                return :Error
+            end
+            :TypeVar
         end,
         Abs(t_in, e) -> begin
             gamma′ = copy(gamma)
             gamma′[depth] = t_in
-            t1 = typecheck(e, gamma′, depth + 1)
+            t1 = might_typecheck(e, gamma′, depth + 1)
             if t1 == :Error
                 return :Error
             end

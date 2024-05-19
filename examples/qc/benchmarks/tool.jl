@@ -3,7 +3,7 @@ include("benchmarks.jl")
 TAG = "v34_stlc_derived_spec_structure_and_prob_eq"
 TAG = "v34_stlc_derived_unif_apps"
 TAG = "v34_rbt_derived"
-TAG = "v35_stlc_might"
+TAG = "v36_stlc_might_fixed"
 # TAG = "test"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 

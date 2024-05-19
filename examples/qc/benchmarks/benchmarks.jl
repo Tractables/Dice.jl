@@ -933,7 +933,10 @@ name(::STLCWellTyped)  = "stlcwelltyped"
 struct STLCMightType <: Property{STLC} end
 function check_property(::STLCMightType, e::Opt.T{Expr.T})
     @assert isdeterministic(e)
-    might_typecheck(e)
+    meets = might_typecheck(e)
+    # assert this this is strictly weaker than full welltyped
+    @assert !check_property(STLCWellTyped(), e) || meets "$(opt_stlc_str(Dice.frombits(e, Dict())))"
+    meets
 end
 name(::STLCMightType)  = "stlcmighttype"
 
