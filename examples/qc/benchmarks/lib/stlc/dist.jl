@@ -476,3 +476,29 @@ function might_typecheck(x::Opt.T{Expr.T})
         Some(xv) -> might_typecheck(xv, Dict(), 0) != :Error
     ]
 end
+
+function var_numberings_good(x::Expr.T, gamma, depth)
+    @match x [
+        Var(i) -> begin
+            i = Dice.frombits(i, Dict())
+            var_depth = depth - i - 1
+            haskey(gamma, var_depth)
+        end,
+        Bool(_) -> true,
+        App(e1, e2) -> begin
+            var_numberings_good(e1, gamma, depth) & var_numberings_good(e2, gamma, depth)
+        end,
+        Abs(t_in, e) -> begin
+            gamma′ = copy(gamma)
+            gamma′[depth] = t_in
+            var_numberings_good(e, gamma′, depth + 1)
+        end,
+    ]
+end
+
+function var_numberings_good(x::Opt.T{Expr.T})
+    @match x [
+        None() -> false,
+        Some(xv) -> var_numberings_good(xv, Dict(), 0),
+    ]
+end

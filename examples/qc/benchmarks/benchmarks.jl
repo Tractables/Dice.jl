@@ -941,6 +941,17 @@ end
 name(::STLCMightType)  = "stlcmighttype"
 
 
+struct STLCVarNumbers <: Property{STLC} end
+function check_property(::STLCVarNumbers, e::Opt.T{Expr.T})
+    @assert isdeterministic(e)
+    meets = var_numberings_good(e)
+    # assert this this is strictly weaker than mighttype
+    @assert !check_property(STLCMightType(), e) || meets "$(opt_stlc_str(Dice.frombits(e, Dict())))"
+    meets
+end
+name(::STLCVarNumbers)  = "stlcvarnumbers"
+
+
 
 struct BSTOrderInvariant <: Property{BST} end
 check_property(::BSTOrderInvariant, t::KVTree.T) =

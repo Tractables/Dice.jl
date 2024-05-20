@@ -5,6 +5,7 @@ TAG = "v34_stlc_derived_unif_apps"
 TAG = "v34_rbt_derived"
 TAG = "v36_stlc_might_fixed"
 TAG = "v37_stlc_might2" # this one is stricter
+TAG = "v38_stlc_vars" # this one is stricter
 # TAG = "test"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
@@ -65,7 +66,7 @@ if isempty(ARGS)
         SamplingEntropy{STLC}(
             resampling_frequency=1,
             samples_per_batch=50,
-            property=STLCMightType(),
+            property=STLCVarNumbers(),
             eq=:prob_equals,
             failure_penalty=fp,
             forgiveness=0.1,

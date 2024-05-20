@@ -61,7 +61,7 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
             SamplingEntropy{STLC}(
                 resampling_frequency=resampling_frequency,
                 samples_per_batch=samples_per_batch,
-                property=STLCMightType(),
+                property=STLCVarNumbers(),
                 eq=eq,
                 failure_penalty=fp,
                 forgiveness=forgiveness,
