@@ -6,6 +6,7 @@ TAG = "v34_rbt_derived"
 TAG = "v36_stlc_might_fixed"
 TAG = "v37_stlc_might2" # this one is stricter
 TAG = "v38_stlc_vars" # this one is stricter
+TAG = "v39_stlc_linapps"
 # TAG = "test"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
@@ -63,16 +64,16 @@ if isempty(ARGS)
         #     forgiveness=0.1,
         #     rand_forgiveness=false,
         # ) => lr,
-        SamplingEntropy{STLC}(
-            resampling_frequency=1,
-            samples_per_batch=50,
-            property=STLCVarNumbers(),
-            eq=:prob_equals,
-            failure_penalty=fp,
-            forgiveness=0.1,
-            rand_forgiveness=false,
-        ) => lr,
-        # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
+        # SamplingEntropy{STLC}(
+        #     resampling_frequency=1,
+        #     samples_per_batch=50,
+        #     property=STLCVarNumbers(),
+        #     eq=:prob_equals,
+        #     failure_penalty=fp,
+        #     forgiveness=0.1,
+        #     rand_forgiveness=false,
+        # ) => lr,
+        MLELossConfig{STLC}(NumApps(), Linear()) => lr,
     ]
     push!(as, replace(string(g_p), " "=>""))
     push!(as, replace(string(l_p), " "=>""))

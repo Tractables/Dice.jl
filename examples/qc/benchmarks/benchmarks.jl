@@ -47,6 +47,19 @@ function run_benchmark(
 
         generation_emit_stats(rs, generation, s)
         generation_params_emit_stats(rs, generation_params, s)
+
+        for (i, (p, lr)) in enumerate(loss_config_weight_pairs)
+            if p isa MLELossConfig
+                println_flush(rs.io, "Saving $(s) distribution...")
+                metric = compute_metric(p.metric, generation)
+                time_infer = @elapsed metric_dist = pr_mixed(rs.var_vals)(metric)
+                println(rs.io, "  $(time_infer) seconds")
+                save_metric_dist(joinpath(rs.out_dir, "loss$(i)_dist_$(name(p.metric))_$(s).csv"), metric_dist; rs.io)
+                println(rs.io)
+            end
+        end
+
+        println(rs.io)
     end
 
     emit_stats("initial")
@@ -709,36 +722,6 @@ function create_loss_manager(rs::RunState, p::ApproxBSTConstructorEntropy, gener
 end
 
 ##################################
-# Sampling BST constructor entropy loss
-##################################
-
-# struct SamplingBSTConstructorEntropy <: LossConfig{BST}
-#     resampling_frequency::Integer
-#     samples_per_batch::Integer
-#     function SamplingBSTConstructorEntropy(; resampling_frequency, samples_per_batch)
-#         new(resampling_frequency, samples_per_batch)
-#     end
-# end
-# to_subpath(p::SamplingBSTConstructorEntropy) = ["sampling_entropy", "freq=$(p.resampling_frequency),spb=$(p.samples_per_batch)"]
-# function create_loss_manager(p::SamplingBSTConstructorEntropy, io, out_dir, var_vals, g::BSTGeneration)
-#     println_flush(io, "Building random_ctor graph...")
-#     time_build_random_ctor = @elapsed random_ctor = match(g.constructors_overapproximation, [
-#         "Some" => e -> choice(collect_constructors(e)), # TODO: implement collect_constructors
-#         "None" => () -> DistInt32(-1),
-#     ])
-#     println(io, "  $(time_build_random_ctor) seconds")
-#     function train!(; epochs, learning_rate)
-#         train_via_sampling_entropy!(
-#             io, out_dir, var_vals, random_ctor; epochs, learning_rate,
-#             resampling_frequency=p.resampling_frequency, samples_per_batch=p.samples_per_batch,
-#             domain=values(bst_ctor_to_id),
-#             ignored_domain=[DistInt32(-1)]
-#         )
-#     end
-#     LossMgrImpl(_ -> nothing, train!)
-# end
-
-##################################
 # RBT generation
 ##################################
 
@@ -1045,18 +1028,6 @@ function create_loss_manager(rs::RunState, p::MLELossConfig, generation)
     println(rs.io)
 
     SimpleLossMgr(loss, nothing)
-
-    # TODO: fix. allow us to register_stats! to rs, or create MLELossMgr
-    # # Also save distribution of metric being trained
-    # function f_emit′(tag)
-    #     println_flush(rs.io, "Saving $(tag) distribution...")
-    #     time_infer = @elapsed metric_dist = pr_mixed(rs.var_vals)(metric)
-    #     println(rs.io, "  $(time_infer) seconds")
-    #     save_metric_dist(joinpath(rs.out_dir, "dist_$(name(p.metric))_$(tag).csv"), metric_dist; rs.io)
-    #     println(rs.io)
-
-    #     emit_stats(mgr, tag)
-    # end
 end
 
 struct RBTDepth <: Metric{RBT} end
