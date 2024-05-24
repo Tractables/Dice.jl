@@ -112,8 +112,8 @@ function run_benchmark(
     #         end
     #     end
 
-    #     println(rs.io)
-    # end
+        println(rs.io)
+    end
 
     emit_stats("initial")
 
