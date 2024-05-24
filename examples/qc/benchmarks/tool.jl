@@ -7,6 +7,7 @@ TAG = "v36_stlc_might_fixed"
 TAG = "v37_stlc_might2" # this one is stricter
 TAG = "v38_stlc_vars" # this one is stricter
 TAG = "v39_stlc_linapps"
+TAG = "v40_stlctb_abunch"
 # TAG = "test"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 

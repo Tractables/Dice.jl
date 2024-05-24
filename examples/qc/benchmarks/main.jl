@@ -1,20 +1,20 @@
 include("benchmarks.jl")
 
 GENERATION_PARAMS_LIST = [
-    # TypeBasedSTLCGenerator(
-    #     size=5,
-    #     ty_size=2,
-    #     dependents=[:size,:stack_tail],
-    #     ty_dependents=[:size,:stack_tail],
-    #     stack_size=2,
-    #     intwidth=6,
-    # ),
-    DerivedGenerator{STLC}(
-        root_ty=Expr.T,
-        ty_sizes=[Expr.T=>4, Typ.T=>1],
+    TypeBasedSTLCGenerator(
+        size=5,
+        ty_size=2,
+        dependents=[:size,:stack_tail],
+        ty_dependents=[:size,:stack_tail],
         stack_size=2,
         intwidth=6,
-    )
+    ),
+    # DerivedGenerator{STLC}(
+    #     root_ty=Expr.T,
+    #     ty_sizes=[Expr.T=>4, Typ.T=>1],
+    #     stack_size=2,
+    #     intwidth=6,
+    # )
     # DerivedGenerator{RBT}(
     #     root_ty=ColorKVTree.t,
     #     ty_sizes=[ColorKVTree.t=>4, Color.T=>0],
@@ -35,11 +35,12 @@ FP_LIST = [0.]
 FORIGIVENESS_LIST = [0]
 RAND_FORIGIVENESS_LIST = [true]
 RESAMPLING_FREQUENCY_LIST = [2]
+PROPERTY_LIST = [STLCVarNumbers(), STLCMightType(), STLCWellTyped()]
 SAMPLES_PER_BATCH_LIST = [200]
 EPOCHS_LIST = [2_000]
 EQ_LIST = [:prob_equals, :eq_structure]
 
-n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, FORIGIVENESS_LIST, RAND_FORIGIVENESS_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST]))
+n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, FORIGIVENESS_LIST, RAND_FORIGIVENESS_LIST, PROPERTY_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST]))
 println(n_runs)
 @assert n_runs <= 10
 
@@ -48,6 +49,7 @@ println(n_runs)
 @show FP_LIST
 @show FORIGIVENESS_LIST
 @show RAND_FORIGIVENESS_LIST
+@show PROPERTY_LIST
 @show RESAMPLING_FREQUENCY_LIST
 @show SAMPLES_PER_BATCH_LIST
 @show EPOCHS_LIST
@@ -61,7 +63,7 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
             SamplingEntropy{STLC}(
                 resampling_frequency=resampling_frequency,
                 samples_per_batch=samples_per_batch,
-                property=STLCVarNumbers(),
+                property=property,
                 eq=eq,
                 failure_penalty=fp,
                 forgiveness=forgiveness,
@@ -92,6 +94,7 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
         for fp in FP_LIST
         for forgiveness in FORIGIVENESS_LIST
         for rand_forgiveness in RAND_FORIGIVENESS_LIST
+        for property in PROPERTY_LIST
         for resampling_frequency in RESAMPLING_FREQUENCY_LIST
         for samples_per_batch in SAMPLES_PER_BATCH_LIST
         for eq in EQ_LIST
