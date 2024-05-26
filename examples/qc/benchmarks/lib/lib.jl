@@ -12,6 +12,7 @@ struct RunState
     rng::AbstractRNG
 end
 
+include("lang.jl")
 include("util.jl")
 include("lruset/dist.jl")
 include("lruset/generator.jl")
@@ -25,3 +26,4 @@ include("bst/to_coq.jl")
 include("rbt/dist.jl")
 include("rbt/generator.jl")
 include("rbt/to_coq.jl")
+include("be.jl")

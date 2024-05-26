@@ -1,3 +1,4 @@
+abstract type GenerationParams{T} end
 include("lib/lib.jl")
 
 using Plots
@@ -6,7 +7,6 @@ using Random
 ENV["GKSwstype"] = "100" # prevent plots from displaying
 
 abstract type Benchmark end
-abstract type GenerationParams{T} end
 abstract type LossConfig{T} end
 abstract type LossMgr end
 
@@ -437,8 +437,8 @@ end
 
 
 struct STLCGeneration <: Generation{STLC}
-    e::Opt.T{Expr.T}
-    constructors_overapproximation::Vector{Opt.T{Expr.T}}
+    e::OptExpr.T
+    constructors_overapproximation::Vector{OptExpr.T}
 end
 function generation_emit_stats(rs::RunState, g::STLCGeneration, s::String)
     println_flush(rs.io, "Saving samples...")
@@ -474,13 +474,13 @@ function to_subpath(p::DerivedGenerator{T}) where T
 end
 function generate(rs::RunState, p::DerivedGenerator{T}) where T
     constructors_overapproximation = []
-    function add_ctor(v::Opt.T{Expr.T})
+    function add_ctor(v::OptExpr.T)
         push!(constructors_overapproximation, v)
         v
     end
     e = generate(rs, p, add_ctor)
     if T == STLC
-        STLCGeneration(Opt.Some(e), constructors_overapproximation)
+        STLCGeneration(OptExpr.Some(e), constructors_overapproximation)
     elseif T == BST
         BSTGeneration(e, constructors_overapproximation)
     elseif T == RBT
@@ -523,7 +523,7 @@ function to_subpath(p::BespokeSTLCGenerator)
 end
 function generate(rs::RunState, p::BespokeSTLCGenerator)
     constructors_overapproximation = []
-    function add_ctor(v::Opt.T{Expr.T})
+    function add_ctor(v::OptExpr.T)
         push!(constructors_overapproximation, v)
         v
     end
@@ -558,6 +558,46 @@ function generation_params_emit_stats(rs::RunState, p::BespokeSTLCGenerator, s)
     end
     println_flush(rs.io)
 end
+
+##################################
+# Bespoke STLC generator using Lang
+##################################
+
+struct LangBespokeSTLCGenerator <: GenerationParams{STLC}
+    expr_size::Integer
+    typ_size::Integer
+end
+LangBespokeSTLCGenerator(; expr_size, typ_size) =
+    LangBespokeSTLCGenerator(expr_size, typ_size)
+function to_subpath(p::LangBespokeSTLCGenerator)
+    [
+        "stlc",
+        "langbespoke",
+        "expr_sz=$(p.expr_size)-typ_sz=$(p.typ_size)",
+    ]
+end
+function generate(rs::RunState, p::LangBespokeSTLCGenerator)
+    constructors_overapproximation = []
+    function add_ctor(v::OptExpr.T)
+        push!(constructors_overapproximation, v)
+        v
+    end
+    prog = gen_expr_lang(p.expr_size, p.typ_size)
+    e = to_dist(rs, prog)
+    STLCGeneration(e, constructors_overapproximation)
+end
+
+function generation_params_emit_stats(rs::RunState, p::LangBespokeSTLCGenerator, s)
+    prog = gen_expr_lang(p.expr_size, p.typ_size)
+
+    path = joinpath(rs.out_dir, "$(s)_Generator.v")
+    open(path, "w") do file
+        println(file, to_coq(rs, p, prog))
+    end
+    println_flush(rs.io, "Saved Coq generator to $(path)")
+    println_flush(rs.io)
+end
+
 
 ##################################
 # Type-based STLC generator
@@ -954,7 +994,7 @@ function create_loss_manager(rs::RunState, p::SatisfyPropertyLoss, generation)
 end
 
 struct STLCWellTyped <: Property{STLC} end
-function check_property(::STLCWellTyped, e::Opt.T{Expr.T})
+function check_property(::STLCWellTyped, e::OptExpr.T)
     @assert isdeterministic(e)
     @match e [
         Some(e) -> (@match typecheck(e) [
@@ -967,7 +1007,7 @@ end
 name(::STLCWellTyped)  = "stlcwelltyped"
 
 struct STLCMightType <: Property{STLC} end
-function check_property(::STLCMightType, e::Opt.T{Expr.T})
+function check_property(::STLCMightType, e::OptExpr.T)
     @assert isdeterministic(e)
     meets = might_typecheck(e)
     # assert this this is strictly weaker than full welltyped
@@ -978,7 +1018,7 @@ name(::STLCMightType)  = "stlcmighttype"
 
 
 struct STLCVarNumbers <: Property{STLC} end
-function check_property(::STLCVarNumbers, e::Opt.T{Expr.T})
+function check_property(::STLCVarNumbers, e::OptExpr.T)
     @assert isdeterministic(e)
     meets = var_numberings_good(e)
     # assert this this is strictly weaker than mighttype

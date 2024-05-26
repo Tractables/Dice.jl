@@ -2,12 +2,11 @@
 # https://github.com/jwshi21/etna/blob/main/bench-suite/Coq/STLC/Methods/BespokeGenerator.v
 
 
-Ctx = List{Typ.T}
 
-function gen_var(ctx::Ctx, t::Typ.T, p::DistNat, r::List{DistNat})::List{DistNat}
+function gen_var(ctx::Ctx.T, t::Typ.T, p::DistNat, r::List{DistNat})::List{DistNat}
     match(ctx, [
-        :Nil => () -> r,
-        :Cons => (t′, ctx′) -> @dice_ite if prob_equals(t, t′)
+        :nil => () -> r,
+        :cons => (t′, ctx′) -> @dice_ite if prob_equals(t, t′)
             gen_var(ctx′, t, p + DistNat(1), DistCons(p, r))
         else
             gen_var(ctx′, t, p + DistNat(1), r)
@@ -23,7 +22,7 @@ function bind_opt(f, ma::Opt.T{T})::Opt.T{<:Any} where T
 end
 
 # TODO: try returning expr instead of opt extr? what does env do?
-function gen_zero(env::Ctx, tau::Typ.T)
+function gen_zero(env::Ctx.T, tau::Typ.T)
     match(tau, [
         :TBool => ()       -> DistSome(DistBoolean(flip(0.5))), # TODO: should this be constant for just learning structure?
         :TFun  => (T1, T2) -> bind_opt(gen_zero(DistCons(T1, env), T2)) do e
@@ -45,7 +44,7 @@ function gen_bool()
     DistBoolean(flip(0.5))
 end
 
-function gen_expr(rs::RunState, env::Ctx, tau::Typ.T, sz::Integer, gen_typ_sz::Integer, by_sz, track_return)::Opt.T{Expr.T}
+function gen_expr(rs::RunState, env::Ctx.T, tau::Typ.T, sz::Integer, gen_typ_sz::Integer, by_sz, track_return)::OptExpr.T
     track_return(
         begin
             for_prefix = if by_sz "sz$(sz)_" else "" end

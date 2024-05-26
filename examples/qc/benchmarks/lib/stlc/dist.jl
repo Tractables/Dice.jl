@@ -11,6 +11,52 @@ module Expr
     @inductive T Var(DistNat) Bool(AnyBool) Abs(Typ.T, T) App(T, T)
 end
 
+module OptExpr
+    using Dice
+    using Main: Expr
+    @inductive T None() Some(Expr.T)
+end
+
+module ListTyp
+    using Dice
+    using Main: Typ
+    @inductive T nil() cons(Typ.T, T)
+end
+
+module ListNat
+    using Dice
+    @inductive T nil() cons(DistUInt32, T)
+end
+
+module ListOptExpr
+    using Dice
+    using Main: OptExpr
+    @inductive T nil() cons(OptExpr.T, T)
+end
+
+module Nat
+    using Dice
+    T = DistUInt32
+end
+
+module Ctx
+    using Dice
+    using Main: Typ
+    @inductive T nil() cons(Typ.T, T)
+end
+
+function one_of(default::OptExpr.T, l::ListOptExpr.T)::OptExpr.T
+    @match l [
+        nil() -> default,
+        cons(x, xs) -> @dice_ite if flip_reciprocal(length(l))
+            x
+        else
+            one_of(default, xs)
+        end
+    ]
+end
+
+
 to_coq(::Type{Expr.T}) = "Expr"
 to_coq(::Type{Typ.T}) = "Typ"
 
@@ -23,14 +69,14 @@ function term_size(e::Expr.T)
     ])
 end
 
-function term_size(e::Opt.T{Expr.T})
+function term_size(e::OptExpr.T)
     match(e, [
         :Some => e -> term_size(e),
         :None => () -> DistUInt32(1024),
     ])
 end
 
-function num_apps(e::Opt.T{Expr.T})
+function num_apps(e::OptExpr.T)
     match(e, [
         :Some => x -> num_apps(x),
         :None => () -> DistUInt32(1024),
@@ -62,7 +108,7 @@ function ctor_to_id(ctor::Expr.T)
     ])
 end
 
-function opt_ctor_to_id(opt_ctor::Opt.T{Expr.T})
+function opt_ctor_to_id(opt_ctor::OptExpr.T)
     match(opt_ctor, [
         :Some => ctor_to_id,
         :None => () -> DistInt32(-1),
@@ -355,7 +401,7 @@ function eq_structure(x::Expr.T, y::Expr.T)
     ]
 end
 
-function eq_except_numbers(x::Opt.T{Expr.T}, y::Opt.T{Expr.T})
+function eq_except_numbers(x::OptExpr.T, y::OptExpr.T)
     @match x [
         Some(xv) -> (@match y [
             Some(yv) -> eq_except_numbers(xv, yv),
@@ -368,7 +414,7 @@ function eq_except_numbers(x::Opt.T{Expr.T}, y::Opt.T{Expr.T})
     ]
 end
 
-function eq_structure(x::Opt.T{Expr.T}, y::Opt.T{Expr.T})
+function eq_structure(x::OptExpr.T, y::OptExpr.T)
     @match x [
         Some(xv) -> (@match y [
             Some(yv) -> eq_structure(xv, yv),
@@ -470,7 +516,7 @@ function might_typecheck(x::Expr.T, gamma, depth)
     ]
 end
 
-function might_typecheck(x::Opt.T{Expr.T})
+function might_typecheck(x::OptExpr.T)
     @match x [
         None() -> false,
         Some(xv) -> might_typecheck(xv, Dict(), 0) != :Error
@@ -496,7 +542,7 @@ function var_numberings_good(x::Expr.T, gamma, depth)
     ]
 end
 
-function var_numberings_good(x::Opt.T{Expr.T})
+function var_numberings_good(x::OptExpr.T)
     @match x [
         None() -> false,
         Some(xv) -> var_numberings_good(xv, Dict(), 0),
