@@ -4,46 +4,54 @@ module Typ
     using Dice
     @inductive T TBool() TFun(T, T)
 end
+to_coq(::Type{Typ.T}) = "Typ"
 
 module Expr
     using Dice
     using Main: DistNat, Typ
     @inductive T Var(DistNat) Bool(AnyBool) Abs(Typ.T, T) App(T, T)
 end
+to_coq(::Type{Expr.T}) = "Expr"
 
 module OptExpr
     using Dice
     using Main: Expr
     @inductive T None() Some(Expr.T)
 end
+to_coq(::Type{OptExpr.T}) = "option Expr"
 
 module ListTyp
     using Dice
     using Main: Typ
     @inductive T nil() cons(Typ.T, T)
 end
+to_coq(::Type{ListTyp.T}) = "list Typ"
 
 module ListNat
     using Dice
     @inductive T nil() cons(DistUInt32, T)
 end
+to_coq(::Type{ListNat.T}) = "list nat"
 
 module ListOptExpr
     using Dice
     using Main: OptExpr
     @inductive T nil() cons(OptExpr.T, T)
 end
+to_coq(::Type{ListOptExpr.T}) = "list option Expr"
 
 module Nat
     using Dice
     T = DistUInt32
 end
+to_coq(::Type{Nat.T}) = "nat"
 
 module Ctx
     using Dice
     using Main: Typ
     @inductive T nil() cons(Typ.T, T)
 end
+to_coq(::Type{Ctx.T}) = "Ctx"
 
 function one_of(default::OptExpr.T, l::ListOptExpr.T)::OptExpr.T
     @match l [
@@ -55,10 +63,6 @@ function one_of(default::OptExpr.T, l::ListOptExpr.T)::OptExpr.T
         end
     ]
 end
-
-
-to_coq(::Type{Expr.T}) = "Expr"
-to_coq(::Type{Typ.T}) = "Typ"
 
 function term_size(e::Expr.T)
     match(e, [

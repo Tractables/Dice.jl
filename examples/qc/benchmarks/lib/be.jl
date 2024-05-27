@@ -19,9 +19,9 @@ function gen_expr_lang(expr_size, typ_size)
   tfun(x, y) = L.Construct(Typ.T, :TFun, [x, y])
   tbool() = L.Construct(Typ.T, :TBool, [])
 
-  bind_opt_expr(x, sym, body) = L.BindGen(x, :__x,
-    L.Match(v(:__x), [
-      (:None, []) => L.Construct(OptExpr.T, :None, []),
+  bind_opt_expr(x, sym, body) = L.BindGen(x, :_x,
+    L.Match(v(:_x), [
+      (:None, []) => L.ReturnGen(L.Construct(OptExpr.T, :None, [])),
       (:Some, [sym]) => body
     ])
   )
@@ -38,7 +38,8 @@ function gen_expr_lang(expr_size, typ_size)
     ])
   )
 
-  genZero = L.Function("genZero", [p(:size, Nat.T)], L.G{OptExpr.T},
+  
+  genZero = L.Function("genZero", [p(:env, Ctx.T), p(:tau, Typ.T)], L.G{OptExpr.T},
     L.Match(v(:tau), [
       (:TBool, []) => L.BindGen(
         L.GenBool([]),
@@ -54,23 +55,26 @@ function gen_expr_lang(expr_size, typ_size)
 
   genTyp = L.Function("genTyp", [p(:size, Nat.T)], L.G{Typ.T},
     L.Match(L.Var(:size), [
-      (:Z, []) => tbool(),
-      (:S, [:size1]) => L.BindGen(
-        L.Call("genTyp", [v(:size1)]),
-        :T1,
-        L.BindGen(
+      (:O, []) => L.ReturnGen(tbool()),
+      (:S, [:size1]) => L.Frequency([v(:size)], [
+        "tbool" => L.ReturnGen(tbool()),
+        "tfun" => L.BindGen(
           L.Call("genTyp", [v(:size1)]),
-          :T2,
-          tfun(v(:T1), v(:T2))
-        )
-      )
+          :T1,
+          L.BindGen(
+            L.Call("genTyp", [v(:size1)]),
+            :T2,
+            L.ReturnGen(tfun(v(:T1), v(:T2)))
+          )
+        ),
+      ])
     ])
   )
 
   genExpr = L.Function("genExpr",
     [p(:env, ListTyp.T), p(:tau, Typ.T), p(:size, Nat.T)], L.G{OptExpr.T},
     L.Match(L.Var(:size), [
-      (:Z, []) =>
+      (:O, []) =>
         L.BindGen(
           L.Backtrack([v(:size)], [
             "var" => L.OneOf(
@@ -82,7 +86,7 @@ function gen_expr_lang(expr_size, typ_size)
             ),
             "zero" => L.Call("genZero", [v(:env), v(:tau)])
           ]),
-        :res, v(:res)),
+        :res, L.ReturnGen(v(:res))),
       (:S, [:size1]) =>
         L.BindGen(
           L.Backtrack([v(:size)], [
@@ -115,7 +119,7 @@ function gen_expr_lang(expr_size, typ_size)
                 )
             ])
           ]),
-        :res, v(:res))
+        :res, L.ReturnGen(v(:res)))
     ])
   )
 

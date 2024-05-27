@@ -136,11 +136,17 @@ function to_dist(rs::RunState, prog::L.Program)::Dist
     end
 end
 
+to_coq(::Type{L.G{T}}) where T = "G ($(to_coq(T)))"
+
 # Translate to a Coq program
-function to_coq(rs::RunState, _::GenerationParams{T}, prog::L.Program)::String where T
+function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String where T
     vals = compute(rs.var_vals, values(rs.adnodes_of_interest))
     adnodes_vals = Dict(s => vals[adnode] for (s, adnode) in rs.adnodes_of_interest)
-    before, after = sandwich(T)
+    before, after = if p isa LangBespokeSTLCGenerator
+        sandwichmaybestlc()
+    else
+        sandwich(T)
+    end
 
     segments = []
     # Emit line
@@ -162,10 +168,21 @@ function to_coq(rs::RunState, _::GenerationParams{T}, prog::L.Program)::String w
     # Append to last line
     function a!(s)
         @assert !isempty(segments)
+        # if starting a new line, include indent
+        if segments[end] == "" || segments[end][end] == '\n'
+            s = "  " ^ indent * s
+        end
         segments[end] = segments[end] * s
     end
     e!(before)
     e!()
+    function for_indent(f, iter)
+        indent += 1
+        map(f, iter)
+        indent -= 1
+    end
+
+    space() = a!(" ")
 
     function for_between(f, f_between, xs)
         for (i, x) in enumerate(xs)
@@ -175,6 +192,13 @@ function to_coq(rs::RunState, _::GenerationParams{T}, prog::L.Program)::String w
             end
         end
     end
+
+    function for_between_indent(f, f_between, xs)
+        indent += 1
+        for_between(f, f_between, xs)
+        indent -= 1
+    end
+
 
     function with_indent(f)
         indent += 1
@@ -236,79 +260,125 @@ function to_coq(rs::RunState, _::GenerationParams{T}, prog::L.Program)::String w
     end
 
     function visit(x::L.Construct)
-        a!("(")
-        for arg in x.args
+        a!("($(x.ctor) ")
+        for_between(space, x.args) do arg
             visit(arg)
         end
         a!(")")
     end
 
     function visit(x::L.Match)
+        a!("match ")
         visit(x.scrutinee)
-        for ((ctor, args), body) in x.branches
+        a!(" with")
+        for_indent(x.branches) do ((ctor, args), body)
+            o!("| $(ctor) $(join([string(arg) for arg in args], " ")) => ")
             visit(body)
         end
+        e!("end")
     end
 
     function visit(x::L.Call)
-        for arg in x.args
+        a!("($(x.f) ")
+        for_between(space, x.args) do arg
             visit(arg)
         end
+        a!(")")
     end
 
     function visit(x::L.Lambda)
-        visit(x.body)
+        e!("(fun $(join([string(param) for param in x.params], " ")) => ")
+        with_indent() do
+            visit(x.body)
+        end
+        a!(")")
     end
 
     function visit(x::L.Map)
+        e!("(map ")
         visit(x.f)
+        space()
         visit(x.l)
+        a!(")")
     end
 
     function visit(x::L.BindGen)
+        e!("(bindGen ")
         visit(x.gen)
-        visit(x.body)
+        space()
+        visit(L.Lambda([x.var], x.body))
+        a!(")")
     end
 
     function visit(x::L.ReturnGen)
+        e!("(returnGen ")
         visit(x.x)
+        a!(")")
     end
 
     function visit(x::L.OneOf)
+        e!("(oneOf_ ")
         visit(x.default)
+        space()
         visit(x.x)
+        a!(")")
     end
 
     function visit(x::L.Frequency)
-        for (name, body) in x.branches
+        e!("(freq [")
+        for_between_indent(() -> a!("; "), x.branches) do (name, body)
+            e!("(1, ")
             visit(body)
+            a!(")")
         end
+        a!("])")
     end
 
     function visit(x::L.Backtrack)
-        for (name, body) in x.branches
+        e!("(backtrack [")
+        for_between_indent(() -> a!("; "), x.branches) do (name, body)
+            e!("(1, ")
             visit(body)
+            a!(")")
         end
+        a!("])")
     end
 
     function visit(x::L.GenNat)
+        e!("arbitrary")
     end
 
     function visit(x::L.GenZ)
+        e!("arbitrary")
     end
 
     function visit(x::L.GenBool)
+        e!("arbitrary")
     end
 
     function visit(x::L.Function)
-        visit(x.body)
+        e!("Fixpoint $(x.name) ")
+        for_between(() -> a!(" "), x.params) do param
+            a!("($(param.name) : $(to_coq(param.ty)))")
+        end
+        a!(" : $(to_coq(x.ret_ty)) :=\n")
+        with_indent() do
+            visit(x.body)
+        end
+        a!(".")
+        e!()
     end
 
     function visit(x::L.Program)
         for f in x.functions
             visit(f)
         end
-        visit(x.res)
+        e!("Definition gSized :=\n")
+        with_indent() do
+            visit(x.res)
+        end
+        a!(".")
+        e!()
     end
     visit(prog)
 
