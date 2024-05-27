@@ -46,8 +46,8 @@ end
 function Dice.match(x::DistUInt32, branches)
     branch_dict = Dict(branches)
     @dice_ite if prob_equals(x, DistUInt32(0))
-        branch_dict["Z"]()
+        branch_dict[:O]()
     else
-        branch_dict["S"](sticky_sub(x, DistUInt32(1)))
+        branch_dict[:S](sticky_sub(x, DistUInt32(1)))
     end
 end
