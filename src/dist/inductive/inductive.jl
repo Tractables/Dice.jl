@@ -1,5 +1,7 @@
 # Distributions over inductively-defined types
-export @inductive, @match, matches, variants
+export @inductive, @match, matches, variants, InductiveType
+
+abstract type InductiveType <: Dist{Any} end
 
 # alternative to `nothing`, so `nothing` can be used as value
 _UNSET = gensym("unset")
@@ -105,7 +107,7 @@ macro inductive(type, constructors...)
     ]
     tvs = if type isa Expr && type.head == :curly map(esc, type.args[2:end]) else [] end
     quote
-        struct $(ty) <: $(esc(:(Dice.Dist{Base.Any})))
+        struct $(ty) <: $(esc(:(Dice.InductiveType))) 
             union::$(esc(:(Dice.DistTaggedUnion)))
         end
 
