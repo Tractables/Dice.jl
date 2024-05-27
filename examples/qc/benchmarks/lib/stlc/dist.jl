@@ -33,6 +33,13 @@ module ListNat
 end
 to_coq(::Type{ListNat.T}) = "list nat"
 
+function prob_map(dest_module, f, l::ListNat.T)
+    @match l [
+        nil() -> dest_module.nil(),
+        cons(hd, tl) -> dest_module.cons(f(hd), prob_map(dest_module, f, tl))
+    ]
+end
+
 module ListOptExpr
     using Dice
     using Main: OptExpr
@@ -52,6 +59,13 @@ module Ctx
     @inductive T nil() cons(Typ.T, T)
 end
 to_coq(::Type{Ctx.T}) = "Ctx"
+
+function Base.length(l::ListOptExpr.T)
+    @match l [
+        nil() -> DistUInt32(0),
+        cons(x, xs) -> DistUInt32(1) + length(xs),
+    ]
+end
 
 function one_of(default::OptExpr.T, l::ListOptExpr.T)::OptExpr.T
     @match l [

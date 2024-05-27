@@ -2,26 +2,26 @@ function gen_expr_lang(expr_size, typ_size)
   v = L.Var
   p = L.Param
 
-  nil_typ() = L.Construct(ListTyp.T, :nil, [])
-  cons_typ(hd, tl) = L.Construct(ListTyp.T, :cons, [hd, tl])
+  nil_typ() = L.Construct(ListTyp.nil, [])
+  cons_typ(hd, tl) = L.Construct(ListTyp.cons, [hd, tl])
 
-  nil_nat() = L.Construct(ListNat.T, :nil, [])
-  cons_nat(hd, tl) = L.Construct(ListNat.T, :cons, [hd, tl])
+  nil_nat() = L.Construct(ListNat.nil, [])
+  cons_nat(hd, tl) = L.Construct(ListNat.cons, [hd, tl])
 
-  none_expr() = L.Construct(OptExpr.T, :None, [])
-  some_expr(x) = L.Construct(OptExpr.T, :Some, [x])
+  none_expr() = L.Construct(OptExpr.None, [])
+  some_expr(x) = L.Construct(OptExpr.Some, [x])
 
-  app(x, y) = L.Construct(Expr.T, :App, [x, y])
-  var(n) = L.Construct(Expr.T, :Var, [n])
-  abs(x, y) = L.Construct(Expr.T, :Abs, [x, y])
-  bool(b) = L.Construct(Expr.T, :Bool, [b])
+  app(x, y) = L.Construct(Expr.App, [x, y])
+  var(n) = L.Construct(Expr.Var, [n])
+  abs(x, y) = L.Construct(Expr.Abs, [x, y])
+  bool(b) = L.Construct(Expr.Bool, [b])
 
-  tfun(x, y) = L.Construct(Typ.T, :TFun, [x, y])
-  tbool() = L.Construct(Typ.T, :TBool, [])
+  tfun(x, y) = L.Construct(Typ.TFun, [x, y])
+  tbool() = L.Construct(Typ.TBool, [])
 
   bind_opt_expr(x, sym, body) = L.BindGen(x, :_x,
     L.Match(v(:_x), [
-      (:None, []) => L.ReturnGen(L.Construct(OptExpr.T, :None, [])),
+      (:None, []) => L.ReturnGen(L.Construct(OptExpr.None, [])),
       (:Some, [sym]) => body
     ])
   )
@@ -76,10 +76,10 @@ function gen_expr_lang(expr_size, typ_size)
     L.Match(L.Var(:size), [
       (:O, []) =>
         L.BindGen(
-          L.Backtrack([v(:size)], [
+          L.Backtrack([v(:size)], none_expr(), [
             "var" => L.OneOf(
               L.ReturnGen(none_expr()),
-              L.Map(
+              L.Map(ListOptExpr,
                 L.Lambda([:x], L.ReturnGen(some_expr(var(v(:x))))),
                 L.Call("genVar'", [v(:env), v(:tau), L.Nat(0), nil_nat()])
               )
@@ -89,10 +89,10 @@ function gen_expr_lang(expr_size, typ_size)
         :res, L.ReturnGen(v(:res))),
       (:S, [:size1]) =>
         L.BindGen(
-          L.Backtrack([v(:size)], [
+          L.Backtrack([v(:size)], none_expr(), [
             "var" => L.OneOf(
               L.ReturnGen(none_expr()),
-              L.Map(
+              L.Map(ListOptExpr,
                 L.Lambda([:x], L.ReturnGen(some_expr(var(v(:x))))),
                 L.Call("genVar'", [v(:env), v(:tau), L.Nat(0), nil_nat()])
               )

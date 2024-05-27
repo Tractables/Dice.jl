@@ -1,3 +1,5 @@
+using Combinatorics: permutations
+
 function empty_stack(p)
     Tuple(0 for _ in 1:p.stack_size)
 end
@@ -62,12 +64,60 @@ end
 #     sample_from(xs)
 # end
 
-function backtrack(xs)
-    isempty(xs) && return DistNone()
-    x = sample_from(xs)
-    remove!(xs, x)
-    backtrack(xs)
+# function backtrack(xs)
+#     isempty(xs) && return DistNone()
+#     x = sample_from(xs)
+#     remove!(xs, x)
+#     backtrack(xs)
+# end
+
+# give a weight to the permutation
+function weight_of(weights_xs)
+    function helper(weights_xs)
+        weight, x = weights_xs[1]
+        if length(weights_xs) == 1
+            Dice.Constant(1), weight
+        else
+            rest = @view weights_xs[2:end]
+            w, rolling_sum = helper(rest)
+
+            rolling_sum += weight
+            w *= weight / rolling_sum
+
+            w, rolling_sum
+        end
+    end
+    w, _ = helper(weights_xs)
+    w
 end
+
+function shuffle(weights_xs)
+    weights, xs = [], []
+    for (weight, x) in weights_xs
+        push!(weights, weight)
+        push!(xs,x)
+    end
+
+    frequency(
+        (weight_of(perm), [x for (weight, x) in perm])
+        for perm in permutations(weights_xs)
+    )
+end
+
+function backtrack(default, weights_xs)
+    first_some(default, shuffle(weights_xs))
+end
+
+function first_some(default, xs)
+    isempty(xs) && return default
+    x, rest = xs[1], @view xs[2:end]
+    @dice_ite if Dice.matches(x, :Some)
+        x
+    else
+        first_some(default, rest)
+    end
+end
+
 
 function first_some(::Type{T}, xs) where T
     isempty(xs) && return DistNone(T)
@@ -281,6 +331,37 @@ function flip_for(rs, name, dependents)
     res
 end
 
+function backtrack_for(rs, name, dependents, casenames_xs, default)
+    casenames = []
+    xs = []
+    for (casename, x) in casenames_xs
+        push!(casenames, casename)
+        push!(xs, x)
+    end
+
+    res = nothing
+    support = support_mixed(dependents; as_dist=true)
+    @assert !isempty(support)
+    for dependents_vals in support
+        t = join([string(x) for x in dependents_vals], "%")
+        weights = [
+            register_weight!(rs, "$(name)_$(casename)%%$(t)")
+            for casename in casenames
+        ]
+        v = backtrack(default, collect(zip(weights, xs)))
+        if isnothing(res)
+            res = v
+        else
+            res = @dice_ite if prob_equals(dependents, dependents_vals)
+                v
+            else
+                res
+            end
+        end
+    end
+    res
+end
+
 function frequency_for(rs, name, dependents, casenames_xs)
     casenames = []
     xs = []
@@ -314,6 +395,10 @@ end
 
 function tocoq(i::Integer)
     "$(i)"
+end
+
+function tocoq(i::DistUInt32)
+    Dice.frombits(i, Dict())
 end
 
 function tocoq(v::Tuple)

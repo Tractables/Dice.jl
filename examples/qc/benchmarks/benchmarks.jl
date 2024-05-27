@@ -600,14 +600,9 @@ function to_subpath(p::LangBespokeSTLCGenerator)
     ]
 end
 function generate(rs::RunState, p::LangBespokeSTLCGenerator)
-    constructors_overapproximation = []
-    function add_ctor(v::OptExpr.T)
-        push!(constructors_overapproximation, v)
-        v
-    end
     prog = gen_expr_lang(p.expr_size, p.typ_size)
-    e = to_dist(rs, prog)
-    STLCGeneration(e, constructors_overapproximation)
+    res, prim_map, function_results = interp(rs, prog)
+    STLCGeneration(res, function_results["genExpr"])
 end
 
 function generation_params_emit_stats(rs::RunState, p::LangBespokeSTLCGenerator, s)

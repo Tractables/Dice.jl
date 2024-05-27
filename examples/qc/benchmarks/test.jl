@@ -18,7 +18,7 @@ function test(samples_per_batch, lr)
     mkdir(out_dir)
 
     log_path = "tmp/log"
-    rs = RunState(Valuation(), Dict{String,ADNode}(), open(log_path, "w"), out_dir, MersenneTwister(SEED))
+    rs = RunState(Valuation(), Dict{String,ADNode}(), open(log_path, "w"), out_dir, MersenneTwister(SEED), nothing)
 
     v = flip(register_weight!(rs, "v"; random_value=true))
 

@@ -28,8 +28,8 @@ if isempty(ARGS)
     #     intwidth=6,
     # )
     g_p = LangBespokeSTLCGenerator(
-        expr_size=5,
-        typ_size=2,
+        expr_size=2,
+        typ_size=1,
     )
     # g_p = DerivedGenerator{RBT}(
     #     root_ty=ColorKVTree.t,
@@ -129,7 +129,7 @@ if isfile(log_path) && !allow_overwrite
     exit(1)
 end
 mkpath(out_dir)
-rs = RunState(Valuation(), Dict{String,ADNode}(), open(log_path, "w"), out_dir, MersenneTwister(SEED))
+rs = RunState(Valuation(), Dict{String,ADNode}(), open(log_path, "w"), out_dir, MersenneTwister(SEED), nothing)
 
 println(stderr, "Logging to $(log_path)\n")
 

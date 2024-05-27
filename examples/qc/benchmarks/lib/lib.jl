@@ -10,6 +10,7 @@ struct RunState
     io::IO
     out_dir::String
     rng::AbstractRNG
+    prim_map
 end
 
 include("lang.jl")
