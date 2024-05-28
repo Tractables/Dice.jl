@@ -1,3 +1,5 @@
+using DataStructures
+
 module L
     using Dice: InductiveType
     # using DirectedAcyclicGraphs: Leaf, Inner
@@ -11,6 +13,10 @@ module L
         name::Symbol
         ty::Type
     end
+
+    mutable struct Loc <: Expr
+    end
+    NodeType(::Type{Loc}) = Leaf()
 
     # Basic operations
     mutable struct Var <: Expr
@@ -176,10 +182,30 @@ module L
     children(x::Program) = vcat(x.functions, [x.res])
 end
 
+function for_between(f, f_between, xs)
+    for (i, x) in enumerate(xs)
+        f(x)
+        if i < length(xs)
+            f_between()
+        end
+    end
+end
+
+function Base.show(io::IO, x::Union{L.Program,L.Function,L.Expr,L.Lambda})
+    ty = typeof(x)
+    show(io, ty)
+    print(io, "(")
+    for_between(() -> print(io, ", "), fieldnames(ty)) do field
+        show(getfield(x, field))
+    end
+    print(io, ")")
+end
+
 using DirectedAcyclicGraphs: children, isinner
 dumbprint(x) = [getfield(x, field) for field in fieldnames(typeof(x))]
 function check_tree(prog)
     prim_map = Dict()
+    loc_map = Dict()
 
     prim_cts = Dict(
         L.Frequency => 0,
@@ -191,14 +217,19 @@ function check_tree(prog)
 
     parent_of = Dict()
     seen = Set{Any}([prog])
-    to_visit = Any[prog]
+    to_visit = Deque{Any}()
+    push!(to_visit, prog)
     while !isempty(to_visit)
-        x = pop!(to_visit)
+        x = popfirst!(to_visit)
 
         xty = typeof(x)
         if haskey(prim_cts, xty)
             prim_cts[xty] += 1
             prim_map[x] = "$(nameof(xty))$(prim_cts[xty])"
+        end
+
+        if x isa L.Loc
+            loc_map[x] = length(loc_map) + 1
         end
 
         if isinner(x)
@@ -217,14 +248,14 @@ function check_tree(prog)
         end
     end
 
-    prim_map
+    prim_map, loc_map
 end
 
 Env = Dict{Symbol, Any}
 
 # Interpret to a Dice dist
 function interp(rs::RunState, prog::L.Program)
-    prim_map = check_tree(prog)
+    prim_map, loc_map = check_tree(prog)
 
     function with_binding(env, from, to)
         env2 = copy(env)
@@ -244,6 +275,10 @@ function interp(rs::RunState, prog::L.Program)
 
     function interp(env::Env, x::L.Var)
         env[x.s]
+    end
+
+    function interp(env::Env, x::L.Loc)
+        DistUInt32(loc_map[x])
     end
 
     function interp(env::Env, x::L.Nat)
@@ -413,7 +448,7 @@ to_coq(::Type{L.G{T}}) where T = "G ($(to_coq(T)))"
 
 # Translate to a Coq program
 function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String where T
-    prim_map = check_tree(prog)
+    prim_map, loc_map = check_tree(prog)
 
     vals = compute(rs.var_vals, values(rs.adnodes_of_interest))
     adnodes_vals = Dict(s => vals[adnode] for (s, adnode) in rs.adnodes_of_interest)
@@ -468,15 +503,6 @@ function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String w
 
     space() = a!(" ")
 
-    function for_between(f, f_between, xs)
-        for (i, x) in enumerate(xs)
-            f(x)
-            if i < length(xs)
-                f_between()
-            end
-        end
-    end
-
     function for_between_indent(f, f_between, xs)
         indent += 1
         for_between(f, f_between, xs)
@@ -493,6 +519,10 @@ function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String w
 
     function visit(x::L.Var)
         a!(string(x.s))
+    end
+
+    function visit(x::L.Loc)
+        a!(string(loc_map[x]))
     end
 
     function visit(x::L.Nat)
@@ -637,21 +667,28 @@ function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String w
     end
     
     function visit(x::L.Frequency)
-        e!("(freq [")
-        for_between_indent(() -> a!("; "), x.branches) do (brname, body)
-            e!("(")
-            ematch!("$(prim_map[x])_$(brname)", x.dependents)
-            a!(",")
-            visit(body)
-            a!(")")
+        name = prim_map[x]
+        if length(x.branches) == 1
+            e!("(* $(name) (single-branch) *) ")
+            visit(x.branches[1][2])
+        else
+            e!("(* $(name) *) (freq [")
+            for_between_indent(() -> a!("; "), x.branches) do (brname, body)
+                e!("(* $(brname) *) (")
+                ematch!("$(name)_$(brname)", x.dependents)
+                a!(",")
+                visit(body)
+                a!(")")
+            end
+            a!("])")
         end
-        a!("])")
     end
 
     function visit(x::L.Backtrack)
-        e!("(backtrack [")
+        name = prim_map[x]
+        e!("(* $(name) *) (backtrack [")
         for_between_indent(() -> a!("; "), x.branches) do (brname, body)
-            e!("(")
+            e!("((* $(brname) *)")
             ematch!("$(prim_map[x])_$(brname)", x.dependents)
             a!(",")
             visit(body)
@@ -662,6 +699,7 @@ function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String w
 
     function visit(x::L.GenNat)
         name = prim_map[x]
+        e!("(* $(name) *)")
         for n in twopowers(x.width)
             e!("(let _weight_$(n) := ")
             ematch!("$(name)_num$(n)", x.dependents)
@@ -677,6 +715,7 @@ function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String w
 
     function visit(x::L.GenZ)
         name = prim_map[x]
+        e!("(* $(name) *)")
         for n in twopowers(x.width)
             e!("(let _weight_$(n) := ")
             ematch!("$(name)_num$(n)", x.dependents)
@@ -692,7 +731,7 @@ function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String w
 
     function visit(x::L.GenBool)
         name = prim_map[x]
-        e!("(let _weight_true := ")
+        e!("(* $(name) *) (let _weight_true := ")
         ematch!("$(name)_true", x.dependents)
         e!("in")
         e!("freq [")

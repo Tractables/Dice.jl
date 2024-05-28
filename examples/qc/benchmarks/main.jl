@@ -1,14 +1,24 @@
 include("benchmarks.jl")
 
 GENERATION_PARAMS_LIST = [
-    TypeBasedSTLCGenerator(
-        size=5,
-        ty_size=2,
-        dependents=[:size,:stack_tail],
-        ty_dependents=[:size,:stack_tail],
+    # LangBespokeSTLCGenerator(
+    #     expr_size=5,
+    #     typ_size=2,
+    # ),
+    LangDerivedGenerator{STLC}(
+        root_ty=Expr.T,
+        ty_sizes=[Expr.T=>5, Typ.T=>2],
         stack_size=2,
         intwidth=6,
     ),
+    # TypeBasedSTLCGenerator(
+    #     size=5,
+    #     ty_size=2,
+    #     dependents=[:size,:stack_tail],
+    #     ty_dependents=[:size,:stack_tail],
+    #     stack_size=2,
+    #     intwidth=6,
+    # ),
     # DerivedGenerator{STLC}(
     #     root_ty=Expr.T,
     #     ty_sizes=[Expr.T=>4, Typ.T=>1],
@@ -59,6 +69,7 @@ println()
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
+            # ApproxSTLCConstructorEntropy() => lr,
             # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
             SamplingEntropy{STLC}(
                 resampling_frequency=resampling_frequency,

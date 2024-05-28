@@ -503,7 +503,7 @@ function generate(rs::RunState, p::DerivedGenerator{T}) where T
     end
     e = generate(rs, p, add_ctor)
     if T == STLC
-        STLCGeneration(OptExpr.Some(e), constructors_overapproximation)
+        STLCGeneration(OptExpr.Some(e), [OptExpr.Some(x) for x in constructors_overapproximation])
     elseif T == BST
         BSTGeneration(e, constructors_overapproximation)
     elseif T == RBT
@@ -525,6 +525,152 @@ function save_coq_generator(rs, p, s, f)
     end
     println_flush(rs.io, "Saved Coq generator to $(path)")
 end
+
+
+
+struct LangDerivedGenerator{T} <: GenerationParams{T}
+    root_ty::Type
+    ty_sizes::Vector{Pair{Type, Integer}}
+    stack_size::Integer
+    intwidth::Integer
+end
+LangDerivedGenerator{T}(; root_ty, ty_sizes, stack_size, intwidth) where T =
+    LangDerivedGenerator{T}(root_ty, ty_sizes, stack_size, intwidth)
+function to_subpath(p::LangDerivedGenerator{T}) where T
+    [
+        lowercase(string(T)),
+        "langderived",
+        "root_ty=$(p.root_ty)",
+        "ty-sizes=$(join(["$(ty)-$(size)" for (ty, size) in p.ty_sizes],"-"))",
+        "stack_size=$(p.stack_size)",
+        "intwidth=$(p.intwidth)",
+    ]
+end
+function generate(rs::RunState, p::LangDerivedGenerator{T}) where T
+    prog = derive_lang_generator(p)
+    res, prim_map, function_results = interp(rs, prog)
+    constructors_overapproximation = []
+    if T == STLC
+        STLCGeneration(OptExpr.Some(res), [OptExpr.Some(e) for e in function_results["genExpr"]])
+    elseif T == BST
+        BSTGeneration(res, function_results["genTree"])
+    elseif T == RBT
+        RBTGeneration(res, function_results["genExpr"])
+    else
+        error()
+    end
+end
+
+function generation_params_emit_stats(rs::RunState, p::LangDerivedGenerator, s)
+    prog = derive_lang_generator(p)
+
+    path = joinpath(rs.out_dir, "$(s)_Generator.v")
+    open(path, "w") do file
+        println(file, to_coq(rs, p, prog))
+    end
+    println_flush(rs.io, "Saved Coq generator to $(path)")
+    println_flush(rs.io)
+end
+
+function save_coq_generator(rs, p, s, f)
+    path = joinpath(rs.out_dir, "$(s)_Generator.v")
+    open(path, "w") do file
+        vals = compute(rs.var_vals, values(rs.adnodes_of_interest))
+        adnodes_vals = Dict(s => vals[adnode] for (s, adnode) in rs.adnodes_of_interest)
+        println(file, f(p, adnodes_vals, rs.io))
+    end
+    println_flush(rs.io, "Saved Coq generator to $(path)")
+end
+
+function derive_lang_generator(p::LangDerivedGenerator{T}) where T
+    stack_vars = [Symbol("stack$(i)") for i in 1:p.stack_size]
+
+    functions = []
+
+    tys, type_ctor_parami_to_id = collect_types(p.root_ty)
+
+    dependents() = vcat(
+        [L.Var(:size)],
+        [L.Var(x) for x in stack_vars]
+    )
+
+    for ty in tys
+        func = L.Function(
+            "gen$(to_coq(ty))",
+            vcat(
+                [L.Param(:size, Nat.T)],
+                [L.Param(stack_var, Nat.T) for stack_var in stack_vars],
+            ),
+            ty,
+            L.Match(L.Var(:size), [
+                if zero_case
+                    (:O, [])
+                else
+                    (:S, [:size1])
+                end =>
+                begin
+                    freq_branches = []
+                    for (varianti, (ctor, params)) in enumerate(variants(ty))
+                        if zero_case && ty in params
+                            continue
+                        end
+                        freq_branch = L.ReturnGen(L.Construct(
+                            ctor, [
+                                L.Var(Symbol("p$(i)"))
+                                for i in 1:length(params)
+                            ]
+                        ))
+                        for (parami, param) in reverse(collect(enumerate(params)))
+                            freq_branch = L.BindGen(
+                                if param in tys
+                                    L.Call("gen$(to_coq(param))", vcat(
+                                        [
+                                            if param == ty
+                                                L.Var(:size1)
+                                            else
+                                                L.Nat(Dict(p.ty_sizes)[param])
+                                            end
+                                        ],
+                                        [ L.Var(stack_vars[i]) for i in 2:p.stack_size ],
+                                        [L.Loc()],
+                                    ))
+                                elseif param == Nat.T
+                                    L.GenNat(dependents(), p.intwidth)
+                                elseif param == DistInt32
+                                    L.GenZ(dependents(), p.intwidth)
+                                elseif param == AnyBool
+                                    L.GenBool(dependents())
+                                else
+                                    error("bad param type $(param)")
+                                end,
+                                Symbol("p$(parami)"),
+                                freq_branch
+                            )
+                        end
+                        push!(freq_branches,
+                            "$(ctor)" => freq_branch
+                        )
+                    end
+                    L.Frequency( dependents(), freq_branches)
+                end
+                for zero_case in [true, false]
+            ])
+        )
+        push!(functions, func)
+    end
+
+    L.Program(
+        functions,
+        L.Call(
+            "gen$(to_coq(p.root_ty))",
+            vcat(
+                [L.Nat(Dict(p.ty_sizes)[p.root_ty])],
+                [L.Nat(0) for _ in 1:p.stack_size]
+            )
+        )
+    )
+end
+
 
 ##################################
 # Bespoke STLC generator

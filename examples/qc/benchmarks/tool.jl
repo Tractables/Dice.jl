@@ -1,14 +1,15 @@
 include("benchmarks.jl")
 
-TAG = "v34_stlc_derived_spec_structure_and_prob_eq"
-TAG = "v34_stlc_derived_unif_apps"
-TAG = "v34_rbt_derived"
-TAG = "v36_stlc_might_fixed"
-TAG = "v37_stlc_might2" # this one is stricter
-TAG = "v38_stlc_vars" # this one is stricter
-TAG = "v39_stlc_linapps"
-TAG = "v40_stlctb_abunch"
-# TAG = "test"
+# TAG = "v34_stlc_derived_spec_structure_and_prob_eq"
+# TAG = "v34_stlc_derived_unif_apps"
+# TAG = "v34_rbt_derived"
+# TAG = "v36_stlc_might_fixed"
+# TAG = "v37_stlc_might2" # this one is stricter
+# TAG = "v38_stlc_vars" # this one is stricter
+# TAG = "v39_stlc_linapps"
+# TAG = "v40_stlctb_abunch"
+TAG = "v40_langstlcbespoke"
+TAG = "v41_langderivedstlc"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS
@@ -21,16 +22,16 @@ if isempty(ARGS)
     #     num_dependents=[:size,:last_callsite],
     #     intwidth=6,
     # )
-    # g_p = DerivedGenerator{STLC}(
-    #     root_ty=Expr.T,
-    #     ty_sizes=[Expr.T=>4, Typ.T=>1],
-    #     stack_size=2,
-    #     intwidth=6,
-    # )
-    g_p = LangBespokeSTLCGenerator(
-        expr_size=2,
-        typ_size=1,
+    g_p = LangDerivedGenerator{STLC}(
+        root_ty=Expr.T,
+        ty_sizes=[Expr.T=>2, Typ.T=>1],
+        stack_size=2,
+        intwidth=6,
     )
+    # g_p = LangBespokeSTLCGenerator(
+    #     expr_size=2,
+    #     typ_size=1,
+    # )
     # g_p = DerivedGenerator{RBT}(
     #     root_ty=ColorKVTree.t,
     #     ty_sizes=Dict(ColorKVTree.t=>4, Color.T=>0),
@@ -78,7 +79,8 @@ if isempty(ARGS)
         #     forgiveness=0.1,
         #     rand_forgiveness=false,
         # ) => lr,
-        MLELossConfig{STLC}(NumApps(), Linear()) => lr,
+        ApproxSTLCConstructorEntropy() => lr,
+        # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
     ]
     push!(as, replace(string(g_p), " "=>""))
     push!(as, replace(string(l_p), " "=>""))
