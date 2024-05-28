@@ -25,7 +25,11 @@ module L
     NodeType(::Type{Var}) = Leaf()
 
     mutable struct Nat <: Expr
-        x::Unsigned
+        x::Integer
+        function Nat(x)
+            @assert x >= 0
+            new(x)
+        end
     end
     NodeType(::Type{Nat}) = Leaf()
 
@@ -196,7 +200,7 @@ function Base.show(io::IO, x::Union{L.Program,L.Function,L.Expr,L.Lambda})
     show(io, ty)
     print(io, "(")
     for_between(() -> print(io, ", "), fieldnames(ty)) do field
-        show(getfield(x, field))
+        show(io, getfield(x, field))
     end
     print(io, ")")
 end
@@ -726,7 +730,7 @@ function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String w
             e!("]) (fun n$(n) =>")
         end
         e!("  returnGen ($(join(["n$(n)" for n in twopowers(x.width)], " + ")))%Z")
-        e!(")" ^ (x.width * 2 + 1))
+        e!(")" ^ (x.width * 2))
     end
 
     function visit(x::L.GenBool)
@@ -741,7 +745,12 @@ function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String w
     end
 
     function visit(x::L.Function)
-        e!("Fixpoint $(x.name) ")
+        recursive = any((y -> y isa L.Call && y.f == x.name), x)
+        if recursive
+            e!("Fixpoint $(x.name) ")
+        else
+            e!("Definition $(x.name) ")
+        end
         for_between(() -> a!(" "), x.params) do param
             a!("($(param.name) : $(to_coq(param.ty)))")
         end

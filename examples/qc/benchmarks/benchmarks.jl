@@ -553,9 +553,9 @@ function generate(rs::RunState, p::LangDerivedGenerator{T}) where T
     if T == STLC
         STLCGeneration(OptExpr.Some(res), [OptExpr.Some(e) for e in function_results["genExpr"]])
     elseif T == BST
-        BSTGeneration(res, function_results["genTree"])
+        BSTGeneration(res) #, function_results["genTree"])
     elseif T == RBT
-        RBTGeneration(res, function_results["genExpr"])
+        RBTGeneration(res) #, function_results["genTree"])
     else
         error()
     end
@@ -594,7 +594,54 @@ function derive_lang_generator(p::LangDerivedGenerator{T}) where T
         [L.Var(x) for x in stack_vars]
     )
 
+    function gen(ty, zero_case)
+        freq_branches = []
+        for (varianti, (ctor, params)) in enumerate(variants(ty))
+            if zero_case && ty in params
+                continue
+            end
+            freq_branch = L.ReturnGen(L.Construct(
+                ctor, [
+                    L.Var(Symbol("p$(i)"))
+                    for i in 1:length(params)
+                ]
+            ))
+            for (parami, param) in reverse(collect(enumerate(params)))
+                freq_branch = L.BindGen(
+                    if param in tys
+                        L.Call("gen$(to_coq(param))", vcat(
+                            [
+                                if param == ty
+                                    L.Var(:size1)
+                                else
+                                    L.Nat(Dict(p.ty_sizes)[param])
+                                end
+                            ],
+                            [ L.Var(stack_vars[i]) for i in 2:p.stack_size ],
+                            [L.Loc()],
+                        ))
+                    elseif param == Nat.T
+                        L.GenNat(dependents(), p.intwidth)
+                    elseif param == DistInt32
+                        L.GenZ(dependents(), p.intwidth)
+                    elseif param == AnyBool
+                        L.GenBool(dependents())
+                    else
+                        error("bad param type $(param)")
+                    end,
+                    Symbol("p$(parami)"),
+                    freq_branch
+                )
+            end
+            push!(freq_branches,
+                "$(ctor)" => freq_branch
+            )
+        end
+        L.Frequency( dependents(), freq_branches)
+    end
+
     for ty in tys
+        recursive = any(ty in params for (ctor, params) in variants(ty))
         func = L.Function(
             "gen$(to_coq(ty))",
             vcat(
@@ -602,59 +649,14 @@ function derive_lang_generator(p::LangDerivedGenerator{T}) where T
                 [L.Param(stack_var, Nat.T) for stack_var in stack_vars],
             ),
             L.G{ty},
-            L.Match(L.Var(:size), [
-                if zero_case
-                    (:O, [])
-                else
-                    (:S, [:size1])
-                end =>
-                begin
-                    freq_branches = []
-                    for (varianti, (ctor, params)) in enumerate(variants(ty))
-                        if zero_case && ty in params
-                            continue
-                        end
-                        freq_branch = L.ReturnGen(L.Construct(
-                            ctor, [
-                                L.Var(Symbol("p$(i)"))
-                                for i in 1:length(params)
-                            ]
-                        ))
-                        for (parami, param) in reverse(collect(enumerate(params)))
-                            freq_branch = L.BindGen(
-                                if param in tys
-                                    L.Call("gen$(to_coq(param))", vcat(
-                                        [
-                                            if param == ty
-                                                L.Var(:size1)
-                                            else
-                                                L.Nat(Dict(p.ty_sizes)[param])
-                                            end
-                                        ],
-                                        [ L.Var(stack_vars[i]) for i in 2:p.stack_size ],
-                                        [L.Loc()],
-                                    ))
-                                elseif param == Nat.T
-                                    L.GenNat(dependents(), p.intwidth)
-                                elseif param == DistInt32
-                                    L.GenZ(dependents(), p.intwidth)
-                                elseif param == AnyBool
-                                    L.GenBool(dependents())
-                                else
-                                    error("bad param type $(param)")
-                                end,
-                                Symbol("p$(parami)"),
-                                freq_branch
-                            )
-                        end
-                        push!(freq_branches,
-                            "$(ctor)" => freq_branch
-                        )
-                    end
-                    L.Frequency( dependents(), freq_branches)
-                end
-                for zero_case in [true, false]
-            ])
+            if recursive
+                L.Match(L.Var(:size), [
+                    (:O, []) => gen(ty, true),
+                    (:S, [:size1]) => gen(ty, false),
+                ])
+            else
+                gen(ty, true)
+            end
         )
         push!(functions, func)
     end

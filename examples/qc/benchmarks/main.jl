@@ -5,12 +5,20 @@ GENERATION_PARAMS_LIST = [
     #     expr_size=5,
     #     typ_size=2,
     # ),
-    LangDerivedGenerator{STLC}(
-        root_ty=Expr.T,
-        ty_sizes=[Expr.T=>5, Typ.T=>2],
+    # LangDerivedGenerator{STLC}(
+    #     root_ty=Expr.T,
+    #     ty_sizes=[Expr.T=>5, Typ.T=>2],
+    #     stack_size=2,
+    #     intwidth=6,
+    # ),
+    LangDerivedGenerator{RBT}(
+        root_ty=ColorKVTree.t,
+        ty_sizes=[ColorKVTree.t=>5, Color.T=>0],
         stack_size=2,
         intwidth=6,
-    ),
+    )
+
+    # DEPRECATED
     # TypeBasedSTLCGenerator(
     #     size=5,
     #     ty_size=2,
@@ -46,6 +54,11 @@ FORIGIVENESS_LIST = [0]
 RAND_FORIGIVENESS_LIST = [true]
 RESAMPLING_FREQUENCY_LIST = [2]
 PROPERTY_LIST = [STLCVarNumbers(), STLCMightType(), STLCWellTyped()]
+PROPERTY_LIST = [MultipleInvariants([
+    BookkeepingInvariant(),
+    BalanceInvariant(),
+    OrderInvariant(),
+])]
 SAMPLES_PER_BATCH_LIST = [200]
 EPOCHS_LIST = [2_000]
 EQ_LIST = [:prob_equals, :eq_structure]

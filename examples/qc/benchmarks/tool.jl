@@ -71,27 +71,27 @@ if isempty(ARGS)
     ]
 
 
-    # g_p = LangDerivedGenerator{RBT}(
-    #     root_ty=ColorKVTree.t,
-    #     ty_sizes=[ColorKVTree.t=>2, Color.T=>0],
-    #     stack_size=2,
-    #     intwidth=6,
-    # )
-    # l_p = [
-    #     SamplingEntropy{RBT}(
-    #         resampling_frequency=1,
-    #         samples_per_batch=50,
-    #         property=MultipleInvariants([
-    #             BookkeepingInvariant(),
-    #             BalanceInvariant(),
-    #             OrderInvariant(),
-    #         ]),
-    #         eq=:prob_equals,
-    #         failure_penalty=fp,
-    #         forgiveness=0.1,
-    #         rand_forgiveness=false,
-    #     ) => lr,
-    # ]
+    g_p = LangDerivedGenerator{RBT}(
+        root_ty=ColorKVTree.t,
+        ty_sizes=[ColorKVTree.t=>2, Color.T=>0],
+        stack_size=2,
+        intwidth=6,
+    )
+    l_p = [
+        SamplingEntropy{RBT}(
+            resampling_frequency=1,
+            samples_per_batch=50,
+            property=MultipleInvariants([
+                BookkeepingInvariant(),
+                BalanceInvariant(),
+                OrderInvariant(),
+            ]),
+            eq=:prob_equals,
+            failure_penalty=fp,
+            forgiveness=0.1,
+            rand_forgiveness=false,
+        ) => lr,
+    ]
 
 
 
