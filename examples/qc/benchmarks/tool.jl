@@ -22,12 +22,6 @@ if isempty(ARGS)
     #     num_dependents=[:size,:last_callsite],
     #     intwidth=6,
     # )
-    g_p = LangDerivedGenerator{STLC}(
-        root_ty=Expr.T,
-        ty_sizes=[Expr.T=>2, Typ.T=>1],
-        stack_size=2,
-        intwidth=6,
-    )
     # g_p = LangBespokeSTLCGenerator(
     #     expr_size=2,
     #     typ_size=1,
@@ -56,32 +50,52 @@ if isempty(ARGS)
     # )
     lr = 0.5
     fp = 0.01
+    g_p = LangDerivedGenerator{STLC}(
+        root_ty=Expr.T,
+        ty_sizes=[Expr.T=>2, Typ.T=>1],
+        stack_size=2,
+        intwidth=6,
+    )
     l_p = [
-        # SamplingEntropy{RBT}(
-        #     resampling_frequency=1,
-        #     samples_per_batch=50,
-        #     property=MultipleInvariants([
-        #         BookkeepingInvariant(),
-        #         BalanceInvariant(),
-        #         OrderInvariant(),
-        #     ]),
-        #     eq=:prob_equals,
-        #     failure_penalty=fp,
-        #     forgiveness=0.1,
-        #     rand_forgiveness=false,
-        # ) => lr,
-        # SamplingEntropy{STLC}(
-        #     resampling_frequency=1,
-        #     samples_per_batch=50,
-        #     property=STLCVarNumbers(),
-        #     eq=:prob_equals,
-        #     failure_penalty=fp,
-        #     forgiveness=0.1,
-        #     rand_forgiveness=false,
-        # ) => lr,
-        ApproxSTLCConstructorEntropy() => lr,
+        SamplingEntropy{STLC}(
+            resampling_frequency=1,
+            samples_per_batch=50,
+            property=STLCVarNumbers(),
+            eq=:prob_equals,
+            failure_penalty=fp,
+            forgiveness=0.1,
+            rand_forgiveness=false,
+        ) => lr,
+
+        # ApproxSTLCConstructorEntropy() => lr,
         # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
     ]
+
+
+    # g_p = LangDerivedGenerator{RBT}(
+    #     root_ty=ColorKVTree.T,
+    #     ty_sizes=[ColorKVTree.T=>2, Color.T=>0],
+    #     stack_size=2,
+    #     intwidth=6,
+    # )
+    # lp = [
+    #     SamplingEntropy{RBT}(
+    #         resampling_frequency=1,
+    #         samples_per_batch=50,
+    #         property=MultipleInvariants([
+    #             BookkeepingInvariant(),
+    #             BalanceInvariant(),
+    #             OrderInvariant(),
+    #         ]),
+    #         eq=:prob_equals,
+    #         failure_penalty=fp,
+    #         forgiveness=0.1,
+    #         rand_forgiveness=false,
+    #     ) => lr,
+    # ]
+
+
+
     push!(as, replace(string(g_p), " "=>""))
     push!(as, replace(string(l_p), " "=>""))
     push!(as, string(10))

@@ -601,7 +601,7 @@ function derive_lang_generator(p::LangDerivedGenerator{T}) where T
                 [L.Param(:size, Nat.T)],
                 [L.Param(stack_var, Nat.T) for stack_var in stack_vars],
             ),
-            ty,
+            L.G{ty},
             L.Match(L.Var(:size), [
                 if zero_case
                     (:O, [])
