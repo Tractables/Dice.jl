@@ -709,8 +709,8 @@ function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String w
             e!("  (100-_weight_$(n), returnGen 0)")
             e!("]) (fun n$(n) =>")
         end
-        e!("  $(join(["n$(n)" for n in twopowers(x.width)], " + "))")
-        e!(")" ^ (x.width + 1))
+        e!("  returnGen ($(join(["n$(n)" for n in twopowers(x.width)], " + ")))")
+        e!(")" ^ (x.width * 2))
     end
 
     function visit(x::L.GenZ)
@@ -725,8 +725,8 @@ function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String w
             e!("  (100-_weight_$(n), returnGen 0%Z)")
             e!("]) (fun n$(n) =>")
         end
-        e!("  ($(join(["n$(n)" for n in twopowers(x.width)], " + ")))%Z")
-        e!(")" ^ (x.width + 1))
+        e!("  returnGen ($(join(["n$(n)" for n in twopowers(x.width)], " + ")))%Z")
+        e!(")" ^ (x.width * 2 + 1))
     end
 
     function visit(x::L.GenBool)

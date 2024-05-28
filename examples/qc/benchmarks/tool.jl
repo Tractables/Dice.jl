@@ -8,7 +8,6 @@ include("benchmarks.jl")
 # TAG = "v38_stlc_vars" # this one is stricter
 # TAG = "v39_stlc_linapps"
 # TAG = "v40_stlctb_abunch"
-TAG = "v40_langstlcbespoke"
 TAG = "v41_langderivedstlc"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
@@ -21,10 +20,6 @@ if isempty(ARGS)
     #     leaf_dependents=[:size,:last_callsite],
     #     num_dependents=[:size,:last_callsite],
     #     intwidth=6,
-    # )
-    # g_p = LangBespokeSTLCGenerator(
-    #     expr_size=2,
-    #     typ_size=1,
     # )
     # g_p = DerivedGenerator{RBT}(
     #     root_ty=ColorKVTree.t,
@@ -56,6 +51,10 @@ if isempty(ARGS)
         stack_size=2,
         intwidth=6,
     )
+    # g_p = LangBespokeSTLCGenerator(
+    #     expr_size=2,
+    #     typ_size=1,
+    # )
     l_p = [
         SamplingEntropy{STLC}(
             resampling_frequency=1,
@@ -73,12 +72,12 @@ if isempty(ARGS)
 
 
     # g_p = LangDerivedGenerator{RBT}(
-    #     root_ty=ColorKVTree.T,
-    #     ty_sizes=[ColorKVTree.T=>2, Color.T=>0],
+    #     root_ty=ColorKVTree.t,
+    #     ty_sizes=[ColorKVTree.t=>2, Color.T=>0],
     #     stack_size=2,
     #     intwidth=6,
     # )
-    # lp = [
+    # l_p = [
     #     SamplingEntropy{RBT}(
     #         resampling_frequency=1,
     #         samples_per_batch=50,
