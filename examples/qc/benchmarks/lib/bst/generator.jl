@@ -83,7 +83,7 @@ function typebased_gen_tree(rs, p, size::Integer, last_callsite, track_return)
     )
 end
 
-function tree_size(e::KVTree.T)
+function tree_size(e::KVTree.t)
     match(e, [
         :Leaf => () -> DistUInt32(0),
         :Node => (l, k, v, r) -> DistUInt32(1) + tree_size(l) + tree_size(r),

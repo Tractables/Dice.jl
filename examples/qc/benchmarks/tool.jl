@@ -9,6 +9,7 @@ include("benchmarks.jl")
 # TAG = "v39_stlc_linapps"
 # TAG = "v40_stlctb_abunch"
 TAG = "v41_langderivedstlc"
+TAG = "v42_langsiblingderivedrbt"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS
@@ -45,9 +46,9 @@ if isempty(ARGS)
     # )
     lr = 0.5
     fp = 0.01
-    g_p = LangDerivedGenerator{STLC}(
-        root_ty=Expr.T,
-        ty_sizes=[Expr.T=>2, Typ.T=>1],
+    g_p = LangSiblingDerivedGenerator{STLC}(
+        root_ty=Expr.t,
+        ty_sizes=[Expr.t=>2, Typ.t=>2],
         stack_size=2,
         intwidth=6,
     )
@@ -71,27 +72,27 @@ if isempty(ARGS)
     ]
 
 
-    g_p = LangSiblingDerivedGenerator{RBT}(
-        root_ty=ColorKVTree.t,
-        ty_sizes=[ColorKVTree.t=>2, Color.t=>0],
-        stack_size=2,
-        intwidth=6,
-    )
-    l_p = [
-        SamplingEntropy{RBT}(
-            resampling_frequency=1,
-            samples_per_batch=50,
-            property=MultipleInvariants([
-                BookkeepingInvariant(),
-                BalanceInvariant(),
-                OrderInvariant(),
-            ]),
-            eq=:prob_equals,
-            failure_penalty=fp,
-            forgiveness=0.1,
-            rand_forgiveness=false,
-        ) => lr,
-    ]
+    # g_p = LangSiblingDerivedGenerator{RBT}(
+    #     root_ty=ColorKVTree.t,
+    #     ty_sizes=[ColorKVTree.t=>2, Color.t=>0],
+    #     stack_size=2,
+    #     intwidth=6,
+    # )
+    # l_p = [
+    #     SamplingEntropy{RBT}(
+    #         resampling_frequency=1,
+    #         samples_per_batch=50,
+    #         property=MultipleInvariants([
+    #             BookkeepingInvariant(),
+    #             BalanceInvariant(),
+    #             OrderInvariant(),
+    #         ]),
+    #         eq=:prob_equals,
+    #         failure_penalty=fp,
+    #         forgiveness=0.1,
+    #         rand_forgiveness=false,
+    #     ) => lr,
+    # ]
 
 
 

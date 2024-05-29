@@ -2,38 +2,38 @@
 
 module Typ
     using Dice
-    @inductive T TBool() TFun(T, T)
+    @inductive t TBool() TFun(t, t)
 end
-to_coq(::Type{Typ.T}) = "Typ"
+to_coq(::Type{Typ.t}) = "Typ"
 
 module Expr
     using Dice
     using Main: DistNat, Typ
-    @inductive T Var(DistNat) Bool(AnyBool) Abs(Typ.T, T) App(T, T)
+    @inductive t Var(DistNat) Bool(AnyBool) Abs(Typ.t, t) App(t, t)
 end
-to_coq(::Type{Expr.T}) = "Expr"
+to_coq(::Type{Expr.t}) = "Expr"
 
 module OptExpr
     using Dice
     using Main: Expr
-    @inductive T None() Some(Expr.T)
+    @inductive t None() Some(Expr.t)
 end
-to_coq(::Type{OptExpr.T}) = "option Expr"
+to_coq(::Type{OptExpr.t}) = "option Expr"
 
 module ListTyp
     using Dice
     using Main: Typ
-    @inductive T nil() cons(Typ.T, T)
+    @inductive t nil() cons(Typ.t, t)
 end
-to_coq(::Type{ListTyp.T}) = "list Typ"
+to_coq(::Type{ListTyp.t}) = "list Typ"
 
 module ListNat
     using Dice
-    @inductive T nil() cons(DistUInt32, T)
+    @inductive t nil() cons(DistUInt32, t)
 end
-to_coq(::Type{ListNat.T}) = "list nat"
+to_coq(::Type{ListNat.t}) = "list nat"
 
-function prob_map(dest_module, f, l::ListNat.T)
+function prob_map(dest_module, f, l::ListNat.t)
     @match l [
         nil() -> dest_module.nil(),
         cons(hd, tl) -> dest_module.cons(f(hd), prob_map(dest_module, f, tl))
@@ -43,31 +43,31 @@ end
 module ListOptExpr
     using Dice
     using Main: OptExpr
-    @inductive T nil() cons(OptExpr.T, T)
+    @inductive t nil() cons(OptExpr.t, t)
 end
-to_coq(::Type{ListOptExpr.T}) = "list option Expr"
+to_coq(::Type{ListOptExpr.t}) = "list option Expr"
 
 module Nat
     using Dice
-    T = DistUInt32
+    t = DistUInt32
 end
-to_coq(::Type{Nat.T}) = "nat"
+to_coq(::Type{Nat.t}) = "nat"
 
 module Ctx
     using Dice
     using Main: Typ
-    @inductive T nil() cons(Typ.T, T)
+    @inductive t nil() cons(Typ.t, t)
 end
-to_coq(::Type{Ctx.T}) = "Ctx"
+to_coq(::Type{Ctx.t}) = "Ctx"
 
-function Base.length(l::ListOptExpr.T)
+function Base.length(l::ListOptExpr.t)
     @match l [
         nil() -> DistUInt32(0),
         cons(x, xs) -> DistUInt32(1) + length(xs),
     ]
 end
 
-function one_of(default::OptExpr.T, l::ListOptExpr.T)::OptExpr.T
+function one_of(default::OptExpr.t, l::ListOptExpr.t)::OptExpr.t
     @match l [
         nil() -> default,
         cons(x, xs) -> @dice_ite if flip_reciprocal(length(l))
@@ -78,7 +78,7 @@ function one_of(default::OptExpr.T, l::ListOptExpr.T)::OptExpr.T
     ]
 end
 
-function term_size(e::Expr.T)
+function term_size(e::Expr.t)
     match(e, [
         :Var     => (i)        -> DistUInt32(1),
         :Bool => (b)        -> DistUInt32(1),
@@ -87,21 +87,21 @@ function term_size(e::Expr.T)
     ])
 end
 
-function term_size(e::OptExpr.T)
+function term_size(e::OptExpr.t)
     match(e, [
         :Some => e -> term_size(e),
         :None => () -> DistUInt32(1024),
     ])
 end
 
-function num_apps(e::OptExpr.T)
+function num_apps(e::OptExpr.t)
     match(e, [
         :Some => x -> num_apps(x),
         :None => () -> DistUInt32(1024),
     ])
 end
 
-function num_apps(e::Expr.T)
+function num_apps(e::Expr.t)
     match(e, [
         :Var     => (i)        -> DistUInt32(0),
         :Bool => (b)        -> DistUInt32(0),
@@ -117,7 +117,7 @@ stlc_ctor_to_id = Dict(
     :Abs => DistInt32(3),
 )
 
-function ctor_to_id(ctor::Expr.T)
+function ctor_to_id(ctor::Expr.t)
     match(ctor, [
         :Var => _ -> stlc_ctor_to_id[:Var]
         :Bool => _ -> stlc_ctor_to_id[:Bool]
@@ -126,7 +126,7 @@ function ctor_to_id(ctor::Expr.T)
     ])
 end
 
-function opt_ctor_to_id(opt_ctor::OptExpr.T)
+function opt_ctor_to_id(opt_ctor::OptExpr.t)
     match(opt_ctor, [
         :Some => ctor_to_id,
         :None => () -> DistInt32(-1),
@@ -249,30 +249,30 @@ function to_int(x::DistUInt32)
     first(keys(dist))
 end
 
-function typecheck(ast::Expr.T, gamma, depth=0)::Opt.T{Typ.T}
+function typecheck(ast::Expr.t, gamma, depth=0)::Opt.T{Typ.t}
     @match ast [
         Var(i) -> begin
             var_depth = depth - to_int(i) - 1
-            haskey(gamma, var_depth) || return Opt.None(Typ.T)
+            haskey(gamma, var_depth) || return Opt.None(Typ.t)
             Opt.Some(gamma[var_depth])
         end,
         Bool(_) -> Opt.Some(Typ.TBool()),
         Abs(t_in, e) -> begin
             gamma′ = copy(gamma)
             gamma′[depth] = t_in
-            Opt.map(Typ.T, typecheck(e, gamma′, depth + 1)) do t_out
+            Opt.map(Typ.t, typecheck(e, gamma′, depth + 1)) do t_out
                 Typ.TFun(t_in, t_out)
             end
         end,
         App(e1, e2) -> begin
-            Opt.bind(Typ.T, typecheck(e1, gamma, depth)) do t1
+            Opt.bind(Typ.t, typecheck(e1, gamma, depth)) do t1
                 @match t1 [
-                    TBool() -> Opt.None(Typ.T),
-                    TFun(t1_in, t1_out) -> Opt.bind(Typ.T, typecheck(e2, gamma, depth)) do t2
+                    TBool() -> Opt.None(Typ.t),
+                    TFun(t1_in, t1_out) -> Opt.bind(Typ.t, typecheck(e2, gamma, depth)) do t2
                         if prob_equals(t1_in, t2)
                             Opt.Some(t1_out)
                         else
-                            Opt.None(Typ.T)
+                            Opt.None(Typ.t)
                         end
                     end,
                 ]
@@ -339,7 +339,7 @@ function typecheck(ast::Tuple, gamma, depth=0)
 end
 
 
-function eq_except_numbers(x::Typ.T, y::Typ.T)
+function eq_except_numbers(x::Typ.t, y::Typ.t)
     @match x [
         TBool() -> (@match y [
             TBool() -> true,
@@ -352,7 +352,7 @@ function eq_except_numbers(x::Typ.T, y::Typ.T)
     ]
 end
 
-function eq_except_numbers(x::Expr.T, y::Expr.T)
+function eq_except_numbers(x::Expr.t, y::Expr.t)
     @match x [
         Var(_) -> (@match y [
             Var(_) -> true,
@@ -381,7 +381,7 @@ function eq_except_numbers(x::Expr.T, y::Expr.T)
     ]
 end
 
-function has_app(x::Expr.T)
+function has_app(x::Expr.t)
     @match x [
         Var(_) -> false,
         Bool(_) -> false,
@@ -390,7 +390,7 @@ function has_app(x::Expr.T)
     ]
 end
 
-function eq_structure(x::Expr.T, y::Expr.T)
+function eq_structure(x::Expr.t, y::Expr.t)
     @match x [
         Var(_) -> (@match y [
             Var(_) -> true,
@@ -419,7 +419,7 @@ function eq_structure(x::Expr.T, y::Expr.T)
     ]
 end
 
-function eq_except_numbers(x::OptExpr.T, y::OptExpr.T)
+function eq_except_numbers(x::OptExpr.t, y::OptExpr.t)
     @match x [
         Some(xv) -> (@match y [
             Some(yv) -> eq_except_numbers(xv, yv),
@@ -432,7 +432,7 @@ function eq_except_numbers(x::OptExpr.T, y::OptExpr.T)
     ]
 end
 
-function eq_structure(x::OptExpr.T, y::OptExpr.T)
+function eq_structure(x::OptExpr.t, y::OptExpr.t)
     @match x [
         Some(xv) -> (@match y [
             Some(yv) -> eq_structure(xv, yv),
@@ -458,7 +458,7 @@ function eq_num_apps(x::Opt.T{T}, y::Opt.T{T}) where T
     ]
 end
 
-function sat_num_apps(e::Expr.T, k::DistUInt32)
+function sat_num_apps(e::Expr.t, k::DistUInt32)
     @match e [
         Var(_) -> DistUInt32(0),
         Bool(_) -> DistUInt32(0),
@@ -494,7 +494,7 @@ function eq_has_app(x::Opt.T{T}, y::Opt.T{T}) where T
     ]
 end
 
-function might_typecheck(x::Expr.T, gamma, depth)
+function might_typecheck(x::Expr.t, gamma, depth)
     @match x [
         Var(i) -> begin
             i = Dice.frombits(i, Dict())
@@ -534,14 +534,14 @@ function might_typecheck(x::Expr.T, gamma, depth)
     ]
 end
 
-function might_typecheck(x::OptExpr.T)
+function might_typecheck(x::OptExpr.t)
     @match x [
         None() -> false,
         Some(xv) -> might_typecheck(xv, Dict(), 0) != :Error
     ]
 end
 
-function var_numberings_good(x::Expr.T, gamma, depth)
+function var_numberings_good(x::Expr.t, gamma, depth)
     @match x [
         Var(i) -> begin
             i = Dice.frombits(i, Dict())
@@ -560,7 +560,7 @@ function var_numberings_good(x::Expr.T, gamma, depth)
     ]
 end
 
-function var_numberings_good(x::OptExpr.T)
+function var_numberings_good(x::OptExpr.t)
     @match x [
         None() -> false,
         Some(xv) -> var_numberings_good(xv, Dict(), 0),

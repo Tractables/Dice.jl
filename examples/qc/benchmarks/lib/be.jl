@@ -27,7 +27,7 @@ function gen_expr_lang(expr_size, typ_size)
   )
 
   genVar = L.Function("genVar'",
-    [p(:ctx, Ctx.T), p(:t, Typ.T), p(:p, Nat.T), p(:r, ListNat.T)], ListNat.T,
+    [p(:ctx, Ctx.t), p(:t, Typ.t), p(:p, Nat.t), p(:r, ListNat.t)], ListNat.t,
     L.Match(v(:ctx), [
       (:nil, []) => v(:r),
       (:cons, [:t1, :ctx1]) => L.If(
@@ -39,7 +39,7 @@ function gen_expr_lang(expr_size, typ_size)
   )
 
   
-  genZero = L.Function("genZero", [p(:env, Ctx.T), p(:tau, Typ.T)], L.G{OptExpr.T},
+  genZero = L.Function("genZero", [p(:env, Ctx.t), p(:tau, Typ.t)], L.G{OptExpr.t},
     L.Match(v(:tau), [
       (:TBool, []) => L.BindGen(
         L.GenBool([]),
@@ -53,7 +53,7 @@ function gen_expr_lang(expr_size, typ_size)
     ])
   )
 
-  genTyp = L.Function("genTyp", [p(:size, Nat.T)], L.G{Typ.T},
+  genTyp = L.Function("genTyp", [p(:size, Nat.t)], L.G{Typ.t},
     L.Match(L.Var(:size), [
       (:O, []) => L.ReturnGen(tbool()),
       (:S, [:size1]) => L.Frequency([v(:size)], [
@@ -72,7 +72,7 @@ function gen_expr_lang(expr_size, typ_size)
   )
 
   genExpr = L.Function("genExpr",
-    [p(:env, ListTyp.T), p(:tau, Typ.T), p(:size, Nat.T)], L.G{OptExpr.T},
+    [p(:env, ListTyp.t), p(:tau, Typ.t), p(:size, Nat.t)], L.G{OptExpr.t},
     L.Match(L.Var(:size), [
       (:O, []) =>
         L.BindGen(

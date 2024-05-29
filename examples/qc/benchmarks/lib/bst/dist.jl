@@ -2,7 +2,7 @@
 module KVTree
     using Dice
     using Main: DistNat
-    @inductive T Leaf() Node(T, DistNat, DistNat, T)
+    @inductive t Leaf() Node(t, DistNat, DistNat, t)
 end
 
 bst_ctor_to_id = Dict(
@@ -10,14 +10,14 @@ bst_ctor_to_id = Dict(
     :Node => DistInt32(1),
 )
 
-function ctor_to_id(ctor::KVTree.T)
+function ctor_to_id(ctor::KVTree.t)
     match(ctor, [
         :Leaf => () -> bst_ctor_to_id[:Leaf]
         :Node => (_, _, _, _) -> bst_ctor_to_id[:Node]
     ])
 end
 
-function satisfies_order_invariant(t::KVTree.T)
+function satisfies_order_invariant(t::KVTree.t)
     function helper(t, lo, hi)
         @match t [
             Leaf() -> true,
@@ -32,7 +32,7 @@ function satisfies_order_invariant(t::KVTree.T)
     helper(t, nothing, nothing)
 end
 
-function eq_except_numbers(x::KVTree.T, y::KVTree.T)
+function eq_except_numbers(x::KVTree.t, y::KVTree.t)
     @match x [
         Leaf() -> (@match y [
             Leaf() -> true,

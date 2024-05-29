@@ -121,7 +121,7 @@ module L
     mutable struct Map <: Expr
         dest_module::Module
         f::Lambda
-        l::Expr # must be a dist that defines map, like ListExpr.T
+        l::Expr # must be a dist that defines map, like ListExpr.t
     end
     NodeType(::Type{Map}) = Inner()
     children(x::Map) = [x.f, x.l]
@@ -143,7 +143,7 @@ module L
 
     mutable struct OneOf <: Expr
         default::Expr
-        x::Expr # must be a dist that defines map, like ListExpr.T
+        x::Expr # must be a dist that defines map, like ListExpr.t
     end
     NodeType(::Type{OneOf}) = Inner()
     children(x::OneOf) = [x.default, x.x]
@@ -717,13 +717,17 @@ function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String w
         end
         a!(") with")
         
-        cases = matchid_to_cases[name]
-        cases = sort(cases)
-        for (name, w) in cases
-            e!("| $(name) => $(w)")
-        end
-        if !isempty(dependents)
-            e!("| _ => 500")
+        if haskey(matchid_to_cases, name)
+            cases = matchid_to_cases[name]
+            cases = sort(cases)
+            for (name, w) in cases
+                e!("| $(name) => $(w)")
+            end
+            if !isempty(dependents)
+                e!("| _ => 500")
+            end
+        else
+            e!("(* This match is dead code *) | _ => 500")
         end
         e!("end")
     end

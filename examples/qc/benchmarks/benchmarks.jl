@@ -460,8 +460,8 @@ end
 
 
 struct STLCGeneration <: Generation{STLC}
-    e::OptExpr.T
-    constructors_overapproximation::Vector{OptExpr.T}
+    e::OptExpr.t
+    constructors_overapproximation::Vector{OptExpr.t}
 end
 function generation_emit_stats(rs::RunState, g::STLCGeneration, s::String)
     println_flush(rs.io, "Saving samples...")
@@ -497,7 +497,7 @@ function to_subpath(p::DerivedGenerator{T}) where T
 end
 function generate(rs::RunState, p::DerivedGenerator{T}) where T
     constructors_overapproximation = []
-    function add_ctor(v::OptExpr.T)
+    function add_ctor(v::OptExpr.t)
         push!(constructors_overapproximation, v)
         v
     end
@@ -664,7 +664,7 @@ function derive_lang_generator(p::LangDerivedGenerator{T}) where T
                             [ L.Var(stack_vars[i]) for i in 2:p.stack_size ],
                             [L.Loc()],
                         ))
-                    elseif param == Nat.T
+                    elseif param == Nat.t
                         L.GenNat(dependents(), p.intwidth)
                     elseif param == DistInt32
                         L.GenZ(dependents(), p.intwidth)
@@ -689,8 +689,8 @@ function derive_lang_generator(p::LangDerivedGenerator{T}) where T
         func = L.Function(
             "gen$(to_coq(ty))",
             vcat(
-                [L.Param(:size, Nat.T)],
-                [L.Param(stack_var, Nat.T) for stack_var in stack_vars],
+                [L.Param(:size, Nat.t)],
+                [L.Param(stack_var, Nat.t) for stack_var in stack_vars],
             ),
             L.G{ty},
             if recursive
@@ -718,47 +718,77 @@ function derive_lang_generator(p::LangDerivedGenerator{T}) where T
     )
 end
 
+unctor = Dict()
+
 module LeafCtorColorKVTree
     using Dice
     @inductive t LeafCtorColorKVTree_E()
 end
 to_coq(::Type{LeafCtorColorKVTree.t}) = "LeafCtorColorKVTree"
+unctor[LeafCtorColorKVTree.LeafCtorColorKVTree_E] = ColorKVTree.E
+module CtorColorKVTree
+    using Dice
+    @inductive t CtorColorKVTree_E() CtorColorKVTree_T()
+end
+to_coq(::Type{CtorColorKVTree.t}) = "CtorColorKVTree"
+unctor[CtorColorKVTree.CtorColorKVTree_T] = ColorKVTree.T
+unctor[CtorColorKVTree.CtorColorKVTree_E] = ColorKVTree.E
+ctor_tys(::Type{ColorKVTree.t}) = [CtorColorKVTree.t, LeafCtorColorKVTree.t]
 
 module LeafCtorColor
     using Dice
     @inductive t LeafCtorColor_R() LeafCtorColor_B()
 end
 to_coq(::Type{LeafCtorColor.t}) = "LeafCtorColor"
-
-module CtorColorKVTree
-    using Dice
-    @inductive t CtorColorKVTree_E() CtorColorKVTree_T()
-end
-to_coq(::Type{CtorColorKVTree.t}) = "CtorColorKVTree"
-
+unctor[LeafCtorColor.LeafCtorColor_R] = Color.R
+unctor[LeafCtorColor.LeafCtorColor_B] = Color.B
 module CtorColor
     using Dice
     @inductive t CtorColor_R() CtorColor_B()
 end
 to_coq(::Type{CtorColor.t}) = "CtorColor"
-
-ctor_tys(::Type{ColorKVTree.t}) = [CtorColorKVTree.t, LeafCtorColorKVTree.t]
 ctor_tys(::Type{Color.t}) = [CtorColor.t, LeafCtorColor.t]
+unctor[CtorColor.CtorColor_R] = Color.R
+unctor[CtorColor.CtorColor_B] = Color.B
+
+module LeafCtorTyp
+    using Dice
+    @inductive t LeafCtorTyp_TBool()
+end
+to_coq(::Type{LeafCtorTyp.t}) = "LeafCtorTyp"
+unctor[LeafCtorTyp.LeafCtorTyp_TBool] = Typ.TBool
+module CtorTyp
+    using Dice
+    @inductive t CtorTyp_TBool() CtorTyp_TFun()
+end
+to_coq(::Type{CtorTyp.t}) = "CtorTyp"
+unctor[CtorTyp.CtorTyp_TBool] = Typ.TBool
+unctor[CtorTyp.CtorTyp_TFun] = Typ.TFun
+ctor_tys(::Type{Typ.t}) = [CtorTyp.t, LeafCtorTyp.t]
+
+module LeafCtorExpr
+    using Dice
+    @inductive t LeafCtorExpr_Var() LeafCtorExpr_Bool()
+end
+to_coq(::Type{LeafCtorExpr.t}) = "LeafCtorExpr"
+unctor[LeafCtorExpr.LeafCtorExpr_Var] = Expr.Var
+unctor[LeafCtorExpr.LeafCtorExpr_Bool] = Expr.Bool
+module CtorExpr
+    using Dice
+    @inductive t CtorExpr_Var() CtorExpr_Bool() CtorExpr_Abs() CtorExpr_App()
+end
+to_coq(::Type{CtorExpr.t}) = "CtorExpr"
+unctor[CtorExpr.CtorExpr_Var] = Expr.Var
+unctor[CtorExpr.CtorExpr_Bool] = Expr.Bool
+unctor[CtorExpr.CtorExpr_Abs] = Expr.Abs
+unctor[CtorExpr.CtorExpr_App] = Expr.App
+ctor_tys(::Type{Expr.t}) = [CtorExpr.t, LeafCtorExpr.t]
 
 function ctor_ty(ty, leaf)
     inner_ctor_ty, leaf_ctor_ty = ctor_tys(ty)
     if leaf leaf_ctor_ty else inner_ctor_ty end
 end
 
-unctor = Dict(
-    LeafCtorColorKVTree.LeafCtorColorKVTree_E => ColorKVTree.E,
-    CtorColorKVTree.CtorColorKVTree_T => ColorKVTree.T,
-    CtorColorKVTree.CtorColorKVTree_E => ColorKVTree.E,
-    LeafCtorColor.LeafCtorColor_R => Color.R,
-    LeafCtorColor.LeafCtorColor_B => Color.B,
-    CtorColor.CtorColor_R => Color.R,
-    CtorColor.CtorColor_B => Color.B,
-)
 
 function module_of_func(f)
     @assert all(m.module == methods(f)[1].module for m in methods(f)) "$(f) $(methods(f))"
@@ -863,7 +893,7 @@ function derive_lang_sibling_generator(p::LangSiblingDerivedGenerator{T}) where 
                                 [L.Loc()],
                             )
                         )
-                    elseif chosen_ctor_param == Nat.T
+                    elseif chosen_ctor_param == Nat.t
                         L.GenNat(dependents(leaf, zero_case), p.intwidth)
                     elseif chosen_ctor_param == DistInt32
                         L.GenZ(dependents(leaf, zero_case), p.intwidth)
@@ -905,7 +935,7 @@ function derive_lang_sibling_generator(p::LangSiblingDerivedGenerator{T}) where 
             "genLeaf$(to_coq(ty))",
             vcat(
                 [L.Param(:chosen_ctor, ctor_ty(ty, true))],
-                [L.Param(stack_var, Nat.T) for stack_var in stack_vars],
+                [L.Param(stack_var, Nat.t) for stack_var in stack_vars],
             ),
             L.G{ty},
             gen(ty, true, nothing)
@@ -916,9 +946,9 @@ function derive_lang_sibling_generator(p::LangSiblingDerivedGenerator{T}) where 
             func = L.Function(
                 "gen$(to_coq(ty))",
                 vcat(
-                    [L.Param(:size, Nat.T)],
+                    [L.Param(:size, Nat.t)],
                     [L.Param(:chosen_ctor, ctor_ty(ty, false))],
-                    [L.Param(stack_var, Nat.T) for stack_var in stack_vars],
+                    [L.Param(stack_var, Nat.t) for stack_var in stack_vars],
                 ),
                 L.G{ty},
                 L.Match(L.Var(:size), [
@@ -976,7 +1006,7 @@ function to_subpath(p::BespokeSTLCGenerator)
 end
 function generate(rs::RunState, p::BespokeSTLCGenerator)
     constructors_overapproximation = []
-    function add_ctor(v::OptExpr.T)
+    function add_ctor(v::OptExpr.t)
         push!(constructors_overapproximation, v)
         v
     end
@@ -1074,12 +1104,12 @@ function to_subpath(p::TypeBasedSTLCGenerator)
 end
 function generate(rs::RunState, p::TypeBasedSTLCGenerator)
     constructors_overapproximation = []
-    function add_ctor(v::Expr.T)
-        push!(constructors_overapproximation, Opt.Some(Expr.T, v))
+    function add_ctor(v::Expr.t)
+        push!(constructors_overapproximation, Opt.Some(Expr.t, v))
         v
     end
     e = tb_gen_expr(rs, p, p.size, empty_stack(p), add_ctor)
-    STLCGeneration(Opt.Some(Expr.T, e), constructors_overapproximation)
+    STLCGeneration(Opt.Some(Expr.t, e), constructors_overapproximation)
 end
 function generation_params_emit_stats(rs::RunState, p::TypeBasedSTLCGenerator, s)
     save_coq_generator(rs, p, s, typebased_stlc_to_coq)
@@ -1154,8 +1184,8 @@ end
 
 abstract type BST <: Benchmark end
 struct BSTGeneration <: Generation{BST}
-    t::KVTree.T
-    constructors_overapproximation::Vector{KVTree.T}
+    t::KVTree.t
+    constructors_overapproximation::Vector{KVTree.t}
 end
 function generation_emit_stats(rs::RunState, g::BSTGeneration, s::String)
 end
@@ -1193,7 +1223,7 @@ function to_subpath(p::BespokeBSTGenerator)
 end
 function generate(rs::RunState, p::BespokeBSTGenerator)
     constructors_overapproximation = []
-    function add_ctor(v::KVTree.T)
+    function add_ctor(v::KVTree.t)
         push!(constructors_overapproximation, v)
         v
     end
@@ -1234,7 +1264,7 @@ function to_subpath(p::TypeBasedBSTGenerator)
 end
 function generate(rs::RunState, p::TypeBasedBSTGenerator)
     constructors_overapproximation = []
-    function add_ctor(v::KVTree.T)
+    function add_ctor(v::KVTree.t)
         push!(constructors_overapproximation, v)
         v
     end
@@ -1442,7 +1472,7 @@ function create_loss_manager(rs::RunState, p::SatisfyPropertyLoss, generation)
 end
 
 struct STLCWellTyped <: Property{STLC} end
-function check_property(::STLCWellTyped, e::OptExpr.T)
+function check_property(::STLCWellTyped, e::OptExpr.t)
     @assert isdeterministic(e)
     @match e [
         Some(e) -> (@match typecheck(e) [
@@ -1455,7 +1485,7 @@ end
 name(::STLCWellTyped)  = "stlcwelltyped"
 
 struct STLCMightType <: Property{STLC} end
-function check_property(::STLCMightType, e::OptExpr.T)
+function check_property(::STLCMightType, e::OptExpr.t)
     @assert isdeterministic(e)
     meets = might_typecheck(e)
     # assert this this is strictly weaker than full welltyped
@@ -1466,7 +1496,7 @@ name(::STLCMightType)  = "stlcmighttype"
 
 
 struct STLCVarNumbers <: Property{STLC} end
-function check_property(::STLCVarNumbers, e::OptExpr.T)
+function check_property(::STLCVarNumbers, e::OptExpr.t)
     @assert isdeterministic(e)
     meets = var_numberings_good(e)
     # assert this this is strictly weaker than mighttype
@@ -1478,7 +1508,7 @@ name(::STLCVarNumbers)  = "stlcvarnumbers"
 
 
 struct BSTOrderInvariant <: Property{BST} end
-check_property(::BSTOrderInvariant, t::KVTree.T) =
+check_property(::BSTOrderInvariant, t::KVTree.t) =
     satisfies_order_invariant(t)
 name(::BSTOrderInvariant) = "order"
 

@@ -3,7 +3,7 @@
 
 
 
-function gen_var(ctx::Ctx.T, t::Typ.T, p::DistNat, r::List{DistNat})::List{DistNat}
+function gen_var(ctx::Ctx.t, t::Typ.t, p::DistNat, r::List{DistNat})::List{DistNat}
     match(ctx, [
         :nil => () -> r,
         :cons => (t′, ctx′) -> @dice_ite if prob_equals(t, t′)
@@ -22,7 +22,7 @@ function bind_opt(f, ma::Opt.T{T})::Opt.T{<:Any} where T
 end
 
 # TODO: try returning expr instead of opt extr? what does env do?
-function gen_zero(env::Ctx.T, tau::Typ.T)
+function gen_zero(env::Ctx.t, tau::Typ.t)
     match(tau, [
         :TBool => ()       -> DistSome(DistBoolean(flip(0.5))), # TODO: should this be constant for just learning structure?
         :TFun  => (T1, T2) -> bind_opt(gen_zero(DistCons(T1, env), T2)) do e
@@ -44,14 +44,14 @@ function gen_bool()
     DistBoolean(flip(0.5))
 end
 
-function gen_expr(rs::RunState, env::Ctx.T, tau::Typ.T, sz::Integer, gen_typ_sz::Integer, by_sz, track_return)::OptExpr.T
+function gen_expr(rs::RunState, env::Ctx.t, tau::Typ.t, sz::Integer, gen_typ_sz::Integer, by_sz, track_return)::OptExpr.t
     track_return(
         begin
             for_prefix = if by_sz "sz$(sz)_" else "" end
             if sz == 0
                 backtrack_for(rs, for_prefix * "zero", [
                     one_of(
-                        map(Expr.T)(
+                        map(Expr.t)(
                             DistVar,
                             gen_var(env, tau, zero(DistNat), DistNil(DistNat))
                         )

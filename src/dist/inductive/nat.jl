@@ -2,10 +2,10 @@ export Nat, nat_ast_to_int
 
 module Nat
     using Dice
-    @inductive T Z() S(T)
+    @inductive t Z() S(t)
 end
 
-function Nat.T(x::Unsigned)
+function Nat.t(x::Unsigned)
     res = DistZero()
     for _ in 1:x
         res = DistSucc(res)
@@ -13,9 +13,9 @@ function Nat.T(x::Unsigned)
     res
 end
 
-Base.zero(::Type{Nat.T}) = Nat.Z()
+Base.zero(::Type{Nat.t}) = Nat.Z()
 
-function Base.:(+)(x::Nat.T, y::Nat.T)
+function Base.:(+)(x::Nat.t, y::Nat.t)
     match(y, [
         "Z" => () -> x
         "S" => y′ -> Nat.S(x) + y′
