@@ -123,7 +123,7 @@ macro inductive(type, constructors...)
 
         function $(esc(:(Base.match)))(x::$(ty), cases) where {$(tvs...)}
             @assert length(cases) == $(length(constructors))
-            branches = [$([
+            branches = $(esc(:(Base.Function)))[$([
                 :(_ -> error("Constructor $($(QuoteNode(ctor))) missing branch"))
                 for (ctor, _) in plist
             ]...)]
