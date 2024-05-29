@@ -1,6 +1,6 @@
 flatten = Iterators.flatten
 
-function tocoq(c::Color.T)
+function tocoq(c::Color.t)
     @match c [
         Red() -> "R",
         Black() -> "B",

@@ -4,21 +4,21 @@ using Dice
 
 module Color
     using Dice
-    @inductive T R() B()
+    @inductive t R() B()
 end
-function Base.string(c::Color.T)
+function Base.string(c::Color.t)
     @assert isdeterministic(c)
     @match c [
         R() -> "Color.R()",
         B() -> "Color.B()",
     ]
 end
-to_coq(::Type{Color.T}) = "Color"
+to_coq(::Type{Color.t}) = "Color"
 
 module ColorKVTree
     using Dice
     using Main: DistNat, Color
-    @inductive t E() T(Color.T, t, DistInt32, DistInt32, t)
+    @inductive t E() T(Color.t, t, DistInt32, DistInt32, t)
 end
 to_coq(::Type{ColorKVTree.t}) = "Tree"
 
@@ -40,7 +40,7 @@ function rbt_depth(e::ColorKVTree.t)
     ]
 end
 
-is_red(c::Color.T) = matches(c, :R)
+is_red(c::Color.t) = matches(c, :R)
 
 # Check that all paths through the tree have the same number of black nodes
 function satisfies_bookkeeping_invariant(e::ColorKVTree.t)

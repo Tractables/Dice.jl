@@ -128,5 +128,5 @@ function gen_expr_lang(expr_size, typ_size)
     :typ,
     L.Call("genExpr", [nil_typ(), v(:typ), L.Nat(expr_size)])
   )
-  L.Program([genVar, genZero, genTyp, genExpr], e)
+  L.Program([], [genVar, genZero, genTyp, genExpr], e)
 end

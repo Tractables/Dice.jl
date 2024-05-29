@@ -79,7 +79,7 @@ module L
 
     mutable struct Match <: Expr
         scrutinee::Expr
-        branches::Vector{Pair{Tuple{Symbol,Vector{Symbol}},Expr}}
+        branches::Vector{Pair{Main.Tuple{Symbol,Vector{Symbol}},Expr}}
     end
     NodeType(::Type{Match}) = Inner()
     children(x::Match) = vcat([x.scrutinee], [
@@ -93,6 +93,21 @@ module L
     end
     NodeType(::Type{Call}) = Inner()
     children(x::Call) = x.args
+
+    mutable struct Tuple <: Expr
+        tys::Vector{Type}
+        components::Vector{Expr}
+    end
+    NodeType(::Type{Tuple}) = Inner()
+    children(x::Tuple) = x.components
+
+    mutable struct UnpackTuple <: Expr
+        e::Expr
+        bindings::Vector{Param}
+        body::Expr
+    end
+    NodeType(::Type{UnpackTuple}) = Inner()
+    children(x::UnpackTuple) = [x.e, x.body]
 
     # Not first-class (doesn't subtype Expr).
     # They can capture values, so it'd be extra work to implement closures.
@@ -179,6 +194,7 @@ module L
     children(x::Function) = [x.body]
  
     mutable struct Program <: DAG
+        type_modules::Vector{Module}
         functions::Vector{Function}
         res::Expr
     end
@@ -210,6 +226,7 @@ dumbprint(x) = [getfield(x, field) for field in fieldnames(typeof(x))]
 function check_tree(prog)
     prim_map = Dict()
     loc_map = Dict()
+    tuple_tys = Set()
 
     prim_cts = Dict(
         L.Frequency => 0,
@@ -236,6 +253,12 @@ function check_tree(prog)
             loc_map[x] = length(loc_map) + 1
         end
 
+        if x isa L.Tuple
+            tys = Tuple(x.tys)
+            push!(tuple_tys, tys)
+        end
+
+
         if isinner(x)
             for y in children(x)
                 if y in seen
@@ -252,14 +275,14 @@ function check_tree(prog)
         end
     end
 
-    prim_map, loc_map
+    prim_map, loc_map, tuple_tys
 end
 
 Env = Dict{Symbol, Any}
 
 # Interpret to a Dice dist
 function interp(rs::RunState, prog::L.Program)
-    prim_map, loc_map = check_tree(prog)
+    prim_map, loc_map, tuple_tys = check_tree(prog)
 
     function with_binding(env, from, to)
         env2 = copy(env)
@@ -328,6 +351,21 @@ function interp(rs::RunState, prog::L.Program)
 
     function interp(env::Env, x::L.Construct)
         x.ctor([interp(env, arg) for arg in x.args]...)
+    end
+
+    function interp(env::Env, x::L.Tuple)
+        Tuple([interp(env, component) for component in x.components])
+    end
+
+    function interp(env::Env, x::L.UnpackTuple)
+        tup = interp(env, x.e)
+        env1 = copy(env)
+        @assert length(x.bindings) == length(tup)
+        for (param, v) in zip(x.bindings, tup)
+            env1[param.name] = v
+        end
+
+        interp(env1, x.body)
     end
 
     function interp(env::Env, x::L.Match)
@@ -452,7 +490,7 @@ to_coq(::Type{L.G{T}}) where T = "G ($(to_coq(T)))"
 
 # Translate to a Coq program
 function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String where T
-    prim_map, loc_map = check_tree(prog)
+    prim_map, loc_map, tuple_tys = check_tree(prog)
 
     vals = compute(rs.var_vals, values(rs.adnodes_of_interest))
     adnodes_vals = Dict(s => vals[adnode] for (s, adnode) in rs.adnodes_of_interest)
@@ -497,8 +535,7 @@ function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String w
         end
         segments[end] = segments[end] * s
     end
-    e!(before)
-    e!()
+
     function for_indent(f, iter)
         indent += 1
         map(f, iter)
@@ -594,6 +631,27 @@ function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String w
             visit(body)
         end
         e!("end")
+    end
+
+    tuple_to_struct(tys) = "Mk$(join([to_coq(ty) for ty in tys]))"
+
+    function visit(x::L.Tuple)
+        tys = Tuple(x.tys)
+        a!("($(tuple_to_struct(tys)) ")
+        for_between(() -> a!(" "), x.components) do component
+            visit(component)
+        end
+        a!(")")
+
+    end
+
+    function visit(x::L.UnpackTuple)
+        tys = Tuple(param.ty for param in x.bindings)
+        a!("(let '($(tuple_to_struct(tys)) $(join([param.name for param in x.bindings], " "))) := ")
+        visit(x.e)
+        a!(" in\n")
+        visit(x.body)
+        a!(")")
     end
 
     function visit(x::L.Call)
@@ -773,6 +831,33 @@ function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String w
         a!(".")
         e!()
     end
+
+    e!(before)
+    e!()
+
+    for type_module in prog.type_modules
+        e!("Inductive $(nameof(type_module)) :=")
+        for_indent(variants(type_module.t)) do (ctor, params)
+            @assert isempty(params) "params not supported yet"
+            e!("| $(nameof(ctor))")
+        end
+        a!(".")
+        e!()
+    end
+
+    for tys in tuple_tys
+        s = join([to_coq(ty) for ty in tys])
+        e!("Inductive Tup$(s) :=")
+        with_indent() do
+            e!("| Mk$(s) : ")
+            for ty in tys
+                a!("$(to_coq(ty)) -> ")
+            end
+            a!("Tup$(s).\n")
+        end
+    end
+
+
     visit(prog)
 
     e!(after)

@@ -23,7 +23,7 @@ if isempty(ARGS)
     # )
     # g_p = DerivedGenerator{RBT}(
     #     root_ty=ColorKVTree.t,
-    #     ty_sizes=Dict(ColorKVTree.t=>4, Color.T=>0),
+    #     ty_sizes=Dict(ColorKVTree.t=>4, Color.t=>0),
     #     stack_size=1,
     #     intwidth=6,
     # )
@@ -71,9 +71,9 @@ if isempty(ARGS)
     ]
 
 
-    g_p = LangDerivedGenerator{RBT}(
+    g_p = LangSiblingDerivedGenerator{RBT}(
         root_ty=ColorKVTree.t,
-        ty_sizes=[ColorKVTree.t=>2, Color.T=>0],
+        ty_sizes=[ColorKVTree.t=>2, Color.t=>0],
         stack_size=2,
         intwidth=6,
     )

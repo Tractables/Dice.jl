@@ -13,7 +13,7 @@ GENERATION_PARAMS_LIST = [
     # ),
     LangDerivedGenerator{RBT}(
         root_ty=ColorKVTree.t,
-        ty_sizes=[ColorKVTree.t=>5, Color.T=>0],
+        ty_sizes=[ColorKVTree.t=>5, Color.t=>0],
         stack_size=2,
         intwidth=6,
     )
@@ -35,7 +35,7 @@ GENERATION_PARAMS_LIST = [
     # )
     # DerivedGenerator{RBT}(
     #     root_ty=ColorKVTree.t,
-    #     ty_sizes=[ColorKVTree.t=>4, Color.T=>0],
+    #     ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
     #     stack_size=2,
     #     intwidth=6,
     # )
