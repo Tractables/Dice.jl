@@ -1495,6 +1495,16 @@ end
 name(::STLCMightType)  = "stlcmighttype"
 
 
+struct STLCMayType <: Property{STLC} end
+function check_property(::STLCMayType, e::OptExpr.t)
+    @assert isdeterministic(e)
+    meets = may_typecheck(e)
+    # assert this this is strictly weaker than might type
+    @assert !check_property(STLCMightType(), e) || meets "$(opt_stlc_str(Dice.frombits(e, Dict())))"
+    meets
+end
+name(::STLCMayType)  = "stlcmaytype"
+
 struct STLCVarNumbers <: Property{STLC} end
 function check_property(::STLCVarNumbers, e::OptExpr.t)
     @assert isdeterministic(e)

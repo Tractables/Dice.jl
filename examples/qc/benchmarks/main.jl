@@ -59,7 +59,8 @@ FP_LIST = [0.]
 FORIGIVENESS_LIST = [0]
 RAND_FORIGIVENESS_LIST = [true]
 RESAMPLING_FREQUENCY_LIST = [2]
-PROPERTY_LIST = [STLCVarNumbers(), STLCMightType(), STLCWellTyped()]
+# PROPERTY_LIST = [STLCVarNumbers(), STLCMightType(), STLCWellTyped()]
+PROPERTY_LIST = [STLCMayType()]
 # PROPERTY_LIST = [MultipleInvariants([
 #     BookkeepingInvariant(),
 #     BalanceInvariant(),
@@ -91,15 +92,15 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
         [
             # ApproxSTLCConstructorEntropy() => lr,
             # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
-            # SamplingEntropy{STLC}(
-            #     resampling_frequency=resampling_frequency,
-            #     samples_per_batch=samples_per_batch,
-            #     property=property,
-            #     eq=eq,
-            #     failure_penalty=fp,
-            #     forgiveness=forgiveness,
-            #     rand_forgiveness=rand_forgiveness,
-            # ) => lr,
+            SamplingEntropy{STLC}(
+                resampling_frequency=resampling_frequency,
+                samples_per_batch=samples_per_batch,
+                property=property,
+                eq=eq,
+                failure_penalty=fp,
+                forgiveness=forgiveness,
+                rand_forgiveness=rand_forgiveness,
+            ) => lr,
             # SamplingEntropy{BST}(
             #     resampling_frequency=resampling_frequency,
             #     samples_per_batch=samples_per_batch,
@@ -107,19 +108,19 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
             #     eq=eq,
             #     failure_penalty=fp,
             # ) => lr,
-            SamplingEntropy{RBT}(
-                resampling_frequency=resampling_frequency,
-                samples_per_batch=samples_per_batch,
-                property=MultipleInvariants([
-                    BookkeepingInvariant(),
-                    BalanceInvariant(),
-                    OrderInvariant(),
-                ]),
-                eq=eq,
-                failure_penalty=fp,
-                forgiveness=forgiveness,
-                rand_forgiveness=rand_forgiveness,
-            ) => lr,
+            # SamplingEntropy{RBT}(
+            #     resampling_frequency=resampling_frequency,
+            #     samples_per_batch=samples_per_batch,
+            #     property=MultipleInvariants([
+            #         BookkeepingInvariant(),
+            #         BalanceInvariant(),
+            #         OrderInvariant(),
+            #     ]),
+            #     eq=eq,
+            #     failure_penalty=fp,
+            #     forgiveness=forgiveness,
+            #     rand_forgiveness=rand_forgiveness,
+            # ) => lr,
         ]
         for lr in LR_LIST
         for fp in FP_LIST

@@ -10,6 +10,8 @@ include("benchmarks.jl")
 # TAG = "v40_stlctb_abunch"
 TAG = "v41_langderivedstlc"
 TAG = "v42_langsiblingderivedrbt"
+TAG = "v43_langsiblingderivedstlc"
+TAG = "v44_stlcmaytype"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS
@@ -60,7 +62,7 @@ if isempty(ARGS)
         SamplingEntropy{STLC}(
             resampling_frequency=1,
             samples_per_batch=50,
-            property=STLCVarNumbers(),
+            property=STLCMayType(),
             eq=:prob_equals,
             failure_penalty=fp,
             forgiveness=0.1,

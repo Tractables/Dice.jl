@@ -494,6 +494,48 @@ function eq_has_app(x::Opt.T{T}, y::Opt.T{T}) where T
     ]
 end
 
+
+function may_typecheck(x::Expr.t, under_abs)
+    @match x [
+        Var(i) -> begin
+            if !under_abs
+                return :Error
+            end
+            :TypeVar # we leniently let this take any type it needs to
+        end,
+        Bool(_) -> :TBool,
+        App(e1, e2) -> begin
+            t1 = may_typecheck(e1, under_abs)
+            if t1 == :Error || t1 == :TBool
+                return :Error
+            end
+            if !(t1 in [:TFun, :TypeVar])
+                return :Error
+            end
+            # Really, should check that t2 matches function input ty of t1
+            t2 = may_typecheck(e2, under_abs)
+            if t2 == :Error
+                return :Error
+            end
+            :TypeVar
+        end,
+        Abs(t_in, e) -> begin
+            t1 = may_typecheck(e, true)
+            if t1 == :Error
+                return :Error
+            end
+            :TFun
+        end,
+    ]
+end
+
+function may_typecheck(x::OptExpr.t)
+    @match x [
+        None() -> false,
+        Some(xv) -> may_typecheck(xv, false) != :Error
+    ]
+end
+
 function might_typecheck(x::Expr.t, gamma, depth)
     @match x [
         Var(i) -> begin
