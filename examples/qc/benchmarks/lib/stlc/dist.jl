@@ -529,6 +529,23 @@ function may_typecheck(x::Expr.t, under_abs)
     ]
 end
 
+function rem_num_bools(x::Expr.t)
+    @match x [
+        Var(_) -> Expr.Var(DistUInt32(0)),
+        Bool(_) -> Expr.Bool(true),
+        App(e1, e2) -> Expr.App(rem_num_bools(e1), rem_num_bools(e2)),
+        Abs(t_in, e) -> Expr.Abs(t_in, rem_num_bools(e)),
+    ]
+end
+
+function rem_num_bools(x::OptExpr.t)
+    @match x [
+        None() -> OptExpr.None(),
+        Some(xv) -> OptExpr.Some(rem_num_bools(xv)),
+    ]
+end
+
+
 function may_typecheck(x::OptExpr.t)
     @match x [
         None() -> false,

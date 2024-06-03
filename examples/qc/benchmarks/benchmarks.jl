@@ -533,9 +533,10 @@ struct LangDerivedGenerator{T} <: GenerationParams{T}
     ty_sizes::Vector{Pair{Type, Integer}}
     stack_size::Integer
     intwidth::Integer
+    arbitrary_prims::Bool
 end
-LangDerivedGenerator{T}(; root_ty, ty_sizes, stack_size, intwidth) where T =
-    LangDerivedGenerator{T}(root_ty, ty_sizes, stack_size, intwidth)
+LangDerivedGenerator{T}(; root_ty, ty_sizes, stack_size, intwidth, arbitrary_prims) where T =
+    LangDerivedGenerator{T}(root_ty, ty_sizes, stack_size, intwidth, arbitrary_prims)
 function to_subpath(p::LangDerivedGenerator{T}) where T
     [
         lowercase(string(T)),
@@ -544,6 +545,7 @@ function to_subpath(p::LangDerivedGenerator{T}) where T
         "ty-sizes=$(join(["$(ty)-$(size)" for (ty, size) in p.ty_sizes],"-"))",
         "stack_size=$(p.stack_size)",
         "intwidth=$(p.intwidth)",
+        "arbitrary_prims=$(p.arbitrary_prims)",
     ]
 end
 function generate(rs::RunState, p::LangDerivedGenerator{T}) where T
@@ -665,11 +667,23 @@ function derive_lang_generator(p::LangDerivedGenerator{T}) where T
                             [L.Loc()],
                         ))
                     elseif param == Nat.t
-                        L.GenNat(dependents(), p.intwidth)
+                        if p.arbitrary_prims
+                            L.ArbitraryNat()
+                        else
+                            L.GenNat(dependents(), p.intwidth)
+                        end
                     elseif param == DistInt32
-                        L.GenZ(dependents(), p.intwidth)
+                        if p.arbitrary_prims
+                            L.ArbitraryZ()
+                        else
+                            L.GenZ(dependents(), p.intwidth)
+                        end
                     elseif param == AnyBool
-                        L.GenBool(dependents())
+                        if p.arbitrary_prims
+                            L.ArbitraryBool()
+                        else
+                            L.GenBool(dependents())
+                        end
                     else
                         error("bad param type $(param)")
                     end,
@@ -1501,6 +1515,10 @@ function check_property(::STLCMayType, e::OptExpr.t)
     meets = may_typecheck(e)
     # assert this this is strictly weaker than might type
     @assert !check_property(STLCMightType(), e) || meets "$(opt_stlc_str(Dice.frombits(e, Dict())))"
+    @assert check_property(STLCMightType(), rem_num_bools(e)) == meets "eq to might rem $(opt_stlc_str(Dice.frombits(e, Dict())))"
+
+    # only applies when arbitrary_prims = true
+    # @assert check_property(STLCMightType(), e) == meets "eq to might rem $(opt_stlc_str(Dice.frombits(e, Dict())))"
     meets
 end
 name(::STLCMayType)  = "stlcmaytype"

@@ -5,18 +5,19 @@ GENERATION_PARAMS_LIST = [
     #     expr_size=5,
     #     typ_size=2,
     # ),
-    # LangDerivedGenerator{STLC}(
-    #     root_ty=Expr.t,
-    #     ty_sizes=[Expr.t=>5, Typ.t=>2],
-    #     stack_size=2,
-    #     intwidth=6,
-    # ),
-    LangSiblingDerivedGenerator{STLC}(
+    LangDerivedGenerator{STLC}(
         root_ty=Expr.t,
         ty_sizes=[Expr.t=>5, Typ.t=>2],
-        stack_size=1,
+        stack_size=2,
         intwidth=6,
-    )
+        arbitrary_prims=true,
+    ),
+    # LangSiblingDerivedGenerator{STLC}(
+    #     root_ty=Expr.t,
+    #     ty_sizes=[Expr.t=>5, Typ.t=>2],
+    #     stack_size=1,
+    #     intwidth=6,
+    # )
     # LangSiblingDerivedGenerator{RBT}(
     #     root_ty=ColorKVTree.t,
     #     ty_sizes=[ColorKVTree.t=>5, Color.t=>0],

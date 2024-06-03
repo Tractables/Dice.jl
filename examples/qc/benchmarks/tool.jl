@@ -48,11 +48,12 @@ if isempty(ARGS)
     # )
     lr = 0.5
     fp = 0.01
-    g_p = LangSiblingDerivedGenerator{STLC}(
+    g_p = LangDerivedGenerator{STLC}(
         root_ty=Expr.t,
         ty_sizes=[Expr.t=>2, Typ.t=>2],
         stack_size=2,
         intwidth=6,
+        arbitrary_prims=true,
     )
     # g_p = LangBespokeSTLCGenerator(
     #     expr_size=2,

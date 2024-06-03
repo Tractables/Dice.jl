@@ -183,6 +183,15 @@ module L
     NodeType(::Type{GenBool}) = Inner()
     children(x::GenBool) = x.dependents
 
+    mutable struct ArbitraryBool <: Expr end
+    NodeType(::Type{ArbitraryBool}) = Leaf()
+
+    mutable struct ArbitraryNat <: Expr end
+    NodeType(::Type{ArbitraryNat}) = Leaf()
+
+    mutable struct ArbitraryZ <: Expr end
+    NodeType(::Type{ArbitraryZ}) = Leaf()
+
     # Functions
     mutable struct Function <: DAG
         name::String
@@ -479,6 +488,18 @@ function interp(rs::RunState, prog::L.Program)
         name = prim_map[x]
         dependents = [interp(env, dependent) for dependent in x.dependents]
         flip_for(rs, "$(name)_true", dependents)
+    end
+
+    function interp(env::Env, x::L.ArbitraryBool)
+        true
+    end
+
+    function interp(env::Env, x::L.ArbitraryNat)
+        DistUInt32(0)
+    end
+
+    function interp(env::Env, x::L.ArbitraryZ)
+        DistInt32(0)
     end
 
     res = interp(Env(), prog.res)
@@ -804,6 +825,18 @@ function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String w
         e!("  (_weight_true, returnGen true);")
         e!("  (100-_weight_true, returnGen false)")
         e!("])")
+    end
+
+    function visit(x::L.ArbitraryBool)
+        e!("arbitrary")
+    end
+
+    function visit(x::L.ArbitraryNat)
+        e!("arbitrary")
+    end
+
+    function visit(x::L.ArbitraryZ)
+        e!("arbitrary")
     end
 
     function visit(x::L.Function)
