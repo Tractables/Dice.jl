@@ -5,13 +5,13 @@ GENERATION_PARAMS_LIST = [
     #     expr_size=5,
     #     typ_size=2,
     # ),
-    LangDerivedGenerator{STLC}(
-        root_ty=Expr.t,
-        ty_sizes=[Expr.t=>5, Typ.t=>2],
-        stack_size=2,
-        intwidth=6,
-        arbitrary_prims=true,
-    ),
+    # LangDerivedGenerator{STLC}(
+    #     root_ty=Expr.t,
+    #     ty_sizes=[Expr.t=>5, Typ.t=>2],
+    #     stack_size=2,
+    #     intwidth=6,
+    #     arbitrary_prims=true,
+    # ),
     # LangSiblingDerivedGenerator{STLC}(
     #     root_ty=Expr.t,
     #     ty_sizes=[Expr.t=>5, Typ.t=>2],
@@ -26,14 +26,14 @@ GENERATION_PARAMS_LIST = [
     # )
 
     # DEPRECATED
-    # TypeBasedSTLCGenerator(
-    #     size=5,
-    #     ty_size=2,
-    #     dependents=[:size,:stack_tail],
-    #     ty_dependents=[:size,:stack_tail],
-    #     stack_size=2,
-    #     intwidth=6,
-    # ),
+    TypeBasedSTLCGenerator(
+        size=5,
+        ty_size=2,
+        dependents=[:size,:stack_tail],
+        ty_dependents=[:size,:stack_tail],
+        stack_size=2,
+        intwidth=6,
+    ),
     # DerivedGenerator{STLC}(
     #     root_ty=Expr.t,
     #     ty_sizes=[Expr.t=>4, Typ.t=>1],
@@ -69,12 +69,12 @@ PROPERTY_LIST = [STLCMayType()]
 # ])]
 SAMPLES_PER_BATCH_LIST = [200]
 EPOCHS_LIST = [2_000]
-EQ_LIST = [:prob_equals, :eq_structure]
+EQ_LIST = [:eq_structure]
 # EQ_LIST = [:prob_equals, :eq_except_numbers]
 
 n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, FORIGIVENESS_LIST, RAND_FORIGIVENESS_LIST, PROPERTY_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST, EQ_LIST]))
 println(n_runs)
-@assert n_runs <= 10
+@assert n_runs <= 12
 
 @show GENERATION_PARAMS_LIST
 @show LR_LIST

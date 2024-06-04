@@ -1,17 +1,7 @@
 include("benchmarks.jl")
 
-# TAG = "v34_stlc_derived_spec_structure_and_prob_eq"
-# TAG = "v34_stlc_derived_unif_apps"
-# TAG = "v34_rbt_derived"
-# TAG = "v36_stlc_might_fixed"
-# TAG = "v37_stlc_might2" # this one is stricter
-# TAG = "v38_stlc_vars" # this one is stricter
-# TAG = "v39_stlc_linapps"
-# TAG = "v40_stlctb_abunch"
-TAG = "v41_langderivedstlc"
-TAG = "v42_langsiblingderivedrbt"
-TAG = "v43_langsiblingderivedstlc"
-TAG = "v44_stlcmaytype"
+TAG = "v45_stlcmayarb"
+TAG = "v46_tbmay"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS
@@ -30,14 +20,14 @@ if isempty(ARGS)
     #     stack_size=1,
     #     intwidth=6,
     # )
-    # g_p = TypeBasedSTLCGenerator(
-    #     size=2,
-    #     ty_size=1,
-    #     dependents=[:size,:stack_tail],
-    #     ty_dependents=[:size,:stack_tail],
-    #     stack_size=2,
-    #     intwidth=6,
-    # )
+    g_p = TypeBasedSTLCGenerator(
+        size=2,
+        ty_size=1,
+        dependents=[:size,:stack_tail],
+        ty_dependents=[:size,:stack_tail],
+        stack_size=2,
+        intwidth=6,
+    )
     # g_p = TypeBasedRBTGenerator(
     #     size=3,
     #     leaf_dependents=[:size,:parent_color,:stack_tail],
@@ -48,13 +38,13 @@ if isempty(ARGS)
     # )
     lr = 0.5
     fp = 0.01
-    g_p = LangDerivedGenerator{STLC}(
-        root_ty=Expr.t,
-        ty_sizes=[Expr.t=>2, Typ.t=>2],
-        stack_size=2,
-        intwidth=6,
-        arbitrary_prims=true,
-    )
+    # g_p = LangDerivedGenerator{STLC}(
+    #     root_ty=Expr.t,
+    #     ty_sizes=[Expr.t=>2, Typ.t=>2],
+    #     stack_size=2,
+    #     intwidth=6,
+    #     arbitrary_prims=true,
+    # )
     # g_p = LangBespokeSTLCGenerator(
     #     expr_size=2,
     #     typ_size=1,

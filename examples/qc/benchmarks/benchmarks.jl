@@ -1119,11 +1119,11 @@ end
 function generate(rs::RunState, p::TypeBasedSTLCGenerator)
     constructors_overapproximation = []
     function add_ctor(v::Expr.t)
-        push!(constructors_overapproximation, Opt.Some(Expr.t, v))
+        push!(constructors_overapproximation, OptExpr.Some(v))
         v
     end
     e = tb_gen_expr(rs, p, p.size, empty_stack(p), add_ctor)
-    STLCGeneration(Opt.Some(Expr.t, e), constructors_overapproximation)
+    STLCGeneration(OptExpr.Some(e), constructors_overapproximation)
 end
 function generation_params_emit_stats(rs::RunState, p::TypeBasedSTLCGenerator, s)
     save_coq_generator(rs, p, s, typebased_stlc_to_coq)
