@@ -8,22 +8,64 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from typing import List, Callable
 
-WORKLOAD = "RBT"
+WORKLOAD = "STLC"
 ORDER_ONLY = True
-ORDER = [ # Put rows in this order and also assert that these generators exist
-    # "EntropyGenerator.v",
-    "ConsiderStack3Generator.v",
-]
+ORDER: List[str] = { # Put rows in this order and also assert that these generators exist
+    "STLC": [
+        # # class: bespoke
+        # "BespokeGenerator",
+        # "LBespokeGenerator",
+        # "LBespokeACEGenerator",
+        # "LBespokeApproxConstructorEntropyGenerator",
+        # # class: type-based
+        # "TypeBasedGenerator",
+        # "LDGenerator",
+        # "LDEqMightGenerator",
+        # "LDEqVarGenerator",
+        # "LDEqWellGenerator",
+        # "LDStructureMightGenerator",
+        # "LDStructureVarGenerator",
+        # "LDStructureWellGenerator",
+        # "LSDGenerator",
+        # "LSDStructureMightGenerator",
+        # "LSDStructureWellGenerator",
+        # "LSDGenerator",
+        # "LSDStructureMayGenerator",
+        # "LSDEqMayGenerator",
+        # "LDStructureMayGenerator",
+        # "LDEqMayGenerator",
+        # "LDMayStructureArb_Freq5_SPB50_LR10Generator",
+        # "LDMayStructureArb_Freq5_SPB50_LR30Generator",
+        # "LDMayStructureArb_Freq5_SPB50_LR50Generator",
+        # "TBMay10Generator",
+        # "TBMay30Generator",
+        # "TBMay50Generator",
+"LDMayStructureArb_Freq2_SPB200_LR10Generator",
+"LDMayStructureArb_Freq2_SPB200_LR30Generator",
+"LDMayStructureArb_Freq2_SPB200_LR50Generator",
+"LDMayStructureArb_Freq2_SPB50_LR10Generator",
+"LDMayStructureArb_Freq2_SPB50_LR30Generator",
+"LDMayStructureArb_Freq2_SPB50_LR50Generator",
+"LDMayStructureArb_Freq5_SPB200_LR10Generator",
+    ],
+
+    "RBT": [
+        "TypeBasedGenerator",
+        "LSDEqGenerator",
+        "LSDExceptNumsGenerator",
+        "LSDGenerator",
+    ]
+}[WORKLOAD]
 
 STRAT_DIR = f"/space/tjoa/etna/workloads/Coq/{WORKLOAD}/Strategies/"
 OUT_DIR = f"/space/tjoa/Dice.jl/stats/{WORKLOAD}"
 COQ_PROJECT_DIR = f"/space/tjoa/etna/workloads/Coq/{WORKLOAD}"
-NUM_TESTS = 10_000
+NUM_TESTS = 100_000
 
 @dataclass
 class Workload:
     type: str
-    generator: str
+    generator: Callable[[str],str]
     invariant_check: str
     metrics: List[str]
     extra_definitions: str
@@ -32,7 +74,7 @@ class Workload:
 WORKLOADS = {
     "STLC": Workload(
         type="Expr",
-        generator="gSized",
+        generator=lambda _:"gSized",
         invariant_check="isJust (mt %s)",
         metrics=["sizeSTLC", "num_apps"],
         extra_definitions="""
@@ -46,7 +88,7 @@ WORKLOADS = {
     ),
     "BST": Workload(
         type="Tree",
-        generator="gSized",
+        generator=lambda _:"gSized",
         invariant_check="isBST %s",
         metrics=["size", "height"],
         extra_definitions="""
@@ -59,7 +101,7 @@ WORKLOADS = {
     ),
     "RBT": Workload(
         type="Tree",
-        generator="arbitrary",
+        generator=lambda filename: "arbitrary" if "typebased" in filename.lower() else "gSized",
         invariant_check="isRBT %s",
         metrics=["size", "height"],
         extra_definitions="""
@@ -74,6 +116,11 @@ WORKLOADS = {
 
 
 workload = WORKLOADS[WORKLOAD]
+
+ORDER = [
+    f"{s}.v"
+    for s in ORDER
+]
 
 def main():
     # List generators
@@ -158,7 +205,7 @@ def collect_stats(path, filename, metric_to_generator_to_counts):
     if may_fail:
         pgrm += """
     Definition collect {A : Type} `{_ : Show A}  (f : """ + workload.type + """ -> A)  : Checker :=  
-        forAll """ + workload.generator + """ (fun (t : option """ + workload.type + """) =>
+        forAll """ + workload.generator(filename) + """ (fun (t : option """ + workload.type + """) =>
           match t with
           | Some t =>
             if """ + (workload.invariant_check % "t") + """ then
@@ -171,7 +218,7 @@ def collect_stats(path, filename, metric_to_generator_to_counts):
     else:
         pgrm += """
     Definition collect {A : Type} `{_ : Show A} (f : """ + workload.type + """  -> A)  : Checker :=  
-        forAll """ + workload.generator + """ (fun (t : """ + workload.type + """) =>
+        forAll """ + workload.generator(filename) + """ (fun (t : """ + workload.type + """) =>
             if """ + (workload.invariant_check % "t") + """ then
                 collect (append "valid " (show (f t))) true
             else
@@ -216,7 +263,7 @@ def collect_stats(path, filename, metric_to_generator_to_counts):
                 print(s)
             last_line_blank = line_blank
 
-        exit(1)
+        # exit(1)
 
 
     assert p.returncode == 0
