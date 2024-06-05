@@ -37,7 +37,7 @@ if isempty(ARGS)
     #     intwidth=6,
     # )
     lr = 0.5
-    fp = 0.01
+    fp = 0
     # g_p = LangDerivedGenerator{STLC}(
     #     root_ty=Expr.t,
     #     ty_sizes=[Expr.t=>2, Typ.t=>2],
@@ -53,11 +53,11 @@ if isempty(ARGS)
         SamplingEntropy{STLC}(
             resampling_frequency=1,
             samples_per_batch=50,
-            property=STLCMayType(),
-            eq=:prob_equals,
+            property=STLCMightType(),
+            eq=:eq_structure,
             failure_penalty=fp,
-            forgiveness=0.1,
-            rand_forgiveness=false,
+            forgiveness=0,
+            rand_forgiveness=true,
         ) => lr,
 
         # ApproxSTLCConstructorEntropy() => lr,
