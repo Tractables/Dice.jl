@@ -105,7 +105,7 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
         [
             # ApproxSTLCConstructorEntropy() => lr,
             # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
-            SamplingEntropy{STLC}(
+            SamplingEntropy{BST}(
                 resampling_frequency=resampling_frequency,
                 samples_per_batch=samples_per_batch,
                 property=property,
