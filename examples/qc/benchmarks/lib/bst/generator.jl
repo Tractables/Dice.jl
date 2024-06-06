@@ -3,11 +3,11 @@ safedec(x::DistUInt{T}) where T = @dice_ite if prob_equals(x, DistUInt{T}(0)) Di
 function gen_tree(rs, s::Integer, lo::DistNat, hi::DistNat, approx_unif::Bool, track_return)
     track_return(
         @dice_ite if s == 0 || hi - lo < DistNat(2)
-            KVTree.Leaf()
+            KVTree.E()
         else
             s′ = s - 1
             if flip(register_weight!(rs, "sz$(s)"))
-                KVTree.Leaf()
+                KVTree.E()
             else
                 k = if approx_unif
                     unif_approx(lo + DistNat(1), safedec(hi))
@@ -17,7 +17,7 @@ function gen_tree(rs, s::Integer, lo::DistNat, hi::DistNat, approx_unif::Bool, t
                 v = DistNat(0) # arbitrary
                 l = gen_tree(rs, s′, lo, k, approx_unif, track_return)
                 r = gen_tree(rs, s′, k, hi, approx_unif, track_return)
-                KVTree.Node(l, k, v, r)
+                KVTree.T(l, k, v, r)
             end
         end
     )
@@ -26,17 +26,17 @@ end
 function gen_tree_dummy_vals(rs, s::Integer, track_return)
     track_return(
         @dice_ite if s == 0
-            KVTree.Leaf()
+            KVTree.E()
         else
             s′ = s - 1
             if flip(register_weight!(rs, "sz$(s)"))
-                KVTree.Leaf()
+                KVTree.E()
             else
                 k = DistNat(0)
                 v = DistNat(0) # arbitrary
                 l = gen_tree_dummy_vals(rs, s′, track_return)
                 r = gen_tree_dummy_vals(rs, s′, track_return)
-                KVTree.Node(l, k, v, r)
+                KVTree.T(l, k, v, r)
             end
         end
     )
@@ -60,11 +60,11 @@ function typebased_gen_tree(rs, p, size::Integer, last_callsite, track_return)
 
     track_return(
         @dice_ite if size == 0
-            KVTree.Leaf()
+            KVTree.E()
         else
             s′ = size - 1
             if dependents_to_flip("leaf", p.leaf_dependents)
-                KVTree.Leaf()
+                KVTree.E()
             else
                 l = typebased_gen_tree(rs, p, s′, 10, track_return)
                 r = typebased_gen_tree(rs, p, s′, 11, track_return)
@@ -77,7 +77,7 @@ function typebased_gen_tree(rs, p, size::Integer, last_callsite, track_return)
                     for n in twopowers(p.intwidth)
                 )
                 v = DistNat(0) # arbitrary
-                KVTree.Node(l, k, v, r)
+                KVTree.T(l, k, v, r)
             end
         end
     )
@@ -85,7 +85,7 @@ end
 
 function tree_size(e::KVTree.t)
     match(e, [
-        :Leaf => () -> DistUInt32(0),
-        :Node => (l, k, v, r) -> DistUInt32(1) + tree_size(l) + tree_size(r),
+        :E => () -> DistUInt32(0),
+        :T => (l, k, v, r) -> DistUInt32(1) + tree_size(l) + tree_size(r),
     ])
 end

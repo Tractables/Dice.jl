@@ -24,16 +24,22 @@ GENERATION_PARAMS_LIST = [
     #     stack_size=2,
     #     intwidth=6,
     # )
-
-    # DEPRECATED
-    TypeBasedSTLCGenerator(
-        size=5,
-        ty_size=2,
-        dependents=[:size,:stack_tail],
-        ty_dependents=[:size,:stack_tail],
+    LangDerivedGenerator{BST}(
+        root_ty=KVTree.t,
+        ty_sizes=[KVTree.t=>5],
         stack_size=2,
         intwidth=6,
-    ),
+        arbitrary_prims=false,
+    )
+    # DEPRECATED
+    # TypeBasedSTLCGenerator(
+    #     size=5,
+    #     ty_size=2,
+    #     dependents=[:size,:stack_tail],
+    #     ty_dependents=[:size,:stack_tail],
+    #     stack_size=2,
+    #     intwidth=6,
+    # ),
     # DerivedGenerator{STLC}(
     #     root_ty=Expr.t,
     #     ty_sizes=[Expr.t=>4, Typ.t=>1],

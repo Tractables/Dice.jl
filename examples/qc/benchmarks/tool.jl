@@ -2,6 +2,7 @@ include("benchmarks.jl")
 
 TAG = "v45_stlcmayarb"
 TAG = "v46_tbmay"
+TAG = "v48_bst_lang"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS
@@ -38,23 +39,32 @@ if isempty(ARGS)
     # )
     lr = 0.5
     fp = 0
-    # g_p = LangDerivedGenerator{STLC}(
-    #     root_ty=Expr.t,
-    #     ty_sizes=[Expr.t=>2, Typ.t=>2],
-    #     stack_size=2,
-    #     intwidth=6,
-    #     arbitrary_prims=true,
-    # )
+    g_p = LangDerivedGenerator{BST}(
+        root_ty=KVTree.t,
+        ty_sizes=[KVTree.t=>5],
+        stack_size=2,
+        intwidth=6,
+        arbitrary_prims=false,
+    )
     # g_p = LangBespokeSTLCGenerator(
     #     expr_size=2,
     #     typ_size=1,
     # )
     l_p = [
-        SamplingEntropy{STLC}(
+        # SamplingEntropy{STLC}(
+        #     resampling_frequency=1,
+        #     samples_per_batch=50,
+        #     property=STLCMightType(),
+        #     eq=:eq_structure,
+        #     failure_penalty=fp,
+        #     forgiveness=0,
+        #     rand_forgiveness=true,
+        # ) => lr,
+        SamplingEntropy{BST}(
             resampling_frequency=1,
             samples_per_batch=50,
-            property=STLCMightType(),
-            eq=:eq_structure,
+            property=BSTOrderInvariant(),
+            eq=:prob_equals,
             failure_penalty=fp,
             forgiveness=0,
             rand_forgiveness=true,
