@@ -30,7 +30,7 @@ GENERATION_PARAMS_LIST = [
         stack_size=2,
         intwidth=6,
         arbitrary_prims=false,
-    )
+    ),
     # DEPRECATED
     # TypeBasedSTLCGenerator(
     #     size=5,
@@ -60,6 +60,12 @@ GENERATION_PARAMS_LIST = [
     #     stack_size=3,
     #     intwidth=6,
     # ),
+    TypeBasedBSTGenerator(
+        size=5,
+        leaf_dependents=[:size,:last_callsite],
+        num_dependents=[:size,:last_callsite],
+        intwidth=6,
+    ),
 ]
 LR_LIST = [0.3]
 FP_LIST = [0.]
@@ -67,7 +73,7 @@ FORIGIVENESS_LIST = [0]
 RAND_FORIGIVENESS_LIST = [true]
 RESAMPLING_FREQUENCY_LIST = [2]
 # PROPERTY_LIST = [STLCVarNumbers(), STLCMightType(), STLCWellTyped()]
-PROPERTY_LIST = [STLCMayType()]
+PROPERTY_LIST = [BSTOrderInvariant()]
 # PROPERTY_LIST = [MultipleInvariants([
 #     BookkeepingInvariant(),
 #     BalanceInvariant(),
@@ -75,8 +81,8 @@ PROPERTY_LIST = [STLCMayType()]
 # ])]
 SAMPLES_PER_BATCH_LIST = [200]
 EPOCHS_LIST = [2_000]
-EQ_LIST = [:eq_structure]
-# EQ_LIST = [:prob_equals, :eq_except_numbers]
+# EQ_LIST = [:eq_structure]
+EQ_LIST = [:prob_equals, :eq_except_numbers]
 
 n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, FORIGIVENESS_LIST, RAND_FORIGIVENESS_LIST, PROPERTY_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST, EQ_LIST]))
 println(n_runs)
