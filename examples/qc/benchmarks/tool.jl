@@ -3,6 +3,7 @@ include("benchmarks.jl")
 TAG = "v45_stlcmayarb"
 TAG = "v46_tbmay"
 TAG = "v48_bst_lang"
+TAG = "v49_stlcmaythin"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS

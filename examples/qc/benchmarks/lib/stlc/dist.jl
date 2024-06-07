@@ -494,6 +494,21 @@ function eq_has_app(x::Opt.T{T}, y::Opt.T{T}) where T
     ]
 end
 
+function rem_num_bools(x::Expr.t)
+    @match x [
+        Var(_) -> Expr.Var(DistUInt32(0)),
+        Bool(_) -> Expr.Bool(true),
+        App(e1, e2) -> Expr.App(rem_num_bools(e1), rem_num_bools(e2)),
+        Abs(t_in, e) -> Expr.Abs(t_in, rem_num_bools(e)),
+    ]
+end
+
+function rem_num_bools(x::OptExpr.t)
+    @match x [
+        None() -> OptExpr.None(),
+        Some(xv) -> OptExpr.Some(rem_num_bools(xv)),
+    ]
+end
 
 function may_typecheck(x::Expr.t, under_abs)
     @match x [
@@ -528,23 +543,6 @@ function may_typecheck(x::Expr.t, under_abs)
         end,
     ]
 end
-
-function rem_num_bools(x::Expr.t)
-    @match x [
-        Var(_) -> Expr.Var(DistUInt32(0)),
-        Bool(_) -> Expr.Bool(true),
-        App(e1, e2) -> Expr.App(rem_num_bools(e1), rem_num_bools(e2)),
-        Abs(t_in, e) -> Expr.Abs(t_in, rem_num_bools(e)),
-    ]
-end
-
-function rem_num_bools(x::OptExpr.t)
-    @match x [
-        None() -> OptExpr.None(),
-        Some(xv) -> OptExpr.Some(rem_num_bools(xv)),
-    ]
-end
-
 
 function may_typecheck(x::OptExpr.t)
     @match x [
@@ -623,5 +621,47 @@ function var_numberings_good(x::OptExpr.t)
     @match x [
         None() -> false,
         Some(xv) -> var_numberings_good(xv, Dict(), 0),
+    ]
+end
+
+# right now mayer = might
+function mayer_typecheck(x::Expr.t, under_abs)
+    @match x [
+        Var(i) -> begin
+            if !under_abs
+                return :Error
+            end
+            :TypeVar # we leniently let this take any type it needs to
+        end,
+        Bool(_) -> :TBool,
+        App(e1, e2) -> begin
+            t1 = mayer_typecheck(e1, under_abs)
+            if t1 == :Error || t1 == :TBool
+                return :Error
+            end
+            if !(t1 in [:TFun, :TypeVar])
+                return :Error
+            end
+            # Really, should check that t2 matches function input ty of t1
+            t2 = mayer_typecheck(e2, under_abs)
+            if t2 == :Error
+                return :Error
+            end
+            :TypeVar
+        end,
+        Abs(t_in, e) -> begin
+            t1 = mayer_typecheck(e, true)
+            if t1 == :Error
+                return :Error
+            end
+            :TFun
+        end,
+    ]
+end
+
+function mayer_typecheck(x::OptExpr.t)
+    @match x [
+        None() -> false,
+        Some(xv) -> mayer_typecheck(xv, false) != :Error
     ]
 end

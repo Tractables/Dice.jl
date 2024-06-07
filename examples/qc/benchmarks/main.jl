@@ -5,25 +5,25 @@ GENERATION_PARAMS_LIST = [
     #     expr_size=5,
     #     typ_size=2,
     # ),
-    # LangDerivedGenerator{STLC}(
-    #     root_ty=Expr.t,
-    #     ty_sizes=[Expr.t=>5, Typ.t=>2],
-    #     stack_size=2,
-    #     intwidth=6,
-    #     arbitrary_prims=true,
-    # ),
+    LangDerivedGenerator{STLC}(
+        root_ty=Expr.t,
+        ty_sizes=[Expr.t=>5, Typ.t=>2],
+        stack_size=2,
+        intwidth=3,
+        arbitrary_prims=false,
+    ),
     # LangSiblingDerivedGenerator{STLC}(
     #     root_ty=Expr.t,
     #     ty_sizes=[Expr.t=>5, Typ.t=>2],
     #     stack_size=1,
     #     intwidth=6,
     # )
-    LangSiblingDerivedGenerator{RBT}(
-        root_ty=ColorKVTree.t,
-        ty_sizes=[ColorKVTree.t=>5, Color.t=>0],
-        stack_size=2,
-        intwidth=6,
-    )
+    # LangSiblingDerivedGenerator{RBT}(
+    #     root_ty=ColorKVTree.t,
+    #     ty_sizes=[ColorKVTree.t=>5, Color.t=>0],
+    #     stack_size=2,
+    #     intwidth=6,
+    # )
     # LangDerivedGenerator{BST}(
     #     root_ty=KVTree.t,
     #     ty_sizes=[KVTree.t=>5],
@@ -73,16 +73,16 @@ FORIGIVENESS_LIST = [0]
 RAND_FORIGIVENESS_LIST = [true]
 RESAMPLING_FREQUENCY_LIST = [2]
 # PROPERTY_LIST = [STLCVarNumbers(), STLCMightType(), STLCWellTyped()]
-# PROPERTY_LIST = [BSTOrderInvariant()]
-PROPERTY_LIST = [MultipleInvariants([
-    BookkeepingInvariant(),
-    BalanceInvariant(),
-    OrderInvariant(),
-])]
+PROPERTY_LIST = [STLCMayType()]
+# PROPERTY_LIST = [MultipleInvariants([
+#     BookkeepingInvariant(),
+#     BalanceInvariant(),
+#     OrderInvariant(),
+# ])]
 SAMPLES_PER_BATCH_LIST = [1000]
 EPOCHS_LIST = [2_000]
-# EQ_LIST = [:eq_structure]
-EQ_LIST = [:prob_equals, :eq_except_numbers]
+EQ_LIST = [:eq_structure]
+# EQ_LIST = [:prob_equals, :eq_except_numbers]
 
 n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, FORIGIVENESS_LIST, RAND_FORIGIVENESS_LIST, PROPERTY_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST, EQ_LIST]))
 println(n_runs)
@@ -105,7 +105,7 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
         [
             # ApproxSTLCConstructorEntropy() => lr,
             # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
-            SamplingEntropy{RBT}(
+            SamplingEntropy{STLC}(
                 resampling_frequency=resampling_frequency,
                 samples_per_batch=samples_per_batch,
                 property=property,

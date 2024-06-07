@@ -40,20 +40,31 @@ ORDER: List[str] = { # Put rows in this order and also assert that these generat
         # "TBMay10Generator",
         # "TBMay30Generator",
         # "TBMay50Generator",
-"LDMayStructureArb_Freq2_SPB200_LR10Generator",
-"LDMayStructureArb_Freq2_SPB200_LR30Generator",
-"LDMayStructureArb_Freq2_SPB200_LR50Generator",
-"LDMayStructureArb_Freq2_SPB50_LR10Generator",
-"LDMayStructureArb_Freq2_SPB50_LR30Generator",
-"LDMayStructureArb_Freq2_SPB50_LR50Generator",
-"LDMayStructureArb_Freq5_SPB200_LR10Generator",
+        "ReproTBMightGenerator",
+# "LDMayStructureArb_Freq2_SPB200_LR10Generator",
+# "LDMayStructureArb_Freq2_SPB200_LR30Generator",
+# "LDMayStructureArb_Freq2_SPB200_LR50Generator",
+# "LDMayStructureArb_Freq2_SPB50_LR10Generator",
+# "LDMayStructureArb_Freq2_SPB50_LR30Generator",
+# "LDMayStructureArb_Freq2_SPB50_LR50Generator",
+# "LDMayStructureArb_Freq5_SPB200_LR10Generator",
     ],
 
     "RBT": [
         "TypeBasedGenerator",
         "LSDEqGenerator",
         "LSDExceptNumsGenerator",
-        "LSDGenerator",
+        "LSDEq2Generator",
+        "LSDExcept2Generator",
+        # "LSDGenerator",
+    ],
+
+    "BST": [
+        "TypeBasedGenerator",
+        "LEqGenerator",
+        "LExceptGenerator",
+        "TBEqGenerator",
+        "TBExceptGenerator",
     ]
 }[WORKLOAD]
 
