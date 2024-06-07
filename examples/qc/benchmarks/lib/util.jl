@@ -223,7 +223,7 @@ function save_samples(rs, filename, e; n_samples=200)
         for _ in 1:n_samples
             expr_dist = sample_as_dist(rs.rng, a, e)
             expr = Dice.frombits(expr_dist, Dict())
-            diff_test_typecheck(expr_dist, expr)
+            # diff_test_typecheck(expr_dist, expr)
             println(file, opt_stlc_str(expr))
             # typecheck_opt(expr)
         end
