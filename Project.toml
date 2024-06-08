@@ -17,7 +17,7 @@ PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 [compat]
 CUDD = "0.3"
 DataStructures = "0.18"
-DirectedAcyclicGraphs = "0.1.1"
+DirectedAcyclicGraphs = "0.1.1, 0.2"
 Distributions = "0.25"
 Graphs = "1"
 IRTools = "0.4.11"
