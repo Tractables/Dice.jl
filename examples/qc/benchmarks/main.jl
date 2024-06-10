@@ -12,12 +12,12 @@ GENERATION_PARAMS_LIST = [
         intwidth=3,
         arbitrary_prims=false,
     ),
-    # LangSiblingDerivedGenerator{STLC}(
-    #     root_ty=Expr.t,
-    #     ty_sizes=[Expr.t=>5, Typ.t=>2],
-    #     stack_size=1,
-    #     intwidth=6,
-    # )
+    LangSiblingDerivedGenerator{STLC}(
+        root_ty=Expr.t,
+        ty_sizes=[Expr.t=>5, Typ.t=>2],
+        stack_size=1,
+        intwidth=3,
+    )
     # LangSiblingDerivedGenerator{RBT}(
     #     root_ty=ColorKVTree.t,
     #     ty_sizes=[ColorKVTree.t=>5, Color.t=>0],
@@ -79,12 +79,13 @@ PROPERTY_LIST = [STLCMayType()]
 #     BalanceInvariant(),
 #     OrderInvariant(),
 # ])]
-SAMPLES_PER_BATCH_LIST = [1000]
+SAMPLES_PER_BATCH_LIST = [200]
 EPOCHS_LIST = [2_000]
-EQ_LIST = [:eq_structure]
+EQ_LIST = [:prob_equals, :eq_structure]
+BOUND_LIST = [0.05, 0.1]
 # EQ_LIST = [:prob_equals, :eq_except_numbers]
 
-n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, FORIGIVENESS_LIST, RAND_FORIGIVENESS_LIST, PROPERTY_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST, EQ_LIST]))
+n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, FORIGIVENESS_LIST, RAND_FORIGIVENESS_LIST, PROPERTY_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST, EQ_LIST, BOUND_LIST]))
 println(n_runs)
 @assert n_runs <= 12
 
@@ -98,6 +99,7 @@ println(n_runs)
 @show SAMPLES_PER_BATCH_LIST
 @show EPOCHS_LIST
 @show EQ_LIST
+@show BOUND_LIST
 println()
 
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
@@ -164,11 +166,11 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
 
 TOOL_PATH = "examples/qc/benchmarks/tool.jl"
 
-@sync for (p, lcws, epochs) in Base.product(GENERATION_PARAMS_LIST, LOSS_CONFIG_WEIGHT_PAIRS_LIST, EPOCHS_LIST)
+@sync for (p, lcws, epochs, bound) in Base.product(GENERATION_PARAMS_LIST, LOSS_CONFIG_WEIGHT_PAIRS_LIST, EPOCHS_LIST, BOUND_LIST)
     flags = join([s for s in ARGS if startswith(s, "-")], " ")
     lcws_s = replace(string(lcws), " "=>"")
     p_s = replace(string(p), " "=>"")
-    s = "julia --project $(TOOL_PATH) $(flags) $(p_s) $(lcws_s) $(epochs)"
+    s = "julia --project $(TOOL_PATH) $(flags) $(p_s) $(lcws_s) $(epochs) $(bound)"
     cmd = Cmd(Cmd(convert(Vector{String}, split(s))), ignorestatus=true)
     println(s)
     out = IOBuffer()

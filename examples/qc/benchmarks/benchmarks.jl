@@ -22,7 +22,8 @@ function run_benchmark(
     rs::RunState,
     generation_params::GenerationParams{T},
     loss_config_weight_pairs::AbstractVector{<:Pair{<:LossConfig{T}, <:Real}},
-    epochs::Integer
+    epochs::Integer,
+    bound::Real,
 ) where T
     println_flush(rs.io, "Building generation computation graph...")
     time_build_generation = @elapsed generation = generate(rs, generation_params)
@@ -147,7 +148,11 @@ function run_benchmark(
         # update vars
         for (adnode, d) in derivs
             if adnode isa Var
-                rs.var_vals[adnode] -= d
+                rs.var_vals[adnode] = clamp(
+                    rs.var_vals[adnode] - d,
+                    inverse_sigmoid(bound),
+                    inverse_sigmoid(1 - bound),
+                )
                 # println(rs.io, "$(adnode) $(-d)")
             end
         end
