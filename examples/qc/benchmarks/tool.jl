@@ -4,7 +4,8 @@ TAG = "v45_stlcmayarb"
 TAG = "v46_tbmay"
 TAG = "v48_bst_lang"
 TAG = "v49_stlcmaythin"
-TAG = "boundtest"
+TAG = "v50_stlcbound"
+TAG = "v51_rbtbound"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS

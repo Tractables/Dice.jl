@@ -40,7 +40,7 @@ ORDER: List[str] = { # Put rows in this order and also assert that these generat
         # "TBMay10Generator",
         # "TBMay30Generator",
         # "TBMay50Generator",
-        "ReproTBMightGenerator",
+        # "ReproTBMightGenerator",
 # "LDMayStructureArb_Freq2_SPB200_LR10Generator",
 # "LDMayStructureArb_Freq2_SPB200_LR30Generator",
 # "LDMayStructureArb_Freq2_SPB200_LR50Generator",
@@ -48,6 +48,16 @@ ORDER: List[str] = { # Put rows in this order and also assert that these generat
 # "LDMayStructureArb_Freq2_SPB50_LR30Generator",
 # "LDMayStructureArb_Freq2_SPB50_LR50Generator",
 # "LDMayStructureArb_Freq5_SPB200_LR10Generator",
+        "LDThinInitGenerator",
+        # "LDThinMayEqGenerator",
+        # "LDThinMayStructureGenerator",
+        # "LDThinMayStructureGenerator",
+        # "LDThinMayStructure2Generator",
+    ] + [
+        f"{template}May{eq}Bound{bound}Generator"
+        for template in ["LD", "LSD"]
+        for eq in ["Structure", "Eq"]
+        for bound in ["05", "10"]
     ],
 
     "RBT": [
