@@ -11,16 +11,16 @@ def get_label(segments, segment_labels):
             res = label
     assert res is not None, f"none {segments} {segment_labels}"
 
-    if isinstance(label, tuple):
+    if isinstance(res, tuple):
         lbl, rest = res
         for x in rest:
             lbl += get_label(segments, x)
         return lbl
     else:
-        assert isinstance(label, str)
+        assert isinstance(res, str)
         return res
 
-rootdir = "/space/tjoa/tuning-output/v51_rbtbound/"
+rootdir = "/space/tjoa/tuning-output/v52_stlcace_w_bounds"
 filename_to_dir: dict[str, str] = {}
 for root, subdirs, files in os.walk(rootdir):
     if "trained_Generator.v" in files:
@@ -34,6 +34,7 @@ for root, subdirs, files in os.walk(rootdir):
             "bst": "B_",
         })
         new += get_label(segments, {
+            "langbespoke": "Bespoke",
             "langderived": ("LD", [
                 {"stack_size=2": ""},
                 {
@@ -58,15 +59,18 @@ for root, subdirs, files in os.walk(rootdir):
                 },
                 {
                     "prop=bookkeepingANDbalanceANDorder": "",
+                    "prop=order": "",
                     # todo: May, Might
                 },
                 {"failure_penalty=0.0": ""},
                 {"forgiveness=0": ""},
                 {"rand_forgiveness=true": ""},
-            ])
+            ]),
+            "approx_entropy": "ACE",
         })
         new += get_label(segments, {
-            "0.3": "",
+            "0.3": "LR30",
+            "0.03": "LR03",
         })
         new += get_label(segments, {
             "epochs=2000": "",
@@ -86,4 +90,7 @@ for new, root in filename_to_dir.items():
     src = os.path.join(root, "trained_Generator.v")
     dst = os.path.join(root, new)
     shutil.copyfile(src, dst)
+    print(dst)
+print()
+for new, root in filename_to_dir.items():
     print(f"\"{new[:-2]}\",")
