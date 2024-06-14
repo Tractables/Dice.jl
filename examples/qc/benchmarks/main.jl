@@ -1,10 +1,10 @@
 include("benchmarks.jl")
 
 GENERATION_PARAMS_LIST = [
-    LangBespokeSTLCGenerator(
-        expr_size=5,
-        typ_size=2,
-    ),
+    # LangBespokeSTLCGenerator(
+    #     expr_size=5,
+    #     typ_size=2,
+    # ),
     # LangDerivedGenerator{STLC}(
     #     root_ty=Expr.t,
     #     ty_sizes=[Expr.t=>5, Typ.t=>2],
@@ -24,13 +24,19 @@ GENERATION_PARAMS_LIST = [
     #     stack_size=2,
     #     intwidth=6,
     # )
-    # LangDerivedGenerator{BST}(
-    #     root_ty=KVTree.t,
-    #     ty_sizes=[KVTree.t=>5],
-    #     stack_size=2,
-    #     intwidth=6,
-    #     arbitrary_prims=false,
-    # ),
+    LangDerivedGenerator{BST}(
+        root_ty=KVTree.t,
+        ty_sizes=[KVTree.t=>5],
+        stack_size=2,
+        intwidth=6,
+    )
+    LangDerivedGenerator{BST}(
+        root_ty=KVTree.t,
+        ty_sizes=[KVTree.t=>5],
+        stack_size=2,
+        intwidth=6,
+        arbitrary_prims=false,
+    ),
     # DEPRECATED
     # TypeBasedSTLCGenerator(
     #     size=5,
@@ -67,7 +73,7 @@ GENERATION_PARAMS_LIST = [
     #     intwidth=6,
     # ),
 ]
-LR_LIST = [0.03]
+LR_LIST = [0.3]
 FP_LIST = [0.]
 FORIGIVENESS_LIST = [0]
 RAND_FORIGIVENESS_LIST = [true]
@@ -106,17 +112,17 @@ println()
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
-            ApproxSTLCConstructorEntropy() => lr,
+            # ApproxSTLCConstructorEntropy() => lr,
             # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
-            # SamplingEntropy{BST}(
-            #     resampling_frequency=resampling_frequency,
-            #     samples_per_batch=samples_per_batch,
-            #     property=property,
-            #     eq=eq,
-            #     failure_penalty=fp,
-            #     forgiveness=forgiveness,
-            #     rand_forgiveness=rand_forgiveness,
-            # ) => lr,
+            SamplingEntropy{BST}(
+                resampling_frequency=resampling_frequency,
+                samples_per_batch=samples_per_batch,
+                property=property,
+                eq=eq,
+                failure_penalty=fp,
+                forgiveness=forgiveness,
+                rand_forgiveness=rand_forgiveness,
+            ) => lr,
             # SamplingEntropy{BST}(
             #     resampling_frequency=resampling_frequency,
             #     samples_per_batch=samples_per_batch,
