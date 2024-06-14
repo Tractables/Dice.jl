@@ -8,7 +8,7 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from typing import List, Callable
 
-WORKLOAD = "STLC"
+WORKLOAD = "RBT"
 ORDER_ONLY = True
 ORDER: List[str] = { # Put rows in this order and also assert that these generators exist
     "STLC": [
@@ -61,12 +61,20 @@ ORDER: List[str] = { # Put rows in this order and also assert that these generat
     ],
 
     "RBT": [
-        "TypeBasedGenerator",
-        "LSDEqGenerator",
-        "LSDExceptNumsGenerator",
-        "LSDEq2Generator",
-        "LSDExcept2Generator",
+        # "TypeBasedGenerator",
+        # "LSDEqGenerator",
+        # "LSDExceptNumsGenerator",
+        # "LSDEq2Generator",
+        # "LSDExcept2Generator",
         # "LSDGenerator",
+"R_LSDEqBound05Generator",
+"R_LSDEqBound20Generator",
+"R_LSDEqGenerator",
+"R_LSDEqBound10Generator",
+"R_LSDExceptBound05Generator",
+"R_LSDExceptBound20Generator",
+"R_LSDExceptGenerator",
+"R_LSDExceptBound10Generator",
     ],
 
     "BST": [

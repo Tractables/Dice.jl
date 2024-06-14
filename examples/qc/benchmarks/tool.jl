@@ -6,6 +6,7 @@ TAG = "v48_bst_lang"
 TAG = "v49_stlcmaythin"
 TAG = "v50_stlcbound"
 TAG = "v51_rbtbound"
+TAG = "v52_stlcace_w_bounds"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS
