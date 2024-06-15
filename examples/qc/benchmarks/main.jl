@@ -85,7 +85,7 @@ FORIGIVENESS_LIST = [0]
 RAND_FORIGIVENESS_LIST = [true]
 RESAMPLING_FREQUENCY_LIST = [2]
 # PROPERTY_LIST = [STLCVarNumbers(), STLCMightType(), STLCWellTyped()]
-# PROPERTY_LIST = [STLCWellTyped()]
+PROPERTY_LIST = [STLCWellTyped()]
 # PROPERTY_LIST = [MultipleInvariants([
 #     BookkeepingInvariant(),
 #     BalanceInvariant(),
