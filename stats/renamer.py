@@ -1,4 +1,5 @@
 #!/usr/bin/env python
+rootdir = "/space/tjoa/tuning-output/v53_stlc_well_bounds"
 
 import os
 import shutil
@@ -20,7 +21,6 @@ def get_label(segments, segment_labels):
         assert isinstance(res, str)
         return res
 
-rootdir = "/space/tjoa/tuning-output/v52_stlcace_w_bounds"
 filename_to_dir: dict[str, str] = {}
 for root, subdirs, files in os.walk(rootdir):
     if "trained_Generator.v" in files:
@@ -29,9 +29,9 @@ for root, subdirs, files in os.walk(rootdir):
 
         new = ""
         new += get_label(segments, {
-            "rbt": "R_",
-            "stlc": "S_",
-            "bst": "B_",
+            "rbt": "R",
+            "stlc": "S",
+            "bst": "B",
         })
         new += get_label(segments, {
             "langbespoke": "Bespoke",
@@ -60,6 +60,7 @@ for root, subdirs, files in os.walk(rootdir):
                 {
                     "prop=bookkeepingANDbalanceANDorder": "",
                     "prop=order": "",
+                    "prop=stlcwelltyped": "Well",
                     # todo: May, Might
                 },
                 {"failure_penalty=0.0": ""},
@@ -72,6 +73,10 @@ for root, subdirs, files in os.walk(rootdir):
             "0.3": "LR30",
             "0.03": "LR03",
         })
+        # new += get_label(segments, {
+        #     "ty-sizes=Main.ColorKVTree.t-6-Main.Color.t-0": "Sz6",
+        #     "ty-sizes=Main.ColorKVTree.t-8-Main.Color.t-0": "Sz8",
+        # })
         new += get_label(segments, {
             "epochs=2000": "",
         })
