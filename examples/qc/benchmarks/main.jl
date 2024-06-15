@@ -5,25 +5,31 @@ GENERATION_PARAMS_LIST = [
     #     expr_size=5,
     #     typ_size=2,
     # ),
-    LangDerivedGenerator{STLC}(
-        root_ty=Expr.t,
-        ty_sizes=[Expr.t=>5, Typ.t=>2],
-        stack_size=2,
-        intwidth=3,
-        arbitrary_prims=false,
-    ),
-    LangSiblingDerivedGenerator{STLC}(
-        root_ty=Expr.t,
-        ty_sizes=[Expr.t=>5, Typ.t=>2],
-        stack_size=2,
-        intwidth=3,
-    )
-    # LangSiblingDerivedGenerator{RBT}(
-    #     root_ty=ColorKVTree.t,
-    #     ty_sizes=[ColorKVTree.t=>5, Color.t=>0],
+    # LangDerivedGenerator{STLC}(
+    #     root_ty=Expr.t,
+    #     ty_sizes=[Expr.t=>5, Typ.t=>2],
     #     stack_size=2,
-    #     intwidth=6,
+    #     intwidth=3,
+    #     arbitrary_prims=false,
+    # ),
+    # LangSiblingDerivedGenerator{STLC}(
+    #     root_ty=Expr.t,
+    #     ty_sizes=[Expr.t=>5, Typ.t=>2],
+    #     stack_size=2,
+    #     intwidth=3,
     # )
+    LangSiblingDerivedGenerator{RBT}(
+        root_ty=ColorKVTree.t,
+        ty_sizes=[ColorKVTree.t=>6, Color.t=>0],
+        stack_size=2,
+        intwidth=6,
+    )
+    LangSiblingDerivedGenerator{RBT}(
+        root_ty=ColorKVTree.t,
+        ty_sizes=[ColorKVTree.t=>8, Color.t=>0],
+        stack_size=2,
+        intwidth=6,
+    )
     # LangSiblingDerivedGenerator{BST}(
     #     root_ty=KVTree.t,
     #     ty_sizes=[KVTree.t=>5],
@@ -79,12 +85,12 @@ FORIGIVENESS_LIST = [0]
 RAND_FORIGIVENESS_LIST = [true]
 RESAMPLING_FREQUENCY_LIST = [2]
 # PROPERTY_LIST = [STLCVarNumbers(), STLCMightType(), STLCWellTyped()]
-PROPERTY_LIST = [STLCWellTyped()]
-# PROPERTY_LIST = [MultipleInvariants([
-#     BookkeepingInvariant(),
-#     BalanceInvariant(),
-#     OrderInvariant(),
-# ])]
+# PROPERTY_LIST = [STLCWellTyped()]
+PROPERTY_LIST = [MultipleInvariants([
+    BookkeepingInvariant(),
+    BalanceInvariant(),
+    OrderInvariant(),
+])]
 SAMPLES_PER_BATCH_LIST = [200]
 EPOCHS_LIST = [2_000]
 # EQ_LIST = [:prob_equals, :eq_structure]

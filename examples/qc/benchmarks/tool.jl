@@ -8,6 +8,7 @@ TAG = "v50_stlcbound"
 TAG = "v51_rbtbound"
 TAG = "v52_stlcace_w_bounds"
 TAG = "v53_stlc_well_bounds"
+TAG = "v54_rbt_bigger"
 OUT_TOP_DIR = "/space/tjoa/tuning-output"
 
 ## PARSE ARGS
