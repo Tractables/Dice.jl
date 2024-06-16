@@ -1,5 +1,5 @@
 #!/usr/bin/env python
-rootdir = "/space/tjoa/tuning-output/v53_stlc_well_bounds"
+rootdir = "/space/tjoa/tuning-output/v55_stlc_faster"
 
 import os
 import shutil
@@ -78,13 +78,19 @@ for root, subdirs, files in os.walk(rootdir):
         #     "ty-sizes=Main.ColorKVTree.t-8-Main.Color.t-0": "Sz8",
         # })
         new += get_label(segments, {
-            "epochs=2000": "",
+            "epochs=2000": "Epochs2000",
+            "epochs=700": "Epochs700",
+            "epochs=500": "Epochs500",
         })
         new += get_label(segments, {
             "bound=0.0": "",
             "bound=0.05": "Bound05",
             "bound=0.1": "Bound10",
             "bound=0.2": "Bound20",
+        })
+        new += get_label(segments, {
+            "freq=2-spb=200": "SPB200",
+            "freq=2-spb=50": "SPB50",
         })
         new += "Generator.v"
 
