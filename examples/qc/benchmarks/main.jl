@@ -11,18 +11,18 @@ GENERATION_PARAMS_LIST = [
     #     stack_size=2,
     #     intwidth=3,
     # )
-    LangSiblingDerivedGenerator{RBT}(
-        root_ty=ColorKVTree.t,
-        ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
+    # LangSiblingDerivedGenerator{RBT}(
+    #     root_ty=ColorKVTree.t,
+    #     ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
+    #     stack_size=2,
+    #     intwidth=3,
+    # )
+    LangSiblingDerivedGenerator{BST}(
+        root_ty=KVTree.t,
+        ty_sizes=[KVTree.t=>4],
         stack_size=2,
         intwidth=3,
-    )
-    # LangSiblingDerivedGenerator{BST}(
-    #     root_ty=KVTree.t,
-    #     ty_sizes=[KVTree.t=>5],
-    #     stack_size=2,
-    #     intwidth=6,
-    # ),
+    ),
 ]
 LR_LIST = [0.3]
 FP_LIST = [0.]
@@ -31,11 +31,12 @@ RAND_FORIGIVENESS_LIST = [true]
 RESAMPLING_FREQUENCY_LIST = [2]
 # PROPERTY_LIST = [STLCVarNumbers(), STLCMightType(), STLCWellTyped()]
 # PROPERTY_LIST = [STLCWellTyped()]
-PROPERTY_LIST = [MultipleInvariants([
-    BookkeepingInvariant(),
-    BalanceInvariant(),
-    OrderInvariant(),
-])]
+PROPERTY_LIST = [BSTOrderInvariant()]
+# PROPERTY_LIST = [MultipleInvariants([
+#     BookkeepingInvariant(),
+#     BalanceInvariant(),
+#     OrderInvariant(),
+# ])]
 SAMPLES_PER_BATCH_LIST = [200]
 EPOCHS_LIST = [2000]
 # EQ_LIST = [:prob_equals, :eq_structure]
@@ -65,7 +66,7 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
         [
             # ApproxSTLCConstructorEntropy() => lr,
             # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
-            SamplingEntropy{RBT}(
+            SamplingEntropy{BST}(
                 resampling_frequency=resampling_frequency,
                 samples_per_batch=samples_per_batch,
                 property=property,
