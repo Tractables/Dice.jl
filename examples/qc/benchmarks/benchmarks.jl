@@ -604,7 +604,7 @@ function generate(rs::RunState, p::LangSiblingDerivedGenerator{T}) where T
     if T == STLC
         STLCGeneration(OptExpr.Some(res), [OptExpr.Some(e) for e in function_results["genExpr"]])
     elseif T == BST
-        BSTGeneration(res) #, function_results["genTree"])
+        BSTGeneration(res, function_results["genTree"])
     elseif T == RBT
         RBTGeneration(res) #, function_results["genTree"])
     else
