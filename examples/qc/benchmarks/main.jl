@@ -5,77 +5,22 @@ GENERATION_PARAMS_LIST = [
     #     expr_size=5,
     #     typ_size=2,
     # ),
-    # LangDerivedGenerator{STLC}(
+    # LangSiblingDerivedGenerator{STLC}(
     #     root_ty=Expr.t,
     #     ty_sizes=[Expr.t=>5, Typ.t=>2],
     #     stack_size=2,
     #     intwidth=3,
-    #     arbitrary_prims=false,
-    # ),
-    LangSiblingDerivedGenerator{STLC}(
-        root_ty=Expr.t,
-        ty_sizes=[Expr.t=>5, Typ.t=>2],
+    # )
+    LangSiblingDerivedGenerator{RBT}(
+        root_ty=ColorKVTree.t,
+        ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
         stack_size=2,
         intwidth=3,
     )
-    # LangSiblingDerivedGenerator{RBT}(
-    #     root_ty=ColorKVTree.t,
-    #     ty_sizes=[ColorKVTree.t=>6, Color.t=>0],
-    #     stack_size=2,
-    #     intwidth=6,
-    # )
-    # LangSiblingDerivedGenerator{RBT}(
-    #     root_ty=ColorKVTree.t,
-    #     ty_sizes=[ColorKVTree.t=>8, Color.t=>0],
-    #     stack_size=2,
-    #     intwidth=6,
-    # )
     # LangSiblingDerivedGenerator{BST}(
     #     root_ty=KVTree.t,
     #     ty_sizes=[KVTree.t=>5],
     #     stack_size=2,
-    #     intwidth=6,
-    # ),
-    # LangDerivedGenerator{BST}(
-    #     root_ty=KVTree.t,
-    #     ty_sizes=[KVTree.t=>5],
-    #     stack_size=2,
-    #     intwidth=6,
-    #     arbitrary_prims=false,
-    # ),
-    # DEPRECATED
-    # TypeBasedSTLCGenerator(
-    #     size=5,
-    #     ty_size=2,
-    #     dependents=[:size,:stack_tail],
-    #     ty_dependents=[:size,:stack_tail],
-    #     stack_size=2,
-    #     intwidth=6,
-    # ),
-    # DerivedGenerator{STLC}(
-    #     root_ty=Expr.t,
-    #     ty_sizes=[Expr.t=>4, Typ.t=>1],
-    #     stack_size=2,
-    #     intwidth=6,
-    # )
-    # DerivedGenerator{RBT}(
-    #     root_ty=ColorKVTree.t,
-    #     ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
-    #     stack_size=2,
-    #     intwidth=6,
-    # )
-    # TypeBasedRBTGenerator(
-    #     size=5,
-    #     leaf_dependents=[:size,:parent_color,:stack_tail],
-    #     red_dependents=[:size,:parent_color,:stack_tail],
-    #     num_dependents=[:size,:parent_color,:stack_tail],
-    #     stack_size=3,
-    #     intwidth=6,
-    # ),
-    # TypeBasedBSTGenerator(
-    #     size=5,
-    #     leaf_dependents=[:size,:last_callsite],
-    #     num_dependents=[:size,:last_callsite],
     #     intwidth=6,
     # ),
 ]
@@ -85,14 +30,14 @@ FORIGIVENESS_LIST = [0]
 RAND_FORIGIVENESS_LIST = [true]
 RESAMPLING_FREQUENCY_LIST = [2]
 # PROPERTY_LIST = [STLCVarNumbers(), STLCMightType(), STLCWellTyped()]
-PROPERTY_LIST = [STLCWellTyped()]
-# PROPERTY_LIST = [MultipleInvariants([
-#     BookkeepingInvariant(),
-#     BalanceInvariant(),
-#     OrderInvariant(),
-# ])]
-SAMPLES_PER_BATCH_LIST = [50, 200]
-EPOCHS_LIST = [500, 700]
+# PROPERTY_LIST = [STLCWellTyped()]
+PROPERTY_LIST = [MultipleInvariants([
+    BookkeepingInvariant(),
+    BalanceInvariant(),
+    OrderInvariant(),
+])]
+SAMPLES_PER_BATCH_LIST = [200]
+EPOCHS_LIST = [2000]
 # EQ_LIST = [:prob_equals, :eq_structure]
 BOUND_LIST = [0.1]
 EQ_LIST = [:prob_equals]
@@ -120,7 +65,7 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
         [
             # ApproxSTLCConstructorEntropy() => lr,
             # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
-            SamplingEntropy{STLC}(
+            SamplingEntropy{RBT}(
                 resampling_frequency=resampling_frequency,
                 samples_per_batch=samples_per_batch,
                 property=property,
