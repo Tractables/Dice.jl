@@ -3,7 +3,7 @@ using SymPy
 @vars varint
 @vars v2
 
-export DistFix, bitblast, bitblast_linear, bitblast_exponential, bitblast_exact, unit_exponential, exponential, laplace, unit_gamma, shift_point_gamma, n_unit_exponentials, geometric
+export DistFix, bitblast, bitblast_linear, bitblast_exponential, bitblast_exact, unit_exponential, exponential, laplace, unit_gamma, shift_point_gamma, n_unit_exponentials, geometric, general_gamma
 
 ##################################
 # types, structs, and constructors
@@ -664,4 +664,13 @@ function geometric(::Type{DistFix{W, F}}, success::Float64, stop::Int) where {W,
     @assert W - F > bits
 
     convert(DistFix{W, F}, DistFix{W, 0}(unit_exponential(DistFix{bits+1, bits}, log(1 - success)*2^bits).mantissa))
+end
+
+function general_gamma(::Type{DistFix{W, F}}, alpha::Int, beta::Float64, ll::Float64, ul::Float64) where {W, F}
+    @assert ispow2(ul - ll)
+    multiply = Int(log2(ul - ll))
+    start = DistFix{W, F}(ul)
+    new_type = DistFix{W, F + multiply} 
+
+    DistFix{W, F}(unit_gamma(new_type, alpha, beta).mantissa.number.bits) + start
 end

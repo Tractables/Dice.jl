@@ -394,5 +394,8 @@ end
     a = geometric(DistFix{8, 2}, 0.8, 32)
     @test pr(a)[0.0] ≈ pdf(x, 0.0)
     @test pr(a)[19] ≈ pdf(x, 19.0)
+
+    x = (@dice general_gamma(DistFix{7, 4}, 1, 1.0, 0.5, 1.0))
+    @test pr(x)[0.0] ≈ 0.0
 end
 
