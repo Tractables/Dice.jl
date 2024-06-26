@@ -24,8 +24,8 @@ GENERATION_PARAMS_LIST = [
 #        intwidth=3,
 #    ),
 ]
-LR_LIST = [0.3]
-LR_LIST = [0.001, 0.003, 0.01, 0.03, 0.1, 0.3]
+# LR_LIST = [0.3]
+LR_LIST = [0.01, 0.1, 0.3]
 FP_LIST = [0.]
 FORIGIVENESS_LIST = [0]
 RAND_FORIGIVENESS_LIST = [true]
@@ -37,8 +37,8 @@ PROPERTY_LIST = [STLCWellTyped()]
 #     BalanceInvariant(),
 #     OrderInvariant(),
 # ])]
-SAMPLES_PER_BATCH_LIST = [200]
-EPOCHS_LIST = [2000]
+SAMPLES_PER_BATCH_LIST = [50, 200]
+EPOCHS_LIST = [500, 2000]
 BOUND_LIST = [0.1]
 EQ_LIST = [:prob_equals]
 
