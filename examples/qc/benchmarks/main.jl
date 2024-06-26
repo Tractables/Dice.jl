@@ -3,7 +3,7 @@ include("benchmarks.jl")
 GENERATION_PARAMS_LIST = [
     LangBespokeSTLCGenerator(
         expr_size=5,
-        typ_size=2,
+        typ_size=1,
     ),
     # LangSiblingDerivedGenerator{STLC}(
     #     root_ty=Expr.t,
