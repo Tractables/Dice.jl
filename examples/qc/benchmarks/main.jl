@@ -37,9 +37,9 @@ PROPERTY_LIST = [STLCWellTyped()]
 #     BalanceInvariant(),
 #     OrderInvariant(),
 # ])]
-SAMPLES_PER_BATCH_LIST = [50, 200]
-EPOCHS_LIST = [500, 2000]
-SAMPLES_PER_BATCH_LIST = [nothing]
+SAMPLES_PER_BATCH_LIST = [50]
+EPOCHS_LIST = [10]
+# SAMPLES_PER_BATCH_LIST = [nothing]
 BOUND_LIST = [0.1]
 EQ_LIST = [:prob_equals]
 
@@ -63,17 +63,17 @@ println()
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
-            ApproxSTLCConstructorEntropy() => lr,
+            # ApproxSTLCConstructorEntropy() => lr,
             # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
-#             SamplingEntropy{STLC}(
-#                 resampling_frequency=resampling_frequency,
-#                 samples_per_batch=samples_per_batch,
-#                 property=property,
-#                 eq=eq,
-#                 failure_penalty=fp,
-#                 forgiveness=forgiveness,
-#                 rand_forgiveness=rand_forgiveness,
-#             ) => lr,
+            SamplingEntropy{STLC}(
+                resampling_frequency=resampling_frequency,
+                samples_per_batch=samples_per_batch,
+                property=property,
+                eq=eq,
+                failure_penalty=fp,
+                forgiveness=forgiveness,
+                rand_forgiveness=rand_forgiveness,
+            ) => lr,
 #             # SamplingEntropy{BST}(
             #     resampling_frequency=resampling_frequency,
             #     samples_per_batch=samples_per_batch,
