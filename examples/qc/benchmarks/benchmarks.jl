@@ -215,6 +215,7 @@ struct SamplingEntropy{T} <: LossConfig{T}
     failure_penalty::Real
     forgiveness::Real
     rand_forgiveness::Bool
+    keyf::Symbol
 end
 
 mutable struct SamplingEntropyLossMgr <: LossMgr
@@ -270,6 +271,10 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
         elseif m.p.eq == :eq_structure eq_structure
         elseif m.p.eq == :prob_equals prob_equals
         else error() end
+
+        keyf = if m.p.keyf == :identity identity
+        else error() end
+
         loss, actual_loss = sum(
             begin
                 lpr_eq = LogPr(f_eq(m.val, sample))
@@ -1805,8 +1810,8 @@ name(::TrueProperty{T}) where T = "trueproperty"
 # Sampling STLC entropy loss
 ##################################
 
-function SamplingEntropy{T}(; resampling_frequency, samples_per_batch, property, eq, failure_penalty, forgiveness, rand_forgiveness) where T
-    SamplingEntropy{T}(resampling_frequency, samples_per_batch, property, eq, failure_penalty, forgiveness, rand_forgiveness)
+function SamplingEntropy{T}(; resampling_frequency, samples_per_batch, property, eq, failure_penalty, forgiveness, rand_forgiveness, keyf) where T
+    SamplingEntropy{T}(resampling_frequency, samples_per_batch, property, eq, failure_penalty, forgiveness, rand_forgiveness, keyf)
 end
 
 to_subpath(p::SamplingEntropy) = [
@@ -1816,7 +1821,8 @@ to_subpath(p::SamplingEntropy) = [
     "prop=$(name(p.property))",
     "failure_penalty=$(p.failure_penalty)",
     "forgiveness=$(p.forgiveness)",
-    "rand_forgiveness=$(p.rand_forgiveness)"
+    "rand_forgiveness=$(p.rand_forgiveness)",
+    "keyf=$(p.keyf)",
 ]
 function create_loss_manager(::RunState, p::SamplingEntropy{T}, g::Generation{T}) where T
     function consider(sample)

@@ -3,7 +3,7 @@ include("benchmarks.jl")
 GENERATION_PARAMS_LIST = [
     LangBespokeSTLCGenerator(
         expr_size=5,
-        typ_size=1,
+        typ_size=2,
     ),
     # LangSiblingDerivedGenerator{STLC}(
     #     root_ty=Expr.t,
@@ -37,11 +37,11 @@ PROPERTY_LIST = [STLCWellTyped()]
 #     BalanceInvariant(),
 #     OrderInvariant(),
 # ])]
-SAMPLES_PER_BATCH_LIST = [50]
-EPOCHS_LIST = [10]
+SAMPLES_PER_BATCH_LIST = [50, 200]
+EPOCHS_LIST = [500, 2000]
 # SAMPLES_PER_BATCH_LIST = [nothing]
 BOUND_LIST = [0.1]
-EQ_LIST = [:prob_equals]
+EQ_LIST = [:eq_structure]
 
 n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, FORIGIVENESS_LIST, RAND_FORIGIVENESS_LIST, PROPERTY_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST, EQ_LIST, BOUND_LIST]))
 println(n_runs)
@@ -73,6 +73,7 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
                 failure_penalty=fp,
                 forgiveness=forgiveness,
                 rand_forgiveness=rand_forgiveness,
+                keyf=:identity,
             ) => lr,
 #             # SamplingEntropy{BST}(
             #     resampling_frequency=resampling_frequency,

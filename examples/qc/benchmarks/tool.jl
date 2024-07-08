@@ -35,14 +35,14 @@ if isempty(ARGS)
     #     stack_size=1,
     #     intwidth=6,
     # )
-    g_p = TypeBasedSTLCGenerator(
-        size=2,
-        ty_size=1,
-        dependents=[:size,:stack_tail],
-        ty_dependents=[:size,:stack_tail],
-        stack_size=2,
-        intwidth=6,
-    )
+    # g_p = TypeBasedSTLCGenerator(
+    #     size=2,
+    #     ty_size=1,
+    #     dependents=[:size,:stack_tail],
+    #     ty_dependents=[:size,:stack_tail],
+    #     stack_size=2,
+    #     intwidth=6,
+    # )
     # g_p = TypeBasedRBTGenerator(
     #     size=3,
     #     leaf_dependents=[:size,:parent_color,:stack_tail],
@@ -53,17 +53,17 @@ if isempty(ARGS)
     # )
     lr = 0.5
     fp = 0
-    g_p = LangDerivedGenerator{BST}(
-        root_ty=KVTree.t,
-        ty_sizes=[KVTree.t=>5],
-        stack_size=2,
-        intwidth=6,
-        arbitrary_prims=false,
-    )
-    # g_p = LangBespokeSTLCGenerator(
-    #     expr_size=2,
-    #     typ_size=1,
+    # g_p = LangDerivedGenerator{BST}(
+    #     root_ty=KVTree.t,
+    #     ty_sizes=[KVTree.t=>5],
+    #     stack_size=2,
+    #     intwidth=6,
+    #     arbitrary_prims=false,
     # )
+    g_p = LangBespokeSTLCGenerator(
+        expr_size=2,
+        typ_size=1,
+    )
     l_p = [
         # SamplingEntropy{STLC}(
         #     resampling_frequency=1,
@@ -74,14 +74,15 @@ if isempty(ARGS)
         #     forgiveness=0,
         #     rand_forgiveness=true,
         # ) => lr,
-        SamplingEntropy{BST}(
+        SamplingEntropy{STLC}(
             resampling_frequency=1,
             samples_per_batch=50,
-            property=BSTOrderInvariant(),
-            eq=:prob_equals,
+            property=STLCWellTyped(),
+            eq=:eq_structure,
             failure_penalty=fp,
             forgiveness=0,
             rand_forgiveness=true,
+            keyf=:identity,
         ) => lr,
 
         # ApproxSTLCConstructorEntropy() => lr,
