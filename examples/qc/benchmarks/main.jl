@@ -25,7 +25,7 @@ GENERATION_PARAMS_LIST = [
 #    ),
 ]
 # LR_LIST = [0.3]
-LR_LIST = [0.01, 0.03, 0.1, 0.3]
+LR_LIST = [0.01, 0.03, 0.1]
 FP_LIST = [0.]
 FORIGIVENESS_LIST = [0]
 RAND_FORIGIVENESS_LIST = [true]
@@ -38,8 +38,9 @@ PROPERTY_LIST = [STLCWellTyped()]
 #     OrderInvariant(),
 # ])]
 SAMPLES_PER_BATCH_LIST = [50, 200]
-EPOCHS_LIST = [500, 2000]
-# SAMPLES_PER_BATCH_LIST = [nothing]
+EPOCHS_LIST = [2000]
+
+SAMPLES_PER_BATCH_LIST = [nothing]
 BOUND_LIST = [0.1]
 EQ_LIST = [:eq_structure]
 
@@ -64,17 +65,17 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
             # ApproxSTLCConstructorEntropy() => lr,
-            # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
-            SamplingEntropy{STLC}(
-                resampling_frequency=resampling_frequency,
-                samples_per_batch=samples_per_batch,
-                property=property,
-                eq=eq,
-                failure_penalty=fp,
-                forgiveness=forgiveness,
-                rand_forgiveness=rand_forgiveness,
-                keyf=:identity,
-            ) => lr,
+            MLELossConfig{STLC}(NumApps(), Linear()) => lr,
+            # SamplingEntropy{STLC}(
+            #     resampling_frequency=resampling_frequency,
+            #     samples_per_batch=samples_per_batch,
+            #     property=property,
+            #     eq=eq,
+            #     failure_penalty=fp,
+            #     forgiveness=forgiveness,
+            #     rand_forgiveness=rand_forgiveness,
+            #     keyf=:identity,
+            # ) => lr,
 #             # SamplingEntropy{BST}(
             #     resampling_frequency=resampling_frequency,
             #     samples_per_batch=samples_per_batch,
