@@ -60,58 +60,64 @@ function run_benchmark(
             end
         end
 
-    #     if T == STLC
-    #         samples_to_take = 10_000
-    #         println_flush(rs.io, "Taking $(samples_to_take) metric samples...")
+        if T == STLC
+            bespoke = generation_params isa LangBespokeSTLCGenerator
+            samples_to_take = 10_000
+            println_flush(rs.io, "Taking $(samples_to_take) metric samples $(bespoke)...")
 
-    #         metrics = [NumApps(), TermSize()]
-    #         metric_to_cts = Dict(metric => Dict() for metric in metrics)
+            metrics = [NumApps(), TermSize()]
+            metric_to_cts = Dict(metric => Dict() for metric in metrics)
 
-    #         a = ADComputer(rs.var_vals)
-    #         time_sample = @elapsed with_concrete_ad_flips(rs.var_vals, value(generation)) do
-    #             for _ in 1:samples_to_take
-    #                 sample = sample_as_dist(rs.rng, a, value(generation))
-    #                 is_valid = check_property(STLCWellTyped(), sample)
-    #                 for (metric, cts) in metric_to_cts
-    #                     key = (
-    #                         is_valid,
-    #                         Dice.frombits(
-    #                             compute_metric(metric, STLCGeneration(sample,[])),
-    #                             Dict())
-    #                     )
-    #                     get!(cts, key, 0)
-    #                     cts[key] += 1
-    #                 end
-    #             end
-    #         end
-    #         println_loud(rs, "  $(time_sample) seconds")
-    #         println_loud(rs, metric_to_cts)
+            a = ADComputer(rs.var_vals)
+            time_sample = @elapsed with_concrete_ad_flips(rs.var_vals, value(generation)) do
+                for _ in 1:samples_to_take
+                    sample = sample_as_dist(rs.rng, a, value(generation))
+                    is_valid = check_property(STLCWellTyped(), sample)
+                    @assert !bespoke || is_valid
+                    for (metric, cts) in metric_to_cts
+                        key = (
+                            is_valid,
+                            Dice.frombits(
+                                compute_metric(metric, STLCGeneration(sample,[])),
+                                Dict())
+                        )
+                        get!(cts, key, 0)
+                        cts[key] += 1
+                    end
+                end
+            end
+            println_loud(rs, "  $(time_sample) seconds")
+            println_loud(rs, metric_to_cts)
 
-    #         for (metric, cts) in metric_to_cts
-    #             filename = joinpath(rs.out_dir, "sampled_$(samples_to_take)_dist_$(name(metric))_$(s).csv")
-    #             open(filename, "w") do file
-    #                 min_metric_val = minimum(
-    #                     metric_val
-    #                     for (valid, metric_val) in keys(cts)
-    #                 )
-    #                 @assert min_metric_val >= 0
-    #                 max_metric_val = maximum(
-    #                     metric_val
-    #                     for (valid, metric_val) in keys(cts)
-    #                 )
-    #                 println(file, join([
-    #                     if valid "$(metric_val)" else "$(metric_val)!" end
-    #                     for metric_val in 0:max_metric_val
-    #                     for valid in [true, false]
-    #                 ], "\t"))
-    #                 println(file, join([
-    #                     get(cts, (valid, metric_val), 0)
-    #                     for metric_val in 0:max_metric_val
-    #                     for valid in [true, false]
-    #                 ], "\t"))
-    #             end
-    #         end
-    #     end
+            for (metric, cts) in metric_to_cts
+                filename = joinpath(rs.out_dir, "sampled_$(samples_to_take)_dist_$(name(metric))_$(s).csv")
+                open(filename, "w") do file
+                    min_metric_val = minimum(
+                        metric_val
+                        for (valid, metric_val) in keys(cts)
+                    )
+                    @assert min_metric_val >= 0
+                    max_metric_val = maximum(
+                        metric_val
+                        for (valid, metric_val) in keys(cts)
+                    )
+
+                    valids = if bespoke
+                        [true] else [true, false] end
+                    println(file, join([
+                        if valid "$(metric_val)" else "$(metric_val)!" end
+                        for metric_val in 0:max_metric_val
+                        for valid in valids
+                        
+                    ], "\t"))
+                    println(file, join([
+                        get(cts, (valid, metric_val), 0)
+                        for metric_val in 0:max_metric_val
+                        for valid in valids
+                    ], "\t"))
+                end
+            end
+        end
 
         println(rs.io)
     end
@@ -273,6 +279,7 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
         else error() end
 
         keyf = if m.p.keyf == :identity identity
+        elseif m.p.keyf == :num_apps num_apps
         else error() end
 
         loss, actual_loss = sum(

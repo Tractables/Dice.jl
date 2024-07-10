@@ -17,6 +17,8 @@ TAG = "v60_stlc_bespoke_se"
 TAG = "v61_stlc_51_ace"
 TAG = "v61_stlc_bespoke_se_force_meets"
 TAG = "v62_ex_unif_stlc"
+TAG = "v63_ex_unif_stlc_entropy"
+TAG = "fig_rbt"
 # TAG = "v59_repro"
 OUT_TOP_DIR = "/space2/tjoa/tuning-output"
 
@@ -85,7 +87,19 @@ if isempty(ARGS)
         #     rand_forgiveness=true,
         #     keyf=:identity,
         # ) => lr,
-        MLELossConfig{STLC}(NumApps(), Linear()) => lr,
+        # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
+        
+        # Apps entropy
+        SamplingEntropy{STLC}(
+            resampling_frequency=1,
+            samples_per_batch=50,
+            property=TrueProperty{STLC}(),
+            eq=:prob_equals,
+            failure_penalty=fp,
+            forgiveness=0,
+            rand_forgiveness=true,
+            keyf=:num_apps,
+        ) => lr,
 
         # ApproxSTLCConstructorEntropy() => lr,
         # MLELossConfig{STLC}(NumApps(), Linear()) => lr,

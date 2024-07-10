@@ -31,6 +31,7 @@ FORIGIVENESS_LIST = [0]
 RAND_FORIGIVENESS_LIST = [true]
 RESAMPLING_FREQUENCY_LIST = [2]
 PROPERTY_LIST = [STLCWellTyped()]
+PROPERTY_LIST = [TrueProperty{STLC}()]
 # PROPERTY_LIST = [BSTOrderInvariant()]
 # PROPERTY_LIST = [MultipleInvariants([
 #     BookkeepingInvariant(),
@@ -38,11 +39,11 @@ PROPERTY_LIST = [STLCWellTyped()]
 #     OrderInvariant(),
 # ])]
 SAMPLES_PER_BATCH_LIST = [50, 200]
-EPOCHS_LIST = [2000]
+EPOCHS_LIST = [50,200]
 
-SAMPLES_PER_BATCH_LIST = [nothing]
+# SAMPLES_PER_BATCH_LIST = [nothing]
 BOUND_LIST = [0.1]
-EQ_LIST = [:eq_structure]
+EQ_LIST = [:prob_equals]
 
 n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, FORIGIVENESS_LIST, RAND_FORIGIVENESS_LIST, PROPERTY_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST, EQ_LIST, BOUND_LIST]))
 println(n_runs)
@@ -65,17 +66,17 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
             # ApproxSTLCConstructorEntropy() => lr,
-            MLELossConfig{STLC}(NumApps(), Linear()) => lr,
-            # SamplingEntropy{STLC}(
-            #     resampling_frequency=resampling_frequency,
-            #     samples_per_batch=samples_per_batch,
-            #     property=property,
-            #     eq=eq,
-            #     failure_penalty=fp,
-            #     forgiveness=forgiveness,
-            #     rand_forgiveness=rand_forgiveness,
-            #     keyf=:identity,
-            # ) => lr,
+            # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
+            SamplingEntropy{STLC}(
+                resampling_frequency=resampling_frequency,
+                samples_per_batch=samples_per_batch,
+                property=property,
+                eq=eq,
+                failure_penalty=fp,
+                forgiveness=forgiveness,
+                rand_forgiveness=rand_forgiveness,
+                keyf=:num_apps,
+            ) => lr,
 #             # SamplingEntropy{BST}(
             #     resampling_frequency=resampling_frequency,
             #     samples_per_batch=samples_per_batch,
