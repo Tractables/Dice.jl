@@ -60,7 +60,7 @@ for root, subdirs, files in os.walk(rootdir):
                     "eq=prob_equals": "Eq",
                 },
                 {
-                    "prop=bookkeepingANDbalanceANDorder": "",
+                    "prop=bookkeepingANDbalanceANDorder": "Valid",
                     "prop=order": "",
                     "prop=stlcwelltyped": "Well",
                     "prop=trueproperty": "",
@@ -99,7 +99,7 @@ for root, subdirs, files in os.walk(rootdir):
         })
         new += "Generator.v"
 
-        assert new not in filename_to_dir, f"{new} {filename_to_dir}"
+        assert new not in filename_to_dir, f"{new}\n{root}\n{filename_to_dir[new]}"
         filename_to_dir[new] = root
 
 for new, root in filename_to_dir.items():

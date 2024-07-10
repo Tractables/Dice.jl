@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from typing import List, Callable
 
 WORKLOAD = "RBT"
-ORDER_ONLY = True
+ORDER_ONLY = False
 ORDER: List[str] = { # Put rows in this order and also assert that these generators exist
     "STLC": [
         # # class: bespoke
@@ -67,14 +67,6 @@ ORDER: List[str] = { # Put rows in this order and also assert that these generat
         # "LSDEq2Generator",
         # "LSDExcept2Generator",
         # "LSDGenerator",
-"R_LSDEqBound05Generator",
-"R_LSDEqBound20Generator",
-"R_LSDEqGenerator",
-"R_LSDEqBound10Generator",
-"R_LSDExceptBound05Generator",
-"R_LSDExceptBound20Generator",
-"R_LSDExceptGenerator",
-"R_LSDExceptBound10Generator",
     ],
 
     "BST": [
@@ -86,9 +78,9 @@ ORDER: List[str] = { # Put rows in this order and also assert that these generat
     ]
 }[WORKLOAD]
 
-STRAT_DIR = f"/space/tjoa/etna/workloads/Coq/{WORKLOAD}/Strategies/"
-OUT_DIR = f"/space/tjoa/Dice.jl/stats/{WORKLOAD}"
-COQ_PROJECT_DIR = f"/space/tjoa/etna/workloads/Coq/{WORKLOAD}"
+STRAT_DIR = f"/scratch/tjoa/etna/workloads/Coq/{WORKLOAD}/Strategies/"
+OUT_DIR = f"/scratch/tjoa/Dice.jl/stats/{WORKLOAD}"
+COQ_PROJECT_DIR = f"/scratch/tjoa/etna/workloads/Coq/{WORKLOAD}"
 NUM_TESTS = 100_000
 
 @dataclass
