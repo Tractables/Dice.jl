@@ -1,22 +1,22 @@
 include("benchmarks.jl")
 
 GENERATION_PARAMS_LIST = [
-    LangBespokeSTLCGenerator(
-        expr_size=5,
-        typ_size=2,
-    ),
+    # LangBespokeSTLCGenerator(
+    #     expr_size=5,
+    #     typ_size=2,
+    # ),
     # LangSiblingDerivedGenerator{STLC}(
     #     root_ty=Expr.t,
     #     ty_sizes=[Expr.t=>5, Typ.t=>2],
     #     stack_size=2,
     #     intwidth=3,
     # )
-    # LangSiblingDerivedGenerator{RBT}(
-    #     root_ty=ColorKVTree.t,
-    #     ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
-    #     stack_size=2,
-    #     intwidth=3,
-    # )
+    LangSiblingDerivedGenerator{RBT}(
+        root_ty=ColorKVTree.t,
+        ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
+        stack_size=2,
+        intwidth=3,
+    )
 #    LangSiblingDerivedGenerator{BST}(
 #        root_ty=KVTree.t,
 #        ty_sizes=[KVTree.t=>4],
@@ -30,19 +30,18 @@ FP_LIST = [0.]
 FORIGIVENESS_LIST = [0]
 RAND_FORIGIVENESS_LIST = [true]
 RESAMPLING_FREQUENCY_LIST = [2]
-PROPERTY_LIST = [STLCWellTyped()]
-PROPERTY_LIST = [TrueProperty{STLC}()]
 # PROPERTY_LIST = [BSTOrderInvariant()]
-# PROPERTY_LIST = [MultipleInvariants([
-#     BookkeepingInvariant(),
-#     BalanceInvariant(),
-#     OrderInvariant(),
-# ])]
-SAMPLES_PER_BATCH_LIST = [50, 200]
-EPOCHS_LIST = [50,200]
+PROPERTY_LIST = [MultipleInvariants([
+    BookkeepingInvariant(),
+    BalanceInvariant(),
+    OrderInvariant(),
+]),
+TrueProperty{RBT}()]
+SAMPLES_PER_BATCH_LIST = [200]
+EPOCHS_LIST = [2000]
 
 # SAMPLES_PER_BATCH_LIST = [nothing]
-BOUND_LIST = [0.1]
+BOUND_LIST = [0, 0.1]
 EQ_LIST = [:prob_equals]
 
 n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, FORIGIVENESS_LIST, RAND_FORIGIVENESS_LIST, PROPERTY_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST, EQ_LIST, BOUND_LIST]))

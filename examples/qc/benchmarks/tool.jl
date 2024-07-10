@@ -18,7 +18,7 @@ TAG = "v61_stlc_51_ace"
 TAG = "v61_stlc_bespoke_se_force_meets"
 TAG = "v62_ex_unif_stlc"
 TAG = "v63_ex_unif_stlc_entropy"
-TAG = "fig_rbt"
+TAG = "v64_fig_rbt"
 # TAG = "v59_repro"
 OUT_TOP_DIR = "/space2/tjoa/tuning-output"
 
@@ -46,13 +46,13 @@ if isempty(ARGS)
     #     stack_size=2,
     #     intwidth=6,
     # )
-    # g_p = TypeBasedRBTGenerator(
-    #     size=3,
-    #     leaf_dependents=[:size,:parent_color,:stack_tail],
-    #     red_dependents=[:size,:parent_color,:stack_tail],
-    #     num_dependents=[:size,:parent_color,:stack_tail],
-    #     stack_size=2,
-    #     intwidth=6,
+    g_p = TypeBasedRBTGenerator(
+        size=3,
+        leaf_dependents=[:size,:parent_color,:stack_tail],
+        red_dependents=[:size,:parent_color,:stack_tail],
+        num_dependents=[:size,:parent_color,:stack_tail],
+        stack_size=2,
+        intwidth=6,
     # )
     lr = 0.5
     fp = 0
