@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 rootdir = "/space/tjoa/tuning-output/v56_rbt_thin"
 # rootdir = "/space/tjoa/tuning-output/v55_stlc_faster"
-rootdir = "/space2/tjoa/tuning-output/v64_fig_rbt"
+rootdir = "/space2/tjoa/tuning-output/v66_fig2_rbt"
 
 import os
 import shutil

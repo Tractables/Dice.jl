@@ -21,6 +21,7 @@ TAG = "v63_ex_unif_stlc_entropy"
 TAG = "v64_fig_rbt"
 TAG = "v65_simpler_ace"
 TAG = "v66_fig2_rbt"
+TAG = "v67_rbt_unif_apps"
 # TAG = "v59_repro"
 OUT_TOP_DIR = "/space2/tjoa/tuning-output"
 
