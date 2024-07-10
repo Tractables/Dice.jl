@@ -69,7 +69,12 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
             # ApproxSTLCConstructorEntropy() => lr,
-            MLELossConfig{RBT}(RBTDepth(), Uniform()) => lr,
+            SatisfyPropertyLoss{RBT}(MultipleInvariants([
+                BookkeepingInvariant(),
+                BalanceInvariant(),
+                OrderInvariant(),
+            ])) => lr,
+            # MLELossConfig{RBT}(RBTDepth(), Uniform()) => lr,
 #             SamplingEntropy{RBT}(
 #                 resampling_frequency=resampling_frequency,
 #                 samples_per_batch=samples_per_batch,
