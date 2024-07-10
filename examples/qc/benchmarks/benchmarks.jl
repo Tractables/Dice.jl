@@ -1109,7 +1109,11 @@ end
 function generate(rs::RunState, p::LangBespokeSTLCGenerator)
     prog = gen_expr_lang(p.expr_size, p.typ_size)
     res, prim_map, function_results = interp(rs, prog)
-    STLCGeneration(res, function_results["genExpr"])
+    STLCGeneration(res, [
+        interp(rs, gen_expr_lang(size, p.typ_size))[1]
+        for size in 0:p.expr_size
+    ])
+    # STLCGeneration(res, function_results["genExpr"])
 end
 
 function generation_params_emit_stats(rs::RunState, p::LangBespokeSTLCGenerator, s)
@@ -1170,6 +1174,7 @@ struct ApproxSTLCConstructorEntropy <: LossConfig{STLC} end
 to_subpath(::ApproxSTLCConstructorEntropy) = ["approx_entropy"]
 function create_loss_manager(rs::RunState, p::ApproxSTLCConstructorEntropy, generation)
     println_flush(rs.io, "Building computation graph for $(p)...")
+    @assert length(generation.constructors_overapproximation) == rs.p.expr_size + 1
     time_build_loss = @elapsed loss = sum(
         neg_entropy(opt_ctor_to_id(ctor), values(stlc_ctor_to_id), ignore_non_support=true)
         for ctor in generation.constructors_overapproximation

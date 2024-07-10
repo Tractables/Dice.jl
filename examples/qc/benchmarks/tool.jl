@@ -19,6 +19,7 @@ TAG = "v61_stlc_bespoke_se_force_meets"
 TAG = "v62_ex_unif_stlc"
 TAG = "v63_ex_unif_stlc_entropy"
 TAG = "v64_fig_rbt"
+TAG = "v65_simpler_ace"
 # TAG = "v59_repro"
 OUT_TOP_DIR = "/space2/tjoa/tuning-output"
 
@@ -90,18 +91,18 @@ if isempty(ARGS)
         # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
         
         # Apps entropy
-        SamplingEntropy{STLC}(
-            resampling_frequency=1,
-            samples_per_batch=50,
-            property=TrueProperty{STLC}(),
-            eq=:prob_equals,
-            failure_penalty=fp,
-            forgiveness=0,
-            rand_forgiveness=true,
-            keyf=:num_apps,
-        ) => lr,
+        # SamplingEntropy{STLC}(
+        #     resampling_frequency=1,
+        #     samples_per_batch=50,
+        #     property=TrueProperty{STLC}(),
+        #     eq=:prob_equals,
+        #     failure_penalty=fp,
+        #     forgiveness=0,
+        #     rand_forgiveness=true,
+        #     keyf=:num_apps,
+        # ) => lr,
 
-        # ApproxSTLCConstructorEntropy() => lr,
+        ApproxSTLCConstructorEntropy() => lr,
         # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
     ]
 
@@ -181,7 +182,7 @@ if isfile(log_path) && !allow_overwrite
     exit(1)
 end
 mkpath(out_dir)
-rs = RunState(Valuation(), Dict{String,ADNode}(), open(log_path, "w"), out_dir, MersenneTwister(SEED), nothing)
+rs = RunState(Valuation(), Dict{String,ADNode}(), open(log_path, "w"), out_dir, MersenneTwister(SEED), nothing,generation_params)
 
 println(stderr, "Logging to $(log_path)\n")
 
