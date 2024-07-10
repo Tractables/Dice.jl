@@ -1,6 +1,7 @@
 #!/usr/bin/env python
 rootdir = "/space/tjoa/tuning-output/v56_rbt_thin"
 # rootdir = "/space/tjoa/tuning-output/v55_stlc_faster"
+rootdir = "/space2/tjoa/tuning-output/v64_fig_rbt"
 
 import os
 import shutil
@@ -62,6 +63,7 @@ for root, subdirs, files in os.walk(rootdir):
                     "prop=bookkeepingANDbalanceANDorder": "",
                     "prop=order": "",
                     "prop=stlcwelltyped": "Well",
+                    "prop=trueproperty": "",
                     # todo: May, Might
                 },
                 {"failure_penalty=0.0": ""},
@@ -72,7 +74,9 @@ for root, subdirs, files in os.walk(rootdir):
         })
         new += get_label(segments, {
             "0.3": "LR30",
+            "0.1": "LR10",
             "0.03": "LR03",
+            "0.01": "LR01",
         })
         # new += get_label(segments, {
         #     "ty-sizes=Main.ColorKVTree.t-6-Main.Color.t-0": "Sz6",

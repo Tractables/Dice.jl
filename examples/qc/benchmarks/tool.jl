@@ -53,7 +53,7 @@ if isempty(ARGS)
         num_dependents=[:size,:parent_color,:stack_tail],
         stack_size=2,
         intwidth=6,
-    # )
+    )
     lr = 0.5
     fp = 0
     # g_p = LangDerivedGenerator{BST}(
