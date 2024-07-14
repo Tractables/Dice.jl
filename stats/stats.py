@@ -9,7 +9,7 @@ from dataclasses import dataclass, field
 from typing import List, Callable
 
 WORKLOAD = "RBT"
-ORDER_ONLY = False
+ORDER_ONLY = True
 ORDER: List[str] = { # Put rows in this order and also assert that these generators exist
     "STLC": [
         # # class: bespoke
@@ -61,6 +61,8 @@ ORDER: List[str] = { # Put rows in this order and also assert that these generat
     ],
 
     "RBT": [
+        "SpecGenerator",
+        "SpecBoundGenerator",
         # "TypeBasedGenerator",
         # "LSDEqGenerator",
         # "LSDExceptNumsGenerator",
