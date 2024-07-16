@@ -30,7 +30,7 @@ FP_LIST = [0.]
 FORIGIVENESS_LIST = [0]
 RAND_FORIGIVENESS_LIST = [true]
 RESAMPLING_FREQUENCY_LIST = [1,2,5]
-# PROPERTY_LIST = [BSTOrderInvariant()]
+PROPERTY_LIST = [STLCWellTyped()]
 # PROPERTY_LIST = [MultipleInvariants([
 #     BookkeepingInvariant(),
 #     BalanceInvariant(),
@@ -38,7 +38,7 @@ RESAMPLING_FREQUENCY_LIST = [1,2,5]
 # ]),
 # TrueProperty{RBT}()]
 
-PROPERTY_LIST = [nothing]
+# PROPERTY_LIST = [nothing]
 
 SAMPLES_PER_BATCH_LIST = [50]
 EPOCHS_LIST = [500,1000]
