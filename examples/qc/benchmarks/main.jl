@@ -5,18 +5,18 @@ GENERATION_PARAMS_LIST = [
     #     expr_size=5,
     #     typ_size=2,
     # ),
-    # LangSiblingDerivedGenerator{STLC}(
-    #     root_ty=Expr.t,
-    #     ty_sizes=[Expr.t=>5, Typ.t=>2],
+    LangSiblingDerivedGenerator{STLC}(
+        root_ty=Expr.t,
+        ty_sizes=[Expr.t=>5, Typ.t=>2],
+        stack_size=1,
+        intwidth=3,
+    )
+    # LangSiblingDerivedGenerator{RBT}(
+    #     root_ty=ColorKVTree.t,
+    #     ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
     #     stack_size=2,
     #     intwidth=3,
     # )
-    LangSiblingDerivedGenerator{RBT}(
-        root_ty=ColorKVTree.t,
-        ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
-        stack_size=2,
-        intwidth=3,
-    )
 #    LangSiblingDerivedGenerator{BST}(
 #        root_ty=KVTree.t,
 #        ty_sizes=[KVTree.t=>4],
@@ -25,11 +25,11 @@ GENERATION_PARAMS_LIST = [
 #    ),
 ]
 # LR_LIST = [0.3]
-LR_LIST = [0.003, 0.01, 0.03, 0.1, 0.3]
+LR_LIST = [0.01, 0.03, 0.1, 0.3]
 FP_LIST = [0.]
 FORIGIVENESS_LIST = [0]
 RAND_FORIGIVENESS_LIST = [true]
-RESAMPLING_FREQUENCY_LIST = [2]
+RESAMPLING_FREQUENCY_LIST = [1,2,5]
 # PROPERTY_LIST = [BSTOrderInvariant()]
 # PROPERTY_LIST = [MultipleInvariants([
 #     BookkeepingInvariant(),
@@ -40,17 +40,17 @@ RESAMPLING_FREQUENCY_LIST = [2]
 
 PROPERTY_LIST = [nothing]
 
-SAMPLES_PER_BATCH_LIST = [200]
-EPOCHS_LIST = [2000]
+SAMPLES_PER_BATCH_LIST = [50]
+EPOCHS_LIST = [500,1000]
 
 # SAMPLES_PER_BATCH_LIST = [nothing]
-BOUND_LIST = [0, 0.1]
+BOUND_LIST = [0.1]
 
 EQ_LIST = [:prob_equals]
 
 n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, FORIGIVENESS_LIST, RAND_FORIGIVENESS_LIST, PROPERTY_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST, EQ_LIST, BOUND_LIST]))
 println(n_runs)
-@assert n_runs <= 12
+@assert n_runs <= 24
 
 @show GENERATION_PARAMS_LIST
 @show LR_LIST
@@ -69,23 +69,23 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
             # ApproxSTLCConstructorEntropy() => lr,
-            SatisfyPropertyLoss{RBT}(MultipleInvariants([
-                BookkeepingInvariant(),
-                BalanceInvariant(),
-                OrderInvariant(),
-            ])) => lr,
+            # SatisfyPropertyLoss{RBT}(MultipleInvariants([
+            #     BookkeepingInvariant(),
+            #     BalanceInvariant(),
+            #     OrderInvariant(),
+            # ])) => lr,
             # MLELossConfig{RBT}(RBTDepth(), Uniform()) => lr,
-#             SamplingEntropy{RBT}(
-#                 resampling_frequency=resampling_frequency,
-#                 samples_per_batch=samples_per_batch,
-#                 property=property,
-#                 eq=eq,
-#                 failure_penalty=fp,
-#                 forgiveness=forgiveness,
-#                 rand_forgiveness=rand_forgiveness,
-#                 keyf=:identity,
-#             ) => lr,
-# #             # SamplingEntropy{BST}(
+            SamplingEntropy{STLC}(
+                resampling_frequency=resampling_frequency,
+                samples_per_batch=samples_per_batch,
+                property=property,
+                eq=eq,
+                failure_penalty=fp,
+                forgiveness=forgiveness,
+                rand_forgiveness=rand_forgiveness,
+                keyf=:identity,
+            ) => lr,
+            # SamplingEntropy{BST}(
             #     resampling_frequency=resampling_frequency,
             #     samples_per_batch=samples_per_batch,
             #     property=BSTOrderInvariant(),
