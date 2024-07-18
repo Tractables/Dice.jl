@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 rootdir = "/space/tjoa/tuning-output/v56_rbt_thin"
 # rootdir = "/space/tjoa/tuning-output/v55_stlc_faster"
+
 rootdir = "/space2/tjoa/tuning-output/v66_fig2_rbt"
+rootdir = "/space2/tjoa/tuning-output/v69_attempt_stlctb_faster"
 
 import os
 import shutil
@@ -38,14 +40,19 @@ for root, subdirs, files in os.walk(rootdir):
         new += get_label(segments, {
             "langbespoke": "Bespoke",
             "langderived": ("LD", [
-                {"stack_size=2": ""},
+                {
+                    "stack_size=2": "",
+                },
                 {
                     "intwidth=3": "Thin",
                     "intwidth=6": "",
                 },
             ]),
             "langsiblingderived": ("LSD", [
-                {"stack_size=2": ""},
+                {
+                    "stack_size=2": "",
+                    "stack_size=1": "Stack1",
+                },
                 {
                     "intwidth=3": "Thin",
                     "intwidth=6": "",
@@ -94,8 +101,15 @@ for root, subdirs, files in os.walk(rootdir):
             "bound=0.2": "Bound20",
         })
         new += get_label(segments, {
-            "freq=2-spb=200": "SPB200",
-            "freq=2-spb=50": "SPB50",
+            "freq=5-spb=200": "Freq5SPB200",
+            "freq=5-spb=100": "Freq5SPB100",
+            "freq=5-spb=50": "Freq5SPB50",
+            "freq=2-spb=200": "Freq2SPB200",
+            "freq=2-spb=100": "Freq2SPB100",
+            "freq=2-spb=50": "Freq2SPB50",
+            "freq=1-spb=200": "Freq1SPB200",
+            "freq=1-spb=100": "Freq1SPB100",
+            "freq=1-spb=50": "Freq1SPB50",
         })
         new += "Generator.v"
 

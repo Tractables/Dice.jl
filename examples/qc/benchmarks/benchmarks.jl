@@ -197,17 +197,17 @@ struct SimpleLossMgr <: LossMgr
     end
 end
 function produce_loss(rs::RunState, m::SimpleLossMgr, epoch::Integer)
-    # dist_path = joinpath(rs.out_dir, "dist.csv")
-    # if epoch == 1
-    #     clear_file(dist_path)
-    # end
-    # d = pr_mixed(rs.var_vals)(m.val)
-    # open(dist_path, "a") do f
-    #     println(f, join([d[i] for i in 0:15],"\t"))
-    # end
-    # if epoch == EPOCHS
-    #     mk_areaplot(dist_path)
-    # end
+    dist_path = joinpath(rs.out_dir, "dist.csv")
+    if epoch == 1
+        clear_file(dist_path)
+    end
+    d = pr_mixed(rs.var_vals)(m.val)
+    open(dist_path, "a") do f
+        println(f, join([d[i] for i in 0:7],"\t"))
+    end
+    if epoch == EPOCHS
+        mk_areaplot(dist_path)
+    end
     
     m.loss
 end
