@@ -126,7 +126,16 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
             # BoolsExactEntropy{3}() => lr,
-            SamplingEntropy{Bools{N}}(resampling_frequency=10, samples_per_batch=100) => lr,
+            SamplingEntropy{Bools{N}}(
+                resampling_frequency=1,
+                samples_per_batch=300,
+                property=TrueProperty{Bools{N}}(),
+                eq=:prob_equals,
+                failure_penalty=0.,
+                forgiveness=0,
+                rand_forgiveness=true,
+                keyf=:identity,
+            ) => lr,
         ]
         for lr in LR_LIST
     ),

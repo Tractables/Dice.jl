@@ -235,17 +235,33 @@ mutable struct SamplingEntropyLossMgr <: LossMgr
     SamplingEntropyLossMgr(p, val, consider) = new(p, val, consider, [], nothing, nothing, nothing)
 end
 
+using Plots
+
+pgfplotsx()
+
 function save_areaplot(path, v)
     mat = mapreduce(permutedims, vcat, v)
     torow(v) = reshape(v, 1, length(v))
+    fontsize=18
     areaplot(
         mat,
         labels=torow(["$(i)" for i in 0:size(mat, 2)]),
-        legend=false,
         # palette=:lightrainbow)
-        palette=cgrad(:thermal)
+        palette=cgrad(:thermal),
+        tickfontsize=fontsize,
+        legendfontsize=fontsize,
+        fontfamily="Palatino Roman",
+        fontsize=fontsize,
+        xlabel="Epochs",
+        ylabel="Probability",
+        # margin=5Plots.mm,
+        xlabelfontsize=fontsize,
+        ylabelfontsize=fontsize,
+        legend=:outertopright,
     )
-    savefig("$(path).svg")
+    # savefig("$(path).svg")
+    savefig("$(path).tikz")
+    savefig("$(path).tex")
 end
 
 function mk_areaplot(path)
@@ -322,26 +338,27 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
         m.current_samples = samples
     end
 
-    # samples_path = joinpath(rs.out_dir, "samples.csv")
-    # dist_path = joinpath(rs.out_dir, "dist.csv")
-    # if epoch == 1
-    #     clear_file(samples_path)
-    #     clear_file(dist_path)
-    # end
-    # d = pr_mixed(rs.var_vals)(m.val)
-    # open(dist_path, "a") do f
-    #     println(f, join([d[i] for i in 0:15],"\t"))
-    # end
-    # open(samples_path, "a") do f
-    #     println(f, join([
-    #         count(s -> prob_equals(s, DistUInt{4}(i)) === true, m.current_samples)
-    #         for i in 0:15
-    #     ], "\t"))
-    # end
-    # if epoch == EPOCHS
-    #     mk_areaplot(samples_path)
-    #     mk_areaplot(dist_path)
-    # end
+    N = 3
+    samples_path = joinpath(rs.out_dir, "samples.csv")
+    dist_path = joinpath(rs.out_dir, "dist.csv")
+    if epoch == 1
+        clear_file(samples_path)
+        clear_file(dist_path)
+    end
+    d = pr_mixed(rs.var_vals)(m.val)
+    open(dist_path, "a") do f
+        println(f, join([d[i] for i in 0:2^N-1],"\t"))
+    end
+    open(samples_path, "a") do f
+        println(f, join([
+            count(s -> prob_equals(s, DistUInt{N}(i)) === true, m.current_samples)
+            for i in 0:2^N-1
+        ], "\t"))
+    end
+    if epoch == EPOCHS
+        mk_areaplot(samples_path)
+        mk_areaplot(dist_path)
+    end
 
     @assert !isnothing(m.current_loss)
     m.current_loss
