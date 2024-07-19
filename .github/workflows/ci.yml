@@ -33,6 +33,6 @@ jobs:
         run:
           julia --project --check-bounds=yes --depwarn=yes -e 'import Pkg; Pkg.test(; coverage=true)'
       
-      - name: Codecov Upload
-        run:
-          julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder());'
+      # - name: Codecov Upload
+      #   run:
+      #     julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder());'

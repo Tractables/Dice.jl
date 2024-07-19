@@ -1,10 +1,16 @@
 # Tour of Dice.jl by example
 
+# Setup testing
+using Test
+using Dice
+function Base.isapprox(d1::AbstractDict, d2::AbstractDict)
+    issetequal(keys(d1), keys(d2)) && all(isapprox(d1[k], d2[k],rtol=0.01) for k in keys(d1))
+end
+@testset "tour_1_core" begin
+
 ################################################################################
 # Basics
 ################################################################################
-
-using Dice
 
 # The fundamental datatype in Dice.jl is `Dist{Bool}`, which represents a
 # distribution over booleans.
@@ -14,16 +20,17 @@ x = flip(0.7)
 
 # We can use `pr(dist)` on a distribution find the dictionary from possible
 # values to probabilities.
-pr(x)         # Dict(false => 0.3, true => 0.7)
-pr(x | true)  # Dict(true => 1.0)
+@test pr(x) ≈ Dict(false => 0.3, true => 0.7)
+@test pr(x | true) ≈ Dict(true => 1.0)
 
 # We can use &, |, ^, ! to perform computation on DistBools.
-pr(flip(0.5) & flip(0.1))  # true => 0.05
+@test pr(flip(0.5) & flip(0.1))[true] ≈ 0.05
 
 # We can find conditional probabilities using the `evidence` keyword arg
 x = flip(0.5)
 y = flip(0.1)
-pr(x & y, evidence=x)  # Pr[X & Y given X] = 0.1
+# Pr[X & Y given X]
+@test pr(x & y, evidence=x)[true] ≈ 0.1
 
 # The condition of `if` statements can be Dist{Bool} if written inside of the
 # @dice_ite macro.
@@ -34,8 +41,7 @@ ite_example = @dice_ite begin
         !flip(0.5)
     end
 end
-pr(ite_example)  # true => 0.95
-
+@test pr(ite_example)[true] ≈ 0.95
 
 ################################################################################
 # Network Verification
@@ -58,14 +64,14 @@ end
 
 function network()
     net = true
-    for _ in 1:10
+    for _ in 1:5
         net = diamond(net)
     end
     net
 end
 
 net = network()
-pr(net)  # true: 0.9995
+@test isapprox(pr(net)[true], 0.99975, rtol=0.001)
 
 
 ################################################################################
@@ -80,22 +86,24 @@ dist = pr(
         DistUInt32(3)
     end
 )
-dist  # Dict(7 => 0.3, 3 => 0.7)
+@test dist ≈ Dict(7 => 0.3, 3 => 0.7)
 
 # There is no magic here - DistInts are just a different way to interpret a
 # joint distribution over multiple bools. We could also write the above as:
 i = DistUInt{3}([flip(0.3), true, true]) # typed by width
                                          # most signif. bit first
-pr(i)  # Dict(7 => 0.3, 3 => 0.7)
+@test pr(i) ≈ Dict(7 => 0.3, 3 => 0.7)
 
 # A uniform distribution on integers in [start, stop]
 x = uniform(DistUInt32, 1, 5)
 y = uniform(DistUInt32, 1, 5)
-pr(x)  # Dist(1 => 0.25, 2 => 0.25, 3 => 0.25, 4 => 0.25)
+@test pr(x) ≈ Dict(1 => 0.25, 2 => 0.25, 3 => 0.25, 4 => 0.25)
 
 # To check for equality, use prob_equals
 product_4 = prob_equals(x * y, DistUInt32(4))
-pr(product_4)  # true => 0.1875 (3/16 cases: (1,4), (2,2), (4,1))
+@test pr(product_4)[true] ≈ 0.1875  # 3/16 cases: (1,4), (2,2), (4,1)
 
 is_even(x::DistUInt32) = prob_equals(x % DistUInt32(2), DistUInt32(0))
-pr(product_4, evidence=is_even(x))  # true => 0.25 (2/8 cases: (2,2), (4,1))
+@test pr(product_4, evidence=is_even(x))[true] ≈ 0.25  # 2/8 cases: (2,2), (4,1)
+
+end

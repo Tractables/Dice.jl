@@ -1,5 +1,5 @@
 export condprobs, condprob, Cudd, CuddDebugInfo, ProbException, allobservations, JointQuery, 
-    returnvalue, expectation, variance, kldivergence, tvdistance, entropy
+    returnvalue, expectation, variance, kldivergence, tvdistance, entropy, pr
 
 using DataStructures: DefaultDict, DefaultOrderedDict, OrderedDict
 
@@ -26,8 +26,9 @@ conditional errors, and a custom inference algorithm.
 function pr(queries::Vector{JointQuery}; evidence::AnyBool = true, 
             errors::Vector{CondError} = CondError[],
             dots::Vector{Tuple{Vector{AnyBool}, String}} = Tuple{Vector{AnyBool}, String}[],
-            algo::InferAlgo = default_infer_algo()) 
-    pr(algo, evidence, queries, errors, dots)
+            algo::InferAlgo = default_infer_algo(),
+            ) 
+    pr_impl(algo, evidence, queries, errors, dots)
 end
 
 function pr(queries::JointQuery...; kwargs...)
@@ -35,7 +36,7 @@ function pr(queries::JointQuery...; kwargs...)
     length(queries) == 1 ? ans[1] : ans
 end
 
-function pr(queries...; kwargs...)
+function pr(queries...; as_dist::Bool=false, kwargs...)
     joint_queries = map(queries) do query
         JointQuery(tobits(query))
     end
@@ -43,10 +44,19 @@ function pr(queries...; kwargs...)
     ans = map(queries, queryworlds) do query, worlds
         dist = DefaultDict(0.0)
         for (world, p) in worlds
-            dist[frombits(query, world)] += p
+            key = if as_dist
+                frombits_as_dist(query, world)
+            else
+                frombits(query, world)
+            end
+            dist[key] += p
         end
-        DefaultOrderedDict(0., OrderedDict(sort(collect(dist); 
-                                by= t -> (-t[2], t[1]))))  # by decreasing probability
+        by = if as_dist
+            t -> -t[2]
+        else
+            t -> (-t[2], t[1])
+        end
+        DefaultOrderedDict(0., OrderedDict(sort(collect(dist); by)))  # by decreasing probability
     end
     length(queries) == 1 ? ans[1] : ans
 end
@@ -164,12 +174,5 @@ include("cudd/wmc.jl")
 # Notable exports:
 # - pr(::Dist, evidence=..., errors=...)
 include("pr.jl")
-
-# Exposes functionality for changing the probabilities of flip_for's
-# to maximize a list of (possibly conditional) bools
-# Notable exports:
-# - train_group_probs!(::Vector{<:AnyBool}))
-# - train_group_probs!(::Vector{<:Tuple{<:AnyBool, <:AnyBool}})
-include("train.jl")
 
 include("sample.jl")

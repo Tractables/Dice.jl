@@ -1,18 +1,11 @@
-export Nat, DistZero, DistSucc, nat_ast_to_int
+export Nat, nat_ast_to_int
 
-struct Nat <: InductiveType end
-
-function param_lists(::Type{Nat})
-    [
-        "Zero" => [],
-        "Succ" => [DistI{Nat}],
-    ]
+module Nat
+    using Dice
+    @inductive t Z() S(t)
 end
 
-DistZero()  = construct(Nat, "Zero", [])
-DistSucc(x) = construct(Nat, "Succ", [x])
-
-function DistI{Nat}(x)
+function Nat.t(x::Unsigned)
     res = DistZero()
     for _ in 1:x
         res = DistSucc(res)
@@ -20,20 +13,20 @@ function DistI{Nat}(x)
     res
 end
 
-Base.zero(::Type{DistI{Nat}}) = DistZero()
+Base.zero(::Type{Nat.t}) = Nat.Z()
 
-function Base.:(+)(x::DistI{Nat}, y::DistI{Nat})
+function Base.:(+)(x::Nat.t, y::Nat.t)
     match(y, [
-        "Zero" => () -> x
-        "Succ" => y′ -> DistSucc(x) + y′
+        "Z" => () -> x
+        "S" => y′ -> Nat.S(x) + y′
     ])
 end
 
 function nat_ast_to_int(ast)
     name, children = ast
-    if name == "Zero"
+    if name == "Z"
         0
-    elseif name == "Succ"
+    elseif name == "S"
         ast′, = children
         1 + nat_ast_to_int(ast′)
     else
@@ -53,8 +46,8 @@ end
 function Dice.match(x::DistUInt32, branches)
     branch_dict = Dict(branches)
     @dice_ite if prob_equals(x, DistUInt32(0))
-        branch_dict["Zero"]()
+        branch_dict[:O]()
     else
-        branch_dict["Succ"](sticky_sub(x, DistUInt32(1)))
+        branch_dict[:S](sticky_sub(x, DistUInt32(1)))
     end
 end
