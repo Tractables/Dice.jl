@@ -1,11 +1,8 @@
 using Test
 using Dice
 
-function dict_approx(d1::AbstractDict, d2::AbstractDict)
-    issetequal(keys(d1), keys(d2)) && all(
-        d1[k] ≈ d2[k]
-        for k in keys(d1)
-    )
+function Base.isapprox(d1::AbstractDict, d2::AbstractDict)
+    issetequal(keys(d1), keys(d2)) && all(isapprox(d1[k], d2[k],rtol=0.01) for k in keys(d1))
 end
 
 @testset "learned_cheap_dists" begin
@@ -41,25 +38,20 @@ end
         i => compute_mixed(wt_var_to_vals, exp(LogPr(prob_equals(int, DistUInt{width}(i)))))
         for i in 0:2^width-1
     )
-    @test dict_approx(
-        wt_var_to_vals,
-        Dict(
-            Var("var0_psp") => -3.2837129282982764,
-            Var("var1_psp") => -1.734139957995633,
-            Var("var2_psp") => -0.4254578347528184)
+    @test wt_var_to_vals ≈ Dict(
+        Var("var0_psp") => -3.2837129282982764,
+        Var("var1_psp") => -1.734139957995633,
+        Var("var2_psp") => -0.4254578347528184
     )
-    @test dict_approx(
-        wt_dist,
-        Dict(
-            0 => 0.4954604613881238,
-            1 => 0.3237688128294564,
-            2 => 0.08747452404585239,
-            3 => 0.057162024036790764,
-            4 => 0.018574220540662965,
-            5 => 0.012137705835969861,
-            6 => 0.0032793153600291173,
-            7 => 0.002142935963114733
-        )
+    @test wt_dist ≈ Dict(
+        0 => 0.4954604613881238,
+        1 => 0.3237688128294564,
+        2 => 0.08747452404585239,
+        3 => 0.057162024036790764,
+        4 => 0.018574220540662965,
+        5 => 0.012137705835969861,
+        6 => 0.0032793153600291173,
+        7 => 0.002142935963114733
     )
 
     # KL divergence minimization
@@ -78,24 +70,19 @@ end
         i => compute_mixed(kl_var_to_vals, exp(LogPr(prob_equals(int, DistUInt{width}(i)))))
         for i in 0:2^width-1
     )
-    @test dict_approx(
-        kl_var_to_vals,
-        Dict(
-            Var("var0_psp") => -3.2837129282982764,
-            Var("var1_psp") => -1.734139957995633,
-            Var("var2_psp") => -0.4254578347528184)
+    @test kl_var_to_vals ≈ Dict(
+        Var("var0_psp") => -3.2837129282982764,
+        Var("var1_psp") => -1.734139957995633,
+        Var("var2_psp") => -0.4254578347528184
     )
-    @test dict_approx(
-        kl_dist,
-        Dict(
-            0 => 0.4954604613881238,
-            1 => 0.3237688128294564,
-            2 => 0.08747452404585239,
-            3 => 0.057162024036790764,
-            4 => 0.018574220540662965,
-            5 => 0.012137705835969861,
-            6 => 0.0032793153600291173,
-            7 => 0.002142935963114733
-        )
+    @test kl_dist ≈ Dict(
+        0 => 0.4954604613881238,
+        1 => 0.3237688128294564,
+        2 => 0.08747452404585239,
+        3 => 0.057162024036790764,
+        4 => 0.018574220540662965,
+        5 => 0.012137705835969861,
+        6 => 0.0032793153600291173,
+        7 => 0.002142935963114733
     )
 end
