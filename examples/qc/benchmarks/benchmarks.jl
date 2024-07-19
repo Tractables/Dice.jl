@@ -237,7 +237,7 @@ end
 
 using Plots
 
-pgfplotsx()
+# pgfplotsx()
 
 function save_areaplot(path, v)
     mat = mapreduce(permutedims, vcat, v)
