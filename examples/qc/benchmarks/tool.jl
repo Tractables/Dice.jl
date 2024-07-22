@@ -27,6 +27,7 @@ TAG = "v69_attempt_stlctb_faster"
 TAG = "v70_bools_fig"
 TAG = "v71_idk"
 TAG = "v72_rbt_mul_linear_depth"
+TAG = "v73_rbt_exp_12"
 # TAG = "v59_repro"
 OUT_TOP_DIR = "/space2/tjoa/tuning-output"
 

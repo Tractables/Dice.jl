@@ -312,8 +312,8 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
 
                 loss_here, actual_loss_here = if meets || (m.p.rand_forgiveness && rand(rs.rng) < m.p.forgiveness)
                     (
-                        (depth + 1) * lpr_eq_expanded * compute(a, lpr_eq_expanded),
-                        (depth + 1) * lpr_eq_expanded
+                        1.2 ^ depth * lpr_eq_expanded * compute(a, lpr_eq_expanded),
+                        1.2 ^ depth * lpr_eq_expanded
                     )
                 elseif !meets && !m.p.rand_forgiveness
                     @assert false
