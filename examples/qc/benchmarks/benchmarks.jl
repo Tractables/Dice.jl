@@ -304,15 +304,19 @@ function produce_loss(rs::RunState, m::SamplingEntropyLossMgr, epoch::Integer)
                 lpr_eq_expanded = Dice.expand_logprs(l, lpr_eq)
                 # diff_test_typecheck(sample, Dice.frombits(sample, Dict()))
                 meets = m.consider(sample)
+
+                depth = Dice.frombits(rbt_depth(sample), Dict())
+
                 # @assert meets
                 meets && (num_meeting += 1)
 
                 loss_here, actual_loss_here = if meets || (m.p.rand_forgiveness && rand(rs.rng) < m.p.forgiveness)
                     (
-                        lpr_eq_expanded * compute(a, lpr_eq_expanded),
-                        lpr_eq_expanded
+                        (depth + 1) * lpr_eq_expanded * compute(a, lpr_eq_expanded),
+                        (depth + 1) * lpr_eq_expanded
                     )
                 elseif !meets && !m.p.rand_forgiveness
+                    @assert false
                     (
                         Dice.Constant(m.p.forgiveness) * lpr_eq_expanded * compute(a, lpr_eq_expanded),
                         Dice.Constant(m.p.forgiveness) * lpr_eq_expanded
@@ -1834,6 +1838,12 @@ struct TrueProperty{T} <: Property{T}
 end
 check_property(::TrueProperty{T}, _) where T = true
 name(::TrueProperty{T}) where T = "trueproperty"
+
+rbt_property() = MultipleInvariants([
+    BookkeepingInvariant(),
+    BalanceInvariant(),
+    OrderInvariant(),
+])
 
 ##################################
 # Sampling STLC entropy loss

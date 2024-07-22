@@ -26,6 +26,7 @@ TAG = "v68_rbt_spec"
 TAG = "v69_attempt_stlctb_faster"
 TAG = "v70_bools_fig"
 TAG = "v71_idk"
+TAG = "v72_rbt_mul_linear_depth"
 # TAG = "v59_repro"
 OUT_TOP_DIR = "/space2/tjoa/tuning-output"
 
@@ -53,37 +54,37 @@ if isempty(ARGS)
     #     stack_size=2,
     #     intwidth=6,
     # )
-    g_p = TypeBasedRBTGenerator(
-        size=3,
-        leaf_dependents=[:size,:parent_color,:stack_tail],
-        red_dependents=[:size,:parent_color,:stack_tail],
-        num_dependents=[:size,:parent_color,:stack_tail],
-        stack_size=2,
-        intwidth=6,
-    )
-    lr = 0.5
-    fp = 0
-    # g_p = LangDerivedGenerator{BST}(
-    #     root_ty=KVTree.t,
-    #     ty_sizes=[KVTree.t=>5],
+    # g_p = TypeBasedRBTGenerator(
+    #     size=3,
+    #     leaf_dependents=[:size,:parent_color,:stack_tail],
+    #     red_dependents=[:size,:parent_color,:stack_tail],
+    #     num_dependents=[:size,:parent_color,:stack_tail],
     #     stack_size=2,
     #     intwidth=6,
-    #     arbitrary_prims=false,
     # )
-    g_p = LangBespokeSTLCGenerator(
-        expr_size=2,
-        typ_size=1,
-    )
+    lr = 0.5
+    fp = 0
+    g_p =      LangSiblingDerivedGenerator{RBT}(
+            root_ty=ColorKVTree.t,
+            ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
+            stack_size=2,
+            intwidth=3,
+        )
+    # g_p = LangBespokeSTLCGenerator(
+    #     expr_size=2,
+    #     typ_size=1,
+    # )
     l_p = [
-        # SamplingEntropy{STLC}(
-        #     resampling_frequency=1,
-        #     samples_per_batch=50,
-        #     property=STLCMightType(),
-        #     eq=:eq_structure,
-        #     failure_penalty=fp,
-        #     forgiveness=0,
-        #     rand_forgiveness=true,
-        # ) => lr,
+        SamplingEntropy{RBT}(
+            resampling_frequency=1,
+            samples_per_batch=50,
+            property=rbt_property(),
+            eq=:prob_equals,
+            failure_penalty=fp,
+            forgiveness=0,
+            rand_forgiveness=true,
+            keyf=:identity,
+        ) => lr,
         # SamplingEntropy{STLC}(
         #     resampling_frequency=1,
         #     samples_per_batch=50,
@@ -108,7 +109,7 @@ if isempty(ARGS)
         #     keyf=:num_apps,
         # ) => lr,
 
-        ApproxSTLCConstructorEntropy() => lr,
+        # ApproxSTLCConstructorEntropy() => lr,
         # MLELossConfig{STLC}(NumApps(), Linear()) => lr,
     ]
 
