@@ -1,5 +1,6 @@
 using Dice
 using DelimitedFiles
+using Plots
 
 function half_adder(a, b)
     summ = xor(a, b)
@@ -39,5 +40,10 @@ a = uniform(DistUInt{3}, 2)
 b = uniform(DistUInt{3}, 2)
 s2, c2 = add(a, b)
 
-pr(!prob_equals(c1, c2))
+carry_changes = DistUInt{3}(0)
+for i in 1:3
+	carry_changes += ifelse(!prob_equals(c1[i], c2[i]), DistUInt{3}(1), DistUInt{3}(0))
+end
+result = pr(carry_changes)
+bar(ans, xlabel="Number of carry changes", ylabel="pr", legend=false)
 # pr(!prob_equals(c1[1], c2[1]) | !prob_equals(c1[2], c2[2]) | !prob_equals(c1[3], c2[3]))
