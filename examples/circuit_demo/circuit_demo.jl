@@ -3,11 +3,18 @@ using DelimitedFiles
 using BenchmarkTools
 using Plots
 
+#= 
+    Contains code implementing the example arithmetic circuit. Operations are 
+	assumed to all be over integers of bit-width 10 (the largest in the example).
+=#
+
 # bit-width of our integers 
 w = 10
 # constant K
 K = 256
 
+# This function creates our random (uniform) integers with 
+# interleaved bits, leading to better performance 
 function interleave_uniforms(widths::Vector{Int})
 	sort_widths = sort(widths, rev=true)
 	result = [Vector(undef, sort_widths[1]) for i in 1:length(widths)]
@@ -20,6 +27,7 @@ function interleave_uniforms(widths::Vector{Int})
 	result
 end
 
+# Dice code block implementing circuit behavior 
 code = @dice begin
 	k = DistUInt{w}(K)
 
@@ -29,6 +37,11 @@ code = @dice begin
     sum3 = x4 + x5
     mult1 = sum1 * x2
     mult2 = sum2 * sum3
-    (mult1 + mult2) > k
+    return (mult1 + mult2) > k # check we want 
+	# TODO: should be (-)? 
 end
+
+# Computes the probabillity of the returned value
 p = pr(code, ignore_errors=true) # Takes about 4 minutes
+
+@show p 

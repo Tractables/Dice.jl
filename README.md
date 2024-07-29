@@ -8,7 +8,7 @@ See [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice)
 
 ## Installation
 
-Install Julia 1.7 or higher using [these instructions](https://julialang.org/downloads/platform/).
+Install Julia 1.8.5 or higher using [these instructions](https://julialang.org/downloads/platform/).
 
 Clone the repository and start julia in project mode for current folder:
 ```bash
@@ -16,10 +16,10 @@ cd Dice.jl
 julia --project
 ```
 
-Install Dice and update dependencies (one can also use `precompile` or `build`):
+In the Julia REPL, use the following command to install all the needed dependencies
 
-```
-] up
+```julia
+using Pkg; Pkg.instantiate()
 ```
 
 Press CTRL-C or backspace to exit from the pkg terminal and return to Julia REPL.
