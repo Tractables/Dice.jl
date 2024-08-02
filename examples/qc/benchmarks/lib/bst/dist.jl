@@ -45,3 +45,11 @@ function eq_except_numbers(x::KVTree.t, y::KVTree.t)
         ]),
     ]
 end
+
+
+function bst_depth(e::KVTree.t)
+    @match e [
+        E() -> DistUInt32(0),
+        T(l, k, v, r) -> DistUInt32(1) + max(bst_depth(l), bst_depth(r))
+    ]
+end
