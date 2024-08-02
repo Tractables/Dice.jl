@@ -11,18 +11,18 @@ GENERATION_PARAMS_LIST = [
     #     stack_size=1,
     #     intwidth=3,
     # )
-    LangSiblingDerivedGenerator{RBT}(
-        root_ty=ColorKVTree.t,
-        ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
-        stack_size=2,
-        intwidth=3,
-    ),
-#    LangSiblingDerivedGenerator{BST}(
-#        root_ty=KVTree.t,
-#        ty_sizes=[KVTree.t=>4],
-#        stack_size=2,
-#        intwidth=3,
-#    ),
+    # LangSiblingDerivedGenerator{RBT}(
+    #     root_ty=ColorKVTree.t,
+    #     ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
+    #     stack_size=2,
+    #     intwidth=3,
+    # ),
+   LangSiblingDerivedGenerator{BST}(
+       root_ty=KVTree.t,
+       ty_sizes=[KVTree.t=>4],
+       stack_size=2,
+       intwidth=3,
+   ),
 ]
 # LR_LIST = [0.3]
 LR_LIST = [0.01]
@@ -119,13 +119,13 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
                 ]
             elseif wl == BST
                 [
-                    MLELossConfig{STLC}(BSTDepth(), Linear()) => lr,
-                    MLELossConfig{STLC}(BSTDepth(), Uniform()) => lr,
+                    MLELossConfig{BST}(BSTDepth(), Linear()) => lr,
+                    MLELossConfig{BST}(BSTDepth(), Uniform()) => lr,
                 ]
             elseif wl == RBT
                 [
-                    MLELossConfig{STLC}(RBTDepth(), Linear()) => lr,
-                    MLELossConfig{STLC}(RBTDepth(), Uniform()) => lr,
+                    MLELossConfig{RBT}(RBTDepth(), Linear()) => lr,
+                    MLELossConfig{RBT}(RBTDepth(), Uniform()) => lr,
                 ]
             else
                 error()
