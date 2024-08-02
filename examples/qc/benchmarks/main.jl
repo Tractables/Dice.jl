@@ -5,18 +5,18 @@ GENERATION_PARAMS_LIST = [
     #     expr_size=5,
     #     typ_size=2,
     # ),
-    LangSiblingDerivedGenerator{STLC}(
-        root_ty=Expr.t,
-        ty_sizes=[Expr.t=>5, Typ.t=>2],
-        stack_size=1,
-        intwidth=3,
-    )
-    # LangSiblingDerivedGenerator{RBT}(
-    #     root_ty=ColorKVTree.t,
-    #     ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
-    #     stack_size=2,
+    # LangSiblingDerivedGenerator{STLC}(
+    #     root_ty=Expr.t,
+    #     ty_sizes=[Expr.t=>5, Typ.t=>2],
+    #     stack_size=1,
     #     intwidth=3,
     # )
+    LangSiblingDerivedGenerator{RBT}(
+        root_ty=ColorKVTree.t,
+        ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
+        stack_size=2,
+        intwidth=3,
+    ),
 #    LangSiblingDerivedGenerator{BST}(
 #        root_ty=KVTree.t,
 #        ty_sizes=[KVTree.t=>4],
@@ -25,12 +25,12 @@ GENERATION_PARAMS_LIST = [
 #    ),
 ]
 # LR_LIST = [0.3]
-LR_LIST = [0.01, 0.03, 0.1, 0.3]
+LR_LIST = [0.01]
 FP_LIST = [0.]
 FORIGIVENESS_LIST = [0]
 RAND_FORIGIVENESS_LIST = [true]
-RESAMPLING_FREQUENCY_LIST = [1,2,5]
-PROPERTY_LIST = [STLCWellTyped()]
+# RESAMPLING_FREQUENCY_LIST = [1,2,5]
+# PROPERTY_LIST = [STLCWellTyped()]
 # PROPERTY_LIST = [MultipleInvariants([
 #     BookkeepingInvariant(),
 #     BalanceInvariant(),
@@ -38,13 +38,14 @@ PROPERTY_LIST = [STLCWellTyped()]
 # ]),
 # TrueProperty{RBT}()]
 
-# PROPERTY_LIST = [nothing]
-
 SAMPLES_PER_BATCH_LIST = [50]
 EPOCHS_LIST = [500]
 
 # SAMPLES_PER_BATCH_LIST = [nothing]
 BOUND_LIST = [0.1]
+
+RESAMPLING_FREQUENCY_LIST = [nothing]
+PROPERTY_LIST = [nothing]
 
 EQ_LIST = [:prob_equals]
 
@@ -67,7 +68,7 @@ println()
 
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
-        [
+        # [
             # ApproxSTLCConstructorEntropy() => lr,
             # SatisfyPropertyLoss{RBT}(MultipleInvariants([
             #     BookkeepingInvariant(),
@@ -75,16 +76,16 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
             #     OrderInvariant(),
             # ])) => lr,
             # MLELossConfig{RBT}(RBTDepth(), Uniform()) => lr,
-            SamplingEntropy{STLC}(
-                resampling_frequency=resampling_frequency,
-                samples_per_batch=samples_per_batch,
-                property=property,
-                eq=eq,
-                failure_penalty=fp,
-                forgiveness=forgiveness,
-                rand_forgiveness=rand_forgiveness,
-                keyf=:identity,
-            ) => lr,
+            # SamplingEntropy{STLC}(
+            #     resampling_frequency=resampling_frequency,
+            #     samples_per_batch=samples_per_batch,
+            #     property=property,
+            #     eq=eq,
+            #     failure_penalty=fp,
+            #     forgiveness=forgiveness,
+            #     rand_forgiveness=rand_forgiveness,
+            #     keyf=:identity,
+            # ) => lr,
             # SamplingEntropy{BST}(
             #     resampling_frequency=resampling_frequency,
             #     samples_per_batch=samples_per_batch,
@@ -105,7 +106,28 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
             #     forgiveness=forgiveness,
             #     rand_forgiveness=rand_forgiveness,
             # ) => lr,
-        ]
+        # ]
+
+            if workload_of(GENERATION_PARAMS_LIST[1]) == STLC
+                [
+                    MLELossConfig{STLC}(NumApps(), Linear()) => lr,
+                    MLELossConfig{STLC}(NumApps(), Uniform()) => lr,
+                    MLELossConfig{STLC}(TermSize(), Linear()) => lr,
+                    MLELossConfig{STLC}(TermSize(), Uniform()) => lr,
+                ]
+            elseif workload_of(GENERATION_PARAMS_LIST[1]) == BST
+                [
+                    MLELossConfig{STLC}(BSTDepth(), Linear()) => lr,
+                    MLELossConfig{STLC}(BSTDepth(), Uniform()) => lr,
+                ]
+            elseif workload_of(GENERATION_PARAMS_LIST[1]) == RBT
+                [
+                    MLELossConfig{STLC}(RBTDepth(), Linear()) => lr,
+                    MLELossConfig{STLC}(RBTDepth(), Uniform()) => lr,
+                ]
+            else
+                error()
+            end
         for lr in LR_LIST
         for fp in FP_LIST
         for forgiveness in FORIGIVENESS_LIST

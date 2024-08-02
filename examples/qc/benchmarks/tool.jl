@@ -30,6 +30,7 @@ TAG = "v72_rbt_mul_linear_depth"
 TAG = "v73_rbt_exp_12"
 TAG = "v74_rbt_exp_20"
 TAG = "v76_pls_work"
+TAG = "v77_metrics"
 # TAG = "v59_repro"
 OUT_TOP_DIR = "/space2/tjoa/tuning-output"
 

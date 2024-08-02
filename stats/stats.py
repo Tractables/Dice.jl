@@ -85,7 +85,7 @@ ORDER: List[str] = { # Put rows in this order and also assert that these generat
     ]
 }[WORKLOAD]
 
-STRAT_DIR = f"/scratch/tjoa/etna/workloads/Coq/{WORKLOAD}/Strategies/"
+STRAT_DIR = f"/scratch/tjoa/etna/workloads/Coq/{WORKLOAD}/Strategies/stats"
 OUT_DIR = f"/scratch/tjoa/Dice.jl/stats/{WORKLOAD}"
 COQ_PROJECT_DIR = f"/scratch/tjoa/etna/workloads/Coq/{WORKLOAD}"
 
