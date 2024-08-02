@@ -109,7 +109,7 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
         # ]
 
         begin
-            wl = workload_of(type_of(GENERATION_PARAMS_LIST[1]))
+            wl = workload_of(typeof(GENERATION_PARAMS_LIST[1]))
             if wl == STLC
                 [
                     MLELossConfig{STLC}(NumApps(), Linear()) => lr,
