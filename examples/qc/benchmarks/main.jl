@@ -108,19 +108,21 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
             # ) => lr,
         # ]
 
-            if workload_of(GENERATION_PARAMS_LIST[1]) == STLC
+        begin
+            wl = workload_of(type_of(GENERATION_PARAMS_LIST[1]))
+            if wl == STLC
                 [
                     MLELossConfig{STLC}(NumApps(), Linear()) => lr,
                     MLELossConfig{STLC}(NumApps(), Uniform()) => lr,
                     MLELossConfig{STLC}(TermSize(), Linear()) => lr,
                     MLELossConfig{STLC}(TermSize(), Uniform()) => lr,
                 ]
-            elseif workload_of(GENERATION_PARAMS_LIST[1]) == BST
+            elseif wl == BST
                 [
                     MLELossConfig{STLC}(BSTDepth(), Linear()) => lr,
                     MLELossConfig{STLC}(BSTDepth(), Uniform()) => lr,
                 ]
-            elseif workload_of(GENERATION_PARAMS_LIST[1]) == RBT
+            elseif wl == RBT
                 [
                     MLELossConfig{STLC}(RBTDepth(), Linear()) => lr,
                     MLELossConfig{STLC}(RBTDepth(), Uniform()) => lr,
@@ -128,6 +130,7 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
             else
                 error()
             end
+        end
         for lr in LR_LIST
         for fp in FP_LIST
         for forgiveness in FORIGIVENESS_LIST
