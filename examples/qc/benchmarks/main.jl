@@ -1,4 +1,5 @@
 include("benchmarks.jl")
+using Infiltrator
 
 GENERATION_PARAMS_LIST = [
     # LangBespokeSTLCGenerator(

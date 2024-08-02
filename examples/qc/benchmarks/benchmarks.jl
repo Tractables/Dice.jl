@@ -1903,6 +1903,10 @@ struct RBTDepth <: Metric{RBT} end
 compute_metric(::RBTDepth, gen::RBTGeneration) = rbt_depth(gen.t)
 name(::RBTDepth) = "rbt_depth"
 
+struct BSTDepth <: Metric{BST} end
+compute_metric(::BSTDepth, gen::BSTGeneration) = rbt_depth(gen.t)
+name(::BSTDepth) = "rbt_depth"
+
 struct TreeSize <: Metric{BST} end
 compute_metric(::TreeSize, gen::BSTGeneration) = tree_size(gen.t)
 name(::TreeSize) = "tree_size"
