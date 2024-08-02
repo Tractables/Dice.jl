@@ -8,59 +8,61 @@ from collections import Counter, defaultdict
 from dataclasses import dataclass, field
 from typing import List, Callable
 
-WORKLOAD = "RBT"
+def bad_args():
+    print("""Usage: stats.py MODE WORKLOAD N
+
+Arguments:
+    MODE      One of:
+                  u     Unique over time
+                  us    Unique shapes over time
+                  d     Distributions of metrics
+
+    WORKLOAD  One of: BST, RBT, STLC
+
+    N         Number of samples""")
+    sys.exit(1)
+
+if len(sys.argv) != 4:
+    bad_args()
+
+_, mode, WORKLOAD, num_tests_str = sys.argv
+
+if mode == "u":
+    UNIQUE = True
+    SHAPES = False
+elif mode == "us":
+    UNIQUE = True
+    SHAPES = True
+elif mode == "d":
+    UNIQUE = False
+    SHAPES = False
+else:
+    bad_args()
+
+if WORKLOAD not in ["STLC", "BST", "RBT"]:
+    bad_args()
+NUM_TESTS = int(num_tests_str)
 ORDER_ONLY = True
-SHAPES = True
+
+sys.exit()
+
 ORDER: List[str] = { # Put rows in this order and also assert that these generators exist
     "STLC": [
-        # # class: bespoke
+        # class: bespoke
         # "BespokeGenerator",
-        # "LBespokeGenerator",
-        # "LBespokeACEGenerator",
-        # "LBespokeApproxConstructorEntropyGenerator",
-        # # class: type-based
-        # "TypeBasedGenerator",
-        # "LDGenerator",
-        # "LDEqMightGenerator",
-        # "LDEqVarGenerator",
-        # "LDEqWellGenerator",
-        # "LDStructureMightGenerator",
-        # "LDStructureVarGenerator",
-        # "LDStructureWellGenerator",
-        # "LSDGenerator",
-        # "LSDStructureMightGenerator",
-        # "LSDStructureWellGenerator",
-        # "LSDGenerator",
-        # "LSDStructureMayGenerator",
-        # "LSDEqMayGenerator",
-        # "LDStructureMayGenerator",
-        # "LDEqMayGenerator",
-        # "LDMayStructureArb_Freq5_SPB50_LR10Generator",
-        # "LDMayStructureArb_Freq5_SPB50_LR30Generator",
-        # "LDMayStructureArb_Freq5_SPB50_LR50Generator",
-        # "TBMay10Generator",
-        # "TBMay30Generator",
-        # "TBMay50Generator",
-        # "ReproTBMightGenerator",
-# "LDMayStructureArb_Freq2_SPB200_LR10Generator",
-# "LDMayStructureArb_Freq2_SPB200_LR30Generator",
-# "LDMayStructureArb_Freq2_SPB200_LR50Generator",
-# "LDMayStructureArb_Freq2_SPB50_LR10Generator",
-# "LDMayStructureArb_Freq2_SPB50_LR30Generator",
-# "LDMayStructureArb_Freq2_SPB50_LR50Generator",
-# "LDMayStructureArb_Freq5_SPB200_LR10Generator",
-        "LDThinInitGenerator",
-        # "LDThinMayEqGenerator",
-        # "LDThinMayStructureGenerator",
-        # "LDThinMayStructureGenerator",
-        # "LDThinMayStructure2Generator",
-    ] + [
-        f"{template}May{eq}Bound{bound}Generator"
-        for template in ["LD", "LSD"]
-        for eq in ["Structure", "Eq"]
-        for bound in ["05", "10"]
-    ],
-
+        "LBespokeGenerator",
+        "SimplerACEGenerator",
+        # class: type-based
+        "LSDThinGenerator",
+        "SLSDThinEqWellLR30Bound10Generator",
+    ] 
+    # + [
+    #     f"{template}May{eq}Bound{bound}Generator"
+    #     for template in ["LD", "LSD"]
+    #     for eq in ["Structure", "Eq"]
+    #     for bound in ["05", "10"]
+    # ]
+    ,
     "RBT": [
         # "SpecGenerator",
         "RLSDThinSmallGenerator",
@@ -77,18 +79,15 @@ ORDER: List[str] = { # Put rows in this order and also assert that these generat
     ],
 
     "BST": [
-        "TypeBasedGenerator",
-        "LEqGenerator",
-        "LExceptGenerator",
-        "TBEqGenerator",
-        "TBExceptGenerator",
+        "BSmallInitGenerator",
+        "BSmallTrainedGenerator",
+        # "TypeBasedGenerator",
     ]
 }[WORKLOAD]
 
 STRAT_DIR = f"/scratch/tjoa/etna/workloads/Coq/{WORKLOAD}/Strategies/"
 OUT_DIR = f"/scratch/tjoa/Dice.jl/stats/{WORKLOAD}"
 COQ_PROJECT_DIR = f"/scratch/tjoa/etna/workloads/Coq/{WORKLOAD}"
-NUM_TESTS = 100000
 
 @dataclass
 class Workload:
@@ -113,14 +112,18 @@ WORKLOADS = {
                 | (App e1 e2) => 1 + num_apps e1 + num_apps e2
                 | _ => 0
                 end.""",
-        is_failing_generator=lambda generator: "Bespoke" in generator,
+        is_failing_generator=lambda generator: "Bespoke" in generator or "SimplerACE" in generator,
         unique_extra="""Inductive Shape :=
-| E_ : Shape
-| T_ : Color -> Shape -> Shape -> Shape.
+| V_ : Shape
+| B_ : Shape
+| Ab_ : Shape -> Shape
+| Ap_ : Shape -> Shape -> Shape.
 
-Fixpoint toShape (t : Tree) : Shape := match t with
-  | E => E_
-  | T c l k v r => T_ c (toShape l) (toShape r)
+Fixpoint toShape (t : Expr) : Shape := match t with
+  | Var _ => V_
+  | Bool _ => B_
+  | Abs ty e => Ab_ (toShape e)
+  | App f x => Ap_ (toShape f) (toShape x)
   end.""",
     ),
 
@@ -136,7 +139,14 @@ Fixpoint toShape (t : Tree) : Shape := match t with
               | T l k v r => 1 + max (height l) (height r)
               end.""",
         is_failing_generator=lambda generator: False,
-        unique_extra="",
+        unique_extra="""Inductive Shape :=
+| E_ : Shape
+| T_ : Shape -> Shape -> Shape.
+
+Fixpoint toShape (t : Tree) : Shape := match t with
+  | E => E_
+  | T l k v r => T_ (toShape l) (toShape r)
+  end.""",
     ),
     "RBT": Workload(
         type="Tree",
@@ -152,11 +162,11 @@ Fixpoint toShape (t : Tree) : Shape := match t with
         is_failing_generator=lambda generator: generator == "BespokeGenerator.v",
         unique_extra="""Inductive Shape :=
 | E_ : Shape
-| T_ : Color -> Shape -> Shape -> Shape.
+| T_ : Shape -> Shape -> Shape.
 
 Fixpoint toShape (t : Tree) : Shape := match t with
   | E => E_
-  | T c l k v r => T_ c (toShape l) (toShape r)
+  | T c l k v r => T_ (toShape l) (toShape r)
   end.""",
     ),
 }
@@ -186,7 +196,7 @@ def get_generators():
     generators.sort(key=key)
     return generators
 
-def collect_unique_shapes():
+def collect_unique():
     # List generators
     generators = get_generators()
     cols = []
@@ -200,31 +210,47 @@ def collect_unique_shapes():
         # to get an idea overhead per run:
         # 100k samples, limit 1000 took 141 seconds
         # 100k samples, limit 10,000 took 14 seconds
-        limit = 2000 if generator == "RLSDThinEqLR30Epochs2000Bound10SPB200Generator.v" else 10000
+        # limit = 2000 if generator == "RLSDThinEqLR30Epochs2000Bound10SPB200Generator.v" else 10000
+        limit = 1000
         print(limit)
+
+        may_fail = workload.is_failing_generator(generator)
         while len(samples) < NUM_TESTS:
             n_now = min(limit, NUM_TESTS - len(samples))
+            t_to_id = "(toShape t)" if SHAPES else "t"
+            if may_fail:
+                gShapes = f"""Definition gShapes :=
+              bindGen (vectorOf numSamples (bindGen {workload.generator(generator)} (fun t_opt => returnGen
+                (match t_opt with
+                | None => None
+                | Some t =>
+                    (if """ + (workload.invariant_check % "t") + f""" then
+                        Some {t_to_id}
+                    else
+                        None)
+                end)
+              ))) (fun samples =>
+                returnGen samples)."""
+            else:
+                gShapes = f"""Definition gShapes :=
+              bindGen (vectorOf numSamples (bindGen {workload.generator(generator)} (fun t => returnGen
+                (if """ + (workload.invariant_check % "t") + f""" then
+                    Some {t_to_id}
+                else
+                    None)
+              ))) (fun samples =>
+                returnGen samples)."""
+
             stdout=run_coq(pgrm + f"""
             Derive Show for Shape.
-
             Extract Constant Test.defNumTests => "1".
             Definition collect {{A : Type}} `{{_ : Show A}} (g : G A)   : Checker :=  
                 forAll g (fun (t : A) =>
                       collect (show t) true
                 ).
-
             Set Warnings "-abstract-large-number".
             Definition numSamples := {n_now}.
-
-            Definition gShapes :=
-              bindGen (vectorOf numSamples (bindGen {workload.generator(generator)} (fun t => returnGen
-                (if """ + (workload.invariant_check % "t") + """ then
-                    Some (toShape t)
-                else
-                    None)
-              ))) (fun samples =>
-                returnGen samples).
-
+            {gShapes}
             QuickChick (collect gShapes).
             """)
             line, = lines_between(stdout, f"QuickChecking (collect gShapes)", "+++")
@@ -241,7 +267,10 @@ def collect_unique_shapes():
 
     # Output stats
     os.makedirs(OUT_DIR, exist_ok=True)
-    file_path = os.path.join(OUT_DIR, f"shapes-{WORKLOAD}.csv")
+    if SHAPES:
+        file_path = os.path.join(OUT_DIR, f"unique-shapes-{WORKLOAD}-{NUM_TESTS}.csv")
+    else:
+        file_path = os.path.join(OUT_DIR, f"unique-{WORKLOAD}-{NUM_TESTS}.csv")
     rows = list(map(list, zip(*cols, strict=True)))
     with open(file_path, "w") as file:
         for row in rows:
@@ -289,8 +318,8 @@ def collect_dist():
         print(f"Write to {file_path}")
 
 def main():
-    if SHAPES:
-        collect_unique_shapes()
+    if UNIQUE:
+        collect_unique()
     else:
         collect_dist()
 
