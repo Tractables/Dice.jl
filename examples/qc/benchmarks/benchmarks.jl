@@ -1903,6 +1903,10 @@ struct RBTDepth <: Metric{RBT} end
 compute_metric(::RBTDepth, gen::RBTGeneration) = rbt_depth(gen.t)
 name(::RBTDepth) = "rbt_depth"
 
+struct RBTSize <: Metric{RBT} end
+compute_metric(::RBTSize, gen::RBTGeneration) = rbt_size(gen.t)
+name(::RBTSize) = "rbt_size"
+
 struct BSTDepth <: Metric{BST} end
 compute_metric(::BSTDepth, gen::BSTGeneration) = bst_depth(gen.t)
 name(::BSTDepth) = "bst_depth"

@@ -12,18 +12,18 @@ GENERATION_PARAMS_LIST = [
     #     stack_size=1,
     #     intwidth=3,
     # )
-    # LangSiblingDerivedGenerator{RBT}(
-    #     root_ty=ColorKVTree.t,
-    #     ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
-    #     stack_size=2,
-    #     intwidth=3,
-    # ),
-   LangSiblingDerivedGenerator{BST}(
-       root_ty=KVTree.t,
-       ty_sizes=[KVTree.t=>4],
-       stack_size=2,
-       intwidth=3,
-   ),
+    LangSiblingDerivedGenerator{RBT}(
+        root_ty=ColorKVTree.t,
+        ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
+        stack_size=2,
+        intwidth=3,
+    ),
+#    LangSiblingDerivedGenerator{BST}(
+#        root_ty=KVTree.t,
+#        ty_sizes=[KVTree.t=>4],
+#        stack_size=2,
+#        intwidth=3,
+#    ),
 ]
 # LR_LIST = [0.3]
 LR_LIST = [0.01]
@@ -40,7 +40,7 @@ RAND_FORIGIVENESS_LIST = [true]
 # TrueProperty{RBT}()]
 
 SAMPLES_PER_BATCH_LIST = [50]
-EPOCHS_LIST = [500]
+EPOCHS_LIST = [2000]
 
 # SAMPLES_PER_BATCH_LIST = [nothing]
 BOUND_LIST = [0.1]
@@ -68,8 +68,8 @@ println(n_runs)
 println()
 
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
-    # (
-        # [
+    (
+        [
             # ApproxSTLCConstructorEntropy() => lr,
             # SatisfyPropertyLoss{RBT}(MultipleInvariants([
             #     BookkeepingInvariant(),
@@ -107,31 +107,7 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
             #     forgiveness=forgiveness,
             #     rand_forgiveness=rand_forgiveness,
             # ) => lr,
-        # ]
-
-        begin
-            wl = workload_of(typeof(GENERATION_PARAMS_LIST[1]))
-            if wl == STLC
-                [
-                    [MLELossConfig{STLC}(NumApps(), Linear()) => lr],
-                    [MLELossConfig{STLC}(NumApps(), Uniform()) => lr],
-                    [MLELossConfig{STLC}(TermSize(), Linear()) => lr],
-                    [MLELossConfig{STLC}(TermSize(), Uniform()) => lr],
-                ]
-            elseif wl == BST
-                [
-                    [MLELossConfig{BST}(BSTDepth(), Linear()) => lr],
-                    [MLELossConfig{BST}(BSTDepth(), Uniform()) => lr],
-                ]
-            elseif wl == RBT
-                [
-                    [MLELossConfig{RBT}(RBTDepth(), Linear()) => lr],
-                    [MLELossConfig{RBT}(RBTDepth(), Uniform()) => lr],
-                ]
-            else
-                error()
-            end
-        end
+        ]
         for lr in LR_LIST
         for fp in FP_LIST
         for forgiveness in FORIGIVENESS_LIST
@@ -140,9 +116,37 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
         for resampling_frequency in RESAMPLING_FREQUENCY_LIST
         for samples_per_batch in SAMPLES_PER_BATCH_LIST
         for eq in EQ_LIST
-    # ),
+    ),
 ]))
 
+LOSS_CONFIG_WEIGHT_PAIRS_LIST = begin
+    lr = 0.03
+    wl = workload_of(typeof(GENERATION_PARAMS_LIST[1]))
+    if wl == STLC
+        [
+            [MLELossConfig{STLC}(NumApps(), Linear()) => lr],
+            [MLELossConfig{STLC}(NumApps(), Uniform()) => lr],
+            [MLELossConfig{STLC}(TermSize(), Linear()) => lr],
+            [MLELossConfig{STLC}(TermSize(), Uniform()) => lr],
+        ]
+    elseif wl == BST
+        [
+            [MLELossConfig{BST}(TreeSize(), Linear()) => lr],
+            [MLELossConfig{BST}(TreeSize(), Uniform()) => lr],
+            # [MLELossConfig{BST}(BSTDepth(), Linear()) => lr],
+            # [MLELossConfig{BST}(BSTDepth(), Uniform()) => lr],
+        ]
+    elseif wl == RBT
+        [
+            [MLELossConfig{RBT}(RBTSize(), Linear()) => lr],
+            [MLELossConfig{RBT}(RBTSize(), Uniform()) => lr],
+            # [MLELossConfig{RBT}(RBTDepth(), Linear()) => lr],
+            # [MLELossConfig{RBT}(RBTDepth(), Uniform()) => lr],
+        ]
+    else
+        error()
+    end
+end
 
 # N = 3
 # GENERATION_PARAMS_LIST = [Flips{N}()]
