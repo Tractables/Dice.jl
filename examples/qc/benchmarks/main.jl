@@ -68,7 +68,7 @@ println(n_runs)
 println()
 
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
-    (
+    # (
         # [
             # ApproxSTLCConstructorEntropy() => lr,
             # SatisfyPropertyLoss{RBT}(MultipleInvariants([
@@ -113,20 +113,20 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
             wl = workload_of(typeof(GENERATION_PARAMS_LIST[1]))
             if wl == STLC
                 [
-                    MLELossConfig{STLC}(NumApps(), Linear()) => lr,
-                    MLELossConfig{STLC}(NumApps(), Uniform()) => lr,
-                    MLELossConfig{STLC}(TermSize(), Linear()) => lr,
-                    MLELossConfig{STLC}(TermSize(), Uniform()) => lr,
+                    [MLELossConfig{STLC}(NumApps(), Linear()) => lr],
+                    [MLELossConfig{STLC}(NumApps(), Uniform()) => lr],
+                    [MLELossConfig{STLC}(TermSize(), Linear()) => lr],
+                    [MLELossConfig{STLC}(TermSize(), Uniform()) => lr],
                 ]
             elseif wl == BST
                 [
-                    MLELossConfig{BST}(BSTDepth(), Linear()) => lr,
-                    MLELossConfig{BST}(BSTDepth(), Uniform()) => lr,
+                    [MLELossConfig{BST}(BSTDepth(), Linear()) => lr],
+                    [MLELossConfig{BST}(BSTDepth(), Uniform()) => lr],
                 ]
             elseif wl == RBT
                 [
-                    MLELossConfig{RBT}(RBTDepth(), Linear()) => lr,
-                    MLELossConfig{RBT}(RBTDepth(), Uniform()) => lr,
+                    [MLELossConfig{RBT}(RBTDepth(), Linear()) => lr],
+                    [MLELossConfig{RBT}(RBTDepth(), Uniform()) => lr],
                 ]
             else
                 error()
@@ -140,7 +140,7 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
         for resampling_frequency in RESAMPLING_FREQUENCY_LIST
         for samples_per_batch in SAMPLES_PER_BATCH_LIST
         for eq in EQ_LIST
-    ),
+    # ),
 ]))
 
 
