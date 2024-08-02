@@ -6,18 +6,18 @@ GENERATION_PARAMS_LIST = [
     #     expr_size=5,
     #     typ_size=2,
     # ),
-    # LangSiblingDerivedGenerator{STLC}(
-    #     root_ty=Expr.t,
-    #     ty_sizes=[Expr.t=>5, Typ.t=>2],
-    #     stack_size=1,
-    #     intwidth=3,
-    # )
-    LangSiblingDerivedGenerator{RBT}(
-        root_ty=ColorKVTree.t,
-        ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
+    LangSiblingDerivedGenerator{STLC}(
+        root_ty=Expr.t,
+        ty_sizes=[Expr.t=>5, Typ.t=>2],
         stack_size=2,
         intwidth=3,
-    ),
+    )
+    # LangSiblingDerivedGenerator{RBT}(
+    #     root_ty=ColorKVTree.t,
+    #     ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
+    #     stack_size=2,
+    #     intwidth=3,
+    # ),
 #    LangSiblingDerivedGenerator{BST}(
 #        root_ty=KVTree.t,
 #        ty_sizes=[KVTree.t=>4],
@@ -26,7 +26,7 @@ GENERATION_PARAMS_LIST = [
 #    ),
 ]
 # LR_LIST = [0.3]
-LR_LIST = [0.01]
+LR_LIST = [0.001]
 FP_LIST = [0.]
 FORIGIVENESS_LIST = [0]
 RAND_FORIGIVENESS_LIST = [true]
