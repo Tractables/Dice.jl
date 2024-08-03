@@ -43,7 +43,7 @@ SAMPLES_PER_BATCH_LIST = [50]
 EPOCHS_LIST = [2000]
 
 # SAMPLES_PER_BATCH_LIST = [nothing]
-BOUND_LIST = [0.1]
+BOUND_LIST = [0.]
 
 RESAMPLING_FREQUENCY_LIST = [nothing]
 PROPERTY_LIST = [nothing]
@@ -128,20 +128,20 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = begin
             [MLELossConfig{STLC}(STLCDepth(), Uniform()) => lr],
             # [MLELossConfig{STLC}(NumApps(), Linear()) => lr],
             # [MLELossConfig{STLC}(NumApps(), Uniform()) => lr],
-            # [MLELossConfig{STLC}(TermSize(), Linear()) => lr],
-            # [MLELossConfig{STLC}(TermSize(), Uniform()) => lr],
+            [MLELossConfig{STLC}(TermSize(), Linear()) => lr],
+            [MLELossConfig{STLC}(TermSize(), Uniform()) => lr],
         ]
     elseif wl == BST
         [
-            # [MLELossConfig{BST}(TreeSize(), Linear()) => lr],
-            # [MLELossConfig{BST}(TreeSize(), Uniform()) => lr],
+            [MLELossConfig{BST}(TreeSize(), Linear()) => lr],
+            [MLELossConfig{BST}(TreeSize(), Uniform()) => lr],
             [MLELossConfig{BST}(BSTDepth(), Linear()) => lr],
             [MLELossConfig{BST}(BSTDepth(), Uniform()) => lr],
         ]
     elseif wl == RBT
         [
-            # [MLELossConfig{RBT}(RBTSize(), Linear()) => lr],
-            # [MLELossConfig{RBT}(RBTSize(), Uniform()) => lr],
+            [MLELossConfig{RBT}(RBTSize(), Linear()) => lr],
+            [MLELossConfig{RBT}(RBTSize(), Uniform()) => lr],
             [MLELossConfig{RBT}(RBTDepth(), Linear()) => lr],
             [MLELossConfig{RBT}(RBTDepth(), Uniform()) => lr],
         ]
