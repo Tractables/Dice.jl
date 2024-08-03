@@ -211,6 +211,10 @@ module L
     children(x::Program) = vcat(x.functions, [x.res])
 end
 
+function twopowers(n)
+    [2^(i-1) for i in 1:n]
+end
+
 function for_between(f, f_between, xs)
     for (i, x) in enumerate(xs)
         f(x)
@@ -519,7 +523,7 @@ function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String w
     matchid_to_cases = Dict()
     for (name, val) in adnodes_vals
         matchid, case = split(name, "%%")
-        case = if case == "" "tt" else "(" * join([tocoq(eval(Meta.parse(x))) for x in split(case, "%")], ", ") * ")" end
+        case = if case == "" "tt" else "(" * join([value_to_coq(eval(Meta.parse(x))) for x in split(case, "%")], ", ") * ")" end
         val = hundredths(val)
         push!(get!(matchid_to_cases, matchid, []), (case, val))
     end
