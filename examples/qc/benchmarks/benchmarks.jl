@@ -1919,6 +1919,10 @@ struct NumApps <: Metric{STLC} end
 compute_metric(::NumApps, gen::STLCGeneration) = num_apps(gen.e)
 name(::NumApps) = "num_apps"
 
+struct STLCDepth <: Metric{STLC} end
+compute_metric(::STLCDepth, gen::STLCGeneration) = depth(gen.e)
+name(::STLCDepth) = "stlc_depth"
+
 struct TermSize <: Metric{STLC} end
 compute_metric(::TermSize, gen::STLCGeneration) = term_size(gen.e)
 name(::TermSize) = "term_size"

@@ -101,6 +101,22 @@ function num_apps(e::OptExpr.t)
     ])
 end
 
+function depth(e::OptExpr.t)
+    @match e [
+        Some(x) -> depth(x),
+        None() -> DistUInt32(1024),
+    ]
+end
+
+function depth(e::Expr.t)
+    @match e [
+        Var(i) -> DistUInt32(0),
+        Bool(b) -> DistUInt32(0),
+        App(f, x) -> DistUInt32(1) + max(depth(f), depth(x)),
+        Abs(ty, e′) -> DistUInt32(1) + depth(e′)
+    ]
+end
+
 function num_apps(e::Expr.t)
     match(e, [
         :Var     => (i)        -> DistUInt32(0),

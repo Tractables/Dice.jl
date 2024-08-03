@@ -2,10 +2,10 @@ include("benchmarks.jl")
 using Infiltrator
 
 GENERATION_PARAMS_LIST = [
-    # LangBespokeSTLCGenerator(
-    #     expr_size=5,
-    #     typ_size=2,
-    # ),
+    LangBespokeSTLCGenerator(
+        expr_size=5,
+        typ_size=2,
+    ),
     LangSiblingDerivedGenerator{STLC}(
         root_ty=Expr.t,
         ty_sizes=[Expr.t=>5, Typ.t=>2],
@@ -124,24 +124,26 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = begin
     wl = workload_of(typeof(GENERATION_PARAMS_LIST[1]))
     if wl == STLC
         [
-            [MLELossConfig{STLC}(NumApps(), Linear()) => lr],
-            [MLELossConfig{STLC}(NumApps(), Uniform()) => lr],
-            [MLELossConfig{STLC}(TermSize(), Linear()) => lr],
-            [MLELossConfig{STLC}(TermSize(), Uniform()) => lr],
+            [MLELossConfig{STLC}(STLCDepth(), Linear()) => lr],
+            [MLELossConfig{STLC}(STLCDepth(), Uniform()) => lr],
+            # [MLELossConfig{STLC}(NumApps(), Linear()) => lr],
+            # [MLELossConfig{STLC}(NumApps(), Uniform()) => lr],
+            # [MLELossConfig{STLC}(TermSize(), Linear()) => lr],
+            # [MLELossConfig{STLC}(TermSize(), Uniform()) => lr],
         ]
     elseif wl == BST
         [
-            [MLELossConfig{BST}(TreeSize(), Linear()) => lr],
-            [MLELossConfig{BST}(TreeSize(), Uniform()) => lr],
-            # [MLELossConfig{BST}(BSTDepth(), Linear()) => lr],
-            # [MLELossConfig{BST}(BSTDepth(), Uniform()) => lr],
+            # [MLELossConfig{BST}(TreeSize(), Linear()) => lr],
+            # [MLELossConfig{BST}(TreeSize(), Uniform()) => lr],
+            [MLELossConfig{BST}(BSTDepth(), Linear()) => lr],
+            [MLELossConfig{BST}(BSTDepth(), Uniform()) => lr],
         ]
     elseif wl == RBT
         [
-            [MLELossConfig{RBT}(RBTSize(), Linear()) => lr],
-            [MLELossConfig{RBT}(RBTSize(), Uniform()) => lr],
-            # [MLELossConfig{RBT}(RBTDepth(), Linear()) => lr],
-            # [MLELossConfig{RBT}(RBTDepth(), Uniform()) => lr],
+            # [MLELossConfig{RBT}(RBTSize(), Linear()) => lr],
+            # [MLELossConfig{RBT}(RBTSize(), Uniform()) => lr],
+            [MLELossConfig{RBT}(RBTDepth(), Linear()) => lr],
+            [MLELossConfig{RBT}(RBTDepth(), Uniform()) => lr],
         ]
     else
         error()
