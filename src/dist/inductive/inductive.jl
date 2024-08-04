@@ -73,6 +73,7 @@ function Base.match(x::DistTaggedUnion, branches::Vector{Function})
 end
 
 # Note: this requires that the "which" index of both unions are equal
+# (Left<Int,Int> 1 != Right<Int,Int> 1)
 function prob_equals(x::DistTaggedUnion, y::DistTaggedUnion)
     res = false
     @assert length(x.dists) == length(y.dists)

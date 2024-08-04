@@ -4,34 +4,34 @@ module Typ
     using Dice
     @inductive t TBool() TFun(t, t)
 end
-to_coq(::Type{Typ.t}) = "Typ"
+type_to_coq(::Type{Typ.t}) = "Typ"
 
 module Expr
     using Dice
-    using Main: DistNat, Typ
-    @inductive t Var(DistNat) Bool(AnyBool) Abs(Typ.t, t) App(t, t)
+    using Main: Nat, Typ
+    @inductive t Var(Nat.t) Bool(AnyBool) Abs(Typ.t, t) App(t, t)
 end
-to_coq(::Type{Expr.t}) = "Expr"
+type_to_coq(::Type{Expr.t}) = "Expr"
 
 module OptExpr
     using Dice
     using Main: Expr
     @inductive t None() Some(Expr.t)
 end
-to_coq(::Type{OptExpr.t}) = "option Expr"
+type_to_coq(::Type{OptExpr.t}) = "option Expr"
 
 module ListTyp
     using Dice
     using Main: Typ
     @inductive t nil() cons(Typ.t, t)
 end
-to_coq(::Type{ListTyp.t}) = "list Typ"
+type_to_coq(::Type{ListTyp.t}) = "list Typ"
 
 module ListNat
     using Dice
     @inductive t nil() cons(DistUInt32, t)
 end
-to_coq(::Type{ListNat.t}) = "list nat"
+type_to_coq(::Type{ListNat.t}) = "list nat"
 
 function prob_map(dest_module, f, l::ListNat.t)
     @match l [
@@ -45,20 +45,14 @@ module ListOptExpr
     using Main: OptExpr
     @inductive t nil() cons(OptExpr.t, t)
 end
-to_coq(::Type{ListOptExpr.t}) = "list option Expr"
-
-module Nat
-    using Dice
-    t = DistUInt32
-end
-to_coq(::Type{Nat.t}) = "nat"
+type_to_coq(::Type{ListOptExpr.t}) = "list option Expr"
 
 module Ctx
     using Dice
     using Main: Typ
     @inductive t nil() cons(Typ.t, t)
 end
-to_coq(::Type{Ctx.t}) = "Ctx"
+type_to_coq(::Type{Ctx.t}) = "Ctx"
 
 function Base.length(l::ListOptExpr.t)
     @match l [
@@ -78,18 +72,18 @@ function one_of(default::OptExpr.t, l::ListOptExpr.t)::OptExpr.t
     ]
 end
 
-function term_size(e::Expr.t)
+function size(e::Expr.t)
     match(e, [
         :Var     => (i)        -> DistUInt32(1),
         :Bool => (b)        -> DistUInt32(1),
-        :App     => (f, x)     -> DistUInt32(1) + term_size(f) + term_size(x),
-        :Abs     => (ty, e′)   -> DistUInt32(1) + term_size(e′),
+        :App     => (f, x)     -> DistUInt32(1) + size(f) + size(x),
+        :Abs     => (ty, e′)   -> DistUInt32(1) + size(e′),
     ])
 end
 
-function term_size(e::OptExpr.t)
+function size(e::OptExpr.t)
     match(e, [
-        :Some => e -> term_size(e),
+        :Some => e -> size(e),
         :None => () -> DistUInt32(1024),
     ])
 end
@@ -352,332 +346,4 @@ function typecheck(ast::Tuple, gamma, depth=0)
     else
         error("Bad node $(name)")
     end
-end
-
-
-function eq_except_numbers(x::Typ.t, y::Typ.t)
-    @match x [
-        TBool() -> (@match y [
-            TBool() -> true,
-            TFun(_, _) -> false,
-        ]),
-        TFun(a1, b1) -> (@match y [
-            TBool() -> false,
-            TFun(a2, b2) -> eq_except_numbers(a1, a2) & eq_except_numbers(b1, b2),
-        ]),
-    ]
-end
-
-function eq_except_numbers(x::Expr.t, y::Expr.t)
-    @match x [
-        Var(_) -> (@match y [
-            Var(_) -> true,
-            Bool(_) -> false,
-            App(_, _) -> false,
-            Abs(_, _) -> false,
-        ]),
-        Bool(_) -> (@match y [
-            Var(_) -> false,
-            Bool(_) -> true,
-            App(_, _) -> false,
-            Abs(_, _) -> false,
-        ]),
-        App(f1, x1) -> (@match y [
-            Var(_) -> false,
-            Bool(_) -> false,
-            App(f2, x2) -> eq_except_numbers(f1, f2) & eq_except_numbers(x1, x2),
-            Abs(_, _) -> false,
-        ]),
-        Abs(ty1, e1) -> (@match y [
-            Var(_) -> false,
-            Bool(_) -> false,
-            App(_, _) -> false,
-            Abs(ty2, e2) -> eq_except_numbers(ty1, ty2) & eq_except_numbers(e1, e2),
-        ]),
-    ]
-end
-
-function has_app(x::Expr.t)
-    @match x [
-        Var(_) -> false,
-        Bool(_) -> false,
-        App(_, _) -> true,
-        Abs(_, e) -> has_app(e),
-    ]
-end
-
-function eq_structure(x::Expr.t, y::Expr.t)
-    @match x [
-        Var(_) -> (@match y [
-            Var(_) -> true,
-            Bool(_) -> false,
-            App(_, _) -> false,
-            Abs(_, _) -> false,
-        ]),
-        Bool(_) -> (@match y [
-            Var(_) -> false,
-            Bool(_) -> true,
-            App(_, _) -> false,
-            Abs(_, _) -> false,
-        ]),
-        App(f1, x1) -> (@match y [
-            Var(_) -> false,
-            Bool(_) -> false,
-            App(f2, x2) -> eq_structure(f1, f2) & eq_structure(x1, x2),
-            Abs(_, _) -> false,
-        ]),
-        Abs(_, e1) -> (@match y [
-            Var(_) -> false,
-            Bool(_) -> false,
-            App(_, _) -> false,
-            Abs(_, e2) -> eq_structure(e1, e2),
-        ]),
-    ]
-end
-
-function eq_except_numbers(x::OptExpr.t, y::OptExpr.t)
-    @match x [
-        Some(xv) -> (@match y [
-            Some(yv) -> eq_except_numbers(xv, yv),
-            None() -> false,
-        ]),
-        None() -> (@match y [
-            Some(_) -> false,
-            None() -> true,
-        ])
-    ]
-end
-
-function eq_structure(x::OptExpr.t, y::OptExpr.t)
-    @match x [
-        Some(xv) -> (@match y [
-            Some(yv) -> eq_structure(xv, yv),
-            None() -> false,
-        ]),
-        None() -> (@match y [
-            Some(_) -> false,
-            None() -> true,
-        ])
-    ]
-end
-
-function eq_num_apps(x::Opt.T{T}, y::Opt.T{T}) where T
-    @match x [
-        Some(xv) -> (@match y [
-            Some(yv) -> prob_equals(num_apps(xv), num_apps(yv)),
-            None() -> false,
-        ]),
-        None() -> (@match y [
-            Some(_) -> false,
-            None() -> true,
-        ])
-    ]
-end
-
-function sat_num_apps(e::Expr.t, k::DistUInt32)
-    @match e [
-        Var(_) -> DistUInt32(0),
-        Bool(_) -> DistUInt32(0),
-        App(f, x) -> min(min(DistUInt32(1), k) + sat_num_apps(f, k) + sat_num_apps(x, k), k),
-        Abs(_, e′) -> sat_num_apps(e′, k),
-    ]
-end
-
-# TODO: why is saturating at 1 different than eq_has_app?
-function sat_eq_num_apps(x::Opt.T{T}, y::Opt.T{T}, k::Integer) where T
-    @match x [
-        Some(xv) -> (@match y [
-            Some(yv) -> prob_equals(sat_num_apps(xv, DistUInt32(k)), sat_num_apps(yv, DistUInt32(k))),
-            None() -> false,
-        ]),
-        None() -> (@match y [
-            Some(_) -> false,
-            None() -> true,
-        ])
-    ]
-end
-
-function eq_has_app(x::Opt.T{T}, y::Opt.T{T}) where T
-    @match x [
-        Some(xv) -> (@match y [
-            Some(yv) -> prob_equals(has_app(xv), has_app(yv)),
-            None() -> false,
-        ]),
-        None() -> (@match y [
-            Some(_) -> false,
-            None() -> true,
-        ])
-    ]
-end
-
-function rem_num_bools(x::Expr.t)
-    @match x [
-        Var(_) -> Expr.Var(DistUInt32(0)),
-        Bool(_) -> Expr.Bool(true),
-        App(e1, e2) -> Expr.App(rem_num_bools(e1), rem_num_bools(e2)),
-        Abs(t_in, e) -> Expr.Abs(t_in, rem_num_bools(e)),
-    ]
-end
-
-function rem_num_bools(x::OptExpr.t)
-    @match x [
-        None() -> OptExpr.None(),
-        Some(xv) -> OptExpr.Some(rem_num_bools(xv)),
-    ]
-end
-
-function may_typecheck(x::Expr.t, under_abs)
-    @match x [
-        Var(i) -> begin
-            if !under_abs
-                return :Error
-            end
-            :TypeVar # we leniently let this take any type it needs to
-        end,
-        Bool(_) -> :TBool,
-        App(e1, e2) -> begin
-            t1 = may_typecheck(e1, under_abs)
-            if t1 == :Error || t1 == :TBool
-                return :Error
-            end
-            if !(t1 in [:TFun, :TypeVar])
-                return :Error
-            end
-            # Really, should check that t2 matches function input ty of t1
-            t2 = may_typecheck(e2, under_abs)
-            if t2 == :Error
-                return :Error
-            end
-            :TypeVar
-        end,
-        Abs(t_in, e) -> begin
-            t1 = may_typecheck(e, true)
-            if t1 == :Error
-                return :Error
-            end
-            :TFun
-        end,
-    ]
-end
-
-function may_typecheck(x::OptExpr.t)
-    @match x [
-        None() -> false,
-        Some(xv) -> may_typecheck(xv, false) != :Error
-    ]
-end
-
-function might_typecheck(x::Expr.t, gamma, depth)
-    @match x [
-        Var(i) -> begin
-            i = Dice.frombits(i, Dict())
-            var_depth = depth - i - 1
-            if !haskey(gamma, var_depth)
-                return :Error
-            end
-            # note that gamma is wrong! because we put dists in it
-            # gamma[var_depth]
-            :TypeVar # we leniently let this take any type it needs to
-        end,
-        Bool(_) -> :TBool,
-        App(e1, e2) -> begin
-            t1 = might_typecheck(e1, gamma, depth)
-            if t1 == :Error || t1 == :TBool
-                return :Error
-            end
-            if !(t1 in [:TFun, :TypeVar])
-                return :Error
-            end
-            # Really, should check that t2 matches function input ty of t1
-            t2 = might_typecheck(e2, gamma, depth)
-            if t2 == :Error
-                return :Error
-            end
-            :TypeVar
-        end,
-        Abs(t_in, e) -> begin
-            gamma′ = copy(gamma)
-            gamma′[depth] = t_in
-            t1 = might_typecheck(e, gamma′, depth + 1)
-            if t1 == :Error
-                return :Error
-            end
-            :TFun
-        end,
-    ]
-end
-
-function might_typecheck(x::OptExpr.t)
-    @match x [
-        None() -> false,
-        Some(xv) -> might_typecheck(xv, Dict(), 0) != :Error
-    ]
-end
-
-function var_numberings_good(x::Expr.t, gamma, depth)
-    @match x [
-        Var(i) -> begin
-            i = Dice.frombits(i, Dict())
-            var_depth = depth - i - 1
-            haskey(gamma, var_depth)
-        end,
-        Bool(_) -> true,
-        App(e1, e2) -> begin
-            var_numberings_good(e1, gamma, depth) & var_numberings_good(e2, gamma, depth)
-        end,
-        Abs(t_in, e) -> begin
-            gamma′ = copy(gamma)
-            gamma′[depth] = t_in
-            var_numberings_good(e, gamma′, depth + 1)
-        end,
-    ]
-end
-
-function var_numberings_good(x::OptExpr.t)
-    @match x [
-        None() -> false,
-        Some(xv) -> var_numberings_good(xv, Dict(), 0),
-    ]
-end
-
-# right now mayer = might
-function mayer_typecheck(x::Expr.t, under_abs)
-    @match x [
-        Var(i) -> begin
-            if !under_abs
-                return :Error
-            end
-            :TypeVar # we leniently let this take any type it needs to
-        end,
-        Bool(_) -> :TBool,
-        App(e1, e2) -> begin
-            t1 = mayer_typecheck(e1, under_abs)
-            if t1 == :Error || t1 == :TBool
-                return :Error
-            end
-            if !(t1 in [:TFun, :TypeVar])
-                return :Error
-            end
-            # Really, should check that t2 matches function input ty of t1
-            t2 = mayer_typecheck(e2, under_abs)
-            if t2 == :Error
-                return :Error
-            end
-            :TypeVar
-        end,
-        Abs(t_in, e) -> begin
-            t1 = mayer_typecheck(e, true)
-            if t1 == :Error
-                return :Error
-            end
-            :TFun
-        end,
-    ]
-end
-
-function mayer_typecheck(x::OptExpr.t)
-    @match x [
-        None() -> false,
-        Some(xv) -> mayer_typecheck(xv, false) != :Error
-    ]
 end

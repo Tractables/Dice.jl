@@ -28,19 +28,10 @@ GENERATION_PARAMS_LIST = [
 # LR_LIST = [0.3]
 LR_LIST = [0.001]
 FP_LIST = [0.]
-FORIGIVENESS_LIST = [0]
-RAND_FORIGIVENESS_LIST = [true]
 # RESAMPLING_FREQUENCY_LIST = [1,2,5]
-# PROPERTY_LIST = [STLCWellTyped()]
-# PROPERTY_LIST = [MultipleInvariants([
-#     BookkeepingInvariant(),
-#     BalanceInvariant(),
-#     OrderInvariant(),
-# ]),
-# TrueProperty{RBT}()]
 
 SAMPLES_PER_BATCH_LIST = [50]
-EPOCHS_LIST = [2000]
+EPOCHS_LIST = [3]
 
 # SAMPLES_PER_BATCH_LIST = [nothing]
 BOUND_LIST = [0.]
@@ -48,22 +39,16 @@ BOUND_LIST = [0.]
 RESAMPLING_FREQUENCY_LIST = [nothing]
 PROPERTY_LIST = [nothing]
 
-EQ_LIST = [:prob_equals]
-
-n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, FP_LIST, FORIGIVENESS_LIST, RAND_FORIGIVENESS_LIST, PROPERTY_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST, EQ_LIST, BOUND_LIST]))
+n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, PROPERTY_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST, BOUND_LIST]))
 println(n_runs)
 @assert n_runs <= 12
 
 @show GENERATION_PARAMS_LIST
 @show LR_LIST
-@show FP_LIST
-@show FORIGIVENESS_LIST
-@show RAND_FORIGIVENESS_LIST
 @show PROPERTY_LIST
 @show RESAMPLING_FREQUENCY_LIST
 @show SAMPLES_PER_BATCH_LIST
 @show EPOCHS_LIST
-@show EQ_LIST
 @show BOUND_LIST
 println()
 
@@ -109,45 +94,24 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
             # ) => lr,
         ]
         for lr in LR_LIST
-        for fp in FP_LIST
-        for forgiveness in FORIGIVENESS_LIST
-        for rand_forgiveness in RAND_FORIGIVENESS_LIST
         for property in PROPERTY_LIST
         for resampling_frequency in RESAMPLING_FREQUENCY_LIST
         for samples_per_batch in SAMPLES_PER_BATCH_LIST
-        for eq in EQ_LIST
     ),
 ]))
 
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = begin
     lr = 0.03
-    wl = workload_of(typeof(GENERATION_PARAMS_LIST[1]))
-    if wl == STLC
-        [
-            [MLELossConfig{STLC}(STLCDepth(), Linear()) => lr],
-            [MLELossConfig{STLC}(STLCDepth(), Uniform()) => lr],
-            # [MLELossConfig{STLC}(NumApps(), Linear()) => lr],
-            # [MLELossConfig{STLC}(NumApps(), Uniform()) => lr],
-            [MLELossConfig{STLC}(TermSize(), Linear()) => lr],
-            [MLELossConfig{STLC}(TermSize(), Uniform()) => lr],
-        ]
-    elseif wl == BST
-        [
-            [MLELossConfig{BST}(TreeSize(), Linear()) => lr],
-            [MLELossConfig{BST}(TreeSize(), Uniform()) => lr],
-            [MLELossConfig{BST}(BSTDepth(), Linear()) => lr],
-            [MLELossConfig{BST}(BSTDepth(), Uniform()) => lr],
-        ]
-    elseif wl == RBT
-        [
-            [MLELossConfig{RBT}(RBTSize(), Linear()) => lr],
-            [MLELossConfig{RBT}(RBTSize(), Uniform()) => lr],
-            [MLELossConfig{RBT}(RBTDepth(), Linear()) => lr],
-            [MLELossConfig{RBT}(RBTDepth(), Uniform()) => lr],
-        ]
-    else
-        error()
+    function workload_of(::Type{<:GenerationParams{T}}) where T
+        T
     end
+    wl = workload_of(typeof(GENERATION_PARAMS_LIST[1]))
+    [
+        [MLELossConfig{wl}(depth, Linear()) => lr],
+        [MLELossConfig{wl}(depth, Uniform()) => lr],
+        [MLELossConfig{wl}(size, Linear()) => lr],
+        [MLELossConfig{wl}(size, Uniform()) => lr],
+    ]
 end
 
 # N = 3

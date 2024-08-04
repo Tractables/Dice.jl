@@ -1,21 +1,5 @@
 using Combinatorics: permutations
 
-function empty_stack(p)
-    Tuple(0 for _ in 1:p.stack_size)
-end
-
-function update_stack_tail(p, stack_tail, loc)
-    @assert loc != 0
-    Tuple(
-        if i == p.stack_size
-            loc
-        else
-            stack_tail[i + 1]
-        end
-        for i in 1:p.stack_size
-    )
-end
-
 function backtrack_for(rs, name, opts::Vector{Opt.T{T}})::Opt.T{T} where T
     first_some(T, shuffle_for(rs, name, opts))
 end
@@ -59,17 +43,6 @@ function shuffle_for(rs, name, xs)
         error("todo: generic shuffle")
     end
 end
-
-# function frequency(xs)
-#     sample_from(xs)
-# end
-
-# function backtrack(xs)
-#     isempty(xs) && return DistNone()
-#     x = sample_from(xs)
-#     remove!(xs, x)
-#     backtrack(xs)
-# end
 
 # give a weight to the permutation
 function weight_of(weights_xs)
@@ -129,16 +102,6 @@ function first_some(::Type{T}, xs) where T
     end
 end
 
-# Manually curry so we can have type be first arg and use "do"
-function map_(::Type{RetT}) where RetT
-    function inner(f, l::List{T}) where T
-        match(l, [
-            "Nil" => () -> DistNil(RetT),
-            "Cons" => (x, xs) -> DistCons(f(x), map_(RetT)(f, xs))
-        ])
-    end
-end
-
 function freq_flips(weights)
     weight_sum = last(weights)
     flips = Vector(undef, length(weights))
@@ -188,6 +151,7 @@ function opt_stlc_str(ast)
 end
 
 function save_metric_dist(filename, dist; io)
+    key_range(d) = minimum(keys(d)):maximum(keys(d))
     open(filename, "w") do file
         println(file, "val\tprobability")
         for i in key_range(dist)
@@ -195,26 +159,6 @@ function save_metric_dist(filename, dist; io)
         end
     end
     println(io, "Saved metric dist to $(filename).")
-end
-
-key_range(d) = minimum(keys(d)):maximum(keys(d))
-
-function preview_distribution(e; full_dist)
-    if full_dist
-        println("Getting distribution of all exprs")
-        @time dist = pr(e)
-        for (k, pr) in dist
-            println("pr: $(pr)")
-            println(opt_stlc_str(k))
-            println()
-        end
-    else
-        println("A few sampled exprs:")
-        for _ in 1:20
-            expr = sample(e)
-            println(opt_stlc_str(expr))
-        end
-    end
 end
 
 function save_samples(rs, filename, e; n_samples=200)
@@ -251,35 +195,6 @@ end
 
 thousandths(n) = if isnan(n) "nan" else Integer(round(n, digits=3) * 1000) end
 hundredths(n) = if isnan(n) "nan" else Integer(round(n * 100)) end
-
-global _soft_assert_ever_triggered = Ref(false)
-
-function to_unquoted(e)
-    io = IOBuffer()
-    Base.show_unquoted(io, e)
-    String(take!(io))
-end
-
-macro soft_assert(io, b, msg)
-    src = "$(__source__.file):$(__source__.line)"
-    b_s = to_unquoted(b)
-    quote
-        if !$(esc(b))
-            global _soft_assert_ever_triggered[] = true
-            for io in Set([$(esc(io)), stdout])
-                println(io, "Assertion failed at $($src)")
-                println(io, $b_s)
-                println(io, $(esc(msg)))
-            end
-        end
-    end
-end
-atexit() do
-    if _soft_assert_ever_triggered[]
-        println("WARNING: this program failed soft assertion(s)")
-        exit(1)
-    end
-end
 
 function register_weight!(rs, s; random_value=false)
     var = Var("$(s)_before_sigmoid")
@@ -407,66 +322,4 @@ function value_to_coq(v::Tuple)
     else
         "($(join([value_to_coq(x) for x in v], ", ")))"
     end
-end
-
-
-function collect_types(root_ty)
-    to_visit = [root_ty]
-    seen = Set([root_ty])
-    tys = [root_ty]
-    while !isempty(to_visit)
-        ty = pop!(to_visit)
-        for (ctor, params) in variants(ty)
-            for param in params
-                if param ∉ seen && hasmethod(variants, (Type{param},))
-                    push!(seen, param)
-                    push!(to_visit, param)
-                    push!(tys, param)
-                end
-            end
-        end
-    end
-    reverse!(tys) # top order
-
-    type_ctor_parami_to_id = Dict()
-    for ty in tys
-        for (ctor, params) in variants(ty)
-            for (parami, param) in enumerate(params)
-                if param in tys
-                    type_ctor_parami_to_id[(ty, ctor, parami)] = length(type_ctor_parami_to_id) + 1
-                end
-            end
-        end
-    end
-
-    tys, type_ctor_parami_to_id
-end
-
-variants2(ty, exclude_recursive) = if exclude_recursive
-    [
-        (ctor, params)
-        for (ctor, params) in variants(ty)
-        if !(ty in params)
-    ]
-else
-    variants(ty)
-end
-
-to_coq(::Type{DistUInt32}) = "nat"
-to_coq(::Type{DistInt32}) = "Z"
-to_coq(::Type{AnyBool}) = "bool"
-
-function sandwichjoin(pairs; middle, sep)
-    ls = []
-    rs = []
-    for (l, r) in pairs
-        push!(ls, l)
-        push!(rs, r)
-    end
-    reverse!(rs)
-    join(
-        Iterators.flatten([
-            ls, [middle], rs
-        ]), sep
-    )
 end

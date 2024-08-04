@@ -1,3 +1,52 @@
+function module_of_func(f)
+    @assert all(m.module == methods(f)[1].module for m in methods(f)) "$(f) $(methods(f))"
+    methods(f)[1].module
+end
+
+function ctor_to_params(f)
+    m = module_of_func(f)
+    for (ctor, params) in variants(m.t)
+        if f == ctor
+            return params
+        end
+    end
+    error("ctor_to_params failed $(f) $(m)")
+end
+
+ty_is_recursive(ty) = any(ty in params for (ctor, params) in variants(ty))
+
+function collect_types(root_ty)
+    to_visit = [root_ty]
+    seen = Set([root_ty])
+    tys = [root_ty]
+    while !isempty(to_visit)
+        ty = pop!(to_visit)
+        for (ctor, params) in variants(ty)
+            for param in params
+                if param ∉ seen && hasmethod(variants, (Type{param},))
+                    push!(seen, param)
+                    push!(to_visit, param)
+                    push!(tys, param)
+                end
+            end
+        end
+    end
+    reverse!(tys) # top order
+
+    type_ctor_parami_to_id = Dict()
+    for ty in tys
+        for (ctor, params) in variants(ty)
+            for (parami, param) in enumerate(params)
+                if param in tys
+                    type_ctor_parami_to_id[(ty, ctor, parami)] = length(type_ctor_parami_to_id) + 1
+                end
+            end
+        end
+    end
+
+    tys, type_ctor_parami_to_id
+end
+
 struct LangDerivedGenerator{T} <: GenerationParams{T}
     root_ty::Type
     ty_sizes::Vector{Pair{Type, Integer}}
@@ -65,16 +114,7 @@ end
 function generate(rs::RunState, p::LangSiblingDerivedGenerator{T}) where T
     prog = derive_lang_sibling_generator(p)
     res, prim_map, function_results = interp(rs, prog)
-    constructors_overapproximation = []
-    if T == STLC
-        STLCGeneration(OptExpr.Some(res), [OptExpr.Some(e) for e in function_results["genExpr"]])
-    elseif T == BST
-        BSTGeneration(res, function_results["genTree"])
-    elseif T == RBT
-        RBTGeneration(res) #, function_results["genTree"])
-    else
-        error()
-    end
+    Generation(res)
 end
 function generation_params_emit_stats(rs::RunState, p::LangSiblingDerivedGenerator, s)
     prog = derive_lang_sibling_generator(p)
@@ -114,7 +154,7 @@ function derive_lang_generator(p::LangDerivedGenerator{T}) where T
             for (parami, param) in reverse(collect(enumerate(params)))
                 freq_branch = L.BindGen(
                     if param in tys
-                        L.Call("gen$(to_coq(param))", vcat(
+                        L.Call("gen$(type_to_coq(param))", vcat(
                             [
                                 if param == ty
                                     L.Var(:size1)
@@ -160,7 +200,7 @@ function derive_lang_generator(p::LangDerivedGenerator{T}) where T
     for ty in tys
         recursive = any(ty in params for (ctor, params) in variants(ty))
         func = L.Function(
-            "gen$(to_coq(ty))",
+            "gen$(type_to_coq(ty))",
             vcat(
                 [L.Param(:size, Nat.t)],
                 [L.Param(stack_var, Nat.t) for stack_var in stack_vars],
@@ -179,16 +219,38 @@ function derive_lang_generator(p::LangDerivedGenerator{T}) where T
     end
 
     L.Program(
-        [],
         functions,
         L.Call(
-            "gen$(to_coq(p.root_ty))",
+            "gen$(type_to_coq(p.root_ty))",
             vcat(
                 [L.Nat(Dict(p.ty_sizes)[p.root_ty])],
                 [L.Nat(0) for _ in 1:p.stack_size]
             )
         )
     )
+end
+
+function ctor_enum_prefix(ty, leaf)
+    leaf_s = if leaf "Leaf" else "" end
+    "$(leaf_s)Ctor$(type_to_coq(ty))"
+end
+
+function ctor_enum(ty, leaf)
+    pre = ctor_enum_prefix(ty, leaf)
+    L.Enum(pre, [
+        "$(pre)_$(nameof(ctor))"
+        for (ctor, params) in variants2(ty, leaf)
+    ])
+end
+
+variants2(ty, exclude_recursive) = if exclude_recursive
+    [
+        (ctor, params)
+        for (ctor, params) in variants(ty)
+        if !(ty in params)
+    ]
+else
+    variants(ty)
 end
 
 function derive_lang_sibling_generator(p::LangSiblingDerivedGenerator{T}) where T
@@ -214,16 +276,11 @@ function derive_lang_sibling_generator(p::LangSiblingDerivedGenerator{T}) where 
             _zero_case
         end
 
-
         chosen_ctor_branches = []
-        for (chosen_ctor_id, chosen_ctor_id_params) in variants(ctor_ty(ty, leaf))
-            @assert isempty(chosen_ctor_id_params)
-
-            chosen_ctor = unctor[chosen_ctor_id]
-            chosen_ctor_params = ctor_to_params(chosen_ctor)
-
+        ce = ctor_enum(ty, leaf)
+        for (chosen_ctor, chosen_ctor_params) in variants2(ty, leaf)
             sub_ctors_tys = [
-                ctor_ty(param, !ty_is_recursive(param) || param == ty && zero_case())
+                ctor_enum(param, !ty_is_recursive(param) || param == ty && zero_case())
                 for param in chosen_ctor_params
                 if param ∈ tys
             ]
@@ -240,7 +297,7 @@ function derive_lang_sibling_generator(p::LangSiblingDerivedGenerator{T}) where 
             end
 
             temp = vec(collect(Iterators.product([
-                [ctor for (ctor, _) in variants(sub_ctor_ty)]
+                [(sub_ctor_ty, ctor) for ctor in sub_ctor_ty.ctors]
                 for sub_ctor_ty in sub_ctors_tys
             ]...)))
 
@@ -256,9 +313,9 @@ function derive_lang_sibling_generator(p::LangSiblingDerivedGenerator{T}) where 
                         chosen_ctor_param_is_leaf = !ty_is_recursive(chosen_ctor_param) || chosen_ctor_param == ty && !leaf && zero_case()
                         subres = L.Call(
                             if chosen_ctor_param_is_leaf
-                                "genLeaf$(to_coq(chosen_ctor_param))"
+                                "genLeaf$(type_to_coq(chosen_ctor_param))"
                             else
-                                "gen$(to_coq(chosen_ctor_param))"
+                                "gen$(type_to_coq(chosen_ctor_param))"
                             end,
                             vcat(
                                 if chosen_ctor_param_is_leaf
@@ -298,7 +355,7 @@ function derive_lang_sibling_generator(p::LangSiblingDerivedGenerator{T}) where 
                     L.Frequency(dependents(leaf, zero_case), [
                         "$(i)" => L.ReturnGen(L.Tuple(
                             sub_ctors_tys,
-                            [L.Construct(ctor, []) for ctor in x],
+                            [L.ConstructEnum(enum, ctor) for (enum, ctor) in x],
                         ))
                         for (i, x) in enumerate(temp)
                     ]),
@@ -309,16 +366,16 @@ function derive_lang_sibling_generator(p::LangSiblingDerivedGenerator{T}) where 
                     )
                 )
             end
-            push!(chosen_ctor_branches, (Symbol(nameof(chosen_ctor_id)), []) => res)
+            push!(chosen_ctor_branches, "$(ctor_enum_prefix(ty, leaf))_$(nameof(chosen_ctor))" => res)
         end
-        L.Match(L.Var(:chosen_ctor), chosen_ctor_branches)
+        L.MatchEnum(ctor_enum(ty, leaf), L.Var(:chosen_ctor), chosen_ctor_branches)
     end
 
     for ty in tys
         leaffunc = L.Function(
-            "genLeaf$(to_coq(ty))",
+            "genLeaf$(type_to_coq(ty))",
             vcat(
-                [L.Param(:chosen_ctor, ctor_ty(ty, true))],
+                [L.Param(:chosen_ctor, ctor_enum(ty, true))],
                 [L.Param(stack_var, Nat.t) for stack_var in stack_vars],
             ),
             L.G{ty},
@@ -328,10 +385,10 @@ function derive_lang_sibling_generator(p::LangSiblingDerivedGenerator{T}) where 
 
         if ty_is_recursive(ty)
             func = L.Function(
-                "gen$(to_coq(ty))",
+                "gen$(type_to_coq(ty))",
                 vcat(
                     [L.Param(:size, Nat.t)],
-                    [L.Param(:chosen_ctor, ctor_ty(ty, false))],
+                    [L.Param(:chosen_ctor, ctor_enum(ty, false))],
                     [L.Param(stack_var, Nat.t) for stack_var in stack_vars],
                 ),
                 L.G{ty},
@@ -344,20 +401,17 @@ function derive_lang_sibling_generator(p::LangSiblingDerivedGenerator{T}) where 
         end
     end
 
+    root_ce = ctor_enum(p.root_ty, false)
     L.Program(
-        collect(Iterators.flatten([
-            [module_of_func(ctor_ty) for ctor_ty in ctor_tys(ty)]
-            for ty in keys(Dict(p.ty_sizes))
-        ])),
         functions,
         L.BindGen(
             L.Frequency([], [
-                "$(i)" => L.ReturnGen(L.Construct(ctor, []))
-                for (i, (ctor, _)) in enumerate(variants(ctor_ty(p.root_ty, false)))
+                "$(i)" => L.ReturnGen(L.ConstructEnum(root_ce, ctor))
+                for (i, ctor) in enumerate(root_ce.ctors)
             ]),
             :init_ctor,
             L.Call(
-                "gen$(to_coq(p.root_ty))",
+                "gen$(type_to_coq(p.root_ty))",
                 vcat(
                     [L.Nat(Dict(p.ty_sizes)[p.root_ty] - 1)],
                     [L.Var(:init_ctor)],
@@ -367,4 +421,3 @@ function derive_lang_sibling_generator(p::LangSiblingDerivedGenerator{T}) where 
         )
     )
 end
-

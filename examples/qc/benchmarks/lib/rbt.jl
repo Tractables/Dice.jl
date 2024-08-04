@@ -13,14 +13,14 @@ function Base.string(c::Color.t)
         B() -> "Color.B()",
     ]
 end
-to_coq(::Type{Color.t}) = "Color"
+type_to_coq(::Type{Color.t}) = "Color"
 
 module ColorKVTree
     using Dice
-    using Main: DistNat, Color
-    @inductive t E() T(Color.t, t, DistInt32, DistInt32, t)
+    using Main: Z, Color
+    @inductive t E() T(Color.t, t, Z.t, Z.t, t)
 end
-to_coq(::Type{ColorKVTree.t}) = "Tree"
+type_to_coq(::Type{ColorKVTree.t}) = "Tree"
 
 function tree_size(e::ColorKVTree.t)
     @match e [
@@ -29,12 +29,12 @@ function tree_size(e::ColorKVTree.t)
     ]
 end
 
-function rbt_depth(e::ColorKVTree.t)
+function depth(e::ColorKVTree.t)
     @match e [
         E() -> DistUInt32(0),
         T(c, l, k, v, r) -> begin
-            ldepth = rbt_depth(l)
-            rdepth = rbt_depth(r)
+            ldepth = depth(l)
+            rdepth = depth(r)
             DistUInt32(1) + @dice_ite if ldepth > rdepth ldepth else rdepth end
         end
     ]

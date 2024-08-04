@@ -33,12 +33,13 @@ TAG = "v76_pls_work"
 TAG = "v77_metrics"
 TAG = "v78_more_metrics"
 TAG = "v78_metrics_no_bound"
+TAG = "v79_actually_refactor"
 # TAG = "v59_repro"
 OUT_TOP_DIR = "/scratch/tjoa/tuning-output"
 
 ## PARSE ARGS
 if isempty(ARGS)
-    TAG = "test2"
+    TAG = "test"
     as = ["-f"]
     # g_p = TypeBasedBSTGenerator(
     #     size=5,
@@ -81,15 +82,10 @@ if isempty(ARGS)
     #     typ_size=1,
     # )
     l_p = [
-        SamplingEntropy{RBT}(
+        SpecEntropy{RBT}(
             resampling_frequency=1,
             samples_per_batch=50,
-            property=rbt_property(),
-            eq=:prob_equals,
-            failure_penalty=fp,
-            forgiveness=0,
-            rand_forgiveness=true,
-            keyf=:identity,
+            property=isRBT,
         ) => lr,
         # SamplingEntropy{STLC}(
         #     resampling_frequency=1,
@@ -208,7 +204,6 @@ println_loud(rs, generation_params)
 println_loud(rs, loss_config_weight_pairs)
 println_loud(rs, "Epochs: $(epochs)")
 println_loud(rs, "Bound: $(bound)")
-println_loud(rs, "DistNat: $(DistNat)")
 println_loud(rs, "SEED: $(SEED)")
 println_loud(rs)
 println("Logging to $(log_path)")
