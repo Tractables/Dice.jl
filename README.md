@@ -6,8 +6,6 @@ This is a Julia embedding for the probabilistic programming language Dice [https
 
 ## Installation
 
-The following installation instructions are for Linux. Currently, the depndencies for this package are not supported on MacOS on a machine with M1 chip.
-
 Install Julia 1.8.5 or higher using [these instructions](https://julialang.org/downloads/platform/).
 
 Then, install SymPy using the following command:
@@ -21,6 +19,13 @@ Next, clone the repository and start julia in project mode for current folder:
 ```bash
 cd Dice.jl
 julia --project
+```
+
+If you are using MacOS on a machine with M1 chip, please use the following commands instead:
+
+```bash
+cd Dice.jl
+julia --project -e "import Pkg;Pkg.add(url=\"https://github.com/rtjoa/CUDD.jl.git\",rev=\"m1compat\")"
 ```
 
 In Julia REPL, then use the following command to install all the needed dependencies
