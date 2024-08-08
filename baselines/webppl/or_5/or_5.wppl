@@ -1,0 +1,58 @@
+
+var model = function() {
+
+    var prior0 = beta({a: 1, b: 1})
+
+    var z0 = bernoulli({p: prior0});
+    var prior1 = beta({a: 1, b: 1})
+
+    var z1 = bernoulli({p: prior1});
+    var prior2 = beta({a: 1, b: 1})
+
+    var z2 = bernoulli({p: prior2});
+    var prior3 = beta({a: 1, b: 1})
+
+    var z3 = bernoulli({p: prior3});
+    var prior4 = beta({a: 1, b: 1})
+
+    var z4 = bernoulli({p: prior4});
+     var y = z0 
+ | z1
+ | z2
+ | z3
+ | z4
+;
+
+                                  if (y) {
+                                              factor(Gaussian({mu: 80, sigma: 8}).score(79));
+                                                } else{
+                                                            factor(Gaussian({mu: 135, sigma: 8}).score(79));
+                                                              }
+
+                                                  if (y) {
+                                                              factor(Gaussian({mu: 80, sigma: 8}).score(136));
+                                                                } else{
+                                                                            factor(Gaussian({mu: 135, sigma: 8}).score(136));
+                                                                              }
+
+
+                                                                  if (y) {
+                                                                              factor(Gaussian({mu: 80, sigma: 8}).score(79));
+                                                                                } else{
+                                                                                            factor(Gaussian({mu: 135, sigma: 8}).score(79));
+                                                                                              }
+
+                                                                                  if (y) {
+                                                                                              factor(Gaussian({mu: 80, sigma: 8}).score(136));
+                                                                                                } else{
+                                                                                                            factor(Gaussian({mu: 135, sigma: 8}).score(136));
+                                                                                                              }
+                                                                                                  return prior0;
+                                                                                                  }
+
+var func1 = function() {
+                return Infer({method: argv.m, particles: argv.s, samples: argv.s}, model);
+                }
+
+timeit( function() { return expectation(func1());})
+      

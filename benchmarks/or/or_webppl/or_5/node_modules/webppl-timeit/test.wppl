@@ -1,0 +1,5 @@
+timeit(function(){
+  var x = 1;
+  sleep(750);
+  return x;
+})

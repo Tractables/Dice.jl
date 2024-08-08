@@ -1,0 +1,22 @@
+Inference for Stan model: coinBias_model
+1 chains: each with iter=(98883263); warmup=(0); thin=(1); 98883263 iterations saved.
+
+Warmup took 0.00 seconds
+Sampling took 0.00 seconds
+
+                         Mean           MCSE         StdDev             5%            50%            95%          N_Eff        N_Eff/s          R_hat
+
+lp__           -8.6718891e+00  1.1950843e-04  7.3677212e-01 -1.0153600e+01 -8.3878200e+00 -8.1523700e+00  3.8007496e+07            inf  1.0000000e+00
+accept_stat__   9.2946013e-01  9.6997098e-06  1.0380172e-01  7.1053400e-01  9.7331900e-01  1.0000000e+00  1.1452271e+08            inf  9.9999999e-01
+stepsize__      9.8039800e-01            nan  2.0433799e-10  9.8039800e-01  9.8039800e-01  9.8039800e-01            nan            nan            nan
+treedepth__     1.3634172e+00  4.9579471e-05  4.8129315e-01  1.0000000e+00  1.0000000e+00  2.0000000e+00  9.4235728e+07            inf  9.9999999e-01
+n_leapfrog__    2.5285648e+00  1.2904765e-04  1.2287793e+00  1.0000000e+00  3.0000000e+00  3.0000000e+00  9.0666642e+07            inf  1.0000000e+00
+divergent__     0.0000000e+00            nan  0.0000000e+00  0.0000000e+00  0.0000000e+00  0.0000000e+00            nan            nan            nan
+energy__        9.1719760e+00  1.6661697e-04  1.0212503e+00  8.2027400e+00  8.8586000e+00  1.1211100e+01  3.7568681e+07            inf  1.0000000e+00
+
+b               4.1665491e-01  2.2281908e-05  1.3673810e-01  1.9953400e-01  4.1189000e-01  6.5017700e-01  3.7659481e+07            inf  1.0000000e+00
+
+Samples were drawn using hmc with nuts.
+For each parameter, N_Eff is a crude measure of effective sample size,
+and R_hat is the potential scale reduction factor on split chains (at 
+convergence, R_hat=1).

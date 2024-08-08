@@ -1,0 +1,13 @@
+float isWeekend
+isWeekend = flip(2/7)
+float hour
+hour = normal(3.0, 4.0)
+if (isWeekend) {
+    hour = abs(normal(5.0, 4.0))
+}
+else {
+    hour = abs(normal(2.0, 4.0))
+}
+
+hardObserve(hour==6.0)
+return(isWeekend)
