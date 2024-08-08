@@ -44,4 +44,5 @@ end
 # Computes the probabillity of the returned value
 p = pr(code, ignore_errors=true) # Takes about 4 minutes
 
+plot(p)
 @show p 
