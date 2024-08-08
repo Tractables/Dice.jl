@@ -6,6 +6,8 @@ This is a Julia embedding for the probabilistic programming language Dice [https
 
 ## Installation
 
+The following installation instructions are for Linux. Currently, the depndencies for this package are not supported on MacOS on a machine with M1 chip.
+
 Install Julia 1.8.5 or higher using [these instructions](https://julialang.org/downloads/platform/).
 
 Then, install SymPy using the following command:
