@@ -14,8 +14,9 @@ function half_adder(a, b)
 end
 
 # Distribution of half adder outputs when both inputs are 1 with probability 0.5
-pr(half_adder(flip(0.5), flip(0.5)))
-
+println("One-bit half adder")
+println(pr(half_adder(flip(0.5), flip(0.5))))
+println()
 
 # One-bit full adder based on half adder 
 function full_adder(a, b, c)
@@ -26,8 +27,9 @@ function full_adder(a, b, c)
 end
 
 # Distribution of full adder outputs when each input is 1 with probability 0.5
-pr(full_adder(flip(0.5), flip(0.5), flip(0.5)))
-
+println("One-bit full adder")
+println(pr(full_adder(flip(0.5), flip(0.5), flip(0.5))))
+println()
 
 # Arbitrary bit adder made by chaining full adders
 # This is in essence how the probabilistic (+) is implemented 
@@ -45,4 +47,5 @@ end
 # Addition on uniform distributions over 3-bit (unsigned) integers
 a = uniform(DistUInt{3})
 b = uniform(DistUInt{3})
-pr(add(a, b))
+println("Adding two uniform distributions over integers 0 to 7")
+println(pr(add(a, b)))

@@ -37,12 +37,11 @@ code = @dice begin
     sum3 = x4 + x5
     mult1 = sum1 * x2
     mult2 = sum2 * sum3
-    return (mult1 + mult2) > k # check we want 
-	# TODO: should be (-)? 
+    return (mult1 - mult2) > k 
 end
 
 # Computes the probabillity of the returned value
 p = pr(code, ignore_errors=true) # Takes about 4 minutes
 
-plot(p)
-@show p 
+println("Probabilities of pushing uniform distributions through the circuit")
+println(p)

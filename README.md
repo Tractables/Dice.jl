@@ -26,6 +26,7 @@ If you are using MacOS on a machine with M1 chip, please use the following comma
 ```bash
 cd Dice.jl
 julia --project -e "import Pkg;Pkg.add(url=\"https://github.com/rtjoa/CUDD.jl.git\",rev=\"m1compat\")"
+julia --project
 ```
 
 In Julia REPL, then use the following command to install all the needed dependencies

@@ -49,8 +49,12 @@ s2, c2 = add(a, b)
 # between the two sums; this is a probabilistic value
 carry_changes = DistUInt{3}(0)
 for i in 1:3
-	carry_changes += ifelse(!prob_equals(c1[i], c2[i]), DistUInt{3}(1), DistUInt{3}(0))
+	global carry_changes += ifelse(!prob_equals(c1[i], c2[i]), DistUInt{3}(1), DistUInt{3}(0))
 end
 result = pr(carry_changes)
-bar(ans, xlabel="Number of carry changes", ylabel="pr", legend=false)
-# pr(!prob_equals(c1[1], c2[1]) | !prob_equals(c1[2], c2[2]) | !prob_equals(c1[3], c2[3]))
+bar(result, xlabel="Number of carry changes", ylabel="pr", legend=false)
+savefig("./examples/circuit_demo/state_change.png")
+
+println("Probability of state change")
+println(result)
+println("Plot saved in ./examples/circuit_demo/state_change.png")
