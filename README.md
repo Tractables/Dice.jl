@@ -1,8 +1,8 @@
-# HyBit
+# Dice.jl - With support for integers and continuous distributions
 
 [![Unit Tests](https://github.com/Juice-jl/Dice.jl/workflows/Unit%20Tests/badge.svg)](https://github.com/Juice-jl/Dice.jl/actions?query=workflow%3A%22Unit+Tests%22+branch%3Amain)  [![codecov](https://codecov.io/gh/Juice-jl/Dice.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/Juice-jl/Dice.jl)
 
-`HyBit` is a bit blasting based probabilistic programming system for discrete-continuous probabilistic programs. It is built on top of another probabilistic programming language Dice See [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice).  
+This is a Julia embedding for the probabilistic programming language Dice [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice) with further support for integer distributions, integer arithmetic and continuous distributions. [[1, 2]](#1)
 
 ## Installation
 
@@ -27,7 +27,7 @@ In Julia REPL, then use the following command to install all the needed dependen
 using Pkg; Pkg.instantiate()
 ```
 
-Once the Dice Julia package is instantiated, its inference algorithm and HyBit is ready to use.
+Once the Dice Julia package is instantiated, its inference algorithm is ready to use.
 
 ## Quick Start
 
@@ -120,3 +120,10 @@ More examples can be found at the following directories:
 * `test/` directory contains unit test cases for all the functions and data types implemented.
 * `examples/` contains simple examples to get started with using Dice Julia package to write probabilistic programs.
 * `benchmarks/` contains discrete-continuous probabilistic programs to get started with using bit blasting.  
+
+## References
+<a id="1">[1]</a> 
+William X. Cao, Poorva Garg, Ryan Tjoa, Steven Holtzen, Todd Millstein, and Guy Van den Broeck. 2023. Scaling integer arithmetic in probabilistic programs. In Proceedings of the Thirty-Ninth Conference on Uncertainty in Artificial Intelligence (UAI '23), Vol. 216. JMLR.org, Article 25, 260–270.
+
+<a id="2">[2]</a>
+Poorva Garg, Steven Holtzen, Guy Van den Broeck, and Todd Millstein. 2024. Bit Blasting Probabilistic Programs. Proc. ACM Program. Lang. 8, PLDI, Article 182 (June 2024), 24 pages. https://doi.org/10.1145/3656412
