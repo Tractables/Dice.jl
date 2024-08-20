@@ -4,6 +4,7 @@ The examples in this directory demonstrate capabilities of Dice.jl to handle dis
 
 1. `adders.jl`: consists of an implementation of a half adder, full adder, and general addition circuit, as well as example calls for each.
 ```bash
+# in Dice.jl directory
 julia --project examples/circuit_demo/adders.jl
 ```
 It outputs results of a half adder, a full adder and a three-bit addition circuit as follows:
@@ -21,6 +22,7 @@ DataStructures.DefaultOrderedDict{Any, Any, Float64}(0 => 0.12500000000000003, 1
 
 2. `state_change.jl`: demonstrates how Dice.jl can be used to record state changes in a probabilistic program. Specifically, we show how change in input distributions to an adder circuit can lead to change in the carry.
 ```bash
+# in Dice.jl directory
 julia --project examples/circuit_demo/state_change.jl
 ```
 
@@ -33,6 +35,7 @@ Plot saved in ./examples/circuit_demo/state_change.png
 
 3. `circuit_demo.jl`: implements the shared example of a hardware circuit and pushes uniform distributions through it. This example uses the machinery built into this system for integer arithmetic.
 ```bash
+# in Dice.jl directory
 julia --project examples/circuit_demo/circuit_demo.jl
 ```
 
