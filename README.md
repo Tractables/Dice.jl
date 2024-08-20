@@ -6,7 +6,7 @@ This is a Julia embedding for the probabilistic programming language Dice [https
 
 ## Installation
 
-Install Julia 1.8.5 using [these instructions](https://julialang.org/downloads/platform/). Julia 1.8.5 is an older release and can be downloaded using the following command. Remaining installation functions remain the same.
+Install Julia 1.8.5 using [these instructions](https://julialang.org/downloads/platform/). Julia 1.8.5 is an older release and can be downloaded using the following command.
 
 ```bash
 wget https://julialang-s3.julialang.org/bin/linux/x64/1.8/julia-1.8.5-linux-x86_64.tar.gz
