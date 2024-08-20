@@ -39,7 +39,7 @@ Plot saved in ./examples/circuit_demo/state_change.png
 julia --project examples/circuit_demo/circuit_demo.jl
 ```
 
-We expect the following output:
+We expect the following output within a runtime of about 4 minutes:
 ```bash
 Probabilities of pushing uniform distributions through the circuit
 DataStructures.DefaultOrderedDict{Any, Any, Float64}(true => 0.7485364750027659, false => 0.25146352499723434)

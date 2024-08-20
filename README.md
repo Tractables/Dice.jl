@@ -2,7 +2,7 @@
 
 [![Unit Tests](https://github.com/Juice-jl/Dice.jl/workflows/Unit%20Tests/badge.svg)](https://github.com/Juice-jl/Dice.jl/actions?query=workflow%3A%22Unit+Tests%22+branch%3Amain)  [![codecov](https://codecov.io/gh/Juice-jl/Dice.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/Juice-jl/Dice.jl)
 
-This is a Julia embedding for the probabilistic programming language Dice [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice) with further support for integer distributions, integer arithmetic and continuous distributions. [[1, 2]](#1)
+This is a Julia embedding for the probabilistic programming language Dice [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice) with further support for integer distributions, integer arithmetic and continuous distributions. [[1, 2]](#1). The repository has been tested only on Linux operating system.
 
 ## Installation
 
@@ -14,20 +14,26 @@ Then, install SymPy using the following command:
 pip3 install sympy
 ```
 
-Next, clone the repository and start julia in project mode for current folder:
+Next, clone the repository and checkout to the `arithmetic-demo` branch.
+
+```bash
+git clone https://github.com/Tractables/Dice.jl.git -b arithmetic-demo
+```
+
+Then start julia in project mode for current folder:
 
 ```bash
 cd Dice.jl
 julia --project
 ```
 
-If you are using MacOS on a machine with M1 chip, please use the following commands instead:
+<!-- If you are using MacOS on a machine with M1 chip, please use the following commands instead:
 
 ```bash
 cd Dice.jl
 julia --project -e "import Pkg;Pkg.add(url=\"https://github.com/rtjoa/CUDD.jl.git\",rev=\"m1compat\")"
 julia --project
-```
+``` -->
 
 In Julia REPL, then use the following command to install all the needed dependencies
 
@@ -63,9 +69,7 @@ julia --project examples/example1.jl
 And it should print the result as following showing that `a` is true with probability `0.526316`:
 
 ```bash
-DataStructures.DefaultOrderedDict{Any, Any, Float64} with 2 entries:
-  true  => 0.526316
-  false => 0.473684
+pr(code) = DataStructures.DefaultOrderedDict{Any, Any, Float64}(true => 0.5263157894736843, false => 0.47368421052631576)
 ```
 
 ### Example: Discrete-Continuous
@@ -92,9 +96,7 @@ julia --project examples/example2.jl
 And it should print the result as following:
 
 ```bash
-DataStructures.DefaultOrderedDict{Any, Any, Float64} with 2 entries:
-  true  => 0.5
-  false => 0.5
+pr(code) = DataStructures.DefaultOrderedDict{Any, Any, Float64}(false => 0.5, true => 0.5)
 ```
 
 The Julia package Dice makes available the following constructs
