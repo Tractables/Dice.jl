@@ -10,7 +10,7 @@ See [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice)
 
 1. Install Julia 1.7 or higher using [these instructions](https://julialang.org/downloads/platform/).
 
-2. Clone this repository and navigate to its root folder. **Check out branch `qc12`**.
+2. Clone this repository and navigate to its root folder. **Check out branch `q12`**.
 
 4. If on Apple Silicon, first add our patched version of CUDD:
 ```
