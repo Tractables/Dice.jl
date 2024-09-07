@@ -1,6 +1,6 @@
 # Learning generator probabilities in Dice
 
-Once the installation ([`../../README.md`](README.md)) is complete, see [`examples/tour_1_core.jl`](examples/tour_1_core.jl) for a quick start to Dice.jl. Then, see [`examples/tour_2_learning.jl`](examples/tour_2_learning.jl) for an introduction to learning probabilities with MLE in Dice.jl.
+Once the installation ([`../../README.md`](../../README.md)) is complete, see [`examples/tour_1_core.jl`](examples/tour_1_core.jl) for a quick start to Dice.jl. Then, see [`examples/tour_2_learning.jl`](examples/tour_2_learning.jl) for an introduction to learning probabilities with MLE in Dice.jl.
 
 The following related programs are included. The expected output of each is in a comment at the bottom of the file.
 - Generator for nat lists ([`examples/demo_natlist.jl`](examples/demo_natlist.jl))
