@@ -10,21 +10,19 @@ See [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice)
 
 Install Julia 1.7 or higher using [these instructions](https://julialang.org/downloads/platform/).
 
-Clone the repository and start julia in project mode for current folder:
-```bash
-cd Dice.jl
-julia --project
+Clone the repository and navigate to its root folder.
+
+If on Apple Silicon, use our patched version of CUDD:
+```
+julia --project -e "import Pkg;Pkg.add(url=\"https://github.com/rtjoa/CUDD.jl.git\",rev=\"m1compat\")"`
 ```
 
-Install Dice and update dependencies (one can also use `precompile` or `build`):
-
+Install Dice and update dependencies:
 ```
-] up
+julia --project -e "import Pkg;Pkg.update()"
 ```
 
-Press CTRL-C or backspace to exit from the pkg terminal and return to Julia REPL.
-
-One can now run a program from the Julia REPL:
+One can now run a program from the Julia REPL (which can be opened with `julia --project`).
 ```julia
 include("examples/graph_reachability.jl")
 ```
