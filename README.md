@@ -31,3 +31,11 @@ Or from the command line:
 ```
 julia --project examples/graph_reachability.jl
 ```
+
+## Running tests
+
+The following should run within 10 minutes:
+
+```
+julia --project test/runtests.jl
+```
