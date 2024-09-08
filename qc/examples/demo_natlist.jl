@@ -1,4 +1,4 @@
-# Demo of using BDD MLE to learn flip probs for nat list of uniform length.
+# Learning flip probs to change the length distribution of a list generator.
 using Dice
 
 # Define inductive datatype for nat lists
