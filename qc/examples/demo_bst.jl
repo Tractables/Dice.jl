@@ -1,7 +1,22 @@
 # Demo of using BDD MLE to learn flip probs for a BST of uniform depth
 
 using Dice
-include("lib/dist_tree.jl")     # DistLeaf, DistBranch, depth
+
+@inductive DistTree DistLeaf() DistBranch(DistUInt32, DistTree, DistTree)
+
+function depth(l::DistTree)
+    @match(l, [
+        DistLeaf() -> DistUInt32(0),
+        DistBranch(x, l, r) -> begin
+            dl, dr = depth(l), depth(r)
+            @dice_ite if dl > dr
+                DistUInt32(1) + dl
+            else
+                DistUInt32(1) + dr
+            end
+        end
+    ])
+end
 
 var_vals = Valuation()
 adnodes_of_interest = Dict{String, ADNode}()
@@ -15,13 +30,9 @@ end
 
 # Return tree
 function gen_bst(size, lo, hi)
-    # Try changing the parameter to flip_for to a constant, which would force
-    # all sizes to use the same probability.
     @dice_ite if size == 0 || flip(register_weight!("sz$(size)"))
-        DistLeaf(DistUInt32)
+        DistLeaf()
     else
-        # The flips used in the uniform aren't tracked via flip_for, so we
-        # don't learn their probabilities (this is on purpose - we could).
         x = unif(lo, hi)
         DistBranch(x, gen_bst(size-1, lo, x), gen_bst(size-1, x, hi))
     end
@@ -62,28 +73,28 @@ println()
 println("A few sampled trees:")
 with_concrete_ad_flips(var_vals, tree) do
     for _ in 1:3
-        print_tree(sample(tree))
+        print_tree(sample_default_rng(tree))
         println()
     end
 end
 
 #==
 Distribution before training:
-   0 => 0.49999999999999994
-   3 => 0.30468750000000006
-   1 => 0.12499999999999997
-   2 => 0.0703125
+DataStructures.DefaultOrderedDict{Any, Any, Float64} with 4 entries:
+  0 => 0.5
+  3 => 0.304688
+  1 => 0.125
+  2 => 0.0703125
 
 Learned flip probability for each size:
-   1 => 0.7522142306508817
-   2 => 0.5773502691896257
-   3 => 0.25
+Dict("sz1" => 0.7522142306508817, "sz2" => 0.5773502691896257, "sz3" => 0.25000000000000006)
 
 Distribution over depths after training:
-   0 => 0.2500000000000004
-   1 => 0.24999999999999994
-   2 => 0.24999999999999994
-   3 => 0.24999999999999994
+DataStructures.DefaultOrderedDict{Any, Any, Float64} with 4 entries:
+  0 => 0.25
+  3 => 0.25
+  1 => 0.25
+  2 => 0.25
 
 A few sampled trees:
 Branch

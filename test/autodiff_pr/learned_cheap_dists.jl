@@ -8,10 +8,10 @@ end
 @testset "learned_cheap_dists" begin
     function dist_binomial(width, p)
         n = 2^width - 1
-        Dict(
-            k => binomial(n, k) * p^k * (1 - p)^(n - k)
+        [
+            DistUInt{width}(k) => binomial(n, k) * p^k * (1 - p)^(n - k)
             for k in 0:n
-        )
+        ]
     end
 
     width = 3
@@ -25,11 +25,8 @@ end
     history = train!(
         wt_var_to_vals,
         mle_loss([
-            BoolToMax(
-                prob_equals(int, DistUInt{width}(i)),
-                weight=target_dist[i]
-            )
-            for i in 0:2^width-1
+            BoolToMax(prob_equals(int, x), weight=p)
+            for (x, p) in target_dist
         ]),
         epochs=300,
         learning_rate=0.1
@@ -61,7 +58,6 @@ end
         kl_divergence(
             target_dist,
             int,
-            Set([i => DistUInt{width}(i) for i in 0:2^width-1])
         ),
         epochs=300,
         learning_rate=0.1

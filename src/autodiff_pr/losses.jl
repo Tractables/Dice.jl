@@ -39,6 +39,17 @@ end
 #     res
 # end
 
+# Assume all fsts of p are unique
+function kl_divergence(p::Vector{<:Pair{<:Dist, <:Real}}, q::Dist)
+    res = 0
+    for (x, prob) in p
+        @assert isdeterministic(x)
+        logqx = LogPr(prob_equals(q, x))
+        res += prob * (log(prob) - logqx) 
+    end
+    res
+end
+
 function kl_divergence(p::Dict{<:Any, <:Real}, q::Dist, domain::Set{<:Pair{<:Any, <:Dist}})
     res = 0
     for (x, x_dist) in domain

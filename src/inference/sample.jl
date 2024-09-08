@@ -1,4 +1,5 @@
-export sample, sample_as_dist
+export sample, sample_as_dist, sample_default_rng
+using Random
 using DirectedAcyclicGraphs: foldup
 
 """Run vanilla rejection sampling without any compilation"""
@@ -46,6 +47,10 @@ function sample(rng, x; evidence=true)
         end
         return frombits(x, vcache)
     end
+end
+
+function sample_default_rng(x; evidence=true)
+    sample(Random.default_rng(), x; evidence)
 end
 
 function sample_as_dist(rng, a, x; evidence=true)

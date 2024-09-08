@@ -1,17 +1,30 @@
 # Demo of using BDD MLE to learn flip probs for nat list of uniform length.
-
 using Dice
 
-function gen_list(size)
-    size == 0 && return DistNil(DistUInt32)
+# Define inductive datatype for nat lists
+@inductive DistNatList DistNil() DistCons(DistUInt32, DistNatList)
 
-    # Try changing the parameter to flip_for to a constant, which would force
-    # all sizes to use the same probability.
+function length(l::DistNatList)
+    @match l [
+        DistNil() -> DistUInt32(0),
+        DistCons(x, xs) -> DistUInt32(1) + length(xs),
+    ]
+end
+
+# Our generator for nat lists
+function gen_list(size)
+    size == 0 && return DistNil()
+
+    # After understanding this demo as-written, try replacing `size` in the next
+    # line with a constant, which would force all sizes to use the same
+    # probability. This would restrict the distribution over list lengths to
+    # roughly geometric distributions, so the final distribution wouldn't be as
+    # close to the desired (but still better than before training).
     @dice_ite if flip(sigmoid(Var(size)))
-        DistNil(DistUInt32)
+        DistNil()
     else
-        # The flips used in the uniform aren't tracked via flip_for, so we
-        # don't learn their probabilities (this is on purpose - we could).
+        # The flips used in `uniform` use concrete weights, so we don't learn
+        # their probabilities (but we could!).
         DistCons(uniform(DistUInt32, 0, 10), gen_list(size-1))
     end
 end
@@ -19,11 +32,9 @@ end
 # Top-level size/fuel. For gen_list, this is the max length.
 INIT_SIZE = 5
 
-# Dataset over the desired property to match. Below is a uniform distribution
-# over sizes.
-DATASET = [DistUInt32(x) for x in 0:INIT_SIZE]
-
-# Use Dice to build computation graph
+# Build computation graph of Dists. We could inline these definitions at their
+# use sites (constructing the computation graph is pure), but this saves a tiny
+# bit of work.
 list = gen_list(INIT_SIZE)
 list_len = length(list)
 
@@ -33,7 +44,13 @@ println("Distribution before training:")
 display(pr_mixed(var_vals)(list_len))
 println()
 
-loss = mle_loss([prob_equals(list_len, x) for x in DATASET])
+# Approximate a distribution using KL divergence
+desired_dist = [
+    DistUInt32(0) => 0.3,
+    DistUInt32(2) => 0.2,
+    DistUInt32(5) => 0.5
+]
+loss = kl_divergence(desired_dist, list_len)
 train!(var_vals, loss, epochs=1000, learning_rate=0.3)
 
 # Done!
@@ -54,17 +71,19 @@ Distribution before training:
    5 => 0.03125
 
 Learned flip probability for each size:
-   1 => 0.5
-   2 => 0.33333333333333337
-   3 => 0.25000000000000006
-   4 => 0.20000000000000007
-   5 => 0.16666666666666669
+Dict{Int64, Float64} with 5 entries:
+  5 => 0.3
+  4 => 0.00482717
+  2 => 0.00678713
+  3 => 0.285714
+  1 => 0.00678713
 
 Distribution over lengths after training:
-   1 => 0.1666666666666667
-   0 => 0.16666666666666669
-   2 => 0.16666666666666669
-   3 => 0.16666666666666669
-   4 => 0.1666666666666666
-   5 => 0.1666666666666666
+DataStructures.DefaultOrderedDict{Any, Any, Float64} with 6 entries:
+  5 => 0.490855
+  0 => 0.3
+  2 => 0.199035
+  1 => 0.00337902
+  3 => 0.00337718
+  4 => 0.00335426
 ==#
