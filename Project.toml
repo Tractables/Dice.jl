@@ -4,7 +4,9 @@ authors = ["Guy Van den Broeck <guyvdb@gmail.com>"]
 version = "0.1.0"
 
 [deps]
+ADEV = "91c67158-5de4-465b-a572-6ca3a628f939"
 CUDD = "345a2cc7-28d8-58b2-abdf-cff77ea7d7f1"
+Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
 DataStructures = "864edb3b-99cc-5e75-8d2d-829cb0a9cfe8"
 DirectedAcyclicGraphs = "1e6dae5e-d6e2-422d-9af3-452e7a3785ee"
 Distributions = "31c24e10-a181-5473-b8eb-7969acd0382f"
@@ -16,6 +18,8 @@ MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
 PrecompileTools = "aea7be01-6a6a-4083-8856-8a6e6704d82a"
 Random = "9a3f8284-a2c9-5f02-9a11-845980a1fd5c"
+ReverseDiff = "37e2e3b7-166d-5795-8a7a-e32c996b4267"
+StochasticAD = "e4facb34-4f7e-4bec-b153-e122c37934ac"
 
 [compat]
 CUDD = "0.3"
