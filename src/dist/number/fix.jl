@@ -1,7 +1,5 @@
 using Distributions
 using SymPy
-@vars varint
-@vars v2
 
 export DistFix, bitblast, bitblast_linear, bitblast_exponential, bitblast_exact, unit_exponential, exponential, laplace, unit_gamma, shift_point_gamma, n_unit_exponentials, geometric, general_gamma
 
@@ -528,8 +526,8 @@ function exponential_for_gamma(α::Int, β::Float64)::Vector{Float64}
 end
 
 function gamma_constants(α::Int, β::Float64, ϵ::Float64)
-    @vars varint
-    @vars v2
+    @syms varint
+    @syms v2
     if α == 0
         []
     else
