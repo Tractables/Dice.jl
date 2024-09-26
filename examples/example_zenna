@@ -1,0 +1,44 @@
+using Dice
+# 1.1010
+code = @dice begin
+    a = uniform(DistFix{5, 4}, 0.0, 1.0)
+    # b = flip(0.5)
+    # observe(a | b)
+    a
+end
+@show p = pr(code)
+plot(p)
+
+
+code = @dice begin
+            function linear()
+                a = uniform(DistUInt{2})
+                b = uniform(DistUInt{2})
+                observe(a < b)
+                a
+            end
+            c = linear()
+            d = uniform(DistUInt{2})
+
+            # if flip(0.5) c else d end
+            if flip(0.5) linear() else uniform(DistUInt{2}) end
+end
+
+pr(code)
+
+code = @dice begin
+    function linear()
+        a = flip(0.5)
+        b = flip(0.5)
+        observe(a | b)
+        a
+    end
+    c = linear()
+    d = flip(0.5)
+
+    if flip(0.5) c else d end
+    # if flip(0.5) linear() else flip(0.4) end
+    # linear()
+end
+
+pr(code)
