@@ -25,7 +25,7 @@ jobs:
         run:
           sudo apt update && sudo apt install -y pdf2svg texlive-latex-base texlive-binaries texlive-latex-extra texlive-luatex
 
-      - name: Install IRTools master
+      - name: Instantiate Packages
         run: |
           julia --project -e 'using Pkg; Pkg.instantiate(); Pkg.build();'
 
@@ -37,6 +37,6 @@ jobs:
         run:
           julia --project --check-bounds=yes --depwarn=yes -e 'import Pkg; Pkg.test(; coverage=true)'
       
-      - name: Codecov Upload
-        run:
-          julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder());'
+      # - name: Codecov Upload
+      #   run:
+      #     julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder());'

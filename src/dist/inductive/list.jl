@@ -1,50 +1,39 @@
 # Define List
-export List, DistNil, DistCons, prob_append, concat, one_of
+export List, Nil, Cons, prob_append, concat, one_of
 
-struct List{T} <: InductiveType end
+@inductive List{T} Nil() Cons(T, List{T})
 
-function param_lists(::Type{List{T}})::Vector{Pair{String,Vector{Type}}} where T <: Union{Dist, AnyBool}
-    [
-        "Nil" => [],
-        "Cons" => [T, DistI{List{T}}],
-    ]
-end
-
-DistNil(T) = construct(List{T}, "Nil",  [])
-DistCons(x::T, xs::DistI{List{T}}) where T =
-    construct(List{T}, "Cons", [x, xs])
-
-function Base.length(l::DistI{List{T}}) where T
+function Base.length(l::List{T}) where T
     match(l, [
-        "Nil"  => ()      -> DistUInt32(0),
-        "Cons" => (x, xs) -> DistUInt32(1) + length(xs),
+        :Nil  => ()      -> DistUInt32(0),
+        :Cons => (x, xs) -> DistUInt32(1) + length(xs),
     ])
 end
 
-function rev_concat(l::DistI{List{T}}, acc::DistI{List{T}}) where T
+function rev_concat(l::List{T}, acc::List{T}) where T
     match(l, [
-        "Nil"  => ()      -> acc,
-        "Cons" => (x, xs) -> rev_concat(xs, DistCons(x, acc)),
+        :Nil  => ()      -> acc,
+        :Cons => (x, xs) -> rev_concat(xs, Cons(T, x, acc)),
     ]) 
 end
 
-function Base.reverse(l::DistI{List{T}}) where T
-    rev_concat(l, DistNil(T))
+function Base.reverse(l::List{T}) where T
+    rev_concat(l, Nil(T))
 end
 
-function concat(l1::DistI{List{T}}, l2::DistI{List{T}}) where T
+function concat(l1::List{T}, l2::List{T}) where T
     rev_concat(reverse(l1), l2)
 end
 
-function prob_append(l::DistI{List{T}}, x::T) where T
-    concat(l, DistCons(x, DistNil(T)))
+function prob_append(l::List{T}, x::T) where T
+    concat(l, Cons(T, x, Nil(T)))
 end
 
-function one_of(l::DistI{List{T}})::DistI{Opt{T}} where T <: Dist
+function one_of(l::List{T})::Opt.T{T} where T <: Dist
     match(l, [
-        "Nil" => () -> DistNone(T),
-        "Cons" => (x, xs) -> @dice_ite if flip_reciprocal(length(l))
-            DistSome(x)
+        :Nil => () -> Opt.None(T),
+        :Cons => (x, xs) -> @dice_ite if flip_reciprocal(length(l))
+            Opt.Some(T, x)
         else
             one_of(xs)
         end

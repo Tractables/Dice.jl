@@ -1,6 +1,6 @@
 export DistUInt, DistUInt8, DistUInt16, DistUInt32, DistUInt64,
     uniform, uniform_arith, uniform_ite, triangle, discrete, unif, unif_obs,
-    flip_reciprocal
+    flip_reciprocal, unif2, unif_half2, unif_approx, unif_half_approx, unif_half
 
 ##################################
 # types, structs, and constructors
@@ -63,7 +63,7 @@ end
 
 "Construct a uniform random number by offsetting a 0-based uniform"
 function uniform_arith(::Type{DistUInt{W}}, start, stop) where W
-    @assert 0 <= start < stop <= 2 ^ W # don't make this BigInt or the dynamo will fail
+    @assert 0 <= start < stop <= 2 ^ W "$(start) $(stop)" # don't make this BigInt or the dynamo will fail
     DInt = DistUInt{W}
     if start > 0
         DInt(start) + uniform_arith(DInt, 0, stop-start)
@@ -215,6 +215,10 @@ function frombits(x::DistUInt{W}, world) where W
     v
 end
 
+function frombits_as_dist(x::DistUInt{W}, world) where W
+    DistUInt{W}([frombits(b, world) for b in x.bits])
+end
+
 function expectation(x::DistUInt; kwargs...)
     bitprobs = pr(x.bits...; kwargs...)
     expectation(bitprobs)
@@ -273,6 +277,7 @@ function variance(x::DistUInt{W}; kwargs...) where W
     return ans
 end
 
+
 ##################################
 # methods
 ##################################
@@ -307,6 +312,20 @@ end
 function overflow_sum(x::DistUInt{W}, y::DistUInt{W}) where W
     z = convert(DistUInt{W+1}, x) + convert(DistUInt{W+1}, y)
     drop_bits(DistUInt{W}, z)
+end
+
+function Base.min(x::DistUInt{W}, y::DistUInt{W}) where W
+    DistUInt{W}([
+        a & b
+        for (a, b) in zip(x.bits, y.bits)
+    ])
+end
+
+function Base.max(x::DistUInt{W}, y::DistUInt{W}) where W
+    DistUInt{W}([
+        a | b
+        for (a, b) in zip(x.bits, y.bits)
+    ])
 end
 
 function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W
@@ -409,9 +428,41 @@ function minvalue(x::DistUInt{W}) where W
     v
 end
 
+function unif_approx(lo::DistUInt{W}, hi::DistUInt{W}) where W
+    lo + unif_half_approx(hi + DistUInt32(1) - lo)
+end
+function unif_half_approx(u::DistUInt{W}) where W
+    uniform(DistUInt{W}) % u
+end
+
 # Uniform from lo to hi, inclusive
 function unif(lo::DistUInt{W}, hi::DistUInt{W}) where W
     lo + unif_half(hi + DistUInt32(1) - lo)
+end
+
+# Uniform from lo to hi, inclusive
+function unif2(lo::DistUInt{W}, hi::DistUInt{W}) where W
+    lo + unif_half2(hi + DistUInt32(1) - lo)
+end
+
+# Uniform from 0 to hi, exclusive
+function unif_half2(u::DistUInt{W}) where W
+    res = nothing
+    for x in support_mixed(u)
+        if x == 0 
+            continue
+        end
+        res = if res === nothing
+            uniform(DistUInt{W}, 0, x)
+        else
+            @dice_ite if prob_equals(u, DistUInt32(x))
+                uniform(DistUInt{W}, 0, x)
+            else
+                res
+            end
+        end
+    end
+    res
 end
 
 flip_reciprocal(x) = prob_equals(DistUInt32(0), unif_half(x))
@@ -424,37 +475,41 @@ end
 
 # Uniform from 0 to hi, exclusive
 function unif_half(hi::DistUInt{W})::DistUInt{W} where W
-    # max_hi = maxvalue(hi)
-    # max_hi > 60 && error("Likely to time out")
-    # prod = BigInt(1)
-    # for prime in primes_at_most(max_hi)
-    #     prod *= prime ^ floor_log(prime, max_hi)
-    # end
-
     # note: # could use path cond too
-    prod = lcm([BigInt(x) for x in keys(pr(hi)) if x != 0])
+    prod = lcm([BigInt(x) for x in support_mixed(hi) if x != 0])
     u = uniform(DistUInt{ndigits(prod, base=2)}, 0, prod)
     rem_trunc(u, hi)
 end
 
-# function primes_at_most(n::Int)
-#     isprime = [true for _ in 1:n]
-#     for p in 2:trunc(Int, sqrt(n))
-#         if isprime[p]
-#             for i in p^2:p:n
-#                 isprime[i] = false
-#             end
-#         end
+# function unif_half(hi::DistUInt{W})::DistUInt{W} where W
+#     max_hi = maxvalue(hi)
+#     max_hi > 60 && error("Likely to time out")
+#     prod = BigInt(1)
+#     for prime in primes_at_most(max_hi)
+#         prod *= prime ^ floor_log(prime, max_hi)
 #     end
-#     [i for i in 2:n if isprime[i]]
+#     u = uniform(DistUInt{ndigits(prod, base=2)}, 0, prod)
+#     rem_trunc(u, hi)
 # end
 
-# function floor_log(base, n)
-#     v = 1
-#     pow = 0
-#     while v * base <= n
-#         v *= base
-#         pow += 1
-#     end
-#     pow
-# end
+function primes_at_most(n::Int)
+    isprime = [true for _ in 1:n]
+    for p in 2:trunc(Int, sqrt(n))
+        if isprime[p]
+            for i in p^2:p:n
+                isprime[i] = false
+            end
+        end
+    end
+    [i for i in 2:n if isprime[i]]
+end
+
+function floor_log(base, n)
+    v = 1
+    pow = 0
+    while v * base <= n
+        v *= base
+        pow += 1
+    end
+    pow
+end

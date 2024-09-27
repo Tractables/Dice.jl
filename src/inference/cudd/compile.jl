@@ -29,6 +29,13 @@ function BDDCompiler()
     c
 end
 
+# It's okay if not all of these are actually actually roots (i.e. some are
+# descendants of others), because including a descendant will not change the set
+# of nodes that foreach_node(roots) considers.
+#
+# It may be problematic to add roots once we've started compiling, though.
+# Currently all users of this code add all roots at the start, but if this
+# changes, we need to think more about GC.
 function BDDCompiler(roots)
     c = BDDCompiler()
     add_roots!(c, roots)
@@ -66,6 +73,7 @@ function compile(c::BDDCompiler, root::AnyBool)::CuddNode
 end
 
 function compile(c::BDDCompiler, roots::Vector{<:AnyBool})::Vector{CuddNode}
+    # TODO: don't add here; maintain set of covered nodes, panic if not covered
     add_roots!(c, roots)
     [compile_existing(c, root) for root in roots]
 end

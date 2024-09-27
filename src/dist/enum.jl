@@ -24,3 +24,6 @@ tobits(x::DistEnum) = tobits(x.i)
 
 frombits(x::DistEnum, world) =
     x.enum(frombits(x.i, world))
+
+frombits_as_dist(x::DistEnum, world) =
+    DistEnum(x.enum, frombits_as_dist(x.i, world))
