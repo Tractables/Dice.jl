@@ -33,5 +33,6 @@ MacroTools = "0.5"
 PrecompileTools = "1"
 julia = "1.8,1.9"
 
-[sources]
-IRTools = {url = "https://github.com/PoorvaGarg/IRTools.jl", rev = "loop-break-patch"}
+[sources.IRTools]
+rev = "loop-break-patch"
+url = "https://github.com/PoorvaGarg/IRTools.jl"
