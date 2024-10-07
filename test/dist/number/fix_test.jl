@@ -2,8 +2,6 @@ using Test
 using Dice
 using Dice: Flip, ifelse, num_ir_nodes
 using Distributions
-using Plots
-using Revise
 using SymPy
 using BenchmarkTools
 
