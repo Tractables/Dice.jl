@@ -35,7 +35,7 @@ jobs:
 
       - name: Unit Tests
         run:
-          julia --project --check-bounds=yes --depwarn=yes -e 'import Pkg; Pkg.add(PackageSpec(url="https://github.com/PoorvaGarg/IRTools.jl", rev="loop-break-patch")); Pkg.test(; coverage=true)'
+          julia --project --check-bounds=yes --depwarn=yes -e 'import Pkg; Pkg.add(url="https://github.com/PoorvaGarg/IRTools.jl", rev="loop-break-patch"); Pkg.test(; coverage=true)'
       
       - name: Codecov Upload
         run:
