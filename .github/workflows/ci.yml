@@ -25,17 +25,17 @@ jobs:
         run:
           sudo apt update && sudo apt install -y pdf2svg texlive-latex-base texlive-binaries texlive-latex-extra texlive-luatex
 
-      - name: Instantiate Packages
-        run: |
-          julia --project -e 'using Pkg; Pkg.instantiate(); Pkg.build();'
-
       - name: Install SymPy
         run: 
           pip3 install sympy
 
+      - name: Instantiate Packages
+        run: |
+          julia --project -e 'using Pkg; Pkg.instantiate(); Pkg.add(url="https://github.com/PoorvaGarg/IRTools.jl", rev="loop-break-patch"); Pkg.add("SymPy"); Pkg.build();'
+
       - name: Unit Tests
         run:
-          julia --project --check-bounds=yes --depwarn=yes -e 'import Pkg; Pkg.add(url="https://github.com/PoorvaGarg/IRTools.jl", rev="loop-break-patch"); Pkg.test(; coverage=true)'
+          julia --project --check-bounds=yes --depwarn=yes -e 'import Pkg; Pkg.test(; coverage=true)'
       
       - name: Codecov Upload
         run:
