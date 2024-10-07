@@ -2,8 +2,6 @@ using Test
 using Dice
 using Dice: Flip, ifelse, num_ir_nodes
 using Distributions
-using SymPy
-using BenchmarkTools
 
 @testset "DistFix inference" begin
     x = DistFix{4, 2}([true, false, true, false]) # -1.5

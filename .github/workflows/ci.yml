@@ -31,7 +31,8 @@ jobs:
 
       - name: Instantiate Packages
         run: |
-          julia --project -e 'using Pkg; Pkg.instantiate(); Pkg.add(url="https://github.com/PoorvaGarg/IRTools.jl", rev="loop-break-patch"); Pkg.add("SymPy"); Pkg.build();'
+          julia --project -e 'using Pkg; Pkg.instantiate(); Pkg.build();'
+          julia --project -e 'using Pkg; Pkg.add(url="https://github.com/PoorvaGarg/IRTools.jl", rev="loop-break-patch"); Pkg.add("SymPy");'
 
       - name: Unit Tests
         run:
