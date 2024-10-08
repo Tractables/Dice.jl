@@ -8,7 +8,7 @@
 
 Install Julia 1.8.5 or higher using [these instructions](https://julialang.org/downloads/platform/).
 
-Then, install SymPy using the following command:
+Then, install SymPy and IRTools using the following command:
 
 ```bash
 pip3 install sympy
