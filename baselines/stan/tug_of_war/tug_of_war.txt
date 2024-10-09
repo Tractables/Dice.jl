@@ -1,0 +1,17 @@
+real alice_skill ~ normal(5, 1);
+real bob_skill ~ normal(5, 1);
+
+int<2>[4] f ~ bernoulli(1/3);
+
+real alice_perf;
+if 
+
+data real[4] match;
+
+for (n in 1:4) {
+	if (alice_skill > bob_skill) {
+		match[n] ~ normal(0, 1);
+	} else {
+		match[n] ~ normal(0, 1);
+	}
+} 

@@ -1,0 +1,24 @@
+var ys = [1, 1, 0, 1, 0];
+
+var model = function() {
+  var mu = beta({a: 2, b: 5});
+
+  map(
+    function(y) {
+        if (y==1) {
+            condition(bernoulli({p: mu}) == true);
+        }
+        else {
+            condition(bernoulli({p: mu}) == false);
+        }
+    },
+    ys);
+
+  return mu;
+}
+
+var func1 = function() {
+	return Infer({method: argv.m, particles: argv.s, samples: argv.s}, model);
+}
+
+timeit( function() { return expectation(func1());})

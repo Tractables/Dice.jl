@@ -1,0 +1,19 @@
+real prior1 ~ beta(1, 1);
+int<2> z1 ~ bernoulli(prior1);
+real prior2 ~ beta(1, 1);
+int<2> z2 ~ bernoulli(prior2);
+real prior3 ~ beta(1, 1);
+int<2> z3 ~ bernoulli(prior3);
+real prior4 ~ beta(1, 1);
+int<2> z4 ~ bernoulli(prior4);
+real prior5 ~ beta(1, 1);
+int<2> z5 ~ bernoulli(prior5);
+data real d1;
+data real d2;
+if (((z1 + z2 + z3 + z4 + z5) - 5) > 0) {
+        d1 ~ normal(135, 8);
+        d2 ~ normal(135, 8);
+} else {
+        d1 ~ normal(80, 8);
+        d2 ~ normal(80, 8);
+}

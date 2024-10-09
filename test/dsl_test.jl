@@ -239,3 +239,9 @@ end
     @test_nowarn @dice bitblast(DistFix{7, 2}, Normal(0, 1), 4, -8.0, 8.0)
 
 end
+
+@testset "reduce inside dynamo" begin
+    @test_nowarn (@dice reduce(&, [true, false]))
+    @test_nowarn @dice reduce(&, [true, false], init=true)
+    
+end

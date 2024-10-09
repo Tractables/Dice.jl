@@ -1,0 +1,10 @@
+def main() {
+    engines := gauss(5, 1);
+    observe(engines >= 0);
+    first_stage := gauss(10, 3);
+    observe(first_stage >= 0);
+    completed_first_stage := engines + first_stage;
+    second_stage := gauss(15, 3);
+    completed_rocket := completed_first_stage + second_stage;
+    return Expectation(completed_rocket);
+}
