@@ -1,6 +1,0 @@
-@limits <lower=0, upper=1>
-float d1
-
-d1 = beta(2, 5)
-
-return(d1)

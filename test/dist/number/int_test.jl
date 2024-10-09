@@ -219,7 +219,7 @@ end
 
     @test_throws Exception y = uniform(DistInt{4}, -7, 9)
 
-    flags = [:arith]
+    flags = [:ite, :arith]
     map(flags) do flag
         y = @dice uniform(DistInt{4}, -7, 1; strategy=flag)
         p = pr(y)
@@ -227,8 +227,6 @@ end
         @test issetequal(keys(p), -7:1:1-1)
         @test all(values(p) .≈ 1/8)
     end
-
-    @test_broken @dice uniform(DistInt{4}, -7, 1; strategy=:ite)
 end
 
 @testset "DistInt division" begin
