@@ -1,0 +1,16 @@
+def perf(x){
+    return if bernoulli(1/3) { x - 2 } else { x };
+}
+
+def main() {
+    alice := gauss(5, 1);
+    bob := gauss(5, 1);
+
+    observe(perf(alice) > perf(bob));
+    observe(perf(alice) < perf(bob));
+    observe(perf(alice) > perf(bob));
+    observe(perf(alice) < perf(bob));
+    
+    match5 := (perf(alice) < perf(bob));
+    return match5;
+}

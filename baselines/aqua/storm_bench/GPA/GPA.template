@@ -1,0 +1,24 @@
+float Nationality
+Nationality = flip(0.5)
+float GPA
+GPA = uniformClose(0, 10)
+float Perfect
+if(Nationality == 0) {
+  Perfect = bernoulli(0.10)
+  if (Perfect) {
+    GPA = uniformClose(8.001,10)
+  } 
+  else {
+    GPA = uniformClose(0, 10)
+  }
+}
+else {
+  Perfect = bernoulli(0.15)
+  if (Perfect) {
+    GPA = uniformClose(3, 4)
+  }
+  else {
+    GPA = uniformClose(0, 4)
+  }
+}
+hardObserve(((Nationality > 0.5) && (GPA > 3.0)) || ((8.0 <= GPA) && (GPA <= 10.0)))
