@@ -29,6 +29,7 @@ Graphs = "1"
 Jive = "0.2"
 MacroTools = "0.5"
 PrecompileTools = "1"
+SymPy = "2"
 julia = "1.8,1.9"
 
 [sources.IRTools]
