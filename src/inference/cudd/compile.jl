@@ -87,9 +87,10 @@ function compile_existing(c::BDDCompiler, root::AnyBool)::CuddNode
         for child in unique(children(node))
             c.num_uncompiled_parents[child] -= 1
             @assert c.num_uncompiled_parents[child] >= 0
-            if c.num_uncompiled_parents[child] == 0
-                Cudd_RecursiveDeref(c.mgr, c.cache[child])
-            end
+            # WARNING: Do not uncomment the following code snippet unless garbage collection has been figured out correctly and carefully
+            # if c.num_uncompiled_parents[child] == 0
+            #     Cudd_RecursiveDeref(c.mgr, c.cache[child])
+            # end
         end
     end
     

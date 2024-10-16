@@ -18,7 +18,7 @@ sigma = inv(transpose(X) * X + inv(S))
 mu = sigma * transpose(transpose(y1s) * X)
 
 bits = 6
-pieces = 2^(0)
+pieces = 2^(bits + 4)
 DFiP = DistFix{9+bits, bits}
 
 w1 = bitblast(DFiP, Normal(0, sqrt(2)), pieces, -8.0, 8.0)
@@ -32,3 +32,6 @@ code = @dice begin
 end
 # p = @timed expectation(code)
 p = pr(code)
+
+a = flip(0.5)
+pr((a, !a))
