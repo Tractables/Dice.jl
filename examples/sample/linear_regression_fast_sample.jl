@@ -44,12 +44,18 @@ NSAMPLES=1000
 samples = rand(Bernoulli(0.5), NSAMPLES, 4)
 samples = map(x -> if x == 1 true else false end, samples)
 
+
+pieces = 2^(bits+2)
 function dice_program(s)
+    param1 = s[1]*0.5 + s[2]*0.25
+    param2 = s[3]*0.5 + s[4]*0.25
     code = @dice begin
-        w1 = DFiP([bitblast(DFiP, Normal(0, sqrt(2)), pieces, -8.0, 8.0).mantissa.number.bits..., s[1], s[2]])
-        w2 = bitblast(DFiP, Normal(0, sqrt(2)), pieces, -8.0, 8.0)
-        observe(prob_equals(w1.mantissa.number.bits[5+bits:6+bits], s[1:2]))
-        observe(prob_equals(w2.mantissa.number.bits[5+bits:6+bits], s[3:4]))
+        w1 = bitblast_sample(DistFix{4+bits, 0}, Normal(0, sqrt(2)), pieces, -8.0, 8.0, param1, 0.25)
+        w2 = bitblast_sample(DistFix{4+bits, 0}, Normal(0, sqrt(2)), pieces, -8.0, 8.0, param2, 0.25)
+        # observe(prob_equals(w1.mantissa.number.bits[5+bits:6+bits], s[1:2]))
+        # observe(prob_equals(w2.mantissa.number.bits[5+bits:6+bits], s[3:4]))
+        w1 = DFiP([w1.mantissa.number.bits..., s[1], s[2]])
+        w2 = DFiP([w2.mantissa.number.bits..., s[3], s[4]])
         for i in 1:nobs
             error = bitblast(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
             observe(prob_equals(DFiP(y1s[i]), DFiP(x1s[1])*w1 + DFiP(x2s[1])*w2 + error) )           

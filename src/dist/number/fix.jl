@@ -130,6 +130,7 @@ function bitblast(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution,
     @assert ispow2(numpieces) "Number of pieces must be a power of two (not $numpieces)"
     intervals_per_piece = (2^Int(f_range_bits))/numpieces
     bits_per_piece = Int(log2(intervals_per_piece))
+    # @show bits_per_piece
 
     dist = truncated(dist, start, stop)
 

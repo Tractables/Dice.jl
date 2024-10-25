@@ -5,7 +5,7 @@ using Distributions
 
 # with observe
 bits = 2
-pieces = 2^(6)
+pieces = 2^(bits + 4)
 DFiP = DistFix{6 + bits, bits}
 code = @dice begin
     w1 = bitblast(DFiP, Normal(0, sqrt(2)), pieces, -8.0, 8.0)
@@ -18,7 +18,7 @@ plot(p1)
 
 # without observe
 bits = 0
-pieces = 2^(bits+4)
+pieces = 2^(bits + 3)
 DFiP = DistFix{6 + bits, bits}
 code = @dice begin
     w1 = bitblast_sample(DFiP, Normal(0, sqrt(2)), pieces, -8.0, 8.0, 0.5, 0.25)
