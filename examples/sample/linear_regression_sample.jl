@@ -63,7 +63,7 @@ function dice_program(s)
 end
 
 
-mean = mapslices(x -> dice_program(x), samples;dims=2)
+p = @timed mean = mapslices(x -> dice_program(x), samples;dims=2)
 
 num = sum(map(x -> x[1]*x[2]/0.0625, mean))
 den = sum(map(x -> x[2]/0.0625, mean))
