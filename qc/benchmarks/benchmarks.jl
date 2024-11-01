@@ -348,6 +348,14 @@ function wellTyped(e::OptExpr.t)
         None() -> false,
     ]
 end
+function wellTyped(e::Expr.t)
+    @assert isdeterministic(e)
+    @match typecheck(e) [
+        Some(_) -> true,
+        None() -> false,
+    ]
+end
+
 
 ##################################
 # Sampling STLC entropy loss

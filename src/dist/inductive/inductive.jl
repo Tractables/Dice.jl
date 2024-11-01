@@ -72,6 +72,35 @@ function Base.match(x::DistTaggedUnion, branches::Vector{Function})
     res
 end
 
+# type t = Left of int | Right of string
+
+# a = if f1
+#     Left 5
+# else
+#     Right "a"
+
+# b = if f2
+#     Right "b"
+# else
+#     Left 5
+
+# a = DistTaggedUnion(
+#     which=if f1 Left else Right,
+#     dists=[
+#         [if f1 5 else ???]
+#         [if f1 ??? else "a"]
+#     ]
+# )
+
+# Cons, [????, [0, ...]]
+# Nil,  [[]  , ????]
+
+# i <- [Nil,  Cons]
+# a <- [????, [0, ...]]
+# b <- [[]    , ????]
+
+
+
 # Note: this requires that the "which" index of both unions are equal
 # (Left<Int,Int> 1 != Right<Int,Int> 1)
 function prob_equals(x::DistTaggedUnion, y::DistTaggedUnion)
