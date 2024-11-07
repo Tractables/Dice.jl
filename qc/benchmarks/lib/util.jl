@@ -112,6 +112,17 @@ function freq_flips(weights)
     flips
 end
 
+function freq_flips_sample(a, weights)
+    weight_sum = compute(a, last(weights))
+    flips = Vector(undef, length(weights))
+    for i in length(weights) - 1 : -1 : 1
+        w = compute(a, weights[i])
+        weight_sum += w
+        flips[i] = rand() < (w / weight_sum)
+    end
+    flips
+end
+
 function freq_choose(xs, flips)
     res = last(xs)
     for i in length(xs) - 1 : -1 : 1
@@ -124,6 +135,19 @@ function freq_choose(xs, flips)
     res
 end
 
+function freq_choose_sample(xs, flips)
+    res = last(xs)
+    for i in length(xs) - 1 : -1 : 1
+        res = if flips[i]
+            xs[i]
+        else
+            res
+        end
+    end
+    res
+end
+
+
 function frequency(weights_xs)
     weights, xs = [], []
     for (weight, x) in weights_xs
@@ -132,6 +156,16 @@ function frequency(weights_xs)
     end
     freq_choose(xs, freq_flips(weights))
 end
+
+function frequency_sample(a, weights_xs)
+    weights, xs = [], []
+    for (weight, x) in weights_xs
+        push!(weights, weight)
+        push!(xs,x)
+    end
+    freq_choose(xs, freq_flips_sample(a, weights))
+end
+
 
 function frequency_for(rs, name, xs)
     weights = [register_weight!(rs, "$(name)_$(i)") for i in 1:length(xs)]
@@ -307,6 +341,29 @@ function frequency_for(rs, name, dependents, casenames_xs)
     end
     res
 end
+
+function frequency_for_sample(rs, a, name, dependents, casenames_xs)
+    casenames = []
+    xs = []
+    for (casename, x) in casenames_xs
+        push!(casenames, casename)
+        push!(xs, x)
+    end
+
+    res = nothing
+    support = support_mixed(dependents; as_dist=true)
+    dependents_vals = [Dice.frombits(dependent, Dict()) for dependent in dependents]
+    @assert !isempty(support)
+    t = join([string(x) for x in dependents_vals], "%")
+    weights = [
+        register_weight!(rs, "$(name)_$(casename)%%$(t)")
+        for casename in casenames
+    ]
+    res = frequency_sample(a, collect(zip(weights, xs)))
+    @assert Dice.isdeterministic(res)
+    res
+end
+
 
 function value_to_coq(i::Integer)
     "$(i)"

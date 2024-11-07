@@ -34,6 +34,7 @@ type_to_coq(::Type{Z.t}) = "Z"
 
 include("lang/definition.jl")
 include("lang/interp.jl")
+include("lang/sample.jl")
 include("sandwiches.jl")
 include("lang/to_coq.jl")
 include("util.jl")

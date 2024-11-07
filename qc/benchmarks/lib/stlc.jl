@@ -72,6 +72,23 @@ function one_of(default::OptExpr.t, l::ListOptExpr.t)::OptExpr.t
     ]
 end
 
+function one_of_sample(default::OptExpr.t, l::ListOptExpr.t)::OptExpr.t
+    l::Dist = length(l)
+    l = Dice.frombits(l, Dict())
+    
+    res = @match l [
+        nil() -> default,
+        cons(x, xs) -> if rand() < (1/length(l))
+            x
+        else
+            one_of_sample(default, xs)
+        end
+    ]
+    @assert isdeterministic(res)
+    res
+end
+
+
 function size(e::Expr.t)
     match(e, [
         :Var     => (i)        -> DistUInt32(1),
