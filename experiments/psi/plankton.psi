@@ -1,5 +1,0 @@
-def main(){
-    param := uniformInt(10, 50);
-    planktoncount := binomial(param, 0.5);
-    return planktoncount;
-}

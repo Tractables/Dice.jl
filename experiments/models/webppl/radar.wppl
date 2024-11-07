@@ -1,0 +1,32 @@
+var T = function(mu, l, r) {
+  var x = uniform(-l, 0) + uniform(0, l);
+  condition(x <= 0);
+  var y = uniform(-r, 0) + uniform(0, r);
+  condition(y > 0);
+  if (flip(l/(l+r))) {
+    return x + mu;
+  }
+  else {
+    return y + mu;
+  }
+}; 
+
+var uniform = function(start, stop) {
+  return randomInteger(stop-start+1) + start;
+};
+
+var main = function(){
+  var b1 = flip(0.2);
+  var b2 = b1?true:flip(0.2);
+  var x1 = uniform(0, 10);
+  var x2 = x1 + uniform(-2, 2);
+  
+  var o1 = x1 + (b1? T(x1, 5, 1) : T(x1, 5, 5));
+  var o2 = x2 + (b2? T(x2, 5, 1) : T(x2, 5, 5));
+  
+  condition(o1 == 5);
+  condition(b1);
+  return x2;
+};
+
+timeit(function(){Infer({method:'enumerate',model:main}).getDist(0)}).runtimeInMilliseconds

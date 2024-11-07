@@ -1,0 +1,17 @@
+var main = function() {
+    var a = randomInteger(4) + 1;
+    var b = randomInteger(4) + 1;
+
+    var cond = (b == 0);
+    var amb = a % b;
+    var a = cond ? a:b;
+    var b = cond ? b:amb;
+
+    var cond = (b == 0);
+    var amb = a % b;
+    var a = cond ? a:b;
+    var b = cond ? b:amb;
+
+    return a;
+}
+timeit(function(){Infer({method:'enumerate',model:main}).getDist(0)}).runtimeInMilliseconds;

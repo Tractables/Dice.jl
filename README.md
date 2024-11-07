@@ -3,13 +3,18 @@
 
 [![Unit Tests](https://github.com/Juice-jl/Dice.jl/workflows/Unit%20Tests/badge.svg)](https://github.com/Juice-jl/Dice.jl/actions?query=workflow%3A%22Unit+Tests%22+branch%3Amain)  [![codecov](https://codecov.io/gh/Tractables/Dice.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/Tractables/Dice.jl)
 
-This is a Julia prototype implementation of the Dice probabilistic programming language with support for integers and integer arithmetic.
-See [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice) and ["Scaling Integer Arithmetic in Probabilistic Programs"](https://arxiv.org/abs/2307.13837).
+This branch contains the Julia prototype implementation of the [Dice](https://github.com/SHoltzen/dice) probabilistic programming language for the UAI 2023 paper  ["Scaling Integer Arithmetic in Probabilistic Programs"](https://arxiv.org/abs/2307.13837). This branch also contains the code used for each experiment:
 
-* The microbenchmarks (Figure 5) are in `benchmarks/microbenchmarks/`
-* The experiments (Table 1) are in `experiments/`
+* The microbenchmarks (Figure 5) are in `experiments/microbenchmarks/`
+* The experiments (Table 1) are in `experiments/models/`
 
-## Installation
+Additional instructions for recreating the experiments are contained in these folders.
+
+ **TODO: add instructions**
+
+ To properly setup `Dice.jl`,  follow the instructions below. For the most up-to-date version, go to the `main` branch.  
+
+## Setup Instructions
 
 Install Julia 1.7 or higher using [these instructions](https://julialang.org/downloads/platform/).
 

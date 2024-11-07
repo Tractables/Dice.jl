@@ -1,0 +1,29 @@
+var main = function(){
+  var a_dist = discrete({ps:[0.015625, 0.09375, 0.234375, 0.3125, 0.234375, 0.09375, 0.015625]}) + 142;
+  var b_dist = discrete({ps:[0.015625, 0.09375, 0.234375, 0.3125, 0.234375, 0.09375, 0.015625]}) + 146;
+  var c_dist = discrete({ps:[0.015625, 0.09375, 0.234375, 0.3125, 0.234375, 0.09375, 0.015625]}) + 150;
+  var d_dist = discrete({ps:[0.015625, 0.09375, 0.234375, 0.3125, 0.234375, 0.09375, 0.015625]}) + 143;
+  var e_dist = discrete({ps:[0.015625, 0.09375, 0.234375, 0.3125, 0.234375, 0.09375, 0.015625]}) + 145;
+  var f_dist = discrete({ps:[0.015625, 0.09375, 0.234375, 0.3125, 0.234375, 0.09375, 0.015625]}) + 140;
+
+  var cheat_player = randomInteger(6);
+  var cheat_player2 = randomInteger(6);
+  condition(cheat_player2 != cheat_player)
+  
+  var a = cheat_player==0 || cheat_player2==0? a_dist+10: a_dist;
+  var b = cheat_player==1 || cheat_player2==1? b_dist+10: b_dist;
+  var c = cheat_player==2 || cheat_player2==2? c_dist+10: c_dist;
+  var d = cheat_player==3 || cheat_player2==3? d_dist+10: d_dist;
+  var e = cheat_player==4 || cheat_player2==4? e_dist+10: e_dist;
+  var f = cheat_player==5 || cheat_player2==5? f_dist+10: f_dist;
+  
+  
+  var result_3 = a+b+e<c+d+f;
+  var result_5 = a+c+d<b+e+f;
+  var result_6 = a+c+e<b+d+f;
+  var result_10 = a+e+f<b+c+d;
+  
+  condition(result_3 && result_5 && result_6 && result_10);
+  return cheat_player == 5 || cheat_player2 == 5;
+};
+timeit(function(){Infer({method:'enumerate',model:main}).getDist(0)}).runtimeInMilliseconds

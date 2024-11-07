@@ -1,0 +1,26 @@
+        
+def main(){
+    ps := array(8, 0:Z);
+    
+    for i in [0..ps.length) {
+        ps[i] = uniformInt(0, 7);
+    }
+    for i in [0..ps.length) {
+        for j in [i+1..ps.length) {
+            observe(ps[i] != ps[j]);
+        }
+    }
+    
+    data := [[0, 1],
+            [2, 1],
+            [0, 3],
+            [4, 7],
+            [5, 4], 
+            [2, 3]];
+
+    for i in [0..data.length) {
+        observe(ps[data[i][0]] < ps[data[i][1]]);
+    }
+    
+    return ps;
+}

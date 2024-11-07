@@ -1,0 +1,60 @@
+var step = function(delta) {
+  if ((delta < 5) && (delta > -5)) {
+        return 0;
+    } 
+    else {
+        if(delta < 0) {
+            if (delta > -25) {
+                return delta + randomInteger(21)-10;
+            }
+            else if (delta > -50) {
+                return delta + randomInteger(41)-20;
+            }
+            else if (delta > - 100) {
+                return delta + randomInteger(101)-50;
+            }
+            else {
+                return delta + randomInteger(201)-100
+            }
+        }
+        else {
+            if (delta < 25) {
+                return delta + randomInteger(21)-10;
+            }
+            else if (delta < 50) {
+                return delta + randomInteger(41)-20;
+            }
+            else if (delta < 100) {
+                return delta + randomInteger(101)-50;
+            }
+            else {
+                return delta + randomInteger(201)-100
+            }
+        }
+    }
+}
+
+var update = function(cur, step) {
+  var newCur = cur + step;
+    var newCur = newCur>500 ? 500 : newCur;
+    var newCur = newCur < 1 ? 1:newCur;
+  return newCur;
+}
+var main = function(){
+    var curValue = randomInteger(500) + 1;
+    var tgtValue = randomInteger(500) + 1;
+    
+    var delta = tgtValue - curValue;
+  
+    var d = step(delta);
+    var curValue = update(curValue, d);
+    var delta = tgtValue - curValue;
+
+    var d = step(delta);
+    var curValue = update(curValue, d);
+    var delta = tgtValue - curValue;
+    
+  return delta < 5 && delta > -5;
+};
+
+timeit(function(){Infer({method:'enumerate',model:main}).getDist(0)}).runtimeInMilliseconds
