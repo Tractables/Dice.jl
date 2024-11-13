@@ -234,11 +234,14 @@ function register_weight!(rs, s; random_value=false)
     var = Var("$(s)_before_sigmoid")
     if !haskey(rs.var_vals, var) || rs.var_vals[var] == 0
         rs.var_vals[var] = 0
+        rs.coupled_ad_computer.vals[var] = 0
     else
         println("WARNING: not registering fresh weight for $(s)")
     end
     if random_value
-        rs.var_vals[var] = inverse_sigmoid(rand(rs.rng))
+        v = inverse_sigmoid(rand(rs.rng))
+        rs.var_vals[var] = v
+        rs.coupled_ad_computer.vals[var] = v
     end
     weight = sigmoid(var)
     rs.adnodes_of_interest[s] = weight
@@ -351,9 +354,9 @@ function frequency_for_sample(rs, a, name, dependents, casenames_xs)
     end
 
     res = nothing
-    support = support_mixed(dependents; as_dist=true)
+    # support = support_mixed(dependents; as_dist=true)
     dependents_vals = [Dice.frombits(dependent, Dict()) for dependent in dependents]
-    @assert !isempty(support)
+    # @assert !isempty(support)
     t = join([string(x) for x in dependents_vals], "%")
     weights = [
         register_weight!(rs, "$(name)_$(casename)%%$(t)")
@@ -380,3 +383,34 @@ function value_to_coq(v::Tuple)
         "($(join([value_to_coq(x) for x in v], ", ")))"
     end
 end
+
+
+# freq [
+#     Var1, e1
+#     Var2, e2
+# ]
+# freq [
+#     Var1, e1
+#     Var3, e1
+# ]
+
+
+# currently:
+# initialize a from rs.var_vals
+# register Var1 to rs.var_vals
+# register Var2 to rs.var_vals
+# compute Var1 using a
+# compute Var2 using a
+# register Var3 to rs.var_vals
+# compute Var1 using a
+# compute Var2 using a
+
+
+# register Var1 to rs.var_vals
+# register Var2 to rs.var_vals
+# register Var3 to rs.var_vals
+# initialize a from rs.var_vals
+# compute Var1 using a
+# compute Var2 using a
+# compute Var1 using a
+# compute Var2 using a

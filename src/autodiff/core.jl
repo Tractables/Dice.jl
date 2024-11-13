@@ -9,6 +9,7 @@ Derivs = Dict{ADNode, ADNodeCompatible}
 mutable struct ADComputer
     vals::Dict{ADNode, ADNodeCompatible}
     function ADComputer(var_vals::Valuation)
+        # new(var_vals)
         new(merge(Dict{ADNode, ADNodeCompatible}(), var_vals))
     end
 end

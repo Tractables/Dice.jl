@@ -2,7 +2,7 @@ using Dice
 using Dates
 using Random
 
-struct RunState
+mutable struct RunState
     var_vals::Valuation
     adnodes_of_interest::Dict{String,ADNode}
     io::IO
@@ -10,6 +10,7 @@ struct RunState
     rng::AbstractRNG
     prim_map
     p
+    coupled_ad_computer::ADComputer
 end
 
 abstract type Workload end

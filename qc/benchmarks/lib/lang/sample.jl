@@ -2,7 +2,6 @@ Env = Dict{Symbol, Any}
 
 # sampleret to a Dice dist
 function sample_from_lang(rs::RunState, prog::L.Program)
-    a = ADComputer(rs.var_vals)
     prim_map, loc_map, tuple_tys, enums = check_tree(prog)
 
     function with_binding(env, from, to)
@@ -90,18 +89,33 @@ function sample_from_lang(rs::RunState, prog::L.Program)
     end
 
     function sample(env::Env, x::L.Match)
-        @infiltrate
-        scrutinee = sample(env, x.scrutinee)
-        which = scrutinee.which
-        @assert isdeterministic(which)
-        (ctor, vars), body = x.branches[which]
-        args = scrutinee.dist[which]
-        @assert length(args) == length(vars)
-        env1 = copy(env)
-        for (var, arg) in zip(vars, args)
-            env1[var] = arg
-        end
-        sample(env1, body)
+        Dice.match(sample(env, x.scrutinee), [
+            ctor => (args...) -> begin
+                @assert length(args) == length(vars)
+                env1 = copy(env)
+                for (var, arg) in zip(vars, args)
+                    env1[var] = arg
+                end
+                sample(env1, body)
+            end
+            for ((ctor, vars), body) in x.branches
+        ])
+
+        # @infiltrate
+        # scrutinee = sample(env, x.scrutinee)
+        # if scrutinee isa Integer
+
+        # end
+        # which = scrutinee.which
+        # @assert isdeterministic(which)
+        # (ctor, vars), body = x.branches[which]
+        # args = scrutinee.dist[which]
+        # @assert length(args) == length(vars)
+        # env1 = copy(env)
+        # for (var, arg) in zip(vars, args)
+        #     env1[var] = arg
+        # end
+        # sample(env1, body)
     end
 
     function sample(env::Env, x::L.ConstructEnum)
@@ -251,7 +265,46 @@ function sample_from_lang(rs::RunState, prog::L.Program)
         DistInt32(0)
     end
 
-    res = sample(Env(), prog.res)
+    # register var_vals
+    # @infiltrate
+    # pre_register(rs, prim_map)
+    a = ADComputer(rs.var_vals)
+    rs.coupled_ad_computer = a
+    sampler() = sample(Env(), prog.res)
+    sampler, prim_map, function_results
+end
 
-    res, prim_map, function_results
+function pre_register(rs, prim_map)
+    function reg_flip_for!(rs, name, dependents)
+        support = support_mixed(dependents; as_dist=true)
+        @assert !isempty(support)
+        for dependents_vals in support
+            t = join([string(x) for x in dependents_vals], "%")
+            register_weight!(rs, "$(name)%%$(t)")
+        end
+    end
+
+    function f(_::L.GenBool, name)
+        reg_flip_for!(rs, "$(name)_true", dependents)
+    end
+
+    function f(x::L.GenNat, name)
+        for n in twopowers(x.width)
+            reg_flip_for!(rs, "$(name)_num$(n)", dependents)
+        end
+    end
+
+    function f(e::L.Frequency, name)
+        support = support_mixed(e.dependents; as_dist=true)
+        @assert !isempty(support)
+        for dependents_vals in support
+            t = join([string(x) for x in dependents_vals], "%")
+            for casename in casenames
+                register_weight!(rs, "$(name)_$(casename)%%$(t)")
+            end
+        end
+    end
+    for (e, id) in prim_map
+        f(e, id)
+    end
 end
