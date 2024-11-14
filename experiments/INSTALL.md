@@ -14,4 +14,6 @@ We also use `webppl-timeit` utility to record the time taken by each WebPPL prog
 
 ## Psi
 
-T
+The particular version of Psi used for the experiments in the paper can be installed using instructions [here](https://github.com/eth-sri/psi/tree/ec2cfc14a62a168afe7ce1d7269b92cf2882b830).
+
+## Problog
