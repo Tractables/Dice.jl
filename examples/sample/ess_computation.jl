@@ -1,3 +1,5 @@
+# A self contained file to compute effective sample size of different bits in a model.
+
 using Revise
 using Dice
 using Random
