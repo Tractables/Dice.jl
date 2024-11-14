@@ -9,6 +9,7 @@ c = @dice begin
         end 
         return output 
     end 
+end
     
     
     
