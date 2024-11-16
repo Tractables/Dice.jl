@@ -283,6 +283,12 @@ function flip_for(rs, name, dependents)
     res
 end
 
+function flip_for_sample(rs, a, name, dependents)
+    dependents_vals = [Dice.frombits(dependent, Dict()) for dependent in dependents]
+    t = join([string(x) for x in dependents_vals], "%")
+    rand() < compute(a, register_weight!(rs, "$(name)%%$(t)"))
+end
+
 function backtrack_for(rs, name, dependents, casenames_xs, default)
     casenames = []
     xs = []

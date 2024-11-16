@@ -219,8 +219,7 @@ function sample_from_lang(rs::RunState, prog::L.Program)
         dependents = [sample(env, dependent) for dependent in x.dependents]
         sum(
             begin
-                f = flip_for(rs, "$(name)_num$(n)", dependents)
-                if rand() < compute(a, f.prob)
+                if flip_for_sample(rs, a, "$(name)_num$(n)", dependents)
                     DistUInt32(n)
                 else
                     DistUInt32(0)
@@ -235,8 +234,7 @@ function sample_from_lang(rs::RunState, prog::L.Program)
         dependents = [sample(env, dependent) for dependent in x.dependents]
         sum(
             begin
-                f = flip_for(rs, "$(name)_num$(n)", dependents)
-                if rand() < compute(a, f.prob)
+                if flip_for_sample(rs, a, "$(name)_num$(n)", dependents)
                     DistInt32(n)
                 else
                     DistInt32(0)
@@ -249,8 +247,7 @@ function sample_from_lang(rs::RunState, prog::L.Program)
     function sample(env::Env, x::L.GenBool)
         name = prim_map[x]
         dependents = [sample(env, dependent) for dependent in x.dependents]
-        f = flip_for(rs, "$(name)_true", dependents)
-        rand() < compute(a, f.prob)
+        flip_for_sample(rs, a, "$(name)_true", dependents)
     end
 
     function sample(env::Env, x::L.ArbitraryBool)

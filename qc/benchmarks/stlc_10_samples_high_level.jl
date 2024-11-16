@@ -32,6 +32,19 @@ end
 
 retries = Ref(0)
 NUM_SAMPLES = 2
+
+
+ProfileView.@profview sampler()
+
+
+ProfileView.@profview sampler()
+length(Dice.sm_cache)
+
+empty!(Dice.sm_cache)
+@elapsed sampler()
+
+NUM_SAMPLES = 10
+# begin
 #== @benchmark ==# @elapsed begin
     samples = []
     while length(samples) < NUM_SAMPLES
