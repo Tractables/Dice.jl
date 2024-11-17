@@ -25,15 +25,15 @@ function sample_from_lang(rs::RunState, prog::L.Program)
     end
 
     function sample(env::Env, x::L.Loc)
-        DistUInt32(loc_map[x])
+        loc_map[x]
     end
 
     function sample(env::Env, x::L.Nat)
-        DistUInt32(x.x)
+        x.x
     end
 
     function sample(env::Env, x::L.Z)
-        DistInt32(x.x)
+        x.x
     end
 
     function sample(env::Env, x::L.Bool)
@@ -55,10 +55,7 @@ function sample_from_lang(rs::RunState, prog::L.Program)
     end
 
     function sample(env::Env, x::L.Eq)
-        prob_equals(
-            sample(env, x.x),
-            sample(env, x.y),
-        )
+        sample(env, x.x) == sample(env, x.y)
     end
 
     function sample(env::Env, x::L.If)
@@ -70,7 +67,7 @@ function sample_from_lang(rs::RunState, prog::L.Program)
     end
 
     function sample(env::Env, x::L.Construct)
-        x.ctor([sample(env, arg) for arg in x.args]...)
+        (x.ctor, [sample(env, arg) for arg in x.args])
     end
 
     function sample(env::Env, x::L.Tuple)
@@ -89,18 +86,39 @@ function sample_from_lang(rs::RunState, prog::L.Program)
     end
 
     function sample(env::Env, x::L.Match)
-        Dice.match(sample(env, x.scrutinee), [
-            ctor => (args...) -> begin
-                @assert length(args) == length(vars)
-                env1 = copy(env)
-                for (var, arg) in zip(vars, args)
-                    env1[var] = arg
-                end
-                sample(env1, body)
+        scrutinee = sample(env, x.scrutinee)
+        if scrutinee isa Integer
+            branches = x.branches
+            @assert length(branches) == 2
+            o, s = if branches[1][1][1] == :O && branches[2][1][1] == :S
+                branches[1], branches[2]
+            else
+                @assert branches[2][1][1] == :O && branches[2][1][1] == :S
+                branches[2], branches[1]
             end
+            if scrutinee > 0
+                env1 = copy(env)
+                (_ctor, vars), body = s
+                var, = vars
+                env1[var] = scrutinee - 1
+                return sample(env1, body)
+            else
+                _, body = o
+                return sample(env, body)
+            end
+        else
+            which, args = scrutinee
             for ((ctor, vars), body) in x.branches
-        ])
-
+                if nameof(ctor) == which
+                    env1 = copy(env)
+                    for (var, arg) in zip(vars, args)
+                        env1[var] = arg
+                    end
+                    return sample(env1, body)
+                end
+            end
+            error()
+        end
         # @infiltrate
         # scrutinee = sample(env, x.scrutinee)
         # if scrutinee isa Integer
@@ -119,30 +137,18 @@ function sample_from_lang(rs::RunState, prog::L.Program)
     end
 
     function sample(env::Env, x::L.ConstructEnum)
-        DistUInt32(findfirst(==(x.s), x.enum.ctors))
+        findfirst(==(x.s), x.enum.ctors)
     end
 
     function sample(env::Env, x::L.MatchEnum)
         scrutinee = sample(env, x.scrutinee)
-        branches = Any[Dice.getunset() for _ in x.enum.ctors]
-
         for (ctor, body) in x.branches
-            branches[findfirst(==(ctor), x.enum.ctors)] = sample(env, body)
-        end
-
-        res = Dice.getunset()
-        for (i, v) in enumerate(branches)
-            if Dice.isunset(res)
-                res = v
-            else
-                res = if prob_equals(DistUInt32(i), scrutinee)
-                    v
-                else
-                    res
-                end
+            i = findfirst(==(ctor), x.enum.ctors)
+            if i == scrutinee
+                return sample(env, body)
             end
         end
-        res
+        error()
     end
 
     function sample(env::Env, x::L.Call)
@@ -220,9 +226,9 @@ function sample_from_lang(rs::RunState, prog::L.Program)
         sum(
             begin
                 if flip_for_sample(rs, a, "$(name)_num$(n)", dependents)
-                    DistUInt32(n)
+                    n
                 else
-                    DistUInt32(0)
+                    0
                 end
             end
             for n in twopowers(x.width)
@@ -235,9 +241,9 @@ function sample_from_lang(rs::RunState, prog::L.Program)
         sum(
             begin
                 if flip_for_sample(rs, a, "$(name)_num$(n)", dependents)
-                    DistInt32(n)
+                    n
                 else
-                    DistInt32(0)
+                    0
                 end
             end
             for n in twopowers(x.width)
@@ -255,11 +261,11 @@ function sample_from_lang(rs::RunState, prog::L.Program)
     end
 
     function sample(env::Env, x::L.ArbitraryNat)
-        DistUInt32(0)
+        0
     end
 
     function sample(env::Env, x::L.ArbitraryZ)
-        DistInt32(0)
+        0
     end
 
     # register var_vals

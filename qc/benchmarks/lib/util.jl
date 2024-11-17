@@ -284,8 +284,7 @@ function flip_for(rs, name, dependents)
 end
 
 function flip_for_sample(rs, a, name, dependents)
-    dependents_vals = [Dice.frombits(dependent, Dict()) for dependent in dependents]
-    t = join([string(x) for x in dependents_vals], "%")
+    t = join([string(x) for x in dependents], "%")
     rand() < compute(a, register_weight!(rs, "$(name)%%$(t)"))
 end
 
@@ -361,9 +360,8 @@ function frequency_for_sample(rs, a, name, dependents, casenames_xs)
 
     res = nothing
     # support = support_mixed(dependents; as_dist=true)
-    dependents_vals = [Dice.frombits(dependent, Dict()) for dependent in dependents]
     # @assert !isempty(support)
-    t = join([string(x) for x in dependents_vals], "%")
+    t = join([string(x) for x in dependents], "%")
     weights = [
         register_weight!(rs, "$(name)_$(casename)%%$(t)")
         for casename in casenames

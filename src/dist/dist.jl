@@ -10,7 +10,8 @@ abstract type Dist{T}  <: DAG end
 
 "Does the distribution have a deterministic value?"
 isdeterministic(x) =
-    isempty(tobits(x))
+    true
+    # isempty(tobits(x))
 
 function Base.show(io::IO, x::Dist) 
     if isdeterministic(x)

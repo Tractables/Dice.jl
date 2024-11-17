@@ -177,6 +177,7 @@ parens(b, s) = if b "($(s))" else s end
 
 function ty_str(ty, free=true)
     name, children = ty
+    name = Symbol(name)
     if name == :TBool
         "Bool"
     else
@@ -202,6 +203,7 @@ end
 
 function stlc_str(ast, depth=0, p=free)
     name, children = ast
+    name = Symbol(name)
     if name == :Var
         i, = children
         i isa Integer || (i = nat_ast_to_int(i))
@@ -271,9 +273,7 @@ function diff_test_typecheck(expr_dist, expr)
 end
 
 function to_int(x::DistUInt32)
-    dist = pr(x)
-    @assert length(dist) == 1
-    first(keys(dist))
+    Dice.frombits(x, Dict())
 end
 
 function typecheck(ast::Expr.t, gamma, depth=0)::Opt.T{Typ.t}
@@ -329,6 +329,7 @@ typecheck(ast) = typecheck(ast, Dict())
 
 function typecheck(ast::Tuple, gamma, depth=0)
     name, children = ast
+    name = Symbol(name)
     if name == :Var
         i, = children
         i isa Integer || (i = nat_ast_to_int(i))
