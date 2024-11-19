@@ -274,7 +274,7 @@ function sample_from_lang(rs::RunState, prog::L.Program)
     a = ADComputer(rs.var_vals)
     rs.coupled_ad_computer = a
     sampler() = sample(Env(), prog.res)
-    sampler, prim_map, function_results
+    sampler #, prim_map, function_results
 end
 
 function pre_register(rs, prim_map)

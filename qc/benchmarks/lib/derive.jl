@@ -69,6 +69,7 @@ function to_subpath(p::LangDerivedGenerator{T}) where T
 end
 function generate(rs::RunState, p::LangDerivedGenerator{T}) where T
     prog = derive_lang_generator(p)
+    rs.prog = prog
     res, prim_map, function_results = interp(rs, prog)
     constructors_overapproximation = []
     if T == STLC
@@ -113,6 +114,7 @@ function to_subpath(p::LangSiblingDerivedGenerator{T}) where T
 end
 function generate(rs::RunState, p::LangSiblingDerivedGenerator{T}) where T
     prog = derive_lang_sibling_generator(p)
+    rs.prog = prog
     res, prim_map, function_results = interp(rs, prog)
     Generation(res)
 end

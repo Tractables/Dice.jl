@@ -186,12 +186,27 @@ function mk_areaplot(path)
     end
 end
 
+function to_dist(v)
+    if v isa Bool
+        v
+    elseif v isa Integer
+        DistUInt32(v)
+    elseif v isa Tuple
+        ctor, args = v
+        ctor([to_dist(arg) for arg in args]...)
+    else
+        error()
+    end
+end
+
 clear_file(path) = open(path, "w") do f end
 function produce_loss(rs::RunState, m::SpecEntropyLossMgr, epoch::Integer)
     if (epoch - 1) % m.p.resampling_frequency == 0
+        sampler = sample_from_lang(rs, rs.prog)
         a = ADComputer(rs.var_vals)
         samples = with_concrete_ad_flips(rs.var_vals, m.val) do
-            [sample_as_dist(rs.rng, a, m.val) for _ in 1:m.p.samples_per_batch]
+            # [sample_as_dist(rs.rng, a, m.val) for _ in 1:m.p.samples_per_batch]
+            [to_dist(sampler()) for _ in 1:m.p.samples_per_batch]
         end
 
         l = Dice.LogPrExpander(WMC(BDDCompiler([

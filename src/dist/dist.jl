@@ -14,11 +14,11 @@ isdeterministic(x) =
     # isempty(tobits(x))
 
 function Base.show(io::IO, x::Dist) 
-    if isdeterministic(x)
-        print(io, "$(typeof(x))($(frombits(x, nothing)))")
-    else
+    # if isdeterministic(x)
+    #     print(io, "$(typeof(x))($(frombits(x, Dict())))")
+    # else
         print(io, "$(typeof(x))@$(hash(x)÷ 10000000000000)")
-    end
+    # end
 end
 
 include("bool.jl")

@@ -85,9 +85,9 @@ function canonicalize(root::Dist{Bool}, cache)
         end
     end
     canonical_root = foldup(root, fl, fi, Dist{Bool})
-    if canonical_root !== root
-        @info "One iteration of `canonicalize` changed IR size from $(num_ir_nodes(root)) to $(num_ir_nodes(canonical_root))"
-    end
+    # if canonical_root !== root
+    #     @info "One iteration of `canonicalize` changed IR size from $(num_ir_nodes(root)) to $(num_ir_nodes(canonical_root))"
+    # end
     canonical_root
 end
 

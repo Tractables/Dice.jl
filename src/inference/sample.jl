@@ -4,6 +4,8 @@ using DirectedAcyclicGraphs: foldup
 
 """Run vanilla rejection sampling without any compilation"""
 function sample(rng, x; evidence=true)
+    error("this function is slow")
+
     while true
         vcache = Dict()
         fl(n::Flip) = begin
@@ -50,10 +52,12 @@ function sample(rng, x; evidence=true)
 end
 
 function sample_default_rng(x; evidence=true)
+    error("this function is slow")
     sample(Random.default_rng(), x; evidence)
 end
 
 function sample_as_dist(rng, a, x; evidence=true)
+    error("this function is slow")
     while true
         vcache = Dict()
         fl(n::Flip) = begin
