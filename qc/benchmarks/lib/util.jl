@@ -268,7 +268,8 @@ function flip_for(rs, name, dependents)
     support = support_mixed(dependents; as_dist=true)
     @assert !isempty(support)
     for dependents_vals in support
-        t = join([string(x) for x in dependents_vals], "%")
+        # t = join([string(x) for x in dependents_vals], "%")
+        t = join([string(Dice.frombits(x,Dict())) for x in dependents_vals], "%")
         v = flip(register_weight!(rs, "$(name)%%$(t)"))
         if isnothing(res)
             res = v
@@ -285,6 +286,7 @@ end
 
 function flip_for_sample(rs, a, name, dependents)
     t = join([string(x) for x in dependents], "%")
+    # t = join([string(Dice.frombits(x,Dict())) for x in dependents_vals], "%")
     rand() < compute(a, register_weight!(rs, "$(name)%%$(t)"))
 end
 
@@ -300,7 +302,7 @@ function backtrack_for(rs, name, dependents, casenames_xs, default)
     support = support_mixed(dependents; as_dist=true)
     @assert !isempty(support)
     for dependents_vals in support
-        t = join([string(x) for x in dependents_vals], "%")
+        t = join([string(Dice.frombits(x,Dict())) for x in dependents_vals], "%")
         weights = [
             register_weight!(rs, "$(name)_$(casename)%%$(t)")
             for casename in casenames
@@ -331,7 +333,7 @@ function frequency_for(rs, name, dependents, casenames_xs)
     support = support_mixed(dependents; as_dist=true)
     @assert !isempty(support)
     for dependents_vals in support
-        t = join([string(x) for x in dependents_vals], "%")
+        t = join([string(Dice.frombits(x,Dict())) for x in dependents_vals], "%")
         weights = [
             register_weight!(rs, "$(name)_$(casename)%%$(t)")
             for casename in casenames
@@ -362,6 +364,7 @@ function frequency_for_sample(rs, a, name, dependents, casenames_xs)
     # support = support_mixed(dependents; as_dist=true)
     # @assert !isempty(support)
     t = join([string(x) for x in dependents], "%")
+    # t = join([string(Dice.frombits(x,Dict())) for x in dependents_vals], "%")
     weights = [
         register_weight!(rs, "$(name)_$(casename)%%$(t)")
         for casename in casenames

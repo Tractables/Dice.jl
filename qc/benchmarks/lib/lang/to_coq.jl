@@ -18,6 +18,7 @@ function to_coq(rs::RunState, p::GenerationParams{T}, prog::L.Program)::String w
     matchid_to_cases = Dict()
     for (name, val) in adnodes_vals
         matchid, case = split(name, "%%")
+        # println(case)
         case = if case == "" "tt" else "(" * join([value_to_coq(eval(Meta.parse(x))) for x in split(case, "%")], ", ") * ")" end
         val = hundredths(val)
         push!(get!(matchid_to_cases, matchid, []), (case, val))
