@@ -77,6 +77,21 @@ function shuffle(weights_xs)
     )
 end
 
+function backtrack_sample(rs, a, default, weights_xs)
+    error("unimplemented")
+    weights, xs = [], []
+    for (weight, x) in weights_xs
+        push!(weights, weight)
+        push!(xs,x)
+    end
+
+    attempts = 0
+    while attempts < length(weight_xs)
+    end
+
+    first_some(default, shuffle(weights_xs))
+end
+
 function backtrack(default, weights_xs)
     first_some(default, shuffle(weights_xs))
 end
@@ -112,13 +127,13 @@ function freq_flips(weights)
     flips
 end
 
-function freq_flips_sample(a, weights)
+function freq_flips_sample(rs, a, weights)
     weight_sum = compute(a, last(weights))
     flips = Vector(undef, length(weights))
     for i in length(weights) - 1 : -1 : 1
         w = compute(a, weights[i])
         weight_sum += w
-        flips[i] = rand() < (w / weight_sum)
+        flips[i] = rand(rs.rng) < (w / weight_sum)
     end
     flips
 end
@@ -157,13 +172,13 @@ function frequency(weights_xs)
     freq_choose(xs, freq_flips(weights))
 end
 
-function frequency_sample(a, weights_xs)
+function frequency_sample(rs, a, weights_xs)
     weights, xs = [], []
     for (weight, x) in weights_xs
         push!(weights, weight)
         push!(xs,x)
     end
-    freq_choose(xs, freq_flips_sample(a, weights))
+    freq_choose(xs, freq_flips_sample(rs, a, weights))
 end
 
 
@@ -287,8 +302,13 @@ end
 function flip_for_sample(rs, a, name, dependents)
     t = join([string(x) for x in dependents], "%")
     # t = join([string(Dice.frombits(x,Dict())) for x in dependents_vals], "%")
-    rand() < compute(a, register_weight!(rs, "$(name)%%$(t)"))
+    rand(rs.rng) < compute(a, register_weight!(rs, "$(name)%%$(t)"))
 end
+
+# function backtrack_for_sample(rs, name, dependents, casenames_xs, default)
+# end
+
+
 
 function backtrack_for(rs, name, dependents, casenames_xs, default)
     casenames = []
@@ -369,7 +389,7 @@ function frequency_for_sample(rs, a, name, dependents, casenames_xs)
         register_weight!(rs, "$(name)_$(casename)%%$(t)")
         for casename in casenames
     ]
-    res = frequency_sample(a, collect(zip(weights, xs)))
+    res = frequency_sample(rs, a, collect(zip(weights, xs)))
     @assert Dice.isdeterministic(res)
     res
 end

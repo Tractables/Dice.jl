@@ -109,7 +109,7 @@ function sample_from_lang(rs::RunState, prog::L.Program)
         else
             which, args = scrutinee
             for ((ctor, vars), body) in x.branches
-                if nameof(ctor) == which
+                if ctor == Symbol(which)
                     env1 = copy(env)
                     for (var, arg) in zip(vars, args)
                         env1[var] = arg
@@ -117,6 +117,9 @@ function sample_from_lang(rs::RunState, prog::L.Program)
                     return sample(env1, body)
                 end
             end
+            println(env)
+            println(which)
+            println(x.branches)
             error()
         end
         # @infiltrate
@@ -162,6 +165,7 @@ function sample_from_lang(rs::RunState, prog::L.Program)
             f.body
         )
         push!(function_results[x.f], res)
+        # println("$(f.name) returned $(res)")
         res
     end
 
@@ -171,13 +175,21 @@ function sample_from_lang(rs::RunState, prog::L.Program)
 
     function sample(env::Env, x::L.Map)
         @assert length(x.f.params) == 1
-        prob_map(
-            x.dest_module,
-            y -> begin
-                sample(with_binding(env, x.f.params[1], y), x.f.body)
-            end,
-            sample(env, x.l)
-        )
+        l = sample(env, x.l)
+
+        function loop(l)
+            ctor, args = l
+            if Symbol(ctor) == :nil
+                return ctor, args
+            end
+            @assert Symbol(ctor) == :cons
+            hd, tl = args
+            hd′ = sample(with_binding(env, x.f.params[1], hd), x.f.body)
+            tl′ = loop(tl)
+            (ctor, [hd′, tl′])
+        end
+
+        loop(l)
     end
 
     function sample(env::Env, x::L.BindGen)
@@ -194,15 +206,40 @@ function sample_from_lang(rs::RunState, prog::L.Program)
     end
 
     function sample(env::Env, x::L.OneOf)
-        one_of_sample(
-            sample(env, x.default),
-            sample(env, x.x),
-        )
+        function getlen(l)
+            ctor, args = l
+            if Symbol(ctor) == :nil
+                return 0
+            end
+            @assert Symbol(ctor) == :cons
+            hd, tl = args
+            1 + getlen(tl)
+        end
+
+        function loop(l, len)
+            ctor, (hd, tl) = l
+            @assert Symbol(ctor) == :cons
+            if rand(rs.rng) < 1/len
+                return hd
+            end
+            loop(tl, len - 1)
+        end
+
+        l = sample(env, x.x)
+        len = getlen(l)
+        if len == 0
+            sample(env, x.default)
+        else
+            loop(l, len)
+        end
     end
 
 
     function sample(env::Env, x::L.Frequency)
         dependents = [sample(env, dependent) for dependent in x.dependents]
+        # TODO: make this only do one execution path!
+
+        # remaining_weight = 
         frequency_for_sample(rs, a, prim_map[x], dependents, [
             name => sample(env, body)
             for (name, body) in x.branches
@@ -210,14 +247,42 @@ function sample_from_lang(rs::RunState, prog::L.Program)
     end
 
     function sample(env::Env, x::L.Backtrack)
-        @assert false
+        splice(v, i) = [x for (j, x) in enumerate(v) if j != i]
+
+        function loop(weights_and_bodies, total_weight)
+            if isempty(weights_and_bodies)
+                return sample(env, x.none)
+            end
+
+            remaining_weight = total_weight
+            for (i, (weight, body)) in enumerate(weights_and_bodies)
+                if rand(rs.rng) < weight / remaining_weight
+                    ctor, args = sample(env, body)
+                    if Symbol(ctor) == :Some
+                        # arg, = args
+                        return ctor, args
+                    else
+                        @assert Symbol(ctor) == :None
+                        loop(splice(weights_and_bodies, i), total_weight - weight)
+                    end
+                end
+                remaining_weight -= weight
+            end
+        end
+
         dependents = [sample(env, dependent) for dependent in x.dependents]
-        backtrack_for_sample(rs, prim_map[x], dependents, [
-                name => sample(env, body)
-                for (name, body) in x.branches
-            ],
-            sample(env, x.none)
-        )
+        t = join([string(x) for x in dependents], "%")
+
+        weights_and_bodies = []
+        name = prim_map[x]
+        total_weight = 0
+        for (casename, body) in x.branches
+            weight = compute(a, register_weight!(rs, "$(name)_$(casename)%%$(t)"))
+            total_weight += weight
+            push!(weights_and_bodies, (weight, body))
+        end
+
+        loop(weights_and_bodies, total_weight)
     end
 
     function sample(env::Env, x::L.GenNat)

@@ -11,9 +11,9 @@ abstract type LossMgr end
 
 struct Generation
     value
+    prog::Union{L.Program,Nothing}
     metadata::Dict{String,Any}
 end
-Generation(value) = Generation(value, Dict())
 
 value(g::Generation) = g.value
 
@@ -146,7 +146,7 @@ end
 
 mutable struct SpecEntropyLossMgr <: LossMgr
     p::SpecEntropy
-    val
+    generation
     consider
     num_meeting
     current_loss::Union{Nothing,ADNode}
@@ -202,15 +202,15 @@ end
 clear_file(path) = open(path, "w") do f end
 function produce_loss(rs::RunState, m::SpecEntropyLossMgr, epoch::Integer)
     if (epoch - 1) % m.p.resampling_frequency == 0
-        sampler = sample_from_lang(rs, rs.prog)
+        sampler = sample_from_lang(rs, m.generation.prog)
         a = ADComputer(rs.var_vals)
-        samples = with_concrete_ad_flips(rs.var_vals, m.val) do
-            # [sample_as_dist(rs.rng, a, m.val) for _ in 1:m.p.samples_per_batch]
-            [to_dist(sampler()) for _ in 1:m.p.samples_per_batch]
-        end
+        samples = [to_dist(sampler()) for _ in 1:m.p.samples_per_batch]
+        # samples = with_concrete_ad_flips(rs.var_vals, m.generation.value) do
+            # [sample_as_dist(rs.rng, a, m.generation.value) for _ in 1:m.p.samples_per_batch]
+        # end
 
         l = Dice.LogPrExpander(WMC(BDDCompiler([
-            prob_equals(m.val,sample)
+            prob_equals(m.generation.value,sample)
             for sample in samples
         ])))
 
@@ -218,7 +218,7 @@ function produce_loss(rs::RunState, m::SpecEntropyLossMgr, epoch::Integer)
         loss, actual_loss = sum(
             if m.consider(sample)
                 num_meeting += 1
-                lpr_eq = Dice.expand_logprs(l, LogPr(prob_equals(m.val, sample)))
+                lpr_eq = Dice.expand_logprs(l, LogPr(prob_equals(m.generation.value, sample)))
                 [lpr_eq * compute(a, lpr_eq), lpr_eq]
             else
                 [Dice.Constant(0), Dice.Constant(0)]
@@ -258,7 +258,8 @@ function generate(rs::RunState, ::Flips{W}) where W
             flip(register_weight!(rs, "f$(i)", random_value=true))
             for i in 1:W
         ],
-        Dict()
+        nothing,
+        Dict(),
     ))
 end
 
@@ -293,7 +294,7 @@ end
 function generate(rs::RunState, p::LangBespokeSTLCGenerator)
     prog = gen_expr_lang(p.expr_size, p.typ_size)
     res, prim_map, function_results = interp(rs, prog)
-    Generation(res, Dict(
+    Generation(res, prog, Dict(
         "ace_vals" => [interp(rs, gen_expr_lang(size, p.typ_size))[1] for size in 0:p.expr_size]
     ))
 end
@@ -391,7 +392,7 @@ function create_loss_manager(::RunState, p::SpecEntropy{T}, g::Generation) where
         @assert c isa Bool
         c
     end
-    SpecEntropyLossMgr(p, value(g), consider)
+    SpecEntropyLossMgr(p, g, consider)
 end
 
 ##################################

@@ -11,7 +11,6 @@ mutable struct RunState
     prim_map
     p
     coupled_ad_computer::ADComputer
-    prog::Any
 end
 RunState(
     var_vals, print_adnodes_of_interest, io, out_dir, rng, prim_map, p,
@@ -19,7 +18,6 @@ RunState(
     RunState(
         var_vals, print_adnodes_of_interest, io, out_dir, rng, prim_map, p, 
         ADComputer(Valuation()),
-        nothing
     )
 
 abstract type Workload end
