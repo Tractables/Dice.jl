@@ -235,8 +235,8 @@ function register_weight!(rs, s; random_value=false)
     if !haskey(rs.var_vals, var) || rs.var_vals[var] == 0
         rs.var_vals[var] = 0
         rs.coupled_ad_computer.vals[var] = 0
-    else
-        println("WARNING: not registering fresh weight for $(s)")
+    # else
+    #     println("WARNING: not registering fresh weight for $(s)")
     end
     if random_value
         v = inverse_sigmoid(rand(rs.rng))

@@ -1,60 +1,65 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 import subprocess
 import math
 import sys
 import os
-from datetime import datetime
 from collections import Counter, defaultdict
 from dataclasses import dataclass, field
+from datetime import datetime
+from enum import Enum, auto
 from typing import List, Callable
+import argparse
+from argparse import ArgumentParser, RawTextHelpFormatter
 
-def bad_args():
-    print("""Usage: stats.py MODE WORKLOAD N
+parser = ArgumentParser(prog='stats.py', formatter_class=RawTextHelpFormatter)
 
-Arguments:
-    MODE      One of:
-                  u     Unique over time
-                  us    Unique shapes over time
-                  d     Distributions of metrics
+parser.add_argument(
+    'mode',
+    choices=["u", "us", "d"],
+    metavar="MODE",
+    help="One of:" +
+    "\n    u: Unique over time" +
+    "\n    us: Unique shapes over time." +
+    "\n    d: Distributions of metriscs."
+)
+parser.add_argument(
+    'workload',
+    choices=["BST", "RBT", "STLC"],
+    metavar="WORKLOAD",
+    help="One of: BST, RBT, STLC"
+)
+parser.add_argument('N', help="Number of samples", type=int)
+parser.add_argument('-p', '--program-only', action='store_true')
 
-    WORKLOAD  One of: BST, RBT, STLC
+args = parser.parse_args()
 
-    N         Number of samples""")
-    sys.exit(1)
+PROGRAM_ONLY = args.program_only
 
-if len(sys.argv) != 4:
-    bad_args()
+class Mode(Enum):
+    UNIQUE = auto()
+    UNIQUE_SHAPES = auto()
+    DISTRIBUTIONS = auto()
 
-_, mode, WORKLOAD, num_tests_str = sys.argv
+MODE_OPTIONS = {
+    "u": Mode.UNIQUE,
+    "us": Mode.UNIQUE_SHAPES,
+    "d": Mode.DISTRIBUTIONS,
+}
 
-if mode == "u":
-    UNIQUE = True
-    SHAPES = False
-elif mode == "us":
-    UNIQUE = True
-    SHAPES = True
-elif mode == "d":
-    UNIQUE = False
-    SHAPES = False
-else:
-    bad_args()
-
-if WORKLOAD not in ["STLC", "BST", "RBT"]:
-    bad_args()
-NUM_TESTS = int(num_tests_str)
-ORDER_ONLY = True
-
-sys.exit()
+mode = MODE_OPTIONS[args.mode]
+WORKLOAD = args.workload
+NUM_TESTS = int(args.N)
 
 ORDER: List[str] = { # Put rows in this order and also assert that these generators exist
     "STLC": [
         # class: bespoke
         # "BespokeGenerator",
-        "LBespokeGenerator",
-        "SimplerACEGenerator",
+        # "LBespokeGenerator",
+        # "SimplerACEGenerator",
         # class: type-based
-        "LSDThinGenerator",
+        # "LSDThinGenerator",
         "SLSDThinEqWellLR30Bound10Generator",
+        "STLC10MGenerator",
     ] 
     # + [
     #     f"{template}May{eq}Bound{bound}Generator"
@@ -85,9 +90,10 @@ ORDER: List[str] = { # Put rows in this order and also assert that these generat
     ]
 }[WORKLOAD]
 
-STRAT_DIR = f"/scratch/tjoa/etna/workloads/Coq/{WORKLOAD}/Strategies/stats"
-OUT_DIR = f"/scratch/tjoa/Dice.jl/stats/{WORKLOAD}"
+STRAT_DIR = f"/scratch/tjoa/etna/workloads/Coq/{WORKLOAD}/Strategies/"
+OUT_DIR = f"/scratch/tjoa/Dice.jl/stats/{WORKLOAD}/{mode.name}"
 COQ_PROJECT_DIR = f"/scratch/tjoa/etna/workloads/Coq/{WORKLOAD}"
+ORDER_ONLY = True
 
 @dataclass
 class Workload:
@@ -211,13 +217,14 @@ def collect_unique():
         # 100k samples, limit 1000 took 141 seconds
         # 100k samples, limit 10,000 took 14 seconds
         # limit = 2000 if generator == "RLSDThinEqLR30Epochs2000Bound10SPB200Generator.v" else 10000
-        limit = 1000
+        limit = 500
         print(limit)
 
         may_fail = workload.is_failing_generator(generator)
         while len(samples) < NUM_TESTS:
-            n_now = min(limit, NUM_TESTS - len(samples))
-            t_to_id = "(toShape t)" if SHAPES else "t"
+            n_now = min(limit, 50 * (NUM_TESTS - len(samples)))
+            print(f"  {n_now}")
+            t_to_id = "(toShape t)" if mode == Mode.UNIQUE_SHAPES else "t"
             if may_fail:
                 gShapes = f"""Definition gShapes :=
               bindGen (vectorOf numSamples (bindGen {workload.generator(generator)} (fun t_opt => returnGen
@@ -225,7 +232,7 @@ def collect_unique():
                 | None => None
                 | Some t =>
                     (if """ + (workload.invariant_check % "t") + f""" then
-                        Some {t_to_id}
+                        Some (sizeSTLC {t_to_id}, {t_to_id})
                     else
                         None)
                 end)
@@ -235,13 +242,13 @@ def collect_unique():
                 gShapes = f"""Definition gShapes :=
               bindGen (vectorOf numSamples (bindGen {workload.generator(generator)} (fun t => returnGen
                 (if """ + (workload.invariant_check % "t") + f""" then
-                    Some {t_to_id}
+                    Some (sizeSTLC {t_to_id}, {t_to_id})
                 else
                     None)
               ))) (fun samples =>
                 returnGen samples)."""
 
-            stdout=run_coq(pgrm + f"""
+            full_pgrm = pgrm + f"""
             Derive Show for Shape.
             Extract Constant Test.defNumTests => "1".
             Definition collect {{A : Type}} `{{_ : Show A}} (g : G A)   : Checker :=  
@@ -252,9 +259,26 @@ def collect_unique():
             Definition numSamples := {n_now}.
             {gShapes}
             QuickChick (collect gShapes).
-            """)
+            """
+            if PROGRAM_ONLY:
+                dump_program(full_pgrm)
+                break
+
+            stdout=run_coq(full_pgrm)
+            if PROGRAM_ONLY:
+                break
             line, = lines_between(stdout, f"QuickChecking (collect gShapes)", "+++")
-            samples.extend(line.replace("1 : \"[","").replace("]\"", "").split("; "))
+            for sample in line.replace("1 : \"[","").replace("]\"", "").split("; "):
+                pre = "Some ("
+                assert sample.startswith(pre), sample
+                size = sample[len(pre):]
+                size = size[:size.find(",")]
+                size = int(size)
+                if size == 4:
+                    samples.append(sample)
+        
+        if PROGRAM_ONLY:
+            return
 
         seen = set()
         col = [generator]
@@ -267,11 +291,8 @@ def collect_unique():
 
     # Output stats
     os.makedirs(OUT_DIR, exist_ok=True)
-    if SHAPES:
-        file_path = os.path.join(OUT_DIR, f"unique-shapes-{WORKLOAD}-{NUM_TESTS}.csv")
-    else:
-        file_path = os.path.join(OUT_DIR, f"unique-{WORKLOAD}-{NUM_TESTS}.csv")
-    rows = list(map(list, zip(*cols, strict=True)))
+    file_path = os.path.join(OUT_DIR, f"{WORKLOAD}-{NUM_TESTS}.csv")
+    rows = list(map(list, zip(*cols)))
     with open(file_path, "w") as file:
         for row in rows:
             file.write("\t".join(row) + "\n")
@@ -280,7 +301,7 @@ def collect_unique():
 def collect_dist():
     # Collect stats
     metric_to_generator_to_counts = defaultdict(lambda: defaultdict(dict))
-    for generator in generators:
+    for generator in get_generators():
         path = os.path.join(STRAT_DIR, generator)
         print(f"Collecting stats for {generator}")
         collect_stats(path, generator, metric_to_generator_to_counts)
@@ -307,7 +328,7 @@ def collect_dist():
                 for valid in (True, False)
             ])
             file.write(metric + '\t' + '\t'.join(val_names) + '\n')
-            for generator in generators:
+            for generator in get_generators():
                 counts = generator_to_counts[generator]
                 tokens = [generator]
                 for val in vals:
@@ -318,9 +339,9 @@ def collect_dist():
         print(f"Write to {file_path}")
 
 def main():
-    if UNIQUE:
+    if mode == Mode.UNIQUE_SHAPES or mode == Mode.UNIQUE:
         collect_unique()
-    else:
+    elif mode == Mode.DISTRIBUTIONS:
         collect_dist()
 
 def read(path):
@@ -343,6 +364,13 @@ def lines_between(s, start, end):
         else:
             raise f"Did not find {start}"
 
+def dump_program(pgrm):
+    now = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
+    pgrm_dump = f"/tmp/program{now}.v"
+    with open(pgrm_dump, "w") as file:
+        file.write(pgrm)
+    print(f"Wrote program to {pgrm_dump}")
+
 def run_coq(pgrm):
     os.chdir(COQ_PROJECT_DIR)
     cmd = ["coqtop", "-Q", ".", WORKLOAD]
@@ -361,11 +389,7 @@ def run_coq(pgrm):
         remove_junk(s).strip()
         for s in p.stderr.split('\n')
     ):
-        now = datetime.now().strftime("%Y_%m_%d__%H_%M_%S")
-        pgrm_dump = f"/tmp/program{now}.v"
-        with open(pgrm_dump, "w") as file:
-            file.write(pgrm)
-        print(f"Wrote program to {pgrm_dump}")
+        dump_program(pgrm)
 
         print("STDERR =====")
         last_line_blank = False
