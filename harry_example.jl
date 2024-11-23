@@ -36,16 +36,21 @@ function lang_sample(var_vals)
 end
 
 var_vals = Valuation([Var("X_psp") => 0.])
-NUM_EPOCHS = 100
-NUM_SAMPLES = 1000
-for epoch in 1:NUM_EPOCHS
+NUM_EPOCHS = 30
+NUM_SAMPLES = 100
+LR = 0.003
+@time for epoch in 1:NUM_EPOCHS
+    global LR
+    global NUM_SAMPLES
+    LR *= 0.95
+    NUM_SAMPLES += 10
     a = ADComputer(var_vals)
     samples = [DistUInt32(lang_sample(var_vals)) for _ in 1:NUM_SAMPLES]
 
-    println("EPOCH $(epoch)")
-    println(count([Dice.frombits(sample,Dict()) for sample in samples]) do n
-        n < hi1
-    end)
+    # println("EPOCH $(epoch)")
+    # println(count([Dice.frombits(sample,Dict()) for sample in samples]) do n
+    #     n < hi1
+    # end)
     println("X = $(sigmoid(var_vals[Var("X_psp")]))")
 
     l = Dice.LogPrExpander(WMC(BDDCompiler([
@@ -59,13 +64,15 @@ for epoch in 1:NUM_EPOCHS
         for sample in samples
     )
 
-    vals, derivs = differentiate(
-        var_vals,
-        Derivs(loss => 1)
-    )
-    for (adnode, d) in derivs
-        if adnode isa Var
-            var_vals[adnode] -= d * 0.0003
+    for _ in 1:5
+        vals, derivs = differentiate(
+            var_vals,
+            Derivs(loss => 1)
+        )
+        for (adnode, d) in derivs
+            if adnode isa Var
+                var_vals[adnode] -= d * LR
+            end
         end
     end
 end
