@@ -189,8 +189,10 @@ end
 function to_dist(v)
     if v isa Bool
         v
-    elseif v isa Integer
+    elseif v isa Unsigned
         DistUInt32(v)
+    elseif v isa Integer
+        DistInt32(v)
     elseif v isa Tuple
         ctor, args = v
         ctor([to_dist(arg) for arg in args]...)

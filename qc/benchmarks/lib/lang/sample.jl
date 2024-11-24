@@ -29,7 +29,7 @@ function sample_from_lang(rs::RunState, prog::L.Program)
     end
 
     function sample(env::Env, x::L.Nat)
-        x.x
+        Unsigned(x.x)
     end
 
     function sample(env::Env, x::L.Z)
@@ -100,7 +100,7 @@ function sample_from_lang(rs::RunState, prog::L.Program)
                 env1 = copy(env)
                 (_ctor, vars), body = s
                 var, = vars
-                env1[var] = scrutinee - 1
+                env1[var] = scrutinee - Unsigned(1)
                 return sample(env1, body)
             else
                 _, body = o
@@ -291,9 +291,9 @@ function sample_from_lang(rs::RunState, prog::L.Program)
         sum(
             begin
                 if flip_for_sample(rs, a, "$(name)_num$(n)", dependents)
-                    n
+                    Unsigned(n)
                 else
-                    0
+                    Unsigned(0)
                 end
             end
             for n in twopowers(x.width)
@@ -326,7 +326,7 @@ function sample_from_lang(rs::RunState, prog::L.Program)
     end
 
     function sample(env::Env, x::L.ArbitraryNat)
-        0
+        Unsigned(0)
     end
 
     function sample(env::Env, x::L.ArbitraryZ)

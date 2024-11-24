@@ -1,6 +1,6 @@
 include("benchmarks.jl")
 
-TAG = "v101_speed2"
+TAG = "v102_redo_eval"
 OUT_TOP_DIR = "../tuning-output"
 
 ## PARSE ARGS
@@ -8,8 +8,27 @@ if isempty(ARGS)
     TAG = "test2"
     as = ["-f"]
     lr = 0.5
-    g_p = LangBespokeSTLCGenerator(2,1)
-    l_p = [SpecEntropy{STLC}(2,200,wellTyped) => lr]
+    # lang bespoke spec entropy
+    # g_p = LangBespokeSTLCGenerator(2,1)
+    # l_p = [SpecEntropy{STLC}(2,200,wellTyped) => lr]
+
+    # RBT
+    # g_p = LangSiblingDerivedGenerator{RBT}(Main.ColorKVTree.t,Pair{Type,Integer}[Main.ColorKVTree.t=>4,Main.Color.t=>0],2,3) 
+    # l_p = [SpecEntropy{RBT}(2,200,isRBT)=>0.3]
+
+    # BST
+    g_p = LangSiblingDerivedGenerator{BST}(Main.KVTree.t,Pair{Type,Integer}[Main.KVTree.t=>4],2,3)
+    l_p = [SpecEntropy{BST}(2,200,isBST)=>0.3]
+
+    # TB STLC SE
+    # g_p = LangSiblingDerivedGenerator{STLC}(Main.Expr.t,Pair{Type,Integer}[Main.Expr.t=>5,Main.Typ.t=>2],2,3)
+    # l_p = [SpecEntropy{STLC}(2,200,wellTyped)=>0.3]
+
+    # l_p = [SpecEntropy{RBT}(2,200,isRBT)=>0.3]
+
+    # g_p = LangBespokeSTLCGenerator(2,1)
+    # l_p = [SpecEntropy{STLC}(2,200,wellTyped) => lr]
+
     push!(as, replace(string(g_p), " "=>""))
     push!(as, replace(string(l_p), " "=>""))
     push!(as, string(10))
