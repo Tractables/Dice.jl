@@ -237,13 +237,25 @@ function sample_from_lang(rs::RunState, prog::L.Program)
 
     function sample(env::Env, x::L.Frequency)
         dependents = [sample(env, dependent) for dependent in x.dependents]
-        # TODO: make this only do one execution path!
+        t = join([string(x) for x in dependents], "%")
 
-        # remaining_weight = 
-        frequency_for_sample(rs, a, prim_map[x], dependents, [
-            name => sample(env, body)
-            for (name, body) in x.branches
-        ])
+        weights_and_bodies = []
+        name = prim_map[x]
+        total_weight = 0
+        for (casename, body) in x.branches
+            weight = compute(a, register_weight!(rs, "$(name)_$(casename)%%$(t)"))
+            total_weight += weight
+            push!(weights_and_bodies, (weight, body))
+        end
+
+        remaining_weight = total_weight
+        for (weight, body) in weights_and_bodies
+            if rand(rs.rng) < weight / remaining_weight
+                return sample(env, body)
+            end
+            remaining_weight -= weight
+        end
+        @assert false
     end
 
     function sample(env::Env, x::L.Backtrack)
