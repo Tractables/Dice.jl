@@ -10,10 +10,10 @@ event = prob_equals(w*x+e, y)
 pr(event)
 
 # Sampled the last bit
-w = DistFix{4, 0}([false, false, flip(0.5), false])
+w = DistFix{4, 0}([false, false, flip(0.5), true])
 x = DistFix{4, 0}([false, false, true, true]) # 3
 y = DistFix{4, 0}([false, true, false, true]) # 5
-e = DistFix{4, 0}([false, false, flip(0.5), false])
+e = DistFix{4, 0}([false, false, flip(0.5), true])
 event = prob_equals(w*x+e, y)
 
 pr(event) # probability is zero

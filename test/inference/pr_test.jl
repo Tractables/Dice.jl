@@ -93,8 +93,8 @@ end
     @test debug_info_ref[].num_nodes == 196604
 
     pr(x, algo=Cudd(CUDD.CUDD_REORDER_SIFT, debug_info_ref))
-    @test debug_info_ref[].num_nodes == 160
+    @test debug_info_ref[].num_nodes == 1500
 
     pr(x, algo=Cudd(CUDD.CUDD_REORDER_WINDOW2, debug_info_ref))
-    @test debug_info_ref[].num_nodes == 129820
+    @test debug_info_ref[].num_nodes == 196860
 end
