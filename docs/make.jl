@@ -1,3 +1,3 @@
 using Documenter, Dice
 
-makedocs(sitename="My Documentation")
+makedocs(sitename="Alea.jl")
