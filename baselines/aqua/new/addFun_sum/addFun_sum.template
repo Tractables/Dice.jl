@@ -1,0 +1,8 @@
+@limits <lower = 0>
+int N : 3
+int y[N] : [1, 0, 1]
+
+float sum
+sum = normal(0,1)*ind[1] + normal(0, 1)*ind[2]
+
+return(sum)

@@ -1,0 +1,22 @@
+@limits <lower=0>
+float engines
+engines = normal(5, 1)
+
+@limits <lower=0>
+float first_stage
+first_stage = normal(10, 3)
+
+float completed_first_stage
+completed_first_stage = normal(15, 1)
+completed_first_stage = engines + first_stage
+
+@limits <lower=0>
+float second_stage
+second_stage = normal(15, 1)
+second_stage = normal(15, 3)
+
+float completed_rocket
+completed_rocket = normal(15, 1)
+completed_rocket = completed_first_stage + second_stage
+
+return(completed_rocket)

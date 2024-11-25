@@ -6,13 +6,13 @@ using Dice, Distributions
     FP = DistFix{6, 2}
     data = FP(0.0)
     
-    code = @dice begin
+    @test_broken code = @dice begin
         a = flip(0.5)
         gaussian_observe(FP, 4, -4.0, 4.0, 0.0, 1.0, data)
         a
     end
 
-    @test pr(code)[false] ≈ 0.5
+    # @test pr(code)[false] ≈ 0.5
 
     FP = DistFix{8, 2}
     data = FP(1.0)

@@ -1,0 +1,37 @@
+def main() {
+    d1 := 4*beta(8, 2);
+    d2 := 8*beta(5, 5);
+
+    gpa1 := d1;
+    if bernoulli(0.95) {
+        gpa1 = d1;
+    } else {
+        if bernoulli(0.15) {
+            gpa1 = 4;
+        } else {
+            gpa1 = 0;
+        }
+    }
+
+    gpa2 := d2;
+    if bernoulli(0.99) {
+        gpa2 = d2;
+    } else {
+        if bernoulli(0.1) {
+            gpa2 = 8;
+        } else {
+            gpa2 = 0;
+        }
+    }
+
+    n := bernoulli(0.25);
+    final := gpa1;
+    if n {
+        final = gpa1;
+    }
+    else {
+        final = gpa2;
+    }
+    observe(final == 0);
+    return n;
+}

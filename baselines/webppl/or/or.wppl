@@ -1,0 +1,53 @@
+var model = function() {
+  var prior = [beta({a: 1, b: 1}), beta({a: 1, b: 1}), beta({a: 1, b: 1}), beta({a: 1, b: 1}),
+  beta({a: 1, b: 1}),
+  beta({a: 1, b: 1}),
+  beta({a: 1, b: 1}),
+  beta({a: 1, b: 1}),
+  beta({a: 1, b: 1}),
+  beta({a: 1, b: 1})]
+  
+  var z1 = bernoulli({p: prior[1]});
+  var z2 = bernoulli({p: prior[2]});
+  var z3 = bernoulli({p: prior[3]});
+  var z4 = bernoulli({p: prior[4]});
+  var z5 = bernoulli({p: prior[5]});
+  var z6 = bernoulli({p: prior[6]});
+  var z7 = bernoulli({p: prior[7]});
+  var z8 = bernoulli({p: prior[8]});
+  var z9 = bernoulli({p: prior[9]});
+  var z10 = bernoulli({p: prior[0]});
+
+  var y = z1 | z2 | z3 | z4 | z5 | z6 | z7 | z8 | z9 | z10;
+  if (y) {
+        factor(Gaussian({mu: -1, sigma: 1}).score(-1.5));
+  } else{
+        factor(Gaussian({mu: 1, sigma: 1}).score(-1.5));
+  }
+
+  if (y) {
+        factor(Gaussian({mu: -1, sigma: 1}).score(1.5));
+  } else{
+        factor(Gaussian({mu: 1, sigma: 1}).score(1.5));
+  }
+
+
+  if (y) {
+        factor(Gaussian({mu: -1, sigma: 1}).score(1.5));
+  } else{
+        factor(Gaussian({mu: 1, sigma: 1}).score(1.5));
+  }
+
+  if (y) {
+        factor(Gaussian({mu: -1, sigma: 1}).score(-1.5));
+  } else{
+        factor(Gaussian({mu: 1, sigma: 1}).score(-1.5));
+  }
+  return prior[1];
+}
+
+var func1 = function() {
+	return Infer({method: argv.m, particles: argv.s, samples: argv.s}, model);
+}
+
+timeit( function() { return expectation(func1());})

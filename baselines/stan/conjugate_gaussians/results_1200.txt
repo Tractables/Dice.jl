@@ -1,0 +1,22 @@
+Inference for Stan model: conjugate_gaussians_model
+1 chains: each with iter=(115723711); warmup=(0); thin=(1); 115723711 iterations saved.
+
+Warmup took 0.00 seconds
+Sampling took 0.00 seconds
+
+                         Mean           MCSE         StdDev             5%            50%            95%          N_Eff        N_Eff/s          R_hat
+
+lp__           -1.5000126e+00  8.8123176e-05  7.0700011e-01 -2.9209700e+00 -1.2275000e+00 -1.0019700e+00  6.4366320e+07            inf  9.9999999e-01
+accept_stat__   8.9602168e-01  1.2725466e-05  1.4669981e-01  5.7431300e-01  9.6176100e-01  1.0000000e+00  1.3289594e+08            inf  1.0000000e+00
+stepsize__      1.2495000e+00            nan  8.6400132e-10  1.2495000e+00  1.2495000e+00  1.2495000e+00            nan            nan            nan
+treedepth__     1.4005307e+00  4.6607901e-05  4.9000599e-01  1.0000000e+00  1.0000000e+00  2.0000000e+00  1.1053089e+08            inf  9.9999999e-01
+n_leapfrog__    2.2734054e+00  1.0008061e-04  9.6189890e-01  1.0000000e+00  3.0000000e+00  3.0000000e+00  9.2375968e+07            inf  1.0000000e+00
+divergent__     0.0000000e+00            nan  0.0000000e+00  0.0000000e+00  0.0000000e+00  0.0000000e+00            nan            nan            nan
+energy__        1.9999796e+00  1.3388263e-04  9.9978595e-01  1.0513300e+00  1.6931900e+00  3.9949300e+00  5.5765497e+07            inf  9.9999999e-01
+
+mu              9.9998229e-01  8.6868113e-05  5.7735756e-01  5.0258000e-02  1.0000100e+00  1.9496200e+00  4.4174225e+07            inf  9.9999999e-01
+
+Samples were drawn using hmc with nuts.
+For each parameter, N_Eff is a crude measure of effective sample size,
+and R_hat is the potential scale reduction factor on split chains (at 
+convergence, R_hat=1).

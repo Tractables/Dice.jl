@@ -1,0 +1,13 @@
+var timeit = function(thunk) {
+  var t0 = webpplTimeit.now();
+  var value = thunk();
+  var t1 = webpplTimeit.now();
+  return {
+    value: value,
+    runtimeInMilliseconds: t1 - t0
+  }
+}
+
+var sleep = function(ms) {
+  webpplTimeit.sleep(ms);
+}
