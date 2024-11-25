@@ -21,6 +21,7 @@ SymbolicNumericIntegration = "78aadeae-fbc0-11eb-17b6-c7ec0477ba9e"
 Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 
 [compat]
+BenchmarkTools = "1"
 CUDD = "0.3"
 DataStructures = "0.18"
 DirectedAcyclicGraphs = "0.1.1"
