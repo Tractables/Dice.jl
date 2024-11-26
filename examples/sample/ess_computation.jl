@@ -25,7 +25,7 @@ println("Ground truth")
 # Normal Dice program
 bits = 2
 pieces = 2^(bits+4)
-DFiP = DistFix{6 + bits, bits}
+DFiP = DistFix{7 + bits, bits}
 
 code = @dice begin
         ws = [bitblast(DFiP, Normal(0, sqrt(2)), pieces, -8.0, 8.0) for i in 1:10]
@@ -54,14 +54,15 @@ samples = rand(Bernoulli(0.5), NSAMPLES)
 samples = map(x -> if x == 1 true else false end, samples)
 
 function dice_program(s, bit, gauss)
+    # @show gauss, bit, s
     code = @dice begin
-        gauss_vector = [bitblast(DFiP, Normal(0, sqrt(2)), pieces, -8.0, 8.0) for i in 1:4]
+        gauss_vector = [bitblast(DFiP, Normal(0, sqrt(2)), pieces, -8.0, 8.0) for j in 1:3]
         w1 = gauss_vector[1]
         w2 = gauss_vector[2]
         observe(prob_equals(gauss_vector[gauss].mantissa.number.bits[bit], s))
         for i in 1:nobs
             error = gauss_vector[i+2]
-            observe(prob_equals(DFiP(y1s[i]), DFiP(x1s[1])*w1 + DFiP(x2s[1])*w2 + error) )           
+            observe(prob_equals(DFiP(ys[i]), DFiP(xs[i, 1])*w1 + DFiP(xs[i, 2])*w2 + error) )               
         end
         w2
     end
@@ -73,9 +74,9 @@ end
 
 # Data points - gauss, bit, error from the true answer, error from the Dice answer, ess
 
-for i in 1:4
+for i in 1:3
     for j in 1:bits+6
-        p = @timed mean = map(x -> dice_program(x, 1), samples)
+        p = @timed mean = map(x -> dice_program(x, j, i), samples)
         num = sum(map(x -> x[1]*x[2]/0.5, mean))
         weights = map(x -> x[2]/0.5, mean)
         den = sum(weights)
