@@ -175,6 +175,22 @@ end
     #TODO: Write tests for exponential pieces
 end
 
+@testset "DistFix bitblast sample" begin
+    d = truncated(Normal(0, 1), -8.0, 8.0)
+    offset = 0.0625
+    width = 0.0625
+    dist = bitblast_sample(DistFix{5, 1}, d, 32, -8.0, 8.0, offset, width)
+    p = pr(dist)
+    total_prob = 0.0
+    for i in keys(p)
+        total_prob += cdf(d, i + offset + width) - cdf(d, i + offset)
+    end
+    for i in keys(p)
+        @show i
+        @test p[i] ≈ (cdf(d, i + offset + width) - cdf(d, i + offset))/total_prob
+    end
+end
+
 @testset "DistFix multiply" begin
     #TODO: make sure if the tests convey the intended meaning of multiply
     a = [0.5, 0.5, -0.5, -0.5]

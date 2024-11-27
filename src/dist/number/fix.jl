@@ -697,10 +697,10 @@ function bitblast_sample(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistrib
         lastinter = start + (i)*intervals_per_piece/2^F 
 
         piece_probs[i] = 0
+        # Warning: A potential source of high runtime
         for j=1:intervals_per_piece
             piece_probs[i] += cdf(dist, firstinter + offset + width + (j-1)/2^F) - cdf(dist, firstinter + offset + (j-1)/2^F)
         end
-        # piece_probs[i] = (cdf(dist, lastinter) - cdf(dist, firstinter))
         total_prob += piece_probs[i]
 
         border_probs[i] = [cdf(dist, firstinter + offset+width) - cdf(dist, firstinter + offset), 
@@ -728,22 +728,22 @@ function bitblast_sample(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistrib
     tria = triangle(DistFix{W,F}, bits_per_piece)
     z = nothing
     for i=1:numpieces
-    iszero(linear_piece_probs[i]) && continue
-    firstinterval = DistFix{W,F}(start + (i-1)*2^bits_per_piece/2^F)
-    lastinterval = DistFix{W,F}(start + (i*2^bits_per_piece-1)/2^F)
-    linear_dist = 
-    if isdecreasing[i]
-    (ifelse(slope_flips[i], 
-        (firstinterval + unif), 
-        (lastinterval - tria)))
-    else
-    firstinterval + ifelse(slope_flips[i], unif, tria)
-    end
-    z = if isnothing(z)
-    linear_dist
-    else
-    ifelse(prob_equals(piecechoice, PieceChoice(i-1)), linear_dist, z)  
-    end
+        iszero(linear_piece_probs[i]) && continue
+        firstinterval = DistFix{W,F}(start + (i-1)*2^bits_per_piece/2^F)
+        lastinterval = DistFix{W,F}(start + (i*2^bits_per_piece-1)/2^F)
+        linear_dist = 
+            if isdecreasing[i]
+                (ifelse(slope_flips[i], 
+                    (firstinterval + unif), 
+                    (lastinterval - tria)))
+            else
+                firstinterval + ifelse(slope_flips[i], unif, tria)
+            end
+        z = if isnothing(z)
+                linear_dist
+            else
+                ifelse(prob_equals(piecechoice, PieceChoice(i-1)), linear_dist, z)  
+            end
     end
     return z
 end
