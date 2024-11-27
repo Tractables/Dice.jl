@@ -665,6 +665,11 @@ function geometric(::Type{DistFix{W, F}}, success::Float64, stop::Int) where {W,
     convert(DistFix{W, F}, DistFix{W, 0}(unit_exponential(DistFix{bits+1, bits}, log(1 - success)*2^bits).mantissa))
 end
 
+"""
+   general_gamma(::Type{DistFix{W, F}}, alpha::Int, beta::Float64, ll::Float64, ul::Float64)
+   
+Returns bitblast distribution for the density function x^alpha e^(beta*x)
+"""
 function general_gamma(::Type{DistFix{W, F}}, alpha::Int, beta::Float64, ll::Float64, ul::Float64) where {W, F}
     @assert ispow2(ul - ll)
     multiply = Int(log2(ul - ll))
@@ -674,6 +679,12 @@ function general_gamma(::Type{DistFix{W, F}}, alpha::Int, beta::Float64, ll::Flo
     DistFix{W, F}(unit_gamma(new_type, alpha, beta).mantissa.number.bits) + start
 end
 
+"""
+    bitblast_sample(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution, 
+        numpieces::Int, start::Float64, stop::Float64, offset::Float64, width::Float64)
+
+A modified version of the function bitblast that works with the assumption of lower bits being sampled.
+"""
 function bitblast_sample(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution, 
     numpieces::Int, start::Float64, stop::Float64, offset::Float64, width::Float64) where {W,F}
 

@@ -123,3 +123,5 @@ function print_tree_helper(
         )
     end
 end
+
+function gaussian_bitblast_sample(mean, std, )
