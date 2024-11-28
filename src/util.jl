@@ -1,6 +1,6 @@
 using Distributions
 
-export gaussian_observe, gaussian_observe_enumerate, parametrised_flip, print_tree
+export gaussian_observe, gaussian_observe_enumerate, parametrised_flip, print_tree, gaussian_bitblast_sample
 
 ##################################
 # Gaussian observation methods
@@ -124,4 +124,23 @@ function print_tree_helper(
     end
 end
 
-function gaussian_bitblast_sample(mean, std, )
+"""
+    gaussian_bitblast_sample(::Type{DistFix{W, F}}, mean::Float64, std::Float64, numpieces::Int64, start::Float64, stop::Float64, lsb::Vector{Bool})
+
+The functions takes as input lower order bits for a gaussian distribution and returns a bitblasted gaussian.
+"""
+function gaussian_bitblast_sample(::Type{DistFix{W, F}}, mean::Float64, std::Float64, numpieces::Int64, start::Float64, stop::Float64, lsb::Vector{Bool}) where {W, F}
+    distribution = Normal(mean, std)
+    nbits = length(lsbs)
+    DFiP = DistFix{W-nbits, F-nbits}
+    width = 1/2^F
+    offset = 0.0
+    for i in 1:nbits
+        if lsbs[i]
+            offset += 2^(F-nbits+i)
+        end
+    end
+
+    sub_gaussian = bitblast_sample(DFiP, distribution, numpieces, start, stop, offset, width)
+    DistFix{W, F}([sub_gaussian.mantissa.number.bits..., lsbs...])
+end
