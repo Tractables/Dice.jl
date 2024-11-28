@@ -688,6 +688,7 @@ A modified version of the function bitblast that works with the assumption of lo
 function bitblast_sample(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution, 
     numpieces::Int, start::Float64, stop::Float64, offset::Float64, width::Float64) where {W,F}
 
+    @show start, stop, numpieces, offset, width
     # count bits and pieces
     @assert -(2^(W-F-1)) <= start < stop <= 2^(W-F-1)
     f_range_bits = log2((stop - start)*2^F)
@@ -710,6 +711,8 @@ function bitblast_sample(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistrib
         piece_probs[i] = 0
         # Warning: A potential source of high runtime
         for j=1:intervals_per_piece
+            @show firstinter + offset + width + (j-1)/2^F
+            @show firstinter + offset + (j-1)/2^F
             piece_probs[i] += cdf(dist, firstinter + offset + width + (j-1)/2^F) - cdf(dist, firstinter + offset + (j-1)/2^F)
         end
         total_prob += piece_probs[i]
@@ -718,6 +721,10 @@ function bitblast_sample(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistrib
                 cdf(dist, lastinter -1/2^F + offset+width) - cdf(dist, lastinter - 1/2^F + offset)]
         linear_piece_probs[i] = (border_probs[i][1] + border_probs[i][2])/2 * 2^(bits_per_piece)
     end
+
+
+    @show piece_probs
+    @show total_prob
 
     PieceChoice = DistUInt{max(1,Int(log2(numpieces)))}
     piecechoice = discrete(PieceChoice, piece_probs ./ total_prob) # selector variable for pieces
