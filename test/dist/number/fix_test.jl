@@ -119,7 +119,8 @@ end
         @test sum(p) ≈ 1.0
         @test sum(q) ≈ 1.0
         ans = 0
-        for i=1:length(p)
+        l = length(p)
+        for i=1:l
             if p[i] > 0
                 ans += p[i] *(log(p[i]) - log(q[i]))
             end
@@ -170,6 +171,14 @@ end
     p = pr(y)
     p2 = map(a -> a[2], sort([(k, v) for (k, v) in p]))
     @test p2 ≈ q
+
+    # Negative F
+    y = bitblast(DistFix{5, -1}, Normal(1, 1), 2, -4.0, 4.0)
+    p = pr(y)
+    d = TruncatedNormal(1, 1, -4, 4)
+    for i in keys(p)
+        @test p[i] ≈ cdf(d, i+2) - cdf(d, i)
+    end
 
     #TODO: write tests for continuous distribution other than gaussian
     #TODO: Write tests for exponential pieces

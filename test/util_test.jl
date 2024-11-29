@@ -107,14 +107,18 @@ end
 
 # TODO: test for negative F
 @testset "gaussian_bitblast_sample" begin
-    x1 = gaussian_bitblast_sample(DistFix{3, 1}, 0.0, 1.0, 2, -1.0, 1.0, [false])
-    x2 = gaussian_bitblast_sample(DistFix{3, 1}, 0.0, 1.0, 2, -1.0, 1.0, [true])
+    x1 = gaussian_bitblast_sample(DistFix{3, 1}, 0.0, 1.0, 2, -2.0, 2.0, [false])
+    x2 = gaussian_bitblast_sample(DistFix{3, 1}, 0.0, 1.0, 2, -2.0, 2.0, [true])
     x = ifelse(flip(0.5), x1, x2)
     p1 = pr(x)
 
-    y = bitblast(DistFix{3, 1}, Normal(0, 1), 4, -1.0, 1.0)
+    y = bitblast(DistFix{3, 1}, Normal(0, 1), 4, -2.0, 2.0)
     p2 = pr(y)
     for i in keys(p1)
         @test p1[i] ≈ p2[i]
     end
+
+    x1 = gaussian_bitblast_sample(DistFix{3, 1}, 0.0, 1.0, 2, -2.0, 2.0, [false, false])
+    p = pr(x1)
+
 end

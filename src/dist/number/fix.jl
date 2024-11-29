@@ -21,7 +21,7 @@ function DistFix{W, F}(b::AbstractVector) where {W,F}
 end
 
 function DistFix{W, F}(x::Float64) where {W,F}
-    mantissa = DistInt{W}(floor(Int, x*2^F))
+    mantissa = DistInt{W}(floor(Int, x*2^float(F)))
     DistFix{W, F}(mantissa)
 end
 
@@ -63,7 +63,7 @@ end
 tobits(x::DistFix) = tobits(x.mantissa)
 
 function frombits(x::DistFix{W, F}, world) where {W,F}
-    frombits(x.mantissa, world)/2^F
+    frombits(x.mantissa, world)/2^float(F)
 end
 
 function expectation(x::DistFix{W, F}; kwargs...) where {W,F}
@@ -125,7 +125,7 @@ function bitblast(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution,
 
     # count bits and pieces
     @assert -(2^(W-F-1)) <= start < stop <= 2^(W-F-1)
-    f_range_bits = log2((stop - start)*2^F)
+    f_range_bits = log2((stop - start)*2^float(F))
     @assert isinteger(f_range_bits) "The number of $(1/2^F)-sized intervals between $start and $stop must be a power of two (not $f_range_bits)."
     @assert ispow2(numpieces) "Number of pieces must be a power of two (not $numpieces)"
     intervals_per_piece = (2^Int(f_range_bits))/numpieces
@@ -140,14 +140,15 @@ function bitblast(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution,
     linear_piece_probs = Vector(undef, numpieces) # prob of each piece if it were linear between end points
 
     for i=1:numpieces
-        firstinter = start + (i-1)*intervals_per_piece/2^F 
-        lastinter = start + (i)*intervals_per_piece/2^F 
+        firstinter = start + (i-1)*intervals_per_piece/2^float(F) 
+        lastinter = start + (i)*intervals_per_piece/2^float(F)
 
         piece_probs[i] = (cdf(dist, lastinter) - cdf(dist, firstinter))
         total_prob += piece_probs[i]
 
-        border_probs[i] = [cdf(dist, firstinter + 1/2^F ) - cdf(dist, firstinter), 
-                        cdf(dist, lastinter) - cdf(dist, lastinter - 1/2^F )]
+        border_probs[i] = [cdf(dist, firstinter + 1/2^float(F) ) - cdf(dist, firstinter), 
+                        cdf(dist, lastinter) - cdf(dist, lastinter - 1/2^float(F) )]
+        @show bits_per_piece
         linear_piece_probs[i] = (border_probs[i][1] + border_probs[i][2])/2 * 2^(bits_per_piece)
     end
 
@@ -172,8 +173,8 @@ function bitblast(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution,
     z = nothing
     for i=1:numpieces
         iszero(linear_piece_probs[i]) && continue
-        firstinterval = DistFix{W,F}(start + (i-1)*2^bits_per_piece/2^F)
-        lastinterval = DistFix{W,F}(start + (i*2^bits_per_piece-1)/2^F)
+        firstinterval = DistFix{W,F}(start + (i-1)*2^bits_per_piece/2^float(F))
+        lastinterval = DistFix{W,F}(start + (i*2^bits_per_piece-1)/2^float(F))
         linear_dist = 
             if isdecreasing[i]
                 (ifelse(slope_flips[i], 
@@ -688,7 +689,6 @@ A modified version of the function bitblast that works with the assumption of lo
 function bitblast_sample(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistribution, 
     numpieces::Int, start::Float64, stop::Float64, offset::Float64, width::Float64) where {W,F}
 
-    @show start, stop, numpieces, offset, width
     # count bits and pieces
     @assert -(2^(W-F-1)) <= start < stop <= 2^(W-F-1)
     f_range_bits = log2((stop - start)*2^F)
