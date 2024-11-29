@@ -175,7 +175,7 @@ end
     # Negative F
     y = bitblast(DistFix{5, -1}, Normal(1, 1), 2, -4.0, 4.0)
     p = pr(y)
-    d = TruncatedNormal(1, 1, -4, 4)
+    d = truncated(Normal(1, 1), -4, 4)
     for i in keys(p)
         @test p[i] ≈ cdf(d, i+2) - cdf(d, i)
     end

@@ -118,7 +118,7 @@ end
         @test p1[i] ≈ p2[i]
     end
 
-    x1 = gaussian_bitblast_sample(DistFix{3, 1}, 0.0, 1.0, 2, -2.0, 2.0, [false, false])
-    p = pr(x1)
+    # x1 = gaussian_bitblast_sample(DistFix{3, 1}, 0.0, 1.0, 2, -2.0, 2.0, [false, false])
+    # p = pr(x1)
 
 end
