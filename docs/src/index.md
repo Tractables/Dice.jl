@@ -4,8 +4,21 @@ This module provides a Julia embedding of Dice probabilistic programming languag
 
 It provides features from the following papers as extensions of Dice.
 
-1. 
+```@contents
+```
 
 ### What is Dice?
 
 Dice is a discrete probabilistic programming language that supports probabilistic programs only over Booleans. 
+
+## API
+
+```@autodocs
+Modules = [Dice]
+Order = [:type, :constant, :function, :macro, :module]
+```
+
+## Index
+
+```@index
+```
