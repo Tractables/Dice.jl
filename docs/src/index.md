@@ -1,15 +1,17 @@
 # Alea.jl
 
-This module provides a Julia embedding of Dice probabilistic programming language, and implementation of further features such as continuous distributions and distributions over integers on top of it.
+This module provides a Julia prototype implementation of Dice probabilistic programming language (see [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice)), and implementation of further features such as distributions over integers, continuous distributions and parameter learning on top of it.
 
 It provides features from the following papers as extensions of Dice.
 
-```@contents
-```
+1. [Scaling Integer Arithmetic in Probabilistic Programs](https://proceedings.mlr.press/v216/cao23b/cao23b.pdf)
+2. HyBit: [Bit Blasting Probabilistic Programs](https://dl.acm.org/doi/10.1145/3656412)
 
-### What is Dice?
+## Installation
 
-Dice is a discrete probabilistic programming language that supports probabilistic programs only over Booleans. 
+Alea.jl can be installed with the Julia package manager along with some additional steps:
+
+
 
 ## API
 
