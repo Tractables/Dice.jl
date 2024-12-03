@@ -2,10 +2,10 @@ include("benchmarks.jl")
 using Infiltrator
 
 GENERATION_PARAMS_LIST = [
-    LangBespokeSTLCGenerator(
-        expr_size=5,
-        typ_size=2,
-    ),
+    # LangBespokeSTLCGenerator(
+    #     expr_size=5,
+    #     typ_size=2,
+    # ),
     LangSiblingDerivedGenerator{STLC}(
         root_ty=Expr.t,
         ty_sizes=[Expr.t=>5, Typ.t=>2],
@@ -26,12 +26,11 @@ GENERATION_PARAMS_LIST = [
 #    ),
 ]
 # LR_LIST = [0.3]
-LR_LIST = [0.001]
-FP_LIST = [0.]
+LR_LIST = [0.01, 0.03, 0.1, 0.3]
 # RESAMPLING_FREQUENCY_LIST = [1,2,5]
 
-SAMPLES_PER_BATCH_LIST = [50]
-EPOCHS_LIST = [3]
+SAMPLES_PER_BATCH_LIST = [200, 2000]
+EPOCHS_LIST = [2000]
 
 # SAMPLES_PER_BATCH_LIST = [nothing]
 BOUND_LIST = [0.]
@@ -55,43 +54,8 @@ println()
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
-            # ApproxSTLCConstructorEntropy() => lr,
-            # SatisfyPropertyLoss{RBT}(MultipleInvariants([
-            #     BookkeepingInvariant(),
-            #     BalanceInvariant(),
-            #     OrderInvariant(),
-            # ])) => lr,
-            # MLELossConfig{RBT}(RBTDepth(), Uniform()) => lr,
-            # SamplingEntropy{STLC}(
-            #     resampling_frequency=resampling_frequency,
-            #     samples_per_batch=samples_per_batch,
-            #     property=property,
-            #     eq=eq,
-            #     failure_penalty=fp,
-            #     forgiveness=forgiveness,
-            #     rand_forgiveness=rand_forgiveness,
-            #     keyf=:identity,
-            # ) => lr,
-            # SamplingEntropy{BST}(
-            #     resampling_frequency=resampling_frequency,
-            #     samples_per_batch=samples_per_batch,
-            #     property=BSTOrderInvariant(),
-            #     eq=eq,
-            #     failure_penalty=fp,
-            # ) => lr,
-            # SamplingEntropy{RBT}(
-            #     resampling_frequency=resampling_frequency,
-            #     samples_per_batch=samples_per_batch,
-            #     property=MultipleInvariants([
-            #         BookkeepingInvariant(),
-            #         BalanceInvariant(),
-            #         OrderInvariant(),
-            #     ]),
-            #     eq=eq,
-            #     failure_penalty=fp,
-            #     forgiveness=forgiveness,
-            #     rand_forgiveness=rand_forgiveness,
-            # ) => lr,
+            FeatureSpecEntropy{STLC}(2,200,wellTyped,typecheck_ft,false) => lr,
+            FeatureSpecEntropy{STLC}(2,200,wellTyped,typecheck_ft,true) => lr,
         ]
         for lr in LR_LIST
         for property in PROPERTY_LIST
@@ -138,7 +102,7 @@ end
 # ]))
 # EPOCHS_LIST = [100]
 
-TOOL_PATH = "examples/qc/benchmarks/tool.jl"
+TOOL_PATH = "qc/benchmarks/tool.jl"
 
 @sync for (p, lcws, epochs, bound) in Base.product(GENERATION_PARAMS_LIST, LOSS_CONFIG_WEIGHT_PAIRS_LIST, EPOCHS_LIST, BOUND_LIST)
     flags = join([s for s in ARGS if startswith(s, "-")], " ")

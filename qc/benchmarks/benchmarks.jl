@@ -396,12 +396,14 @@ struct FeatureSpecEntropy{T} <: LossConfig{T}
     samples_per_batch::Integer
     property::Function
     feature::Function # deterministic Dice.Dist -> Hashable 
+    train_feature::Bool
 end
-function FeatureSpecEntropy{T}(; resampling_frequency, samples_per_batch, property, feature) where T
-    FeatureSpecEntropy{T}(resampling_frequency, samples_per_batch, property, feature)
+function FeatureSpecEntropy{T}(; resampling_frequency, samples_per_batch, property, feature, train_feature) where T
+    FeatureSpecEntropy{T}(resampling_frequency, samples_per_batch, property, feature, train_feature)
 end
 to_subpath(p::FeatureSpecEntropy) = [
     "feature_spec_entropy",
+    "train_feature=$(p.train_feature)",
     "freq=$(p.resampling_frequency)-spb=$(p.samples_per_batch)",
     "prop=$(p.property)",
     "feature=$(p.feature)",
@@ -446,12 +448,14 @@ function produce_loss(rs::RunState, m::FeatureSpecEntropyLossMgr, epoch::Integer
         loss, actual_loss = sum(
             if m.consider(sample)
                 num_meeting += 1
-                empirical_feature_logpr = log(feature_counts[m.p.feature(sample)]/length(samples))
 
-                # TODO: I think this expand_logprs is unnecessary?
-                lpr_eq = Dice.expand_logprs(l, LogPr(prob_equals(m.generation.value, sample)))
-                # [lpr_eq * empirical_feature_logpr, empirical_feature_logpr]
-                [lpr_eq * compute(a, lpr_eq), lpr_eq]
+                lpr_eq = LogPr(prob_equals(m.generation.value, sample))
+                if m.p.train_feature
+                    empirical_feature_logpr = log(feature_counts[m.p.feature(sample)]/length(samples))
+                    [lpr_eq * empirical_feature_logpr, empirical_feature_logpr]
+                else
+                    [lpr_eq * compute(a, lpr_eq), lpr_eq]
+                end
             else
                 [Dice.Constant(0), Dice.Constant(0)]
             end

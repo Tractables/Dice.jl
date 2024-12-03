@@ -8,4 +8,6 @@
 # julia --project qc/benchmarks/tool.jl -f "LangSiblingDerivedGenerator{STLC}(Main.Expr.t,Pair{Type,Integer}[Main.Expr.t=>2,Main.Typ.t=>1],2,3)" "Pair{SpecEntropy{STLC},Float64}[SpecEntropy{STLC}(2,200,wellTyped)=>0.3]" "2" "0.1"
 
 # current command for unif types:
-(cd $DICEREPO && julia --project $TOOL -f "LangSiblingDerivedGenerator{STLC}(Main.Expr.t,Pair{Type,Integer}[Main.Expr.t=>5,Main.Typ.t=>2],2,3)" "Pair{FeatureSpecEntropy{STLC},Float64}[FeatureSpecEntropy{STLC}(2,200,wellTyped,typecheck_ft)=>0.3]" "2000" "0.1")
+(cd $DICEREPO && julia --project $TOOL -f "LangSiblingDerivedGenerator{STLC}(Main.Expr.t,Pair{Type,Integer}[Main.Expr.t=>5,Main.Typ.t=>2],2,3)" "Pair{FeatureSpecEntropy{STLC},Float64}[FeatureSpecEntropy{STLC}(2,200,wellTyped,typecheck_ft,false)=>0.3]" "2000" "0.1")
+
+(cd $DICEREPO && julia --project $TOOL -f "LangSiblingDerivedGenerator{STLC}(Main.Expr.t,Pair{Type,Integer}[Main.Expr.t=>5,Main.Typ.t=>2],2,3)" "Pair{FeatureSpecEntropy{STLC},Float64}[FeatureSpecEntropy{STLC}(2,200,wellTyped,typecheck_ft,true)=>0.3]" "2000" "0.1")
