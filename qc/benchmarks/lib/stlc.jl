@@ -179,12 +179,14 @@ function ty_str(ty, free=true)
     name, children = ty
     name = Symbol(name)
     if name == :TBool
-        "Bool"
+        # "Bool"
+        "B"
     else
         t1, t2 = children
         parens(
             !free,
-            "$(ty_str(t1, false)) -> $(ty_str(t2, true))"
+            # "$(ty_str(t1, false)) -> $(ty_str(t2, true))"
+            "$(ty_str(t1, false))→$(ty_str(t2, true))"
         )
     end
 end

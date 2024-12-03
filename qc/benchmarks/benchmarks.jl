@@ -3,6 +3,7 @@ include("lib/lib.jl")
 
 using Plots
 using Random
+using Infiltrator
 
 ENV["GKSwstype"] = "100" # prevent plots from displaying
 
@@ -76,7 +77,7 @@ function run_benchmark(
         update_curves(vals)
 
         for (i, m) in enumerate(loss_mgrs)
-            if m isa SpecEntropyLossMgr
+            if m isa SpecEntropyLossMgr || m isa FeatureSpecEntropyLossMgr
                 a = ADComputer(Valuation())
                 a.vals = vals
                 al_val = compute(a, m.current_actual_loss)
@@ -111,9 +112,43 @@ function run_benchmark(
     end
 
     for (al_curve, loss_config, m) in zip(al_curves, loss_configs, loss_mgrs)
-        if m isa SpecEntropyLossMgr
+        if m isa SpecEntropyLossMgr || m isa FeatureSpecEntropyLossMgr
             save_learning_curve(out_dir, al_curve, "actual_loss_" * join(to_subpath(loss_config), "_"))
             save_learning_curve(out_dir, m.num_meeting, "meets_invariant_" * join(to_subpath(loss_config), "_"))
+        end
+
+        if m isa FeatureSpecEntropyLossMgr
+            d = []
+            for (k, cts) in m.feature_counts_history
+                ctor, args = k
+                if ctor == :Some
+                    ty, = args
+                    push!(d, (ty_str(ty), cts))
+                else 
+                    ctor = :None
+                    push!(d, ("not well-typed", cts))
+                end
+            end
+            sort!(d, by=kv -> -sum(kv[2]))
+
+            function save_feature_cts(filename, d)
+                open(filename, "w") do file
+                    println(file, join([
+                        k for (k, cts) in d
+                    ], "\t"))
+                    for i in 1:length(first(d)[2])
+                        println(file, join([
+                            cts[i] for (k, cts) in d
+                        ], "\t"))
+                    end
+                end
+                println_flush(rs.io, "Saved to $(filename)")
+                println_flush(rs.io)
+            end
+
+            filename = joinpath(rs.out_dir, "feature_dist_" * join(to_subpath(loss_config), "_"))
+            save_feature_cts(filename, d)
+            mk_areaplot2(filename, has_header=true, xlabel="Sampling #", ylabel="Counts")
         end
     end
 end
@@ -123,39 +158,36 @@ function generation_params_emit_stats(rs::RunState, generation_params, s)
     println_flush(rs.io)
 end
 
-struct SimpleLossMgr <: LossMgr
-    loss::ADNode
-    val
-    function SimpleLossMgr(loss::ADNode, val)
-        # TODO: share an expander?
-        l = Dice.LogPrExpander(WMC(BDDCompiler(Dice.bool_roots([loss]))))
-        loss = Dice.expand_logprs(l, loss)
-        new(loss, val)
-    end
-end
-function produce_loss(rs::RunState, m::SimpleLossMgr, epoch::Integer)
-    m.loss
-end
+######################################################################
+# Shared utils (to_dist, areaplots), stuff that belongs elsewhere
+######################################################################
 
-
-struct SpecEntropy{T} <: LossConfig{T}
-    resampling_frequency::Integer
-    samples_per_batch::Integer
-    property::Function
+alwaysTrue(t) = true
+isRBT(t) = satisfies_bookkeeping_invariant(t) && satisfies_balance_invariant(t) && satisfies_order_invariant(t)
+isBST(t) = satisfies_order_invariant(t)
+function wellTyped(e::OptExpr.t)
+    @assert isdeterministic(e)
+    @match e [
+        Some(e) -> (@match typecheck(e) [
+            Some(_) -> true,
+            None() -> false,
+        ]),
+        None() -> false,
+    ]
 end
-
-mutable struct SpecEntropyLossMgr <: LossMgr
-    p::SpecEntropy
-    generation
-    consider
-    num_meeting
-    current_loss::Union{Nothing,ADNode}
-    current_actual_loss::Union{Nothing,ADNode}
-    current_samples
-    SpecEntropyLossMgr(p, val, consider) = new(p, val, consider, [], nothing, nothing, nothing)
+function wellTyped(e::Expr.t)
+    @assert isdeterministic(e)
+    @match typecheck(e) [
+        Some(_) -> true,
+        None() -> false,
+    ]
 end
 
-using Plots
+function typecheck_ft(e::Expr.t)
+    @assert isdeterministic(e)
+    Dice.frombits(typecheck(e), Dict())
+end
+
 
 function save_areaplot(path, v)
     mat = mapreduce(permutedims, vcat, v)
@@ -186,6 +218,52 @@ function mk_areaplot(path)
     end
 end
 
+function save_areaplot2(path, header, v; xlabel, ylabel)
+    mat = mapreduce(permutedims, vcat, v)
+    torow(v) = reshape(v, 1, length(v))
+
+    labels = if isnothing(header)
+        torow(["$(i)" for i in 0:size(mat, 2)])
+    else
+        # header = [ if length(h) > 10 h[:10] * "..." else h end
+        #            for h in header ]
+        torow(header)
+    end
+
+    fontsize=8
+    areaplot(
+        mat,
+        labels=labels,
+        palette=cgrad(:thermal),
+        tickfontsize=fontsize,
+        legendfontsize=fontsize,
+        fontfamily="Palatino Roman",
+        fontsize=fontsize,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        xlabelfontsize=fontsize,
+        ylabelfontsize=fontsize,
+        legend=:outertopright,
+    )
+    savefig("$(path).png")
+    savefig("$(path).svg")
+    # savefig("$(path).tikz")
+    # savefig("$(path).tex")
+end
+
+function mk_areaplot2(path; xlabel, ylabel, has_header)
+    open(path, "r") do f
+        header, lines = if has_header
+            line, lines... = readlines(f)
+            split(line,"\t"), lines
+        else
+            nothing, readlines(f)
+        end
+        v = [[parse(Float64, s) for s in split(line,"\t")] for line in lines]
+        save_areaplot2(path, header, v; xlabel, ylabel)
+    end
+end
+
 function to_dist(v)
     if v isa Bool
         v
@@ -202,6 +280,76 @@ function to_dist(v)
 end
 
 clear_file(path) = open(path, "w") do f end
+
+function save_learning_curve(out_dir, learning_curve, name)
+    open(joinpath(out_dir, "$(name).csv"), "w") do file
+        xs = 0:length(learning_curve)-1
+        for (epoch, logpr) in zip(xs, learning_curve)
+            println(file, "$(epoch)\t$(logpr)")
+        end
+        plot(xs, learning_curve)
+        savefig(joinpath(out_dir, "$(name).svg"))
+    end
+end
+
+
+######################################################################
+# Simple loss mgr
+######################################################################
+
+struct SimpleLossMgr <: LossMgr
+    loss::ADNode
+    val
+    function SimpleLossMgr(loss::ADNode, val)
+        # TODO: share an expander?
+        l = Dice.LogPrExpander(WMC(BDDCompiler(Dice.bool_roots([loss]))))
+        loss = Dice.expand_logprs(l, loss)
+        new(loss, val)
+    end
+end
+function produce_loss(rs::RunState, m::SimpleLossMgr, epoch::Integer)
+    m.loss
+end
+
+######################################################################
+# SpecEntropy
+######################################################################
+
+struct SpecEntropy{T} <: LossConfig{T}
+    resampling_frequency::Integer
+    samples_per_batch::Integer
+    property::Function
+end
+function SpecEntropy{T}(; resampling_frequency, samples_per_batch, property) where T
+    SpecEntropy{T}(resampling_frequency, samples_per_batch, property)
+end
+to_subpath(p::SpecEntropy) = [
+    "spec_entropy",
+    "freq=$(p.resampling_frequency)-spb=$(p.samples_per_batch)",
+    "prop=$(p.property)",
+]
+
+mutable struct SpecEntropyLossMgr <: LossMgr
+    p::SpecEntropy
+    generation
+    consider
+    num_meeting
+    current_loss::Union{Nothing,ADNode}
+    current_actual_loss::Union{Nothing,ADNode}
+    current_samples
+    SpecEntropyLossMgr(p, val, consider) = new(p, val, consider, [], nothing, nothing, nothing)
+end
+
+function create_loss_manager(::RunState, p::SpecEntropy{T}, g::Generation) where T
+    function consider(sample)
+        c = p.property(sample)
+        @assert c isa Bool
+        c
+    end
+    SpecEntropyLossMgr(p, g, consider)
+end
+
+
 function produce_loss(rs::RunState, m::SpecEntropyLossMgr, epoch::Integer)
     if (epoch - 1) % m.p.resampling_frequency == 0
         sampler = sample_from_lang(rs, m.generation.prog)
@@ -239,16 +387,99 @@ function produce_loss(rs::RunState, m::SpecEntropyLossMgr, epoch::Integer)
     m.current_loss
 end
 
-function save_learning_curve(out_dir, learning_curve, name)
-    open(joinpath(out_dir, "$(name).csv"), "w") do file
-        xs = 0:length(learning_curve)-1
-        for (epoch, logpr) in zip(xs, learning_curve)
-            println(file, "$(epoch)\t$(logpr)")
-        end
-        plot(xs, learning_curve)
-        savefig(joinpath(out_dir, "$(name).svg"))
-    end
+######################################################################
+# FeatureSpecEntropy
+######################################################################
+
+struct FeatureSpecEntropy{T} <: LossConfig{T}
+    resampling_frequency::Integer
+    samples_per_batch::Integer
+    property::Function
+    feature::Function # deterministic Dice.Dist -> Hashable 
 end
+function FeatureSpecEntropy{T}(; resampling_frequency, samples_per_batch, property, feature) where T
+    FeatureSpecEntropy{T}(resampling_frequency, samples_per_batch, property, feature)
+end
+to_subpath(p::FeatureSpecEntropy) = [
+    "feature_spec_entropy",
+    "freq=$(p.resampling_frequency)-spb=$(p.samples_per_batch)",
+    "prop=$(p.property)",
+    "feature=$(p.feature)",
+]
+
+mutable struct FeatureSpecEntropyLossMgr <: LossMgr
+    p::FeatureSpecEntropy
+    generation
+    consider
+    num_meeting
+    current_loss::Union{Nothing,ADNode}
+    current_actual_loss::Union{Nothing,ADNode}
+    current_samples
+    feature_counts_history
+    num_resamples
+    FeatureSpecEntropyLossMgr(p, val, consider) = new(p, val, consider, [], nothing, nothing, nothing, Dict(), 0)
+end
+
+function create_loss_manager(::RunState, p::FeatureSpecEntropy{T}, g::Generation) where T
+    function consider(sample)
+        c = p.property(sample)
+        @assert c isa Bool
+        c
+    end
+    FeatureSpecEntropyLossMgr(p, g, consider)
+end
+
+function produce_loss(rs::RunState, m::FeatureSpecEntropyLossMgr, epoch::Integer)
+    if (epoch - 1) % m.p.resampling_frequency == 0
+        sampler = sample_from_lang(rs, m.generation.prog)
+        samples = [to_dist(sampler()) for _ in 1:m.p.samples_per_batch]
+
+        feature_counts = counter(map(m.p.feature, samples))
+
+        l = Dice.LogPrExpander(WMC(BDDCompiler([
+            prob_equals(m.generation.value,sample)
+            for sample in samples
+        ])))
+
+        num_meeting = 0
+        loss, actual_loss = sum(
+            if m.consider(sample)
+                num_meeting += 1
+                empirical_feature_pr = feature_counts[m.p.feature(sample)]/length(samples)
+
+                # TODO: I think this expand_logprs is unnecessary?
+                lpr_eq = Dice.expand_logprs(l, LogPr(prob_equals(m.generation.value, sample)))
+                [lpr_eq * empirical_feature_pr, empirical_feature_pr]
+            else
+                [Dice.Constant(0), Dice.Constant(0)]
+            end
+            for sample in samples
+        )
+        push!(m.num_meeting, num_meeting / length(samples))
+
+        loss = Dice.expand_logprs(l, loss) / length(samples)
+        m.current_loss = loss
+        m.current_actual_loss = actual_loss
+        m.current_samples = samples
+
+        for feature in keys(feature_counts)
+            if !haskey(m.feature_counts_history, feature)
+                m.feature_counts_history[feature] = zeros(Int, m.num_resamples)
+            end
+        end
+        for feature in keys(m.feature_counts_history)
+            push!(m.feature_counts_history[feature], feature_counts[feature])
+        end
+        m.num_resamples += 1
+    end
+
+    @assert !isnothing(m.current_loss)
+    m.current_loss
+end
+
+##################################
+# Flips
+##################################
 
 struct Flips{W} <: GenerationParams{Bools{W}} end
 function to_subpath(::Flips)
@@ -351,50 +582,6 @@ function create_loss_manager(rs::RunState, p::SatisfyPropertyLoss, generation)
     println(rs.io)
 
     SimpleLossMgr(loss, nothing)
-end
-
-alwaysTrue(t) = true
-isRBT(t) = satisfies_bookkeeping_invariant(t) && satisfies_balance_invariant(t) && satisfies_order_invariant(t)
-isBST(t) = satisfies_order_invariant(t)
-function wellTyped(e::OptExpr.t)
-    @assert isdeterministic(e)
-    @match e [
-        Some(e) -> (@match typecheck(e) [
-            Some(_) -> true,
-            None() -> false,
-        ]),
-        None() -> false,
-    ]
-end
-function wellTyped(e::Expr.t)
-    @assert isdeterministic(e)
-    @match typecheck(e) [
-        Some(_) -> true,
-        None() -> false,
-    ]
-end
-
-
-##################################
-# Sampling STLC entropy loss
-##################################
-
-function SpecEntropy{T}(; resampling_frequency, samples_per_batch, property) where T
-    SpecEntropy{T}(resampling_frequency, samples_per_batch, property)
-end
-
-to_subpath(p::SpecEntropy) = [
-    "spec_entropy",
-    "freq=$(p.resampling_frequency)-spb=$(p.samples_per_batch)",
-    "prop=$(p.property)",
-]
-function create_loss_manager(::RunState, p::SpecEntropy{T}, g::Generation) where T
-    function consider(sample)
-        c = p.property(sample)
-        @assert c isa Bool
-        c
-    end
-    SpecEntropyLossMgr(p, g, consider)
 end
 
 ##################################
