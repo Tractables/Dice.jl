@@ -368,7 +368,7 @@ function produce_loss(rs::RunState, m::SpecEntropyLossMgr, epoch::Integer)
         loss, actual_loss = sum(
             if m.consider(sample)
                 num_meeting += 1
-                lpr_eq = Dice.expand_logprs(l, LogPr(prob_equals(m.generation.value, sample)))
+                lpr_eq = LogPr(prob_equals(m.generation.value, sample))
                 [lpr_eq * compute(a, lpr_eq), lpr_eq]
             else
                 [Dice.Constant(0), Dice.Constant(0)]
