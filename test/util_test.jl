@@ -105,7 +105,6 @@ end
         """
 end
 
-# TODO: test for negative F
 @testset "gaussian_bitblast_sample" begin
     x1 = gaussian_bitblast_sample(DistFix{3, 1}, 0.0, 1.0, 2, -2.0, 2.0, [false])
     x2 = gaussian_bitblast_sample(DistFix{3, 1}, 0.0, 1.0, 2, -2.0, 2.0, [true])
@@ -118,7 +117,8 @@ end
         @test p1[i] ≈ p2[i]
     end
 
-    # x1 = gaussian_bitblast_sample(DistFix{3, 1}, 0.0, 1.0, 2, -2.0, 2.0, [false, false])
-    # p = pr(x1)
-
+    x1 = gaussian_bitblast_sample(DistFix{3, 1}, 0.0, 1.0, 2, -2.0, 2.0, [false, false])
+    p = pr(x1)
+    d = truncated(Normal(0.0, 1.0), -2.0, 2.0)
+    @test (cdf(d, -1.5) - cdf(d, -2.0))/(cdf(d, 0.5) - cdf(d, 0.0)) ≈ p[-2.0]/p[0.0]
 end

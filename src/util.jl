@@ -127,7 +127,7 @@ end
 """
     gaussian_bitblast_sample(::Type{DistFix{W, F}}, mean::Float64, std::Float64, numpieces::Int64, start::Float64, stop::Float64, lsb::Vector{Bool})
 
-The functions takes as input lower order bits for a gaussian distribution and returns a bitblasted gaussian.
+The functions takes as input lower order bits for a gaussian distribution and returns a bitblasted gaussian. The semantics of this function can be understood as a bitblasted gaussian conditioned on the lower order bits.
 """
 function gaussian_bitblast_sample(::Type{DistFix{W, F}}, mean::Float64, std::Float64, numpieces::Int64, start::Float64, stop::Float64, lsb::Vector{Bool}) where {W, F}
     distribution = Normal(mean, std)
@@ -141,6 +141,6 @@ function gaussian_bitblast_sample(::Type{DistFix{W, F}}, mean::Float64, std::Flo
         end
     end
 
-    sub_gaussian = bitblast_sample(DFiP, distribution, numpieces, start, stop, offset, width)
+    sub_gaussian = bitblast_sample(DFiP, distribution, numpieces, start, stop, offset=offset, width=width)
     DistFix{W, F}([sub_gaussian.mantissa.number.bits..., lsb...])
 end

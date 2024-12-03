@@ -486,7 +486,7 @@ function bitblast_sample(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistrib
 
     # count bits and pieces
     @assert -(2^(W-F-1)) <= start < stop <= 2^(W-F-1)
-    f_range_bits = log2((stop - start)*2^F)
+    f_range_bits = log2((stop - start)*2.0^F)
     @assert isinteger(f_range_bits) "The number of $(1/2^F)-sized intervals between $start and $stop must be a power of two (not $f_range_bits)."
     @assert ispow2(numpieces) "Number of pieces must be a power of two (not $numpieces)"
     intervals_per_piece = (2^Int(f_range_bits))/numpieces
@@ -502,18 +502,18 @@ function bitblast_sample(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistrib
     linear_piece_probs = Vector(undef, numpieces) # prob of each piece if it were linear between end points
 
     for i=1:numpieces
-        firstinter = start + (i-1)*intervals_per_piece/2^F 
-        lastinter = start + (i)*intervals_per_piece/2^F 
+        firstinter = start + (i-1)*intervals_per_piece/2.0^F 
+        lastinter = start + (i)*intervals_per_piece/2.0^F 
 
         # Warning: A potential source of terrible runtime
         piece_probs[i] = 0
         for j=1:intervals_per_piece
-            piece_probs[i] += cdf(dist, firstinter + offset + width + (j-1)/2^F) - cdf(dist, firstinter + offset + (j-1)/2^F)
+            piece_probs[i] += cdf(dist, firstinter + offset + width + (j-1)/2.0^F) - cdf(dist, firstinter + offset + (j-1)/2.0^F)
         end
         total_prob += piece_probs[i]
 
         border_probs[i] = [cdf(dist, firstinter + offset+width) - cdf(dist, firstinter + offset), 
-                                cdf(dist, lastinter -1/2^F + offset+width) - cdf(dist, lastinter - 1/2^F + offset)]
+                                cdf(dist, lastinter -1/2.0^F + offset+width) - cdf(dist, lastinter - 1/2.0^F + offset)]
         linear_piece_probs[i] = (border_probs[i][1] + border_probs[i][2])/2 * 2^(bits_per_piece)
     end
 
@@ -542,8 +542,8 @@ function bitblast_sample(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistrib
 
     for i=1:numpieces
         iszero(linear_piece_probs[i]) && continue
-        firstinterval = DistFix{W,F}(start + (i-1)*2^bits_per_piece/2^F)
-        lastinterval = DistFix{W,F}(start + (i*2^bits_per_piece-1)/2^F)
+        firstinterval = DistFix{W,F}(start + (i-1)*2^bits_per_piece/2.0^F)
+        lastinterval = DistFix{W,F}(start + (i*2^bits_per_piece-1)/2.0^F)
         linear_dist = 
             if isdecreasing[i]
                 (ifelse(slope_flips[i], 
