@@ -432,6 +432,7 @@ end
 function produce_loss(rs::RunState, m::FeatureSpecEntropyLossMgr, epoch::Integer)
     if (epoch - 1) % m.p.resampling_frequency == 0
         sampler = sample_from_lang(rs, m.generation.prog)
+        a = ADComputer(rs.var_vals)
         samples = [to_dist(sampler()) for _ in 1:m.p.samples_per_batch]
 
         feature_counts = counter(map(m.p.feature, samples))
@@ -449,7 +450,8 @@ function produce_loss(rs::RunState, m::FeatureSpecEntropyLossMgr, epoch::Integer
 
                 # TODO: I think this expand_logprs is unnecessary?
                 lpr_eq = Dice.expand_logprs(l, LogPr(prob_equals(m.generation.value, sample)))
-                [lpr_eq * empirical_feature_logpr, empirical_feature_logpr]
+                # [lpr_eq * empirical_feature_logpr, empirical_feature_logpr]
+                [lpr_eq * compute(a, lpr_eq), lpr_eq]
             else
                 [Dice.Constant(0), Dice.Constant(0)]
             end

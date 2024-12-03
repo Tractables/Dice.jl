@@ -1,6 +1,7 @@
 include("benchmarks.jl")
 
 TAG = "v103_unif_type"
+TAG = "v104_unif_type_ACTUALLY_SPEC_ENT"
 OUT_TOP_DIR = "../tuning-output"
 
 ## PARSE ARGS
