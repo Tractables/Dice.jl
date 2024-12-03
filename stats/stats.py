@@ -58,8 +58,10 @@ ORDER: List[str] = { # Put rows in this order and also assert that these generat
         # "SimplerACEGenerator",
         # class: type-based
         # "LSDThinGenerator",
-        "SLSDThinEqWellLR30Bound10Generator",
-        "STLC10MGenerator",
+        # "SLSDThinEqWellLR30Bound10Generator",
+        # "STLC10MGenerator",
+        "LSDSTLCFastGenerator",
+        "FastACEGenerator"
     ] 
     # + [
     #     f"{template}May{eq}Bound{bound}Generator"
@@ -69,24 +71,17 @@ ORDER: List[str] = { # Put rows in this order and also assert that these generat
     # ]
     ,
     "RBT": [
-        # "SpecGenerator",
-        "RLSDThinSmallGenerator",
-        "SpecBoundGenerator",
-        "RLSDThinEqLR30Epochs2000Bound10SPB200Generator",
-        "RLSDThinEqValidLR30Epochs2000Bound10SPB200Generator",
-
-        # "TypeBasedGenerator",
-        # "LSDEqGenerator",
-        # "LSDExceptNumsGenerator",
-        # "LSDEq2Generator",
-        # "LSDExcept2Generator",
-        # "LSDGenerator",
+        # "RLSDThinSmallGenerator",
+        # "RLSDThinEqLR30Epochs2000Bound10SPB200Generator",
+        # "RLSDThinEqValidLR30Epochs2000Bound10SPB200Generator",
+        "LSDRBTFastGenerator"
     ],
 
     "BST": [
-        "BSmallInitGenerator",
-        "BSmallTrainedGenerator",
+        # "BSmallInitGenerator",
+        # "BSmallTrainedGenerator",
         # "TypeBasedGenerator",
+        "LSDBSTFastGenerator"
     ]
 }[WORKLOAD]
 
@@ -118,7 +113,7 @@ WORKLOADS = {
                 | (App e1 e2) => 1 + num_apps e1 + num_apps e2
                 | _ => 0
                 end.""",
-        is_failing_generator=lambda generator: "Bespoke" in generator or "SimplerACE" in generator,
+        is_failing_generator=lambda generator: "Bespoke" in generator or "ACE" in generator,
         unique_extra="""Inductive Shape :=
 | V_ : Shape
 | B_ : Shape
