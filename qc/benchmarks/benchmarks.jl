@@ -445,11 +445,11 @@ function produce_loss(rs::RunState, m::FeatureSpecEntropyLossMgr, epoch::Integer
         loss, actual_loss = sum(
             if m.consider(sample)
                 num_meeting += 1
-                empirical_feature_pr = feature_counts[m.p.feature(sample)]/length(samples)
+                empirical_feature_logpr = log(feature_counts[m.p.feature(sample)]/length(samples))
 
                 # TODO: I think this expand_logprs is unnecessary?
                 lpr_eq = Dice.expand_logprs(l, LogPr(prob_equals(m.generation.value, sample)))
-                [lpr_eq * empirical_feature_pr, empirical_feature_pr]
+                [lpr_eq * empirical_feature_logpr, empirical_feature_logpr]
             else
                 [Dice.Constant(0), Dice.Constant(0)]
             end
