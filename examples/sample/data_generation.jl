@@ -24,8 +24,11 @@ end
 function generate_linear(n, p)
     X = rand(Normal(0, 1), n, p)
 
-    dt = fit(ZScoreTransform, X, dims=1, center=true, scale=true)
-    X_new = StatsBase.transform(dt, X)
+    X_new = X
+    if n >= 2
+        dt = fit(ZScoreTransform, X, dims=1, center=true, scale=true)
+        X_new = StatsBase.transform(dt, X)
+    end
 
     beta = [2 for i in 1:p]
 

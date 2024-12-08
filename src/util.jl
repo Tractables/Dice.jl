@@ -136,9 +136,7 @@ function gaussian_bitblast_sample(::Type{DistFix{W, F}}, mean::Float64, std::Flo
     width = 1/2^F
     offset = 0.0
     for i in 1:nbits
-        if lsb[i]
-            offset += 1/2^(F-nbits+i)
-        end
+        offset += lsb[i]/2^float(F-nbits+i)
     end
 
     sub_gaussian = bitblast_sample(DFiP, distribution, numpieces, start, stop, offset=offset, width=width)

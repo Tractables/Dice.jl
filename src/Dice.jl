@@ -38,9 +38,9 @@ include("inference/inference.jl")
 include("autodiff_pr/train.jl")
 include("autodiff_pr/losses.jl")
 include("analysis/analysis.jl")
+include("util.jl")
 include("dsl.jl")
 include("plot.jl")
-include("util.jl")
 
 # add precompile statements here - keep it lightweight for main features
 @compile_workload begin
