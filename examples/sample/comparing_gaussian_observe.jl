@@ -40,6 +40,23 @@ end
 @show num_nodes(returnvalue(code))
 @show num_nodes(allobservations(code))
 
+pr(code)
+
+code2 = @dice begin
+    for i in 1:n
+        error = bitblast_linear(DFiP, Normal(0.0, 1.0), 2^(4 + bits), -8.0, 8.0)
+        # error = gaussian_bitblast_sample(DFiP, 0.0, 1.0, Int(pieces/2), -8.0, 8.0, s[i+p, :])
+        linear = reduce(+, map(*, DFiP.(X[i, :]), ws))
+        observe(prob_equals(DFiP(y[i]) - linear, error))         
+    end
+    ws[1]
+end
+
+@show num_nodes(returnvalue(code2))
+@show num_nodes(allobservations(code2))
+
+pr(code2)
+
 
 function squarex(x::DistFix{W, F}) where {W, F}
     square_coeff = Matrix(undef, W, W)
@@ -57,17 +74,25 @@ function squarex(x::DistFix{W, F}) where {W, F}
     square_coeff
 end
 
-W = 9+bits
-F = bits
-code2 = @dice begin
+function fixed_abs(x::DistFix{W, F}) where {W, F}
+    unsigned_abs(x.mantissa)
+end
+
+
+code3 = @dice begin
+    a = Vector(undef, n)
     for i in 1:n
         linear = DFiP(y[i]) - reduce(+, map(*, DFiP.(X[i, :]), ws))
-        squared_x = squarex(linear)
+        absolute = DistFix{9 + bits, bits}(fixed_abs(linear).bits)
+        squared_x = squarex(absolute)
+        a[i] = squared_x[5, 5]
         for i in 1:9+bits
             for j in 1:i
                 i_hat = 2.0^(9-i)
                 j_hat = 2.0^(9-j)
+                
                 flip_param = exp(-i_hat * j_hat/(2^(i == j)))
+                @show flip_param
                 # if squared_x[i, j] observe(flip(flip_param)) else true end
                 # squared_x[i, j] && observe(flip(flip_param))
                 observe(!squared_x[i, j] | (squared_x[i, j] & flip(flip_param)))
@@ -75,18 +100,19 @@ code2 = @dice begin
         end
     end
     ws[1]
+    # a[2]
 end
 
-@show num_nodes(returnvalue(code2))
-@show num_nodes(allobservations(code2))
+@show num_nodes(returnvalue(code3))
+@show num_nodes(allobservations(code3))
 
-pr(code2)
+pr(code3)
 
-code3 = @dice begin
+code4 = @dice begin
     for i in 1:n
         linear = DFiP(y[i]) - reduce(+, map(*, DFiP.(X[i, :]), ws))
-        squared_x = linear * linear
-        for i in 1:length(squared_x.mantissa.number.bits)
+        squared_x = (linear * linear).mantissa.number.bits
+        for i in 1:length(squared_x)
             flip_param = exp(-2.0^(9-i-1))
             # flip_param = flip_param/(1+flip_param)
             observe(!squared_x[i] | (squared_x[i] & flip(flip_param)))
@@ -97,8 +123,10 @@ code3 = @dice begin
     ws[1]
 end
 
-@show num_nodes(returnvalue(code3))
-@show num_nodes(allobservations(code3))
+@show num_nodes(returnvalue(code4))
+@show num_nodes(allobservations(code4))
+
+pr(code4)
 
 
 

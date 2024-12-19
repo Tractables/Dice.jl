@@ -79,36 +79,3 @@ end
 pr(code3)
 
 num_nodes(allobservations(code3))
-
-
-
-
-
-squared_x = x * x
-bits = squared_x.mantissa.number.bits
-res = true
-for (i, j) in enumerate(bits)
-    print(i, j)
-    @show W-F+i-1
-    flip_param = 1/(1 + exp(2^(W-F+i-1)))
-    res = res & (prob_equals(j, flip(flip_param)))         
-end
-
-pr(res)
-
-W = 5
-F = 3
-DFiP = DistFix{5, 3}
-
-
-mu = flip(0.5)
-code = @dice begin 
-            if mu
-                dummy_gauss_observe3(DFiP(1.0).mantissa.number.bits)
-            else
-                dummy_gauss_observe3(DFiP(1.25).mantissa.number.bits)
-            end
-        mu
-        end
-    
-pr(code)
