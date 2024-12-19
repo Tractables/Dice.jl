@@ -61,6 +61,11 @@ function gaussian_observe_enumerate(::Type{DistFix{W, F}}, data, mu, sigma) wher
     end
 end
 
+function gaussian_observe_density(x::DistFix{W, F}) where {W, F}
+    
+
+end
+
 #We might want to inline this to interleave bits of p and new uniform
 function parametrised_flip(p::DistFix{W, F}) where W where F
     invalid = (p < DistFix{W, F}(0.0)) | (DistFix{W, F}(1.0) < p)

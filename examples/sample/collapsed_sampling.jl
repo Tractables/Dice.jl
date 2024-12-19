@@ -19,6 +19,9 @@ function linear_regression_sample(bits, n, p, X, y, s::Matrix{Bool})
             ws[1]
     end
 
+    @show num_nodes(returnvalue(code))
+    @show num_nodes(allobservations(code))
+
     inside_expectation = try expectation(code)
                          catch 
                             1.0
