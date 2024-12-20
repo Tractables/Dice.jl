@@ -19,7 +19,7 @@ mutable struct Flip <: Dist{Bool}
         if prob isa Real
             @assert !isone(prob) "Use `true` for deterministic flips"
             @assert !iszero(prob) "Use `false` for deterministic flips"
-            @assert isnan(prob) || 0 < prob < 1 "Probabilities are between 0 and 1 (or undefined as NaN)"
+            @assert isnan(prob) || 0 < prob < 1 "Probabilities are between 0 and 1 (or undefined as NaN), not $prob"
         end
         global global_flip_id
         new(global_flip_id += 1, prob, name)
