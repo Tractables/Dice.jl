@@ -356,6 +356,7 @@ function bitblast_linear(::Type{DistFix{W,F}}, dist::ContinuousUnivariateDistrib
     f_range_bits = log2((stop - start)*2^float(F))
     @assert isinteger(f_range_bits) "The number of $(1/2^F)-sized intervals between $start and $stop must be a power of two (not $f_range_bits)."
     @assert ispow2(numpieces) "Number of pieces must be a power of two (not $numpieces)"
+    @assert numpieces < 4096 "Number of pieces is higher than 4096: might cause StackOverflowError"
     intervals_per_piece = (2^Int(f_range_bits))/numpieces
     bits_per_piece = Int(log2(intervals_per_piece))
 

@@ -285,6 +285,16 @@ bitwidth(::DistUInt{W}) where W = W
 
 function prob_equals(x::DistUInt{W}, y::DistUInt{W}) where W
     mapreduce(prob_equals, &, x.bits, y.bits)
+    result = vcat(map(prob_equals, x.bits, y.bits), [true for i in 1:2^ceil(log2(W)) - W])
+    
+    while length(result) > 1
+        temp = Vector(undef, Int(length(result)/2))
+        for i in 1:2:Int(length(result))
+            temp[Int((i+1)/2)] = result[i] & result[i+1]
+        end
+        result = temp
+    end
+    result[1]
 end
 
 function Base.isless(x::DistUInt{W}, y::DistUInt{W}) where W

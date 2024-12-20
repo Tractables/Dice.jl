@@ -10,11 +10,13 @@ using DelimitedFiles
 
 naive_observe = Vector(undef, 20)
 
+
+
 for i in 1:20
     W = 4 + i
     F = i
     DFiP = DistFix{W, F}
-    x = uniform(DFiP, i+4)
+    x = DFiP(vcat([flip(0.5), flip(0.5)], [true for i in 1:i+2]))
 
     normal = bitblast(DFiP, Normal(0, 1), 8, -8.0, 8.0)
 
@@ -52,7 +54,7 @@ for i in 1:20
     W = 4 + i
     F = i
     DFiP = DistFix{W, F}
-    x = uniform(DFiP, i+4)
+    x = DFiP(vcat([flip(0.5), flip(0.5)], [true for i in 1:i+2]))
     code2 = @dice begin
         squared_x = x*x
         for i in 1:length(squared_x.mantissa.number.bits)
@@ -71,11 +73,12 @@ end
 
 square_trick = Vector(undef, 20)
 
-for i in 10:10
+for i in 1:20
+    @show i
     W = 4 + i
     F = i
     DFiP = DistFix{W, F}
-    x = uniform(DFiP, i+4)
+    x = DFiP(vcat([flip(0.5), flip(0.5)], [true for i in 1:i+2]))
     code3 = @dice begin
                 squared_x = squarex(x)
                 for i in 1:W
@@ -106,7 +109,7 @@ using Plots
 naive_observe = readdlm("naive_observe.txt")
 actual_square = readdlm("actual_square.txt")
 square_trick = readdlm("square_trick.txt")
-plot(naive_observe, marker=:dot, labels = "prob_equals", xlabel="# bits", ylabel="# BDD Nodes", yaxis=:log, legend=:topleft)
-plot!(actual_square, marker=:dot, labels = "x*x")
-plot!(square_trick, marker=:dot, labels = "square_matrix")
+plot(naive_observe[18:end], marker=:dot, labels = "prob_equals", xlabel="# bits", ylabel="# BDD Nodes", legend=:topleft)
+plot!(actual_square[21:end], marker=:dot, labels = "x*x")
+plot!(square_trick[19:end], marker=:dot, labels = "square_matrix")
 savefig("square_tricks.png")
