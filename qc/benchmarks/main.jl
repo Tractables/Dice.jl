@@ -66,19 +66,19 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     ),
 ]))
 
-LOSS_CONFIG_WEIGHT_PAIRS_LIST = begin
-    lr = 0.03
-    function workload_of(::Type{<:GenerationParams{T}}) where T
-        T
-    end
-    wl = workload_of(typeof(GENERATION_PARAMS_LIST[1]))
-    [
-        [MLELossConfig{wl}(depth, Linear()) => lr],
-        [MLELossConfig{wl}(depth, Uniform()) => lr],
-        [MLELossConfig{wl}(size, Linear()) => lr],
-        [MLELossConfig{wl}(size, Uniform()) => lr],
-    ]
-end
+# LOSS_CONFIG_WEIGHT_PAIRS_LIST = begin
+#     lr = 0.03
+#     function workload_of(::Type{<:GenerationParams{T}}) where T
+#         T
+#     end
+#     wl = workload_of(typeof(GENERATION_PARAMS_LIST[1]))
+#     [
+#         [MLELossConfig{wl}(depth, Linear()) => lr],
+#         [MLELossConfig{wl}(depth, Uniform()) => lr],
+#         [MLELossConfig{wl}(size, Linear()) => lr],
+#         [MLELossConfig{wl}(size, Uniform()) => lr],
+#     ]
+# end
 
 # N = 3
 # GENERATION_PARAMS_LIST = [Flips{N}()]
