@@ -4,6 +4,7 @@ TAG = "v103_unif_type"
 TAG = "v104_unif_type_ACTUALLY_SPEC_ENT"
 TAG = "v105_train_feature_param"
 TAG = "v106_stlce_be_metrics"
+TAG = "v107_unif_ty_attempts"
 OUT_TOP_DIR = "../tuning-output"
 
 ## PARSE ARGS
