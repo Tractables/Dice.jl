@@ -3,6 +3,7 @@ include("benchmarks.jl")
 TAG = "v103_unif_type"
 TAG = "v104_unif_type_ACTUALLY_SPEC_ENT"
 TAG = "v105_train_feature_param"
+TAG = "v106_stlce_be_metrics"
 OUT_TOP_DIR = "../tuning-output"
 
 ## PARSE ARGS
@@ -11,7 +12,8 @@ if isempty(ARGS)
     as = ["-f"]
     lr = 0.5
     # lang bespoke spec entropy
-    # g_p = LangBespokeSTLCGenerator(2,1)
+    g_p = LangBespokeSTLCGenerator(2,1)
+    l_p = [MLELossConfig{STLC}(num_apps, Uniform()) => lr]
     # l_p = [SpecEntropy{STLC}(2,200,wellTyped) => lr]
 
     # RBT
@@ -22,19 +24,9 @@ if isempty(ARGS)
     # g_p = LangSiblingDerivedGenerator{BST}(Main.KVTree.t,Pair{Type,Integer}[Main.KVTree.t=>4],2,3)
     # l_p = [SpecEntropy{BST}(2,200,isBST)=>0.3]
 
-    # TB STLC SE
-    # g_p = LangSiblingDerivedGenerator{STLC}(Main.Expr.t,Pair{Type,Integer}[Main.Expr.t=>5,Main.Typ.t=>2],2,3)
-    # l_p = [SpecEntropy{STLC}(2,200,wellTyped)=>0.3]
-
-    # l_p = [SpecEntropy{RBT}(2,200,isRBT)=>0.3]
-
-    # g_p = LangBespokeSTLCGenerator(2,1)
-    # l_p = [SpecEntropy{STLC}(2,200,wellTyped) => lr]
-
     # uniform type
-
-    g_p = LangSiblingDerivedGenerator{STLC}(Main.Expr.t,Pair{Type,Integer}[Main.Expr.t=>5,Main.Typ.t=>2],2,3)
-    l_p = [FeatureSpecEntropy{STLC}(2,200,wellTyped,typecheck_ft)=>0.3]
+    # g_p = LangSiblingDerivedGenerator{STLC}(Main.Expr.t,Pair{Type,Integer}[Main.Expr.t=>5,Main.Typ.t=>2],2,3)
+    # l_p = [FeatureSpecEntropy{STLC}(2,200,wellTyped,typecheck_ft)=>0.3]
 
 
     push!(as, replace(string(g_p), " "=>""))

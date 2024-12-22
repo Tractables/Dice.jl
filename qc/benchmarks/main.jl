@@ -2,16 +2,16 @@ include("benchmarks.jl")
 using Infiltrator
 
 GENERATION_PARAMS_LIST = [
-    # LangBespokeSTLCGenerator(
-    #     expr_size=5,
-    #     typ_size=2,
-    # ),
-    LangSiblingDerivedGenerator{STLC}(
-        root_ty=Expr.t,
-        ty_sizes=[Expr.t=>5, Typ.t=>2],
-        stack_size=2,
-        intwidth=3,
-    )
+    LangBespokeSTLCGenerator(
+        expr_size=5,
+        typ_size=2,
+    ),
+    # LangSiblingDerivedGenerator{STLC}(
+    #     root_ty=Expr.t,
+    #     ty_sizes=[Expr.t=>5, Typ.t=>2],
+    #     stack_size=2,
+    #     intwidth=3,
+    # )
     # LangSiblingDerivedGenerator{RBT}(
     #     root_ty=ColorKVTree.t,
     #     ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
@@ -54,8 +54,10 @@ println()
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
-            FeatureSpecEntropy{STLC}(2,200,wellTyped,typecheck_ft,false) => lr,
-            FeatureSpecEntropy{STLC}(2,200,wellTyped,typecheck_ft,true) => lr,
+            # FeatureSpecEntropy{STLC}(2,200,wellTyped,typecheck_ft,false) => lr,
+            # FeatureSpecEntropy{STLC}(2,200,wellTyped,typecheck_ft,true) => lr,
+            MLELossConfig{STLC}(num_apps, Uniform()) => lr,
+            MLELossConfig{STLC}(size, Uniform()) => lr,
         ]
         for lr in LR_LIST
         for property in PROPERTY_LIST
