@@ -454,6 +454,7 @@ function produce_loss(rs::RunState, m::FeatureSpecEntropyLossMgr, epoch::Integer
                 if m.p.train_feature
                     [lpr_eq * empirical_feature_logpr, empirical_feature_logpr]
                 else
+                    lpr_eq = Dice.expand_logprs(l, lpr_eq)
                     [lpr_eq * compute(a, lpr_eq), empirical_feature_logpr]
                 end
             else
@@ -463,7 +464,8 @@ function produce_loss(rs::RunState, m::FeatureSpecEntropyLossMgr, epoch::Integer
         )
         push!(m.num_meeting, num_meeting / length(samples))
 
-        loss = Dice.expand_logprs(l, loss) / length(samples)
+        # loss = Dice.expand_logprs(l, loss) / length(samples)
+        loss = loss / length(samples)
         m.current_loss = loss
         m.current_actual_loss = actual_loss
         m.current_samples = samples
