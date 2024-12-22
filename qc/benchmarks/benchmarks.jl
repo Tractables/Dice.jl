@@ -450,11 +450,11 @@ function produce_loss(rs::RunState, m::FeatureSpecEntropyLossMgr, epoch::Integer
                 num_meeting += 1
 
                 lpr_eq = LogPr(prob_equals(m.generation.value, sample))
+                empirical_feature_logpr = log(feature_counts[m.p.feature(sample)]/length(samples))
                 if m.p.train_feature
-                    empirical_feature_logpr = log(feature_counts[m.p.feature(sample)]/length(samples))
                     [lpr_eq * empirical_feature_logpr, empirical_feature_logpr]
                 else
-                    [lpr_eq * compute(a, lpr_eq), lpr_eq]
+                    [lpr_eq * compute(a, lpr_eq), empirical_feature_logpr]
                 end
             else
                 [Dice.Constant(0), Dice.Constant(0)]
