@@ -27,15 +27,13 @@ GENERATION_PARAMS_LIST = [
 ]
 # LR_LIST = [0.3]
 LR_LIST = [0.01, 0.03, 0.1, 0.3]
-# RESAMPLING_FREQUENCY_LIST = [1,2,5]
 
 SAMPLES_PER_BATCH_LIST = [200, 2000]
+RESAMPLING_FREQUENCY_LIST = [2]
 EPOCHS_LIST = [2000]
 
-# SAMPLES_PER_BATCH_LIST = [nothing]
 BOUND_LIST = [0.]
 
-RESAMPLING_FREQUENCY_LIST = [nothing]
 PROPERTY_LIST = [nothing]
 
 n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, PROPERTY_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST, BOUND_LIST]))
@@ -54,8 +52,8 @@ println()
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
-            FeatureSpecEntropy{STLC}(2,200,wellTyped,typecheck_ft,false) => lr,
-            FeatureSpecEntropy{STLC}(2,200,wellTyped,typecheck_ft,true) => lr,
+            FeatureSpecEntropy{STLC}(resampling_frequency,samples_per_batch,wellTyped,typecheck_ft,false) => lr,
+            FeatureSpecEntropy{STLC}(resampling_frequency,samples_per_batch,wellTyped,typecheck_ft,true) => lr,
             # MLELossConfig{STLC}(num_apps, Uniform()) => lr,
             # MLELossConfig{STLC}(size, Uniform()) => lr,
         ]
