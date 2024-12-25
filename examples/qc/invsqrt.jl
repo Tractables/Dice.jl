@@ -5,9 +5,9 @@ using Random
 # Finding accuracy errors in an approximate inverse square root function
 
 # Current output of this program (nondeterministic):
-# 15.127460 seconds (141.17 M allocations: 6.819 GiB, 6.44% gc time, 19.28% compilation time)
-# Initial p(bugfound) = 0.011
-# Trained p(bugfound) = 0.99
+#   Initial p(bug) = 0.00591
+#   Trained p(bug) = 0.96988
+#   Training time: 4.247871542s
 
 ################################################################################
 # HYPERPARAMETERS AND CONFIG
@@ -21,18 +21,13 @@ STEPS = 5
 # numbers closer to 0
 PREC=10
 
-# We consider a bug to be found if we get relative error BUG_THRESH
-# Note: relative error is from approx_inv_sqrt(x)^2 to 1/x. This prevents us
-# from needing a preexisting implementation of sqrt.
-# Maybe this helps the story, but it also makes "relative error" a bit harder to
-# explain so maybe we should just use `sqrt`, and measure error from
-# approx_inv_sqrt(x) to 1/sqrt(x).
+# We consider a bug to be found if we get relative error above BUG_THRESH
 BUG_THRESH = 0.01
 
 # Training
 NUM_EPOCHS = 100
-NUM_SAMPLES = 1000
-LR = 0.03
+NUM_SAMPLES = 100
+LR = .3
 
 ################################################################################
 # DistZeroToOne
@@ -49,7 +44,6 @@ frombits(x::DistZeroToOne, world) =
 DistZeroToOne(x::Float64, W) = DistZeroToOne(DistUInt{W}(Int(x * 2^W)))
 prob_equals(x::DistZeroToOne, y::DistZeroToOne) =
     prob_equals(x.mantissa, y.mantissa)
-
 
 ################################################################################
 # Approximate inverse square root and its error
@@ -70,11 +64,7 @@ approx_inv_sqrt(x, steps) = 1/approx_sqrt(x, steps)
 
 rel_error(actual, expected) = abs((actual - expected) / expected)
 
-# Note we don't need an "oracle" (an existing `sqrt`` function) to target error!
-# We instead compare the squared approx-inverse-sqrt to the inverse.
-# Maybe this helps the story, but it also makes "relative error" a bit harder to
-# explain so maybe we should just use `sqrt`.
-approx_inv_sqrt_error(x, steps) = rel_error(approx_inv_sqrt(x, steps)^2, 1/x)
+approx_inv_sqrt_error(x, steps) = rel_error(approx_inv_sqrt(x, steps), 1/sqrt(x))
 
 ################################################################################
 # Generator
@@ -100,13 +90,26 @@ g = DistZeroToOne(DistUInt{PREC}([
 # Train to maximize error
 ################################################################################
 
+
+take_samples(n) = 
+    Dice.with_concrete_ad_flips(var_vals, g) do
+      [sample(Random.default_rng(), g) for _ in 1:n]
+    end
+
+p_bug_found() =
+    sum(
+        1 for sample in take_samples(100_000)
+        if approx_inv_sqrt_error(sample, STEPS) > BUG_THRESH
+        ; init=0
+    ) / 100_000
+
+
+println("Initial p(bug) = $(p_bug_found())")
+
 history_err = []
 history_p_bugfound = []
-
-@time for epoch in 1:NUM_EPOCHS
-    samples = Dice.with_concrete_ad_flips(var_vals, g) do
-      [sample(Random.default_rng(), g) for _ in 1:NUM_SAMPLES]
-    end
+train_time = @elapsed for epoch in 1:NUM_EPOCHS
+    samples = take_samples(NUM_SAMPLES)
 
     l = Dice.LogPrExpander(WMC(BDDCompiler([
         prob_equals(g, DistZeroToOne(sample, PREC))
@@ -138,5 +141,5 @@ history_p_bugfound = []
     end
 end
 
-println("Initial p(bugfound) = $(first(history_p_bugfound))")
-println("Trained p(bugfound) = $(last(history_p_bugfound))")
+println("Trained p(bug) = $(p_bug_found())")
+println("Training time: $(train_time)s")
