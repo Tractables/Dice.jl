@@ -36,7 +36,9 @@ BOUND_LIST = [0.]
 
 PROPERTY_LIST = [nothing]
 
-n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, PROPERTY_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST, BOUND_LIST]))
+TRAIN_FEATURE_LIST = [false, true]
+
+n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, PROPERTY_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST, BOUND_LIST, TRAIN_FEATURE_LIST]))
 println(n_runs)
 @assert n_runs <= 12
 
@@ -52,8 +54,7 @@ println()
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
-            FeatureSpecEntropy{STLC}(resampling_frequency,samples_per_batch,wellTyped,typecheck_ft,false) => lr,
-            FeatureSpecEntropy{STLC}(resampling_frequency,samples_per_batch,wellTyped,typecheck_ft,true) => lr,
+            FeatureSpecEntropy{STLC}(resampling_frequency,samples_per_batch,wellTyped,typecheck_ft,train_feature) => lr,
             # MLELossConfig{STLC}(num_apps, Uniform()) => lr,
             # MLELossConfig{STLC}(size, Uniform()) => lr,
         ]
@@ -61,6 +62,7 @@ LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
         for property in PROPERTY_LIST
         for resampling_frequency in RESAMPLING_FREQUENCY_LIST
         for samples_per_batch in SAMPLES_PER_BATCH_LIST
+        for train_feature in TRAIN_FEATURE_LIST
     ),
 ]))
 

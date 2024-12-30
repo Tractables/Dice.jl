@@ -452,7 +452,7 @@ function produce_loss(rs::RunState, m::FeatureSpecEntropyLossMgr, epoch::Integer
 
                 lpr_eq = LogPr(prob_equals(m.generation.value, sample))
                 lpr_eq = Dice.expand_logprs(l, lpr_eq)
-                empirical_feature_logpr = log(feature_counts[m.p.feature(sample)]/length(samples))
+                empirical_feature_logpr = Dice.Constant(log(feature_counts[m.p.feature(sample)]/length(samples)))
                 if m.p.train_feature
                     [lpr_eq * empirical_feature_logpr, empirical_feature_logpr]
                 else
