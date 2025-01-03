@@ -5,7 +5,7 @@ using Plots
 using Random
 using Infiltrator
 using DataStructures
-using Debugger
+# using Debugger
 
 ENV["GKSwstype"] = "100" # prevent plots from displaying
 
