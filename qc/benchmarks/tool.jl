@@ -1,6 +1,7 @@
 include("benchmarks.jl")
 
 TAG = "v109_unif_ty"
+TAG = "v1110_weighted_se"
 OUT_TOP_DIR = "../tuning-output"
 
 ## PARSE ARGS
@@ -10,8 +11,9 @@ if isempty(ARGS)
     lr = 0.5
     # lang bespoke spec entropy
     g_p = LangBespokeSTLCGenerator(2,1)
-    l_p = [MLELossConfig{STLC}(num_apps, Uniform()) => lr]
-    # l_p = [SpecEntropy{STLC}(2,200,wellTyped) => lr]
+    # l_p = [MLELossConfig{STLC}(num_apps, Uniform()) => lr]
+    l_p = [SpecEntropy{STLC}(2,200,wellTyped) => lr]
+    l_p = [WeightedSpecEntropy{STLC}(2,200,wellTyped,inv_size) => lr]
 
     # RBT
     # g_p = LangSiblingDerivedGenerator{RBT}(Main.ColorKVTree.t,Pair{Type,Integer}[Main.ColorKVTree.t=>4,Main.Color.t=>0],2,3) 
@@ -22,8 +24,8 @@ if isempty(ARGS)
     # l_p = [SpecEntropy{BST}(2,200,isBST)=>0.3]
 
     # uniform type
-    g_p = LangSiblingDerivedGenerator{STLC}(Main.Expr.t,Pair{Type,Integer}[Main.Expr.t=>5,Main.Typ.t=>2],2,3)
-    l_p = [FeatureSpecEntropy{STLC}(2,200,wellTyped,typecheck_ft,true)=>0.3]
+    # g_p = LangSiblingDerivedGenerator{STLC}(Main.Expr.t,Pair{Type,Integer}[Main.Expr.t=>5,Main.Typ.t=>2],2,3)
+    # l_p = [FeatureSpecEntropy{STLC}(2,200,wellTyped,typecheck_ft,true)=>0.3]
 
 
     push!(as, replace(string(g_p), " "=>""))

@@ -105,6 +105,19 @@ function size(e::OptExpr.t)
     ])
 end
 
+function inv_size(e::OptExpr.t)
+    match(e, [
+        :Some => e -> inv_size(e),
+        :None => () -> 1024
+    ])
+end
+
+function inv_size(e::Expr.t)
+    x::Number = Dice.frombits(size(e), Dict())
+    1/x
+end
+
+
 function num_apps(e::OptExpr.t)
     match(e, [
         :Some => x -> num_apps(x),

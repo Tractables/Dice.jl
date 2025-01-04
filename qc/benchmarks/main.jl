@@ -2,10 +2,10 @@ include("benchmarks.jl")
 using Infiltrator
 
 GENERATION_PARAMS_LIST = [
-    # LangBespokeSTLCGenerator(
-    #     expr_size=5,
-    #     typ_size=2,
-    # ),
+    LangBespokeSTLCGenerator(
+        expr_size=5,
+        typ_size=2,
+    ),
     LangSiblingDerivedGenerator{STLC}(
         root_ty=Expr.t,
         ty_sizes=[Expr.t=>5, Typ.t=>2],
@@ -28,7 +28,8 @@ GENERATION_PARAMS_LIST = [
 # LR_LIST = [0.3]
 LR_LIST = [0.03, 0.1, 0.3]
 
-SAMPLES_PER_BATCH_LIST = [200, 2000]
+SAMPLES_PER_BATCH_LIST = [200]
+# SAMPLES_PER_BATCH_LIST = [200, 2000]
 RESAMPLING_FREQUENCY_LIST = [2]
 EPOCHS_LIST = [2000]
 
@@ -37,6 +38,7 @@ BOUND_LIST = [0.]
 PROPERTY_LIST = [nothing]
 
 TRAIN_FEATURE_LIST = [false, true]
+TRAIN_FEATURE_LIST = [nothing]
 
 n_runs = prod(map(length, [GENERATION_PARAMS_LIST, LR_LIST, PROPERTY_LIST, RESAMPLING_FREQUENCY_LIST, SAMPLES_PER_BATCH_LIST, EPOCHS_LIST, BOUND_LIST, TRAIN_FEATURE_LIST]))
 println(n_runs)
@@ -54,7 +56,8 @@ println()
 LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
     (
         [
-            FeatureSpecEntropy{STLC}(resampling_frequency,samples_per_batch,wellTyped,typecheck_ft,train_feature) => lr,
+            # FeatureSpecEntropy{STLC}(resampling_frequency,samples_per_batch,wellTyped,typecheck_ft,train_feature) => lr,
+            WeightedSpecEntropy{STLC}(resampling_frequency,samples_per_batch,wellTyped,inv_size) => lr,
             # MLELossConfig{STLC}(num_apps, Uniform()) => lr,
             # MLELossConfig{STLC}(size, Uniform()) => lr,
         ]

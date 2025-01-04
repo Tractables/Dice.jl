@@ -79,7 +79,7 @@ function run_benchmark(
         update_curves(vals)
 
         for (i, m) in enumerate(loss_mgrs)
-            if m isa SpecEntropyLossMgr || m isa FeatureSpecEntropyLossMgr
+            if m isa SpecEntropyLossMgr || m isa FeatureSpecEntropyLossMgr || m isa WeightedSpecEntropyLossMgr
                 a = ADComputer(Valuation())
                 a.vals = vals
                 al_val = compute(a, m.current_actual_loss)
@@ -115,7 +115,7 @@ function run_benchmark(
     end
 
     for (al_curve, loss_config, m) in zip(al_curves, loss_configs, loss_mgrs)
-        if m isa SpecEntropyLossMgr || m isa FeatureSpecEntropyLossMgr
+        if m isa SpecEntropyLossMgr || m isa FeatureSpecEntropyLossMgr || m isa WeightedSpecEntropyLossMgr
             save_learning_curve(out_dir, al_curve, "actual_loss_" * join(to_subpath(loss_config), "_"))
             save_learning_curve(out_dir, m.num_meeting, "meets_invariant_" * join(to_subpath(loss_config), "_"))
         end
@@ -403,6 +403,91 @@ function produce_loss(rs::RunState, m::SpecEntropyLossMgr, epoch::Integer)
     m.current_loss
 end
 
+
+
+######################################################################
+# WeightedSpecEntropy
+######################################################################
+
+struct WeightedSpecEntropy{T} <: LossConfig{T}
+    resampling_frequency::Integer
+    samples_per_batch::Integer
+    property::Function
+    weighter::Function # deterministic Dice.Dist -> number
+end
+function WeightedSpecEntropy{T}(; resampling_frequency, samples_per_batch, property, weighter) where T
+    WeightedSpecEntropy{T}(resampling_frequency, samples_per_batch, property, weighter)
+end
+to_subpath(p::WeightedSpecEntropy) = [
+    "weighted_spec_entropy",
+    "freq=$(p.resampling_frequency)-spb=$(p.samples_per_batch)",
+    "prop=$(p.property)",
+    "weighter=$(nameof(p.weighter))",
+]
+
+mutable struct WeightedSpecEntropyLossMgr <: LossMgr
+    p::WeightedSpecEntropy
+    generation
+    consider
+    num_meeting
+    current_loss::Union{Nothing,ADNode}
+    current_actual_loss::Union{Nothing,ADNode}
+    current_samples
+    WeightedSpecEntropyLossMgr(p, val, consider) = new(p, val, consider, [], nothing, nothing, nothing)
+end
+
+function create_loss_manager(::RunState, p::WeightedSpecEntropy{T}, g::Generation) where T
+    function consider(sample)
+        c = p.property(sample)
+        @assert c isa Bool
+        c
+    end
+    WeightedSpecEntropyLossMgr(p, g, consider)
+end
+
+
+function produce_loss(rs::RunState, m::WeightedSpecEntropyLossMgr, epoch::Integer)
+    if (epoch - 1) % m.p.resampling_frequency == 0
+        sampler = sample_from_lang(rs, m.generation.prog)
+        a = ADComputer(rs.var_vals)
+        samples = [to_dist(sampler()) for _ in 1:m.p.samples_per_batch]
+        # samples = with_concrete_ad_flips(rs.var_vals, m.generation.value) do
+            # [sample_as_dist(rs.rng, a, m.generation.value) for _ in 1:m.p.samples_per_batch]
+        # end
+
+        l = Dice.LogPrExpander(WMC(BDDCompiler([
+            prob_equals(m.generation.value,sample)
+            for sample in samples
+        ])))
+
+        num_meeting = 0
+        loss, actual_loss = sum(
+            if m.consider(sample)
+                num_meeting += 1
+                lpr_eq = LogPr(prob_equals(m.generation.value, sample))
+                lpr_eq = Dice.expand_logprs(l, lpr_eq)
+                w = Dice.Constant(m.p.weighter(sample))
+                [w * lpr_eq * compute(a, lpr_eq), w * lpr_eq]
+            else
+                [Dice.Constant(0), Dice.Constant(0)]
+            end
+            for sample in samples
+        )
+        push!(m.num_meeting, num_meeting / length(samples))
+
+        loss = Dice.expand_logprs(l, loss) / length(samples)
+        m.current_loss = loss
+        m.current_actual_loss = actual_loss
+        m.current_samples = samples
+    end
+
+    @assert !isnothing(m.current_loss)
+    m.current_loss
+end
+
+
+
+
 ######################################################################
 # FeatureSpecEntropy
 ######################################################################
@@ -647,7 +732,7 @@ struct MLELossConfig{T} <: LossConfig{T}
     metric::Function
     target_dist::TargetDist
 end
-to_subpath(p::MLELossConfig) = [string(nameof(p.metric)), name(p.target_dist)]
+to_subpath(p::MLELossConfig) = ["mle",string(nameof(p.metric)), name(p.target_dist)]
 function create_loss_manager(rs::RunState, p::MLELossConfig, generation)
     println_flush(rs.io, "Building computation graph for $(p)...")
     time_build_loss = @elapsed begin
