@@ -6,6 +6,7 @@ using Plots
 using Random
 using Infiltrator
 using DataStructures
+using JLD2
 # using Debugger
 
 ENV["GKSwstype"] = "100" # prevent plots from displaying
@@ -129,8 +130,37 @@ function run_benchmark(
         save_learning_curve(rs.out_dir, curve, join(to_subpath(loss_config), "_"))
     end
 
+    for (al_curve, loss_config, m) in zip(al_curves, loss_configs, loss_mgrs)
+        if m isa SpecEntropyLossMgr || m isa FeatureSpecEntropyLossMgr || m isa WeightedSpecEntropyLossMgr
+            save_learning_curve(out_dir, al_curve, "actual_loss_" * join(to_subpath(loss_config), "_"))
+            save_learning_curve(out_dir, m.num_meeting, "meets_invariant_" * join(to_subpath(loss_config), "_"))
+        end
+    end
+
     for (loss_config, pres, posts, m) in zip(loss_configs, press, postss, loss_mgrs)
-        if m isa FeatureSpecEntropyLossMgr
+        if loss_config isa FeatureSpecEntropy
+            d = compute_feature_counts(m.feature_counts_history)
+            filename = joinpath(rs.out_dir, "feature_dist_" * join(to_subpath(loss_config), "_"))
+            save_feature_cts(filename, d)
+        end
+    end
+
+    save_object(joinpath(out_dir, "pres_posts.jld2"), (press, postss))
+end
+
+function make_plots(
+    rs::RunState,
+    generation_params::GenerationParams{T},
+    loss_config_weight_pairs::AbstractVector{<:Pair{<:LossConfig{T}, <:Real}},
+    epochs::Integer,
+    bound::Real,
+) where T
+    press, postss = load_object(joinpath(out_dir, "pres_posts.jld2"))
+
+    loss_configs, loss_weights = zip(loss_config_weight_pairs...)
+
+    for (loss_config, pres, posts) in zip(loss_configs, press, postss)
+        if loss_config isa FeatureSpecEntropy
             name = "unique_curves_" * join(to_subpath(loss_config), "_")
             open(joinpath(out_dir, "$(name).csv"), "w") do file
                 xs = 1:length(pres)
@@ -142,48 +172,43 @@ function run_benchmark(
                 savefig(joinpath(out_dir, "$(name).svg"))
             end
 
-            d = []
-            for (k, cts) in m.feature_counts_history
-                ctor, args = k
-                if ctor == :Some
-                    ty, = args
-                    push!(d, (ty_str(ty), cts))
-                else 
-                    ctor = :None
-                    push!(d, ("not well-typed", cts))
-                end
-            end
-            sort!(d, by=kv -> -sum(kv[2]))
-
-            function save_feature_cts(filename, d)
-                open(filename, "w") do file
-                    println(file, join([
-                        k for (k, cts) in d
-                    ], "\t"))
-                    for i in 1:length(first(d)[2])
-                        println(file, join([
-                            cts[i] for (k, cts) in d
-                        ], "\t"))
-                    end
-                end
-                println_flush(rs.io, "Saved to $(filename)")
-                println_flush(rs.io)
-            end
-
             filename = joinpath(rs.out_dir, "feature_dist_" * join(to_subpath(loss_config), "_"))
-            save_feature_cts(filename, d)
             mk_areaplot2(filename, has_header=true, xlabel="Sampling #", ylabel="Counts")
         end
     end
-
-    for (al_curve, loss_config, m) in zip(al_curves, loss_configs, loss_mgrs)
-        if m isa SpecEntropyLossMgr || m isa FeatureSpecEntropyLossMgr || m isa WeightedSpecEntropyLossMgr
-            save_learning_curve(out_dir, al_curve, "actual_loss_" * join(to_subpath(loss_config), "_"))
-            save_learning_curve(out_dir, m.num_meeting, "meets_invariant_" * join(to_subpath(loss_config), "_"))
-        end
-
-    end
 end
+
+function compute_feature_counts(feature_counts_history)
+    d = []
+    for (k, cts) in feature_counts_history
+        ctor, args = k
+        if ctor == :Some
+            ty, = args
+            push!(d, (ty_str(ty), cts))
+        else 
+            ctor = :None
+            push!(d, ("not well-typed", cts))
+        end
+    end
+    sort!(d, by=kv -> -sum(kv[2]))
+end
+
+function save_feature_cts(filename, d)
+    open(filename, "w") do file
+        println(file, join([
+            k for (k, cts) in d
+        ], "\t"))
+        for i in 1:length(first(d)[2])
+            println(file, join([
+                cts[i] for (k, cts) in d
+            ], "\t"))
+        end
+    end
+    println_flush(rs.io, "Saved to $(filename)")
+    println_flush(rs.io)
+end
+
+
 
 function generation_params_emit_stats(rs::RunState, generation_params, s)
     println_flush(rs.io, "Default generation_params_emit_stats")

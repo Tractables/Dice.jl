@@ -4,7 +4,6 @@ authors = ["Guy Van den Broeck <guyvdb@gmail.com>"]
 version = "0.1.0"
 
 [deps]
-ADEV = "91c67158-5de4-465b-a572-6ca3a628f939"
 BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
 CUDD = "345a2cc7-28d8-58b2-abdf-cff77ea7d7f1"
 Combinatorics = "861a8166-3701-5b0c-9a16-15d98fcdc6aa"
@@ -16,6 +15,7 @@ ForwardDiff = "f6369f11-7733-5829-9624-2563aa707210"
 Graphs = "86223c79-3864-5bf0-83f7-82e725a168b6"
 IRTools = "7869d1d1-7146-5819-86e3-90919afe41df"
 Infiltrator = "5903a43b-9cc3-4c30-8d17-598619ec4e9b"
+JLD2 = "033835bb-8acc-5ee8-8aae-3f567f8a3819"
 Jive = "ba5e3d4b-8524-549f-bc71-e76ad9e9deed"
 MacroTools = "1914dd2f-81c6-5fcd-8719-6d5c9610ff09"
 PProf = "e4faabce-9ead-11e9-39d9-4379958e3056"
