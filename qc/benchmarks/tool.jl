@@ -24,8 +24,8 @@ if isempty(ARGS)
     # l_p = [SpecEntropy{BST}(2,200,isBST)=>0.3]
 
     # uniform type
-    # g_p = LangSiblingDerivedGenerator{STLC}(Main.Expr.t,Pair{Type,Integer}[Main.Expr.t=>5,Main.Typ.t=>2],2,3)
-    # l_p = [FeatureSpecEntropy{STLC}(2,200,wellTyped,typecheck_ft,true)=>0.3]
+    g_p = LangSiblingDerivedGenerator{STLC}(Main.Expr.t,Pair{Type,Integer}[Main.Expr.t=>5,Main.Typ.t=>2],2,3)
+    l_p = [FeatureSpecEntropy{STLC}(2,200,wellTyped,typecheck_ft,true)=>0.3]
 
 
     push!(as, replace(string(g_p), " "=>""))

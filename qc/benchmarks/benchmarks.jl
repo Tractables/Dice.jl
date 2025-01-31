@@ -1,6 +1,7 @@
 abstract type GenerationParams{T} end
 include("lib/lib.jl")
 
+UNIQUE_CURVES_SAMPLES = 10_000
 using Plots
 using Random
 using Infiltrator
@@ -62,6 +63,13 @@ function run_benchmark(
         println(rs.io)
     end
 
+    press = [
+        if m isa FeatureSpecEntropyLossMgr
+            feature_unique_curve(rs, m, UNIQUE_CURVES_SAMPLES)
+        else nothing end
+        for m in loss_mgrs
+    ]
+
     emit_stats("initial")
 
     for epoch in 1:epochs
@@ -110,18 +118,19 @@ function run_benchmark(
 
     emit_stats("trained")
 
+    postss = [
+        if m isa FeatureSpecEntropyLossMgr
+            feature_unique_curve(rs, m, UNIQUE_CURVES_SAMPLES)
+        else nothing end
+        for m in loss_mgrs
+    ]
+
     for (loss_config, curve) in zip(loss_configs, curves)
         save_learning_curve(rs.out_dir, curve, join(to_subpath(loss_config), "_"))
     end
 
-    for (al_curve, loss_config, m) in zip(al_curves, loss_configs, loss_mgrs)
-        if m isa SpecEntropyLossMgr || m isa FeatureSpecEntropyLossMgr || m isa WeightedSpecEntropyLossMgr
-            save_learning_curve(out_dir, al_curve, "actual_loss_" * join(to_subpath(loss_config), "_"))
-            save_learning_curve(out_dir, m.num_meeting, "meets_invariant_" * join(to_subpath(loss_config), "_"))
-        end
-
+    for (loss_config, pres, posts, m) in zip(loss_configs, press, postss, loss_mgrs)
         if m isa FeatureSpecEntropyLossMgr
-            pres, posts = first(m.feature_unique_curve_history), last(m.feature_unique_curve_history)
             name = "unique_curves_" * join(to_subpath(loss_config), "_")
             open(joinpath(out_dir, "$(name).csv"), "w") do file
                 xs = 1:length(pres)
@@ -165,6 +174,14 @@ function run_benchmark(
             save_feature_cts(filename, d)
             mk_areaplot2(filename, has_header=true, xlabel="Sampling #", ylabel="Counts")
         end
+    end
+
+    for (al_curve, loss_config, m) in zip(al_curves, loss_configs, loss_mgrs)
+        if m isa SpecEntropyLossMgr || m isa FeatureSpecEntropyLossMgr || m isa WeightedSpecEntropyLossMgr
+            save_learning_curve(out_dir, al_curve, "actual_loss_" * join(to_subpath(loss_config), "_"))
+            save_learning_curve(out_dir, m.num_meeting, "meets_invariant_" * join(to_subpath(loss_config), "_"))
+        end
+
     end
 end
 
@@ -542,6 +559,24 @@ function only_first_last!(v)
         empty!(v)
         append!(v, [a, b])
     end
+end
+
+function feature_unique_curve(rs, m::FeatureSpecEntropyLossMgr, n)
+    sampler = sample_from_lang(rs, m.generation.prog)
+    a = ADComputer(rs.var_vals)
+    samples = [to_dist(sampler()) for _ in 1:n]
+    feature_unique_curve = []
+    feature_counts = DefaultDict(0)
+    # counter(f, collection)
+    for s in samples
+        s_feature = m.p.feature(s)
+        if !haskey(feature_counts, s_feature)
+            feature_counts[s_feature] = 0
+        end
+        feature_counts[s_feature] += 1
+        push!(feature_unique_curve, length(feature_counts))
+    end
+    feature_unique_curve
 end
 
 function produce_loss(rs::RunState, m::FeatureSpecEntropyLossMgr, epoch::Integer)
