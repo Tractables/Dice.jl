@@ -246,15 +246,23 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
 end
 using PyPlot
 
+
+
+
+
 function save_areaplot2(path, header, v; xlabel, ylabel)
     mat = mapreduce(permutedims, vcat, v)
+    
+    # Normalize each row to get proportions
+    row_sums = sum(mat, dims=2)
+    mat = mat ./ row_sums
+    
     torow(v) = reshape(v, 1, length(v))
-
     size = Base.size
     
-    # Generate labels
+    # Generate labels first
     labels = if isnothing(header)
-        ["$(i)" for i in 0:size(mat)[2]]  # Fixed: use size(mat)[2] instead of size(mat, 2)
+        ["$(i)" for i in 0:size(mat)[2]]
     else
         function f(h::AbstractString)
             l = 20
@@ -264,35 +272,104 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
                 h
             end
         end
-        [if i > 50 "" else f(s) end for (i, s) in enumerate(header)]
+        [f(s) for s in header]
     end
+    
+    # Set first label manually
+    if length(labels) > 0
+        labels[1] = "Not well-typed"
+    end
+    
+    # Threshold for "small" areas (using proportion threshold)
+    threshold = 0.01  # 1% threshold
+    
+    # Identify which columns are "small" based on their maximum proportion
+    column_maxes = [maximum(mat[:, i]) for i in 1:size(mat)[2]]
+    is_small = column_maxes .< threshold
+    
+    # Combine columns keeping originals but marking small ones for special coloring
+    mat_combined = mat
+    
+    # Update labels
+    labels_main = copy(labels)
+    other_indices = findall(is_small)
     
     # Create figure and axis
     fig, ax = subplots(figsize=(10, 5))
     
     # Get x values
-    x = 1:size(mat)[1]  # Fixed: use size(mat)[1]
+    x = 1:size(mat)[1]
+    
+    # Create colors using thermal colormap, skipping first 20%
+    n_main = sum(.!is_small)
+    thermal_cmap = plt.cm.get_cmap("magma")  # similar to thermal
+    main_colors = [(0, 0, 0, 1)]  # Start with black for "Not well-typed"
+    if n_main > 1
+        # Generate colors from thermal gradient, skipping first 20%
+        thermal_colors = [thermal_cmap(i) for i in LinRange(0.2, 1.0, n_main-1)]
+        main_colors = vcat(main_colors, thermal_colors)
+    end
+    
+    # Define two shades of blue for "other" categories
+    light_blue = (0.6, 0.8, 1.0, 1.0)  # Light blue
+    dark_blue = (0.2, 0.4, 0.8, 1.0)   # Dark blue
+    
+    # Create color array
+    colors = Vector{Tuple{Float64, Float64, Float64, Float64}}(undef, size(mat)[2])
+    main_idx = 1
+    for i in 1:size(mat)[2]
+        if is_small[i]
+            colors[i] = i % 2 == 0 ? light_blue : dark_blue
+            labels_main[i] = "Other"
+        else
+            colors[i] = main_colors[main_idx]
+            main_idx += 1
+        end
+    end
     
     # Create stacked area plot
-    y_stack = zeros(size(mat)[1])  # Fixed: use size(mat)[1]
-    # colors = [plt.cm.thermal(i) for i in LinRange(0, 1, size(mat)[2])]  # Fixed: use size(mat)[2]
-    colors = [plt.cm.hot(i) for i in LinRange(0, 1, size(mat)[2])]
-
-    
+    y_stack = zeros(size(mat_combined)[1])
     areas = []
-    for i in 1:size(mat)[2]  # Fixed: use size(mat)[2]
-        area = ax.fill_between(x, y_stack, y_stack .+ mat[:, i],
-                             label=labels[i],
-                             color=colors[i])
+    
+    # Track if we've added "Other" to legend
+    other_in_legend = false
+    
+    for i in 1:size(mat_combined)[2]
+        # For small categories, only add to legend once
+        if is_small[i]
+            if !other_in_legend
+                area = ax.fill_between(x, y_stack, y_stack .+ mat_combined[:, i],
+                                     label="Other",
+                                     color=colors[i],
+                                     alpha=0.95)
+                other_in_legend = true
+            else
+                area = ax.fill_between(x, y_stack, y_stack .+ mat_combined[:, i],
+                                     color=colors[i],
+                                     alpha=0.95)
+            end
+        else
+            area = ax.fill_between(x, y_stack, y_stack .+ mat_combined[:, i],
+                                 label=labels_main[i],
+                                 color=colors[i],
+                                 alpha=0.95)
+        end
         push!(areas, area)
-        y_stack .+= mat[:, i]
+        y_stack .+= mat_combined[:, i]
     end
+    
+    # Style improvements
+    ax.set_facecolor("white")
+    fig.patch.set_facecolor("white")
     
     # Customize plot
     fontsize = 8
     ax.set_xlabel(xlabel, fontsize=fontsize)
-    ax.set_ylabel(ylabel, fontsize=fontsize)
+    ax.set_ylabel("Proportion", fontsize=fontsize)
     ax.tick_params(labelsize=fontsize)
+    
+    # Set y-axis to show percentages
+    ax.yaxis.set_major_formatter(plt.matplotlib.ticker.PercentFormatter(1.0))
     
     # Set font family
     plt.rcParams["font.family"] = "Palatino"
@@ -301,7 +378,7 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
     legend = ax.legend(bbox_to_anchor=(1.05, 1),
                       loc="upper left",
                       fontsize=fontsize)
-    legend.get_frame().set_facecolor("none")  # transparent background
+    legend.get_frame().set_facecolor("none")
     
     # Adjust margins
     plt.subplots_adjust(left=0.1, right=0.85, bottom=0.1, top=0.9)
@@ -312,6 +389,9 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
     
     plt.close()
 end
+
+
+
 
 function make_plots(
     rs::RunState,
