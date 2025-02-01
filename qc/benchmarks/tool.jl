@@ -2,7 +2,7 @@ include("benchmarks.jl")
 
 TAG = "v109_unif_ty"
 TAG = "v1110_weighted_se"
-OUT_TOP_DIR = "../tuning-output"
+OUT_TOP_DIR = joinpath(@__DIR__, "../../../tuning-output")
 
 args = ARGS
 allow_overwrite = "-f" ∈ args
@@ -89,7 +89,7 @@ rs = RunState(Valuation(), Dict{String,ADNode}(), open(log_path, "w"), out_dir, 
 
 println(stderr, "Logging to $(log_path)\n")
 
-commit = strip(cmd_out(`git rev-parse --short HEAD`))
+commit = strip(cmd_out(Cmd(`git rev-parse --short HEAD`, dir=@__DIR__)))
 t = now()
 println_loud(rs, "$(t) $(commit) $(ARGS)")
 println_loud(rs, "== Config ==")
@@ -103,7 +103,7 @@ println_loud(rs)
 println("Logging to $(log_path)")
 println()
 
-if !plot_only
+if !plots_only
     run_benchmark(rs, generation_params, loss_config_weight_pairs, epochs, bound)
 end
 make_plots(rs, generation_params, loss_config_weight_pairs, epochs, bound)

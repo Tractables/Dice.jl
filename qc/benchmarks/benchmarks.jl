@@ -148,6 +148,171 @@ function run_benchmark(
     save_object(joinpath(out_dir, "pres_posts.jld2"), (press, postss))
 end
 
+using PyPlot
+
+
+begin
+
+function mk_areaplot2(path; xlabel, ylabel, has_header)
+    open(path, "r") do f
+        header, lines = if has_header
+            line, lines... = readlines(f)
+            split(line,"\t"), lines
+        else
+            nothing, readlines(f)
+        end
+        v = [[parse(Float64, s) for s in split(line,"\t")] for line in lines]
+        save_areaplot2(path, header, v; xlabel, ylabel)
+    end
+end
+
+function save_areaplot2(path, header, v; xlabel, ylabel)
+    mat = mapreduce(permutedims, vcat, v)
+    torow(v) = reshape(v, 1, length(v))
+
+    labels = if isnothing(header)
+        torow(["$(i)" for i in 0:size(mat, 2)])
+    else
+        # header = [ if length(h) > 10 h[:10] * "..." else h end
+
+        #            for h in header ]
+        function f(h::AbstractString)
+            l = 20
+            if length(collect(h)) > l
+                first(h, l) * " ..."
+            else
+                h
+            end
+        end
+        torow([
+            if i > 50 "" else f(s) end
+            for (i, s) in enumerate(header)
+        ])
+    end
+
+    fontsize=8
+    areaplot(
+        mat,
+        labels=labels,
+        palette=cgrad(:thermal),
+        tickfontsize=fontsize,
+        legendfontsize=fontsize,
+        fontfamily="Palatino Roman",
+        fontsize=fontsize,
+        xlabel=xlabel,
+        ylabel=ylabel,
+        xlabelfontsize=fontsize,
+        ylabelfontsize=fontsize,
+        legend=:outerright,
+        left_margin=5Plots.mm,
+        right_margin=15Plots.mm,
+        foreground_color_legend = nothing,
+        bottom_margin=5Plots.mm,
+        legend_left_margin=-5Plots.mm,
+        # legend=false,
+        # legend_margin=-100,  # Add this line to reduce the margin
+    )
+    plot!(size=(1000,500))
+    savefig("$(path).png")
+    savefig("$(path).svg")
+
+
+    # p = plot(
+    #     legend=:right,
+    #     legendfontsize=fontsize,
+    #     fontfamily="Palatino Roman",
+    #     foreground_color_legend=nothing,  # transparent background
+    #     background_color_legend=nothing,   # transparent background
+    #     showaxis=false,                   # hide axes
+    #     grid=false,                       # hide grid
+    #     ticks=nothing,                    # hide ticks
+    #     framestyle=:none                  # hide frame
+    # )
+    
+    # # Add dummy series just for the legend entries
+    # for (i, label) in enumerate(header)
+    #     plot!(p, [], [], 
+    #         label=label,
+    #         color=get(cgrad(:thermal), (i-1)/(length(header)-1))
+    #     )
+    # end
+    
+    # # Save just the legend
+    # savefig("$(path).legend.png")
+    # savefig("$(path).legend.svg")
+
+    # savefig("$(path).tikz")
+    # savefig("$(path).tex")
+end
+using PyPlot
+
+function save_areaplot2(path, header, v; xlabel, ylabel)
+    mat = mapreduce(permutedims, vcat, v)
+    torow(v) = reshape(v, 1, length(v))
+
+    size = Base.size
+    
+    # Generate labels
+    labels = if isnothing(header)
+        ["$(i)" for i in 0:size(mat)[2]]  # Fixed: use size(mat)[2] instead of size(mat, 2)
+    else
+        function f(h::AbstractString)
+            l = 20
+            if length(collect(h)) > l
+                first(h, l) * " ..."
+            else
+                h
+            end
+        end
+        [if i > 50 "" else f(s) end for (i, s) in enumerate(header)]
+    end
+    
+    # Create figure and axis
+    fig, ax = subplots(figsize=(10, 5))
+    
+    # Get x values
+    x = 1:size(mat)[1]  # Fixed: use size(mat)[1]
+    
+    # Create stacked area plot
+    y_stack = zeros(size(mat)[1])  # Fixed: use size(mat)[1]
+    # colors = [plt.cm.thermal(i) for i in LinRange(0, 1, size(mat)[2])]  # Fixed: use size(mat)[2]
+    colors = [plt.cm.hot(i) for i in LinRange(0, 1, size(mat)[2])]
+
+    
+    areas = []
+    for i in 1:size(mat)[2]  # Fixed: use size(mat)[2]
+        area = ax.fill_between(x, y_stack, y_stack .+ mat[:, i],
+                             label=labels[i],
+                             color=colors[i])
+        push!(areas, area)
+        y_stack .+= mat[:, i]
+    end
+    
+    # Customize plot
+    fontsize = 8
+    ax.set_xlabel(xlabel, fontsize=fontsize)
+    ax.set_ylabel(ylabel, fontsize=fontsize)
+    ax.tick_params(labelsize=fontsize)
+    
+    # Set font family
+    plt.rcParams["font.family"] = "Palatino"
+    
+    # Adjust legend
+    legend = ax.legend(bbox_to_anchor=(1.05, 1),
+                      loc="upper left",
+                      fontsize=fontsize)
+    legend.get_frame().set_facecolor("none")  # transparent background
+    
+    # Adjust margins
+    plt.subplots_adjust(left=0.1, right=0.85, bottom=0.1, top=0.9)
+    
+    # Save figures
+    plt.savefig("$(path).png", dpi=300, bbox_inches="tight")
+    plt.savefig("$(path).svg", bbox_inches="tight")
+    
+    plt.close()
+end
+
 function make_plots(
     rs::RunState,
     generation_params::GenerationParams{T},
@@ -176,6 +341,8 @@ function make_plots(
             mk_areaplot2(filename, has_header=true, xlabel="Sampling #", ylabel="Counts")
         end
     end
+end
+make_plots(rs, generation_params, loss_config_weight_pairs, epochs, bound)
 end
 
 function compute_feature_counts(feature_counts_history)
@@ -272,52 +439,6 @@ function mk_areaplot(path)
     open(path, "r") do f
         v = [[parse(Float64, s) for s in split(line,"\t")] for line in readlines(f)]
         save_areaplot(path, v)
-    end
-end
-
-function save_areaplot2(path, header, v; xlabel, ylabel)
-    mat = mapreduce(permutedims, vcat, v)
-    torow(v) = reshape(v, 1, length(v))
-
-    labels = if isnothing(header)
-        torow(["$(i)" for i in 0:size(mat, 2)])
-    else
-        # header = [ if length(h) > 10 h[:10] * "..." else h end
-        #            for h in header ]
-        torow(header)
-    end
-
-    fontsize=8
-    areaplot(
-        mat,
-        labels=labels,
-        palette=cgrad(:thermal),
-        tickfontsize=fontsize,
-        legendfontsize=fontsize,
-        fontfamily="Palatino Roman",
-        fontsize=fontsize,
-        xlabel=xlabel,
-        ylabel=ylabel,
-        xlabelfontsize=fontsize,
-        ylabelfontsize=fontsize,
-        legend=:outertopright,
-    )
-    savefig("$(path).png")
-    savefig("$(path).svg")
-    # savefig("$(path).tikz")
-    # savefig("$(path).tex")
-end
-
-function mk_areaplot2(path; xlabel, ylabel, has_header)
-    open(path, "r") do f
-        header, lines = if has_header
-            line, lines... = readlines(f)
-            split(line,"\t"), lines
-        else
-            nothing, readlines(f)
-        end
-        v = [[parse(Float64, s) for s in split(line,"\t")] for line in lines]
-        save_areaplot2(path, header, v; xlabel, ylabel)
     end
 end
 
