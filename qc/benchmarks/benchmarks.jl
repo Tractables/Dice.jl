@@ -3,6 +3,7 @@ include("lib/lib.jl")
 
 UNIQUE_CURVES_SAMPLES = 10_000
 using Plots
+# pgfplotsx()
 using Random
 using Infiltrator
 using DataStructures
@@ -166,6 +167,11 @@ function mk_areaplot2(path; xlabel, ylabel, has_header)
     end
 end
 
+# function PGFPlotsX.print_tex(io::IO, data::Plots.Measures.AbsoluteLength)
+#     print(io, string(data))
+# end
+
+
 function save_areaplot2(path, header, v; xlabel, ylabel)
     rng = Random.MersenneTwister(42)
     
@@ -178,13 +184,17 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
     torow(v) = reshape(v, 1, length(v))
 
     # Calculate maximum proportion for each column
-    threshold = 0.04  # threshold
     max_proportions = vec(maximum(mat, dims=1))
 
     # Create ordering by maximum proportion
     order = sortperm(max_proportions, rev=true)
     mat = mat[:, order]
     max_proportions = max_proportions[order]
+
+    # Calculate threshold to show top 20 labels
+    num_labels_to_show = min(20, length(max_proportions))
+    threshold = max_proportions[num_labels_to_show]  
+    println_flush(rs.io, "Threshold: $(threshold)")
 
     # Find where the original first three columns ended up
     original_positions = [findfirst(==(i), order) for i in 1:3]
@@ -247,11 +257,12 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
         xlabelfontsize=fontsize,
         ylabelfontsize=fontsize,
         legend=:outerright,
-        left_margin=5Plots.mm,
+        left_margin=10Plots.mm,
         right_margin=15Plots.mm,
         foreground_color_legend = nothing,
         bottom_margin=5Plots.mm,
         legend_left_margin=-5Plots.mm,
+        yticks=nothing,
     )
     yflip!(true)
     plot!(size=(1000,500))
@@ -466,7 +477,7 @@ function make_plots(
             end
 
             filename = joinpath(rs.out_dir, "feature_dist_" * join(to_subpath(loss_config), "_"))
-            mk_areaplot2(filename, has_header=true, xlabel="Epochs", ylabel="Proportion")
+            mk_areaplot2(filename, has_header=true, xlabel="Epochs", ylabel="Sample Proportion")
         end
     end
 end
