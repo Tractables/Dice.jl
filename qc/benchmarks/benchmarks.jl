@@ -167,37 +167,83 @@ function mk_areaplot2(path; xlabel, ylabel, has_header)
 end
 
 function save_areaplot2(path, header, v; xlabel, ylabel)
+    rng = Random.MersenneTwister(42)
+    
     mat = mapreduce(permutedims, vcat, v)
+    
+    # Normalize each row to get proportions
+    row_sums = sum(mat, dims=2)
+    mat = mat ./ row_sums
+    
     torow(v) = reshape(v, 1, length(v))
 
-    labels = if isnothing(header)
-        torow(["$(i)" for i in 0:size(mat, 2)])
-    else
-        function f(h::AbstractString)
-            l = 20
-            if length(collect(h)) > l
-                first(h, l) * " ..."
-            else
-                h
-            end
+    # Calculate maximum proportion for each column
+    threshold = 0.04  # threshold
+    max_proportions = vec(maximum(mat, dims=1))
+
+    # Create ordering by maximum proportion
+    order = sortperm(max_proportions, rev=true)
+    mat = mat[:, order]
+    max_proportions = max_proportions[order]
+
+    # Find where the original first three columns ended up
+    original_positions = [findfirst(==(i), order) for i in 1:3]
+
+    # Reorder and process labels
+    header = isnothing(header) ? ["$(i)" for i in 0:Base.size(mat, 2)] : header
+    header = header[order]
+    labels = function f(h::AbstractString)
+        if h == "not well-typed"
+            return "Not well-typed"
         end
-        torow([
-            if i > 50 "" else f(s) end
-            for (i, s) in enumerate(header)
-        ])
+        l = 20
+        if length(collect(h)) > l
+            first(h, l) * " ..."
+        else
+            h
+        end
+    end
+    labels = torow([
+        if max_proportions[i] < threshold "" else f(s) end
+        for (i, s) in enumerate(header)
+    ])
+
+    # Create colors with golden ratio spacing after reordering
+    n_colors = Base.size(mat, 2)
+    phi = (1 + √5) / 2  # golden ratio
+    colors = [
+        get(cgrad(:thermal), # :balance has a nice range of colors
+            mod((i / phi + 0.2 * rand(rng)), 1.0)
+        ) 
+        for i in 1:n_colors
+    ]
+    
+    # Override specific colors for the reordered positions
+    override_colors = [
+        RGBA(0, 0, 0, 1.0),              # Black for "Not Well-Typed"
+        # RGBA(0.8, 0.3, 0.3, 1.0),        # Deep rose red
+        # RGBA(0.35, 0.35, 0.8, 1.0),      # Medium blue
+        # RGBA(0.8, 0.6, 0.2, 1.0),        # Golden yellow
+    ]
+    
+    for (new_pos, color) in zip(original_positions, override_colors)
+        if !isnothing(new_pos)
+            colors[new_pos] = color
+        end
     end
 
     fontsize=8
     areaplot(
         mat,
         labels=labels,
-        palette=cgrad(:thermal),
+        color_palette=colors,
         tickfontsize=fontsize,
         legendfontsize=fontsize,
         fontfamily="Palatino Roman",
         fontsize=fontsize,
         xlabel=xlabel,
         ylabel=ylabel,
+        xaxis=:log10,
         xlabelfontsize=fontsize,
         ylabelfontsize=fontsize,
         legend=:outerright,
@@ -207,9 +253,12 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
         bottom_margin=5Plots.mm,
         legend_left_margin=-5Plots.mm,
     )
+    yflip!(true)
     plot!(size=(1000,500))
     Plots.savefig("$(path).png")
     Plots.savefig("$(path).svg")
+    # Plots.savefig("$(path).tikz")
+    # Plots.savefig("$(path).tex")
 end
 
 
@@ -417,7 +466,7 @@ function make_plots(
             end
 
             filename = joinpath(rs.out_dir, "feature_dist_" * join(to_subpath(loss_config), "_"))
-            mk_areaplot2(filename, has_header=true, xlabel="Sampling #", ylabel="Counts")
+            mk_areaplot2(filename, has_header=true, xlabel="Sampling #", ylabel="Proportion")
         end
     end
 end
