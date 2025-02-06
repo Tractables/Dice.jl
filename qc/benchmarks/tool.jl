@@ -3,6 +3,7 @@ include("benchmarks.jl")
 TAG = "v109_unif_ty"
 TAG = "v1110_weighted_se"
 TAG = "v112_prettier_unif"
+TAG = "v113_prettier_unif"
 OUT_TOP_DIR = joinpath(@__DIR__, "../../../tuning-output")
 
 args = ARGS
@@ -10,6 +11,10 @@ allow_overwrite = "-f" ∈ args
 args = filter(a -> a != "-f", args)
 plot_only = "-p" in args
 args = filter(a -> a != "-p", args)
+
+if plot_only
+    TAG = "v1110_weighted_se"
+end
 
 # plot_only = true
 
@@ -100,6 +105,7 @@ println_loud(rs, loss_config_weight_pairs)
 println_loud(rs, "Epochs: $(epochs)")
 println_loud(rs, "Bound: $(bound)")
 println_loud(rs, "SEED: $(SEED)")
+println_loud(rs, "ARGS: $(join(map(arg -> contains(arg, ' ') ? "\"$(arg)\"" : arg, ARGS), " "))")
 println_loud(rs)
 println("Logging to $(log_path)")
 println()

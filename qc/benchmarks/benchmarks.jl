@@ -212,8 +212,8 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
     n_colors = Base.size(mat, 2)
     phi = (1 + √5) / 2  # golden ratio
     colors = [
-        get(cgrad(:thermal), # :balance has a nice range of colors
-            mod((i / phi + 0.2 * rand(rng)), 1.0)
+        get(cgrad(:thermal), 
+            mod((i / 2 / phi), 1.0) ^ 1.2
         ) 
         for i in 1:n_colors
     ]
@@ -466,7 +466,7 @@ function make_plots(
             end
 
             filename = joinpath(rs.out_dir, "feature_dist_" * join(to_subpath(loss_config), "_"))
-            mk_areaplot2(filename, has_header=true, xlabel="Sampling #", ylabel="Proportion")
+            mk_areaplot2(filename, has_header=true, xlabel="Epochs", ylabel="Proportion")
         end
     end
 end
