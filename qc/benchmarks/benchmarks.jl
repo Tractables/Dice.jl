@@ -173,9 +173,6 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
     labels = if isnothing(header)
         torow(["$(i)" for i in 0:size(mat, 2)])
     else
-        # header = [ if length(h) > 10 h[:10] * "..." else h end
-
-        #            for h in header ]
         function f(h::AbstractString)
             l = 20
             if length(collect(h)) > l
@@ -209,12 +206,11 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
         foreground_color_legend = nothing,
         bottom_margin=5Plots.mm,
         legend_left_margin=-5Plots.mm,
-        # legend=false,
-        # legend_margin=-100,  # Add this line to reduce the margin
     )
     plot!(size=(1000,500))
-    savefig("$(path).png")
-    savefig("$(path).svg")
+    Plots.savefig("$(path).png")
+    Plots.savefig("$(path).svg")
+end
 
 
     # p = plot(
@@ -243,152 +239,155 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
 
     # savefig("$(path).tikz")
     # savefig("$(path).tex")
-end
 using PyPlot
 
 
 
 
 
-function save_areaplot2(path, header, v; xlabel, ylabel)
-    mat = mapreduce(permutedims, vcat, v)
+# function save_areaplot2(path, header, v; xlabel, ylabel)
+#     mat = mapreduce(permutedims, vcat, v)
     
-    # Normalize each row to get proportions
-    row_sums = sum(mat, dims=2)
-    mat = mat ./ row_sums
+#     # Normalize each row to get proportions
+#     row_sums = sum(mat, dims=2)
+#     mat = mat ./ row_sums
     
-    torow(v) = reshape(v, 1, length(v))
-    size = Base.size
+#     torow(v) = reshape(v, 1, length(v))
+#     size = Base.size
     
-    # Generate labels first
-    labels = if isnothing(header)
-        ["$(i)" for i in 0:size(mat)[2]]
-    else
-        function f(h::AbstractString)
-            l = 20
-            if length(collect(h)) > l
-                first(h, l) * " ..."
-            else
-                h
-            end
-        end
-        [f(s) for s in header]
-    end
+#     # Generate labels first
+#     labels = if isnothing(header)
+#         ["$(i)" for i in 0:size(mat)[2]]
+#     else
+#         function f(h::AbstractString)
+#             l = 20
+#             if length(collect(h)) > l
+#                 first(h, l) * " ..."
+#             else
+#                 h
+#             end
+#         end
+#         [f(s) for s in header]
+#     end
     
-    # Set first label manually
-    if length(labels) > 0
-        labels[1] = "Not well-typed"
-    end
+#     # Set first label manually
+#     if length(labels) > 0
+#         labels[1] = "Not well-typed"
+#     end
+#     for i in 1:length(labels)
+#         labels[i] = ""
+#     end
     
-    # Threshold for "small" areas (using proportion threshold)
-    threshold = 0.01  # 1% threshold
+#     # Threshold for "small" areas (using proportion threshold)
+#     threshold = 0.0  # 1% threshold
     
-    # Identify which columns are "small" based on their maximum proportion
-    column_maxes = [maximum(mat[:, i]) for i in 1:size(mat)[2]]
-    is_small = column_maxes .< threshold
+#     # Identify which columns are "small" based on their maximum proportion
+#     column_maxes = [maximum(mat[:, i]) for i in 1:size(mat)[2]]
+#     is_small = column_maxes .< threshold
     
-    # Combine columns keeping originals but marking small ones for special coloring
-    mat_combined = mat
+#     # Combine columns keeping originals but marking small ones for special coloring
+#     mat_combined = mat
     
-    # Update labels
-    labels_main = copy(labels)
-    other_indices = findall(is_small)
+#     # Update labels
+#     labels_main = copy(labels)
+#     other_indices = findall(is_small)
     
-    # Create figure and axis
-    fig, ax = subplots(figsize=(10, 5))
+#     # Create figure and axis
+#     fig, ax = subplots(figsize=(10, 5))
     
-    # Get x values
-    x = 1:size(mat)[1]
+#     # Get x values
+#     x = 1:size(mat)[1]
     
-    # Create colors using thermal colormap, skipping first 20%
-    n_main = sum(.!is_small)
-    thermal_cmap = plt.cm.get_cmap("magma")  # similar to thermal
-    main_colors = [(0, 0, 0, 1)]  # Start with black for "Not well-typed"
-    if n_main > 1
-        # Generate colors from thermal gradient, skipping first 20%
-        thermal_colors = [thermal_cmap(i) for i in LinRange(0.2, 1.0, n_main-1)]
-        main_colors = vcat(main_colors, thermal_colors)
-    end
+#     # Create colors using thermal colormap, skipping first 20%
+#     n_main = sum(.!is_small)
+#     thermal_cmap = plt.cm.get_cmap("magma")  # similar to thermal
+#     main_colors = [(0, 0, 0, 1)]  # Start with black for "Not well-typed"
+#     if n_main > 1
+#         # Generate colors from thermal gradient, skipping first 20%
+#         thermal_colors = [thermal_cmap(i) for i in LinRange(0.2, 1.0, n_main-1)]
+#         main_colors = vcat(main_colors, thermal_colors)
+#     end
     
-    # Define two shades of blue for "other" categories
-    light_blue = (0.6, 0.8, 1.0, 1.0)  # Light blue
-    dark_blue = (0.2, 0.4, 0.8, 1.0)   # Dark blue
+#     # Define two shades of blue for "other" categories
+#     light_blue = (0.6, 0.8, 1.0, 1.0)  # Light blue
+#     dark_blue = (0.2, 0.4, 0.8, 1.0)   # Dark blue
     
-    # Create color array
-    colors = Vector{Tuple{Float64, Float64, Float64, Float64}}(undef, size(mat)[2])
-    main_idx = 1
-    for i in 1:size(mat)[2]
-        if is_small[i]
-            colors[i] = i % 2 == 0 ? light_blue : dark_blue
-            labels_main[i] = "Other"
-        else
-            colors[i] = main_colors[main_idx]
-            main_idx += 1
-        end
-    end
+#     # Create color array
+#     colors = Vector{Tuple{Float64, Float64, Float64, Float64}}(undef, size(mat)[2])
+#     main_idx = 1
+#     for i in 1:size(mat)[2]
+#         if is_small[i]
+#             colors[i] = i % 2 == 0 ? light_blue : dark_blue
+#             labels_main[i] = "Other"
+#         else
+#             colors[i] = main_colors[main_idx]
+#             main_idx += 1
+#         end
+#     end
     
-    # Create stacked area plot
-    y_stack = zeros(size(mat_combined)[1])
-    areas = []
+#     # Create stacked area plot
+#     y_stack = zeros(size(mat_combined)[1])
+#     areas = []
     
-    # Track if we've added "Other" to legend
-    other_in_legend = false
+#     # Track if we've added "Other" to legend
+#     other_in_legend = false
     
-    for i in 1:size(mat_combined)[2]
-        # For small categories, only add to legend once
-        if is_small[i]
-            if !other_in_legend
-                area = ax.fill_between(x, y_stack, y_stack .+ mat_combined[:, i],
-                                     label="Other",
-                                     color=colors[i],
-                                     alpha=0.95)
-                other_in_legend = true
-            else
-                area = ax.fill_between(x, y_stack, y_stack .+ mat_combined[:, i],
-                                     color=colors[i],
-                                     alpha=0.95)
-            end
-        else
-            area = ax.fill_between(x, y_stack, y_stack .+ mat_combined[:, i],
-                                 label=labels_main[i],
-                                 color=colors[i],
-                                 alpha=0.95)
-        end
-        push!(areas, area)
-        y_stack .+= mat_combined[:, i]
-    end
+#     for i in 1:size(mat_combined)[2]
+#         # For small categories, only add to legend once
+#         if is_small[i]
+#             if !other_in_legend
+#                 area = ax.fill_between(x, y_stack, y_stack .+ mat_combined[:, i],
+#                                      label="Other",
+#                                      color=colors[i],
+#                                      alpha=0.95)
+#                 other_in_legend = true
+#             else
+#                 area = ax.fill_between(x, y_stack, y_stack .+ mat_combined[:, i],
+#                                      color=colors[i],
+#                                      alpha=0.95)
+#             end
+#         else
+#             area = ax.fill_between(x, y_stack, y_stack .+ mat_combined[:, i],
+#                                  label=labels_main[i],
+#                                  color=colors[i],
+#                                  alpha=0.95)
+#         end
+#         push!(areas, area)
+#         y_stack .+= mat_combined[:, i]
+#     end
     
-    # Style improvements
-    ax.set_facecolor("white")
-    fig.patch.set_facecolor("white")
+#     # Style improvements
+#     ax.set_facecolor("white")
+#     fig.patch.set_facecolor("white")
     
-    # Customize plot
-    fontsize = 8
-    ax.set_xlabel(xlabel, fontsize=fontsize)
-    ax.set_ylabel("Proportion", fontsize=fontsize)
-    ax.tick_params(labelsize=fontsize)
+#     # Customize plot
+#     fontsize = 8
+#     ax.set_xlabel(xlabel, fontsize=fontsize)
+#     ax.set_ylabel("Proportion", fontsize=fontsize)
+#     ax.tick_params(labelsize=fontsize)
     
-    # Set y-axis to show percentages
-    ax.yaxis.set_major_formatter(plt.matplotlib.ticker.PercentFormatter(1.0))
+#     # Set y-axis to show percentages
+#     ax.yaxis.set_major_formatter(plt.matplotlib.ticker.PercentFormatter(1.0))
     
-    # Set font family
-    plt.rcParams["font.family"] = "Palatino"
+#     # Set font family
+#     plt.rcParams["font.family"] = "Palatino"
     
-    # Adjust legend
-    legend = ax.legend(bbox_to_anchor=(1.05, 1),
-                      loc="upper left",
-                      fontsize=fontsize)
-    legend.get_frame().set_facecolor("none")
+#     # Adjust legend
+#     legend = ax.legend(bbox_to_anchor=(1.05, 1),
+#                       loc="upper left",
+#                       fontsize=fontsize)
+#     legend.get_frame().set_facecolor("none")
     
-    # Adjust margins
-    plt.subplots_adjust(left=0.1, right=0.85, bottom=0.1, top=0.9)
+#     # Adjust margins
+#     plt.subplots_adjust(left=0.1, right=0.85, bottom=0.1, top=0.9)
     
-    # Save figures
-    plt.savefig("$(path).png", dpi=300, bbox_inches="tight")
-    plt.savefig("$(path).svg", bbox_inches="tight")
+#     # Save figures
+#     plt.savefig("$(path).png", dpi=300, bbox_inches="tight")
+#     plt.savefig("$(path).svg", bbox_inches="tight")
     
-    plt.close()
-end
+#     plt.close()
+# end
+
 
 
 
@@ -412,9 +411,9 @@ function make_plots(
                 for (num_samples, pre, post) in zip(xs, pres, posts)
                     println(file, "$(num_samples)\t$(pre)\t$(post)")
                 end
-                plot(xs, pres, label="Initial", color=:blue, xlabel="Number of samples", ylabel="Count", title="STLC: Cumulative unique types during sampling", legend=:topright)
+                Plots.plot(xs, pres, label="Initial", color=:blue, xlabel="Number of samples", ylabel="Count", title="STLC: Cumulative unique types during sampling", legend=:topright)
                 plot!(xs, posts, label="Trained", color=:red)
-                savefig(joinpath(out_dir, "$(name).svg"))
+                Plots.savefig(joinpath(out_dir, "$(name).svg"))
             end
 
             filename = joinpath(rs.out_dir, "feature_dist_" * join(to_subpath(loss_config), "_"))
@@ -422,7 +421,9 @@ function make_plots(
         end
     end
 end
-make_plots(rs, generation_params, loss_config_weight_pairs, epochs, bound)
+
+
+# make_plots(rs, generation_params, loss_config_weight_pairs, epochs, bound)
 end
 
 function compute_feature_counts(feature_counts_history)
@@ -511,8 +512,8 @@ function save_areaplot(path, v)
         ylabelfontsize=fontsize,
         legend=:outertopright,
     )
-    savefig("$(path).tikz")
-    savefig("$(path).tex")
+    Plots.savefig("$(path).tikz")
+    Plots.savefig("$(path).tex")
 end
 
 function mk_areaplot(path)
@@ -545,8 +546,8 @@ function save_learning_curve(out_dir, learning_curve, name)
         for (epoch, logpr) in zip(xs, learning_curve)
             println(file, "$(epoch)\t$(logpr)")
         end
-        plot(xs, learning_curve)
-        savefig(joinpath(out_dir, "$(name).svg"))
+        Plots.plot(xs, learning_curve)
+        Plots.savefig(joinpath(out_dir, "$(name).svg"))
     end
 end
 

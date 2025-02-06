@@ -10,7 +10,7 @@ args = filter(a -> a != "-f", args)
 plot_only = "-p" in args
 args = filter(a -> a != "-p", args)
 
-plots_only = true
+# plot_only = true
 
 ## PARSE ARGS
 if isempty(args)
@@ -103,7 +103,7 @@ println_loud(rs)
 println("Logging to $(log_path)")
 println()
 
-if !plots_only
+if !plot_only
     run_benchmark(rs, generation_params, loss_config_weight_pairs, epochs, bound)
 end
 make_plots(rs, generation_params, loss_config_weight_pairs, epochs, bound)
