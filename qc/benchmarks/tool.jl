@@ -13,7 +13,7 @@ plot_only = "-p" in args
 args = filter(a -> a != "-p", args)
 
 if plot_only
-    TAG = "v1110_weighted_se"
+    # TAG = "v1110_weighted_se"
 end
 
 # plot_only = true

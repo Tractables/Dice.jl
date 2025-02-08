@@ -242,7 +242,7 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
         end
     end
 
-    fontsize=8
+    fontsize=20
     areaplot(
         mat,
         labels=labels,
@@ -257,15 +257,15 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
         xlabelfontsize=fontsize,
         ylabelfontsize=fontsize,
         legend=:outerright,
-        left_margin=10Plots.mm,
-        right_margin=15Plots.mm,
+        left_margin=20Plots.mm,
+        right_margin=30Plots.mm,
         foreground_color_legend = nothing,
-        bottom_margin=5Plots.mm,
-        legend_left_margin=-5Plots.mm,
+        bottom_margin=10Plots.mm,
+        legend_left_margin=-20Plots.mm,
         yticks=nothing,
     )
     yflip!(true)
-    plot!(size=(1000,500))
+    plot!(size=(2000,1200))
     Plots.savefig("$(path).png")
     Plots.savefig("$(path).svg")
     # Plots.savefig("$(path).tikz")
