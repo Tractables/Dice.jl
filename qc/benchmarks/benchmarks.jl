@@ -1,7 +1,7 @@
 abstract type GenerationParams{T} end
 include("lib/lib.jl")
 
-UNIQUE_CURVES_SAMPLES = 10_000
+UNIQUE_CURVES_SAMPLES = 100_000
 using Plots
 # pgfplotsx()
 using Random
