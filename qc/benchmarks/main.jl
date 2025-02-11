@@ -6,18 +6,18 @@ GENERATION_PARAMS_LIST = [
     #     expr_size=5,
     #     typ_size=2,
     # ),
-    LangSiblingDerivedGenerator{STLC}(
-        root_ty=Expr.t,
-        ty_sizes=[Expr.t=>5, Typ.t=>2],
-        stack_size=2,
-        intwidth=3,
-    )
-    # LangSiblingDerivedGenerator{RBT}(
-    #     root_ty=ColorKVTree.t,
-    #     ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
+    # LangSiblingDerivedGenerator{STLC}(
+    #     root_ty=Expr.t,
+    #     ty_sizes=[Expr.t=>5, Typ.t=>2],
     #     stack_size=2,
     #     intwidth=3,
-    # ),
+    # )
+    LangSiblingDerivedGenerator{RBT}(
+        root_ty=ColorKVTree.t,
+        ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
+        stack_size=2,
+        intwidth=3,
+    ),
 #    LangSiblingDerivedGenerator{BST}(
 #        root_ty=KVTree.t,
 #        ty_sizes=[KVTree.t=>4],
@@ -25,17 +25,16 @@ GENERATION_PARAMS_LIST = [
 #        intwidth=3,
 #    ),
 ]
-LR_LIST = [0.3]
-# LR_LIST = [0.03, 0.1, 0.3]
+# LR_LIST = [0.3]
+LR_LIST = [0.03, 0.1, 0.3]
 
-# SAMPLES_PER_BATCH_LIST = [200]
-SAMPLES_PER_BATCH_LIST = [2000]
-RESAMPLING_FREQUENCY_LIST = [1]
-EPOCHS_LIST = [2000, 10000]
+SAMPLES_PER_BATCH_LIST = [200]
+# SAMPLES_PER_BATCH_LIST = [2000]
+RESAMPLING_FREQUENCY_LIST = [2]
+EPOCHS_LIST = [2000]
+BOUND_LIST = [0., 0.1]
 
-BOUND_LIST = [0.]
-
-PROPERTY_LIST = [nothing]
+PROPERTY_LIST = [isRBT, always_true]
 
 # TRAIN_FEATURE_LIST = [false, true]
 TRAIN_FEATURE_LIST = [true]
@@ -53,21 +52,40 @@ println(n_runs)
 @show BOUND_LIST
 println()
 
-LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
+
+LOSS_CONFIG_WEIGHT_PAIRS_LIST = []
+
+append!(LOSS_CONFIG_WEIGHT_PAIRS_LIST,
     (
-        [
-            FeatureSpecEntropy{STLC}(resampling_frequency,samples_per_batch,wellTyped,typecheck_ft,train_feature) => lr,
-            # WeightedSpecEntropy{STLC}(resampling_frequency,samples_per_batch,wellTyped,inv_size) => lr,
-            # MLELossConfig{STLC}(num_apps, Uniform()) => lr,
-            # MLELossConfig{STLC}(size, Uniform()) => lr,
-        ]
+        [SpecEntropy{RBT}(resampling_frequency,samples_per_batch,property) => lr]
         for lr in LR_LIST
         for property in PROPERTY_LIST
         for resampling_frequency in RESAMPLING_FREQUENCY_LIST
         for samples_per_batch in SAMPLES_PER_BATCH_LIST
-        for train_feature in TRAIN_FEATURE_LIST
     ),
-]))
+)
+append!(LOSS_CONFIG_WEIGHT_PAIRS_LIST,
+    (
+        [SatisfyPropertyLoss{RBT}(isRBTdist) => lr]
+        for lr in LR_LIST
+    ),
+)
+
+# LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
+#     (
+#         [
+#             FeatureSpecEntropy{STLC}(resampling_frequency,samples_per_batch,wellTyped,typecheck_ft,train_feature) => lr,
+#             # WeightedSpecEntropy{STLC}(resampling_frequency,samples_per_batch,wellTyped,inv_size) => lr,
+#             # MLELossConfig{STLC}(num_apps, Uniform()) => lr,
+#             # MLELossConfig{STLC}(size, Uniform()) => lr,
+#         ]
+#         for lr in LR_LIST
+#         for property in PROPERTY_LIST
+#         for resampling_frequency in RESAMPLING_FREQUENCY_LIST
+#         for samples_per_batch in SAMPLES_PER_BATCH_LIST
+#         for train_feature in TRAIN_FEATURE_LIST
+#     ),
+# ]))
 
 # LOSS_CONFIG_WEIGHT_PAIRS_LIST = begin
 #     lr = 0.03
@@ -115,7 +133,8 @@ TOOL_PATH = "qc/benchmarks/tool.jl"
     p_s = replace(string(p), " "=>"")
     s = "julia --project $(TOOL_PATH) $(flags) $(p_s) $(lcws_s) $(epochs) $(bound)"
     cmd = Cmd(Cmd(convert(Vector{String}, split(s))), ignorestatus=true)
-    println(s)
+    s_hum = "julia --project $(TOOL_PATH) $(flags) \"$(p_s)\" \"$(lcws_s)\" $(epochs) $(bound)"
+    println(s_hum)
     out = IOBuffer()
     @async begin
         proc = run(pipeline(cmd; stdout=out, stderr=stdout),)
@@ -123,7 +142,7 @@ TOOL_PATH = "qc/benchmarks/tool.jl"
             println()
             println(proc.exitcode)
             so = String(take!(out))
-            println("FAILED: $(s)\nSTDOUT ===\n$(so)\n\n")
+            println("FAILED:\n$(s_hum)\nSTDOUT ===\n$(so)\n\n")
         end
     end
 end
