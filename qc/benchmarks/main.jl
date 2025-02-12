@@ -74,21 +74,25 @@ println()
 #     ),
 # )
 
-LOSS_CONFIG_WEIGHT_PAIRS_LIST = collect(Iterators.flatten([
+LOSS_CONFIG_WEIGHT_PAIRS_LIST = []
+append!(LOSS_CONFIG_WEIGHT_PAIRS_LIST,
     (
-        [
-            # FeatureSpecEntropy{STLC}(resampling_frequency,samples_per_batch,wellTyped,typecheck_ft,train_feature) => lr,
-            # WeightedSpecEntropy{STLC}(resampling_frequency,samples_per_batch,wellTyped,inv_size) => lr,
-            MLELossConfig{STLC}(num_apps, Target4321()) => lr,
-            MLELossConfig{STLC}(size, Target4321()) => lr,
-        ]
+        [MLELossConfig{STLC}(size, Target4321()) => lr]
         for lr in LR_LIST
         for property in PROPERTY_LIST
         for resampling_frequency in RESAMPLING_FREQUENCY_LIST
         for samples_per_batch in SAMPLES_PER_BATCH_LIST
-        for train_feature in TRAIN_FEATURE_LIST
     ),
-]))
+)
+append!(LOSS_CONFIG_WEIGHT_PAIRS_LIST,
+    (
+        [MLELossConfig{STLC}(num_apps, Target4321()) => lr]
+        for lr in LR_LIST
+        for property in PROPERTY_LIST
+        for resampling_frequency in RESAMPLING_FREQUENCY_LIST
+        for samples_per_batch in SAMPLES_PER_BATCH_LIST
+    ),
+)
 
 # LOSS_CONFIG_WEIGHT_PAIRS_LIST = begin
 #     lr = 0.03
