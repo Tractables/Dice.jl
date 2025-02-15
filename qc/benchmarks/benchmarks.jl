@@ -1033,7 +1033,7 @@ end
 struct SatisfyPropertyLoss{T} <: LossConfig{T}
     property::Function
 end
-to_subpath(p::SatisfyPropertyLoss) = ["$(p.property)"]
+to_subpath(p::SatisfyPropertyLoss) = ["satisfy_property", "prop=$(p.property)"]
 function create_loss_manager(rs::RunState, p::SatisfyPropertyLoss, generation)
     println_flush(rs.io, "Building computation graph for $(p)...")
     time_build_loss = @elapsed begin
@@ -1095,6 +1095,16 @@ function metric_loss(metric::Dist, ::Target4321)
         BoolToMax(prob_equals(metric, DistUInt32(1)), weight=.3),
         BoolToMax(prob_equals(metric, DistUInt32(2)), weight=.2),
         BoolToMax(prob_equals(metric, DistUInt32(3)), weight=.1),
+    ])
+end
+
+struct Target333 <: TargetDist end
+name(::Target333) = "target333"
+function metric_loss(metric::Dist, ::Target333)
+    mle_loss([
+        BoolToMax(prob_equals(metric, DistUInt32(0)), weight=.33),
+        BoolToMax(prob_equals(metric, DistUInt32(1)), weight=.33),
+        BoolToMax(prob_equals(metric, DistUInt32(2)), weight=.33),
     ])
 end
 

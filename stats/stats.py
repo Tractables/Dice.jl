@@ -20,7 +20,7 @@ parser.add_argument(
     help="One of:" +
     "\n    u: Unique over time" +
     "\n    us: Unique shapes over time." +
-    "\n    d: Distributions of metriscs."
+    "\n    d: Distributions of metrics."
 )
 parser.add_argument(
     'workload',
@@ -74,7 +74,16 @@ ORDER: List[str] = { # Put rows in this order and also assert that these generat
         # "RLSDThinSmallGenerator",
         # "RLSDThinEqLR30Epochs2000Bound10SPB200Generator",
         # "RLSDThinEqValidLR30Epochs2000Bound10SPB200Generator",
-        "LSDRBTFastGenerator"
+        # "LSDRBTFastGenerator"
+
+"UntunedGenerator",
+"ValidGenerator",
+"ValidBoundGenerator",
+"EntropyGenerator",
+"EntropyBoundGenerator",
+"SEGenerator",
+"SEBoundGenerator",
+
     ],
 
     "BST": [
@@ -188,7 +197,7 @@ def get_generators():
         and not (ORDER_ONLY and generator not in ORDER)
     ]
     for generator in ORDER:
-        assert generator in generators, generator
+        assert generator in generators, f"{generator} not in {generators}"
     def key(generator):
         if generator in ORDER:
             return ORDER.index(generator)

@@ -5,6 +5,8 @@ rootdir = "/space/tjoa/tuning-output/v56_rbt_thin"
 rootdir = "/space2/tjoa/tuning-output/v66_fig2_rbt"
 rootdir = "/space2/tjoa/tuning-output/v69_attempt_stlctb_faster"
 
+rootdir = "/scratch/tjoa/tuning-output/v114_rbt_table"
+
 import os
 import shutil
 
@@ -14,7 +16,7 @@ def get_label(segments, segment_labels):
         if segment in segments:
             assert res is None, f"multiple {segments} {segment_labels}"
             res = label
-    assert res is not None, f"none {segments} {segment_labels}"
+    assert res is not None, f"none {segments} {segment_labels.keys()}"
 
     if isinstance(res, tuple):
         lbl, rest = res
@@ -29,6 +31,7 @@ filename_to_dir: dict[str, str] = {}
 for root, subdirs, files in os.walk(rootdir):
     if "trained_Generator.v" in files:
         assert root[:len(rootdir)] == rootdir
+        print(root)
         segments = root[len(rootdir):].split("/")
 
         new = ""
@@ -78,6 +81,29 @@ for root, subdirs, files in os.walk(rootdir):
                 {"rand_forgiveness=true": ""},
             ]),
             "approx_entropy": "ACE",
+            "spec_entropy": ("SE", [
+                {
+                    "freq=5-spb=200": "Freq5SPB200",
+                    "freq=5-spb=100": "Freq5SPB100",
+                    "freq=5-spb=50": "Freq5SPB50",
+                    "freq=2-spb=200": "Freq2SPB200",
+                    "freq=2-spb=100": "Freq2SPB100",
+                    "freq=2-spb=50": "Freq2SPB50",
+                    "freq=1-spb=200": "Freq1SPB200",
+                    "freq=1-spb=100": "Freq1SPB100",
+                    "freq=1-spb=50": "Freq1SPB50",
+                },
+                {
+                    "prop=always_true": "AlwaysTrue",
+                    "prop=isRBT": "IsRBT",
+                },
+            ]),
+            "satisfy_property": ("Prop", [
+                {
+                    "prop=always_true": "AlwaysTrue",
+                    "prop=isRBTdist": "IsRBT",
+                },
+            ]),
         })
         new += get_label(segments, {
             "0.3": "LR30",
@@ -99,17 +125,6 @@ for root, subdirs, files in os.walk(rootdir):
             "bound=0.05": "Bound05",
             "bound=0.1": "Bound10",
             "bound=0.2": "Bound20",
-        })
-        new += get_label(segments, {
-            "freq=5-spb=200": "Freq5SPB200",
-            "freq=5-spb=100": "Freq5SPB100",
-            "freq=5-spb=50": "Freq5SPB50",
-            "freq=2-spb=200": "Freq2SPB200",
-            "freq=2-spb=100": "Freq2SPB100",
-            "freq=2-spb=50": "Freq2SPB50",
-            "freq=1-spb=200": "Freq1SPB200",
-            "freq=1-spb=100": "Freq1SPB100",
-            "freq=1-spb=50": "Freq1SPB50",
         })
         new += "Generator.v"
 
