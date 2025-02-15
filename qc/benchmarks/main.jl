@@ -86,7 +86,7 @@ append!(LOSS_CONFIG_WEIGHT_PAIRS_LIST,
 )
 append!(LOSS_CONFIG_WEIGHT_PAIRS_LIST,
     (
-        [MLELossConfig{STLC}(num_apps, Target4321()) => lr]
+        [MLELossConfig{STLC}(num_apps, Target333()) => lr]
         for lr in LR_LIST
         for property in PROPERTY_LIST
         for resampling_frequency in RESAMPLING_FREQUENCY_LIST

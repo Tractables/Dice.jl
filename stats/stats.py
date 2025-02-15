@@ -160,7 +160,8 @@ Fixpoint toShape (t : Tree) : Shape := match t with
     ),
     "RBT": Workload(
         type="Tree",
-        generator=lambda generator: "arbitrary" if "typebased" in generator.lower() else "gSized",
+        generator=lambda _:"gSized",
+        # generator=lambda generator: "arbitrary" if "typebased" in generator.lower() else "gSized",
         invariant_check="isRBT %s",
         metrics=["size", "height"],
         extra_definitions="""
@@ -214,7 +215,8 @@ def collect_unique():
         path = os.path.join(STRAT_DIR, generator)
         print(f"Unique over time for {generator}")
         pgrm = read(path) 
-        pgrm += workload.unique_extra
+        pgrm += "\n" + workload.extra_definitions
+        pgrm += "\n" + workload.unique_extra
         samples = []
 
         # to get an idea overhead per run:
@@ -236,7 +238,7 @@ def collect_unique():
                 | None => None
                 | Some t =>
                     (if """ + (workload.invariant_check % "t") + f""" then
-                        Some (sizeSTLC {t_to_id}, {t_to_id})
+                        Some (height {t_to_id}, {t_to_id})
                     else
                         None)
                 end)
@@ -246,7 +248,7 @@ def collect_unique():
                 gShapes = f"""Definition gShapes :=
               bindGen (vectorOf numSamples (bindGen {workload.generator(generator)} (fun t => returnGen
                 (if """ + (workload.invariant_check % "t") + f""" then
-                    Some (sizeSTLC {t_to_id}, {t_to_id})
+                    Some (height {t_to_id}, {t_to_id})
                 else
                     None)
               ))) (fun samples =>
@@ -272,7 +274,11 @@ def collect_unique():
             if PROGRAM_ONLY:
                 break
             line, = lines_between(stdout, f"QuickChecking (collect gShapes)", "+++")
+            print(stdout)
+            assert False
             for sample in line.replace("1 : \"[","").replace("]\"", "").split("; "):
+                if sample.startswith("None"):
+                    continue
                 pre = "Some ("
                 assert sample.startswith(pre), sample
                 size = sample[len(pre):]
