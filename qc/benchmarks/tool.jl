@@ -6,6 +6,7 @@ TAG = "v112_prettier_unif"
 TAG = "v113_prettier_unif"
 TAG = "v114_rbt_table"
 TAG = "v116_stlc4321"
+TAG = "v117_stlc4321"
 OUT_TOP_DIR = joinpath(@__DIR__, "../../../tuning-output")
 
 args = ARGS
