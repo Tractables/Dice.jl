@@ -20,7 +20,7 @@ parser.add_argument(
     help="One of:" +
     "\n    u: Unique over time" +
     "\n    us: Unique shapes over time." +
-    "\n    d: Distributions of metriscs."
+    "\n    d: Distributions of metrics."
 )
 parser.add_argument(
     'workload',
@@ -74,7 +74,16 @@ ORDER: List[str] = { # Put rows in this order and also assert that these generat
         # "RLSDThinSmallGenerator",
         # "RLSDThinEqLR30Epochs2000Bound10SPB200Generator",
         # "RLSDThinEqValidLR30Epochs2000Bound10SPB200Generator",
-        "LSDRBTFastGenerator"
+        # "LSDRBTFastGenerator"
+
+"UntunedGenerator",
+"ValidGenerator",
+"ValidBoundGenerator",
+"EntropyGenerator",
+"EntropyBoundGenerator",
+"SEGenerator",
+"SEBoundGenerator",
+
     ],
 
     "BST": [
@@ -151,7 +160,8 @@ Fixpoint toShape (t : Tree) : Shape := match t with
     ),
     "RBT": Workload(
         type="Tree",
-        generator=lambda generator: "arbitrary" if "typebased" in generator.lower() else "gSized",
+        generator=lambda _:"gSized",
+        # generator=lambda generator: "arbitrary" if "typebased" in generator.lower() else "gSized",
         invariant_check="isRBT %s",
         metrics=["size", "height"],
         extra_definitions="""
@@ -188,7 +198,7 @@ def get_generators():
         and not (ORDER_ONLY and generator not in ORDER)
     ]
     for generator in ORDER:
-        assert generator in generators, generator
+        assert generator in generators, f"{generator} not in {generators}"
     def key(generator):
         if generator in ORDER:
             return ORDER.index(generator)
@@ -205,7 +215,8 @@ def collect_unique():
         path = os.path.join(STRAT_DIR, generator)
         print(f"Unique over time for {generator}")
         pgrm = read(path) 
-        pgrm += workload.unique_extra
+        pgrm += "\n" + workload.extra_definitions
+        pgrm += "\n" + workload.unique_extra
         samples = []
 
         # to get an idea overhead per run:
@@ -227,7 +238,7 @@ def collect_unique():
                 | None => None
                 | Some t =>
                     (if """ + (workload.invariant_check % "t") + f""" then
-                        Some (sizeSTLC {t_to_id}, {t_to_id})
+                        Some (height {t_to_id}, {t_to_id})
                     else
                         None)
                 end)
@@ -237,7 +248,7 @@ def collect_unique():
                 gShapes = f"""Definition gShapes :=
               bindGen (vectorOf numSamples (bindGen {workload.generator(generator)} (fun t => returnGen
                 (if """ + (workload.invariant_check % "t") + f""" then
-                    Some (sizeSTLC {t_to_id}, {t_to_id})
+                    Some (height {t_to_id}, {t_to_id})
                 else
                     None)
               ))) (fun samples =>
@@ -263,14 +274,16 @@ def collect_unique():
             if PROGRAM_ONLY:
                 break
             line, = lines_between(stdout, f"QuickChecking (collect gShapes)", "+++")
+            # print(stdout)
             for sample in line.replace("1 : \"[","").replace("]\"", "").split("; "):
-                pre = "Some ("
-                assert sample.startswith(pre), sample
-                size = sample[len(pre):]
-                size = size[:size.find(",")]
-                size = int(size)
-                if size == 4:
-                    samples.append(sample)
+                samples.append(sample)
+                # pre = "Some ("
+                # assert sample.startswith(pre), sample
+                # size = sample[len(pre):]
+                # size = size[:size.find(",")]
+                # size = int(size)
+                # if size == 4:
+                #     samples.append(sample)
         
         if PROGRAM_ONLY:
             return

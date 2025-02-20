@@ -549,6 +549,7 @@ end
 
 alwaysTrue(t) = true
 isRBT(t) = satisfies_bookkeeping_invariant(t) && satisfies_balance_invariant(t) && satisfies_order_invariant(t)
+isRBTdist(t) = satisfies_bookkeeping_invariant(t) & satisfies_balance_invariant(t) & satisfies_order_invariant(t)
 isBST(t) = satisfies_order_invariant(t)
 function wellTyped(e::OptExpr.t)
     @assert isdeterministic(e)
@@ -709,7 +710,7 @@ function produce_loss(rs::RunState, m::SpecEntropyLossMgr, epoch::Integer)
                 num_meeting += 1
                 lpr_eq = LogPr(prob_equals(m.generation.value, sample))
                 lpr_eq = Dice.expand_logprs(l, lpr_eq)
-                [lpr_eq * compute(a, lpr_eq), Dice.Constant(lpr_eq)]
+                [lpr_eq * compute(a, lpr_eq), lpr_eq]
             else
                 [Dice.Constant(0), Dice.Constant(0)]
             end
@@ -718,6 +719,7 @@ function produce_loss(rs::RunState, m::SpecEntropyLossMgr, epoch::Integer)
         push!(m.num_meeting, num_meeting / length(samples))
 
         loss = Dice.expand_logprs(l, loss) / length(samples)
+        actual_loss = Dice.expand_logprs(l, actual_loss) / length(samples)
         m.current_loss = loss
         m.current_actual_loss = actual_loss
         m.current_samples = samples
@@ -1051,7 +1053,7 @@ end
 struct SatisfyPropertyLoss{T} <: LossConfig{T}
     property::Function
 end
-to_subpath(p::SatisfyPropertyLoss) = [nameof(p.property)]
+to_subpath(p::SatisfyPropertyLoss) = ["satisfy_property", "prop=$(p.property)"]
 function create_loss_manager(rs::RunState, p::SatisfyPropertyLoss, generation)
     println_flush(rs.io, "Building computation graph for $(p)...")
     time_build_loss = @elapsed begin
@@ -1115,3 +1117,16 @@ function metric_loss(metric::Dist, ::Target4321)
         BoolToMax(prob_equals(metric, DistUInt32(3)), weight=.1),
     ])
 end
+
+struct Target333 <: TargetDist end
+name(::Target333) = "target333"
+function metric_loss(metric::Dist, ::Target333)
+    mle_loss([
+        BoolToMax(prob_equals(metric, DistUInt32(0)), weight=.33),
+        BoolToMax(prob_equals(metric, DistUInt32(1)), weight=.33),
+        BoolToMax(prob_equals(metric, DistUInt32(2)), weight=.33),
+    ])
+end
+
+
+always_true(_) = true
