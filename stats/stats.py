@@ -274,18 +274,16 @@ def collect_unique():
             if PROGRAM_ONLY:
                 break
             line, = lines_between(stdout, f"QuickChecking (collect gShapes)", "+++")
-            print(stdout)
-            assert False
+            # print(stdout)
             for sample in line.replace("1 : \"[","").replace("]\"", "").split("; "):
-                if sample.startswith("None"):
-                    continue
-                pre = "Some ("
-                assert sample.startswith(pre), sample
-                size = sample[len(pre):]
-                size = size[:size.find(",")]
-                size = int(size)
-                if size == 4:
-                    samples.append(sample)
+                samples.append(sample)
+                # pre = "Some ("
+                # assert sample.startswith(pre), sample
+                # size = sample[len(pre):]
+                # size = size[:size.find(",")]
+                # size = int(size)
+                # if size == 4:
+                #     samples.append(sample)
         
         if PROGRAM_ONLY:
             return
