@@ -1,9 +1,11 @@
 abstract type GenerationParams{T} end
 include("lib/lib.jl")
 
-UNIQUE_CURVES_SAMPLES = 10_000
+UNIQUE_CURVES_SAMPLES = 100_000
 using Plots
-# pgfplotsx()
+using PGFPlots
+# Start with GR backend by default
+gr()
 using Random
 using Infiltrator
 using DataStructures
@@ -163,7 +165,13 @@ function mk_areaplot2(path; xlabel, ylabel, has_header)
             nothing, readlines(f)
         end
         v = [[parse(Float64, s) for s in split(line,"\t")] for line in lines]
+        # Create plot with GR backend
         save_areaplot2(path, header, v; xlabel, ylabel)
+        # Switch to PGFPlots only for tex/tikz output
+        pgfplots()
+        save_areaplot2(path, header, v; xlabel, ylabel)
+        # Switch back to GR
+        gr()
     end
 end
 
@@ -231,9 +239,6 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
     # Override specific colors for the reordered positions
     override_colors = [
         RGBA(0, 0, 0, 1.0),              # Black for "Not Well-Typed"
-        # RGBA(0.8, 0.3, 0.3, 1.0),        # Deep rose red
-        # RGBA(0.35, 0.35, 0.8, 1.0),      # Medium blue
-        # RGBA(0.8, 0.6, 0.2, 1.0),        # Golden yellow
     ]
     
     for (new_pos, color) in zip(original_positions, override_colors)
@@ -266,10 +271,16 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
     )
     yflip!(true)
     plot!(size=(2000,1200))
-    Plots.savefig("$(path).png")
-    Plots.savefig("$(path).svg")
-    # Plots.savefig("$(path).tikz")
-    # Plots.savefig("$(path).tex")
+    
+    # Save with current backend
+    backend_name = string(Plots.backend())
+    if backend_name == "pgfplotsx"
+        Plots.savefig("$(path).tikz")
+        Plots.savefig("$(path).tex")
+    else
+        Plots.savefig("$(path).png")
+        Plots.savefig("$(path).svg")
+    end
 end
 
 
@@ -471,9 +482,18 @@ function make_plots(
                 for (num_samples, pre, post) in zip(xs, pres, posts)
                     println(file, "$(num_samples)\t$(pre)\t$(post)")
                 end
+                # Create plot with GR backend
                 Plots.plot(xs, pres, label="Initial", color=:blue, xlabel="Number of samples", ylabel="Count", title="STLC: Cumulative unique types during sampling", legend=:topright)
                 plot!(xs, posts, label="Trained", color=:red)
                 Plots.savefig(joinpath(out_dir, "$(name).svg"))
+                Plots.savefig(joinpath(out_dir, "$(name).png"))
+                
+                # Switch to PGFPlots for tex output
+                pgfplots()
+                Plots.savefig(joinpath(out_dir, "$(name).tikz"))
+                Plots.savefig(joinpath(out_dir, "$(name).tex"))
+                # Switch back to GR
+                gr()
             end
 
             filename = joinpath(rs.out_dir, "feature_dist_" * join(to_subpath(loss_config), "_"))
