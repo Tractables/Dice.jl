@@ -247,7 +247,7 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
         end
     end
 
-    fontsize=20
+    fontsize=32
     areaplot(
         mat,
         labels=labels,
@@ -262,10 +262,10 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
         xlabelfontsize=fontsize,
         ylabelfontsize=fontsize,
         legend=:outerright,
-        left_margin=20Plots.mm,
-        right_margin=30Plots.mm,
+        left_margin=30Plots.mm,
+        right_margin=50Plots.mm,
         foreground_color_legend = nothing,
-        bottom_margin=10Plots.mm,
+        bottom_margin=25Plots.mm,
         legend_left_margin=-20Plots.mm,
         yticks=nothing,
     )

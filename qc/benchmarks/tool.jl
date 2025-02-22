@@ -8,6 +8,7 @@ TAG = "v114_rbt_table"
 TAG = "v116_stlc4321"
 TAG = "v117_stlc4321"
 TAG = "v118_8stlcbespoke"
+TAG = "v113_prettier_unif"
 OUT_TOP_DIR = joinpath(@__DIR__, "../../../tuning-output")
 
 args = ARGS
