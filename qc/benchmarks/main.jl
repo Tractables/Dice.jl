@@ -6,18 +6,18 @@ GENERATION_PARAMS_LIST = [
         expr_size=5,
         typ_size=2,
     ),
-    # LangSiblingDerivedGenerator{STLC}(
-    #     root_ty=Expr.t,
-    #     ty_sizes=[Expr.t=>5, Typ.t=>2],
-    #     stack_size=2,
-    #     intwidth=3,
-    # )
-    # LangSiblingDerivedGenerator{RBT}(
-    #     root_ty=ColorKVTree.t,
-    #     ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
-    #     stack_size=2,
-    #     intwidth=3,
-    # ),
+#     LangSiblingDerivedGenerator{STLC}(
+#         root_ty=Expr.t,
+#         ty_sizes=[Expr.t=>5, Typ.t=>2],
+#         stack_size=2,
+#         intwidth=3,
+#     )
+#     LangSiblingDerivedGenerator{RBT}(
+#         root_ty=ColorKVTree.t,
+#         ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
+#         stack_size=2,
+#         intwidth=3,
+#     ),
 #    LangSiblingDerivedGenerator{BST}(
 #        root_ty=KVTree.t,
 #        ty_sizes=[KVTree.t=>4],
@@ -25,18 +25,18 @@ GENERATION_PARAMS_LIST = [
 #        intwidth=3,
 #    ),
 ]
-LR_LIST = [0.3]
-# LR_LIST = [0.03, 0.1, 0.3]
+# LR_LIST = [0.3]
+LR_LIST = [0.03, 0.1, 0.3, 1.0]
 
 # SAMPLES_PER_BATCH_LIST = [200]
-SAMPLES_PER_BATCH_LIST = [2000]
-RESAMPLING_FREQUENCY_LIST = [1]
-EPOCHS_LIST = [2000] #, 10000]
+# SAMPLES_PER_BATCH_LIST = [2000]
+# RESAMPLING_FREQUENCY_LIST = [1]
+EPOCHS_LIST = [2] #, 10000]
 
-SAMPLES_PER_BATCH_LIST = [200]
+# SAMPLES_PER_BATCH_LIST = [200]
 # SAMPLES_PER_BATCH_LIST = [2000]
 RESAMPLING_FREQUENCY_LIST = [2]
-EPOCHS_LIST = [1000, 2000]
+EPOCHS_LIST = [1000]
 BOUND_LIST = [0.]
 
 SAMPLES_PER_BATCH_LIST = [nothing]
@@ -61,7 +61,23 @@ println(n_runs)
 println()
 
 
-# LOSS_CONFIG_WEIGHT_PAIRS_LIST = []
+function workload_of(::Type{<:GenerationParams{T}}) where T
+    T
+end
+wl = workload_of(typeof(GENERATION_PARAMS_LIST[1]))
+
+LOSS_CONFIG_WEIGHT_PAIRS_LIST = []
+append!(LOSS_CONFIG_WEIGHT_PAIRS_LIST,
+    (
+        # [SpecEntropy{RBT}(resampling_frequency,samples_per_batch,property) => lr]
+        [MLELossConfig{wl}(depth, target) => lr]
+        for lr in LR_LIST
+        for property in PROPERTY_LIST
+        for resampling_frequency in RESAMPLING_FREQUENCY_LIST
+        for samples_per_batch in SAMPLES_PER_BATCH_LIST
+        for target in [Uniform(), Linear()]
+    )
+)
 
 # append!(LOSS_CONFIG_WEIGHT_PAIRS_LIST,
 #     (
@@ -79,25 +95,25 @@ println()
 #     ),
 # )
 
-LOSS_CONFIG_WEIGHT_PAIRS_LIST = []
-append!(LOSS_CONFIG_WEIGHT_PAIRS_LIST,
-    (
-        [MLELossConfig{STLC}(size, Target4321()) => lr]
-        for lr in LR_LIST
-        for property in PROPERTY_LIST
-        for resampling_frequency in RESAMPLING_FREQUENCY_LIST
-        for samples_per_batch in SAMPLES_PER_BATCH_LIST
-    ),
-)
-append!(LOSS_CONFIG_WEIGHT_PAIRS_LIST,
-    (
-        [MLELossConfig{STLC}(num_apps, Target333()) => lr]
-        for lr in LR_LIST
-        for property in PROPERTY_LIST
-        for resampling_frequency in RESAMPLING_FREQUENCY_LIST
-        for samples_per_batch in SAMPLES_PER_BATCH_LIST
-    ),
-)
+# LOSS_CONFIG_WEIGHT_PAIRS_LIST = []
+# append!(LOSS_CONFIG_WEIGHT_PAIRS_LIST,
+#     (
+#         [MLELossConfig{STLC}(size, Target4321()) => lr]
+#         for lr in LR_LIST
+#         for property in PROPERTY_LIST
+#         for resampling_frequency in RESAMPLING_FREQUENCY_LIST
+#         for samples_per_batch in SAMPLES_PER_BATCH_LIST
+#     ),
+# )
+# append!(LOSS_CONFIG_WEIGHT_PAIRS_LIST,
+#     (
+#         [MLELossConfig{STLC}(num_apps, Target333()) => lr]
+#         for lr in LR_LIST
+#         for property in PROPERTY_LIST
+#         for resampling_frequency in RESAMPLING_FREQUENCY_LIST
+#         for samples_per_batch in SAMPLES_PER_BATCH_LIST
+#     ),
+# )
 
 # LOSS_CONFIG_WEIGHT_PAIRS_LIST = begin
 #     lr = 0.03
