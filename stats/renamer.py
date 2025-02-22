@@ -6,6 +6,7 @@ rootdir = "/space2/tjoa/tuning-output/v66_fig2_rbt"
 rootdir = "/space2/tjoa/tuning-output/v69_attempt_stlctb_faster"
 
 rootdir = "/scratch/tjoa/tuning-output/v114_rbt_table"
+rootdir = "/space2/tjoa/tuning-output/v117_stlc4321"
 
 import os
 import shutil
@@ -104,8 +105,19 @@ for root, subdirs, files in os.walk(rootdir):
                     "prop=isRBTdist": "IsRBT",
                 },
             ]),
+            "mle" : ("MLE", [
+                {
+                    "num_apps": "NumApps",
+                },
+                {
+                    "target4321": "Target4321",
+                    "target333": "Target333",
+                }
+
+            ]),
         })
         new += get_label(segments, {
+            "1.0": "LR1",
             "0.3": "LR30",
             "0.1": "LR10",
             "0.03": "LR03",
@@ -116,6 +128,7 @@ for root, subdirs, files in os.walk(rootdir):
         #     "ty-sizes=Main.ColorKVTree.t-8-Main.Color.t-0": "Sz8",
         # })
         new += get_label(segments, {
+            "epochs=1000": "Epochs1000",
             "epochs=2000": "Epochs2000",
             "epochs=700": "Epochs700",
             "epochs=500": "Epochs500",
