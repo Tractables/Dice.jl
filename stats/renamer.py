@@ -6,7 +6,7 @@ rootdir = "/space2/tjoa/tuning-output/v66_fig2_rbt"
 rootdir = "/space2/tjoa/tuning-output/v69_attempt_stlctb_faster"
 
 rootdir = "/scratch/tjoa/tuning-output/v114_rbt_table"
-rootdir = "/space2/tjoa/tuning-output/v117_stlc4321"
+rootdir = "/space2/tjoa/tuning-output/v119_4321"
 
 import os
 import shutil
@@ -132,6 +132,7 @@ for root, subdirs, files in os.walk(rootdir):
             "epochs=2000": "Epochs2000",
             "epochs=700": "Epochs700",
             "epochs=500": "Epochs500",
+            "epochs=250": "Epochs250",
         })
         new += get_label(segments, {
             "bound=0.0": "",

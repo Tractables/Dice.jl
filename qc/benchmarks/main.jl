@@ -2,28 +2,28 @@ include("benchmarks.jl")
 using Infiltrator
 
 GENERATION_PARAMS_LIST = [
-    LangBespokeSTLCGenerator(
-        expr_size=5,
-        typ_size=2,
-    ),
-#     LangSiblingDerivedGenerator{STLC}(
-#         root_ty=Expr.t,
-#         ty_sizes=[Expr.t=>5, Typ.t=>2],
-#         stack_size=2,
-#         intwidth=3,
-#     )
-#     LangSiblingDerivedGenerator{RBT}(
-#         root_ty=ColorKVTree.t,
-#         ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
-#         stack_size=2,
-#         intwidth=3,
-#     ),
-#    LangSiblingDerivedGenerator{BST}(
-#        root_ty=KVTree.t,
-#        ty_sizes=[KVTree.t=>4],
-#        stack_size=2,
-#        intwidth=3,
-#    ),
+    # LangBespokeSTLCGenerator(
+    #     expr_size=5,
+    #     typ_size=2,
+    # ),
+    # LangSiblingDerivedGenerator{STLC}(
+    #     root_ty=Expr.t,
+    #     ty_sizes=[Expr.t=>5, Typ.t=>2],
+    #     stack_size=2,
+    #     intwidth=3,
+    # )
+    # LangSiblingDerivedGenerator{RBT}(
+    #     root_ty=ColorKVTree.t,
+    #     ty_sizes=[ColorKVTree.t=>4, Color.t=>0],
+    #     stack_size=2,
+    #     intwidth=3,
+    # ),
+   LangSiblingDerivedGenerator{BST}(
+       root_ty=KVTree.t,
+       ty_sizes=[KVTree.t=>4],
+       stack_size=2,
+       intwidth=3,
+   ),
 ]
 # LR_LIST = [0.3]
 LR_LIST = [0.03, 0.1, 0.3, 1.0]
