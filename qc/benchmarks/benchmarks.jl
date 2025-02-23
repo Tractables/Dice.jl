@@ -3,9 +3,9 @@ include("lib/lib.jl")
 
 UNIQUE_CURVES_SAMPLES = 100_000
 using Plots
-using PGFPlots
+# using PGFPlots
 # Start with GR backend by default
-gr()
+# gr()
 using Random
 using Infiltrator
 using DataStructures
@@ -168,7 +168,7 @@ function mk_areaplot2(path; xlabel, ylabel, has_header)
         # Create plot with GR backend
         save_areaplot2(path, header, v; xlabel, ylabel)
         # Switch to PGFPlots only for tex/tikz output
-        pgfplots()
+        # pgfplots()
         save_areaplot2(path, header, v; xlabel, ylabel)
         # Switch back to GR
         gr()
@@ -247,7 +247,7 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
         end
     end
 
-    fontsize=32
+    fontsize=30
     areaplot(
         mat,
         labels=labels,
@@ -263,7 +263,7 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
         ylabelfontsize=fontsize,
         legend=:outerright,
         left_margin=30Plots.mm,
-        right_margin=50Plots.mm,
+        right_margin=40Plots.mm,
         foreground_color_legend = nothing,
         bottom_margin=25Plots.mm,
         legend_left_margin=-20Plots.mm,
@@ -273,14 +273,14 @@ function save_areaplot2(path, header, v; xlabel, ylabel)
     plot!(size=(2000,1200))
     
     # Save with current backend
-    backend_name = string(Plots.backend())
-    if backend_name == "pgfplotsx"
-        Plots.savefig("$(path).tikz")
-        Plots.savefig("$(path).tex")
-    else
+    # backend_name = string(Plots.backend())
+    # if backend_name == "pgfplotsx"
+    #     Plots.savefig("$(path).tikz")
+    #     Plots.savefig("$(path).tex")
+    # else
         Plots.savefig("$(path).png")
         Plots.savefig("$(path).svg")
-    end
+    # end
 end
 
 
@@ -489,11 +489,11 @@ function make_plots(
                 Plots.savefig(joinpath(out_dir, "$(name).png"))
                 
                 # Switch to PGFPlots for tex output
-                pgfplots()
-                Plots.savefig(joinpath(out_dir, "$(name).tikz"))
-                Plots.savefig(joinpath(out_dir, "$(name).tex"))
-                # Switch back to GR
-                gr()
+                # pgfplots()
+                # Plots.savefig(joinpath(out_dir, "$(name).tikz"))
+                # Plots.savefig(joinpath(out_dir, "$(name).tex"))
+                # # Switch back to GR
+                # gr()
             end
 
             filename = joinpath(rs.out_dir, "feature_dist_" * join(to_subpath(loss_config), "_"))
