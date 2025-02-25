@@ -42,10 +42,11 @@ var do_cond_observes = function(ps, obs) {
   }
 }
 var main = function(){
-  var n = 6;
+  var n = argv["n"];
+  var full_id = [2, 0, 5, 6, 0, 6, 7, 1, 7, 8];
+  var id = full_id.slice(0, n);
+
   var ps = gen(10, n);
-  
-  var id = [2, 0, 5, 6, 0, 0];
   
   do_cond_observes(ps, id);
   
@@ -53,5 +54,4 @@ var main = function(){
   condition(10-(post_sum % 10) == id[0]);
   return ps[0];
 };
-
 timeit(function(){Infer({method:'enumerate',model:main}).getDist(0)}).runtimeInMilliseconds

@@ -51,7 +51,6 @@ var main = function(){
   
   var post_sum = compute_sum(ps.slice(1), true);
   condition(10-(post_sum % 10) == id[0]);
-  return ps;
+  return ps[0];
 };
-
-display(Infer({method:'enumerate',model:main}))
+timeit(function(){Infer({method:'enumerate',model:main}).getDist(0)}).runtimeInMilliseconds
