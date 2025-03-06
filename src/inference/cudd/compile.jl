@@ -1,8 +1,9 @@
 ##################################
 # CUDD Compilation
 ##################################
+using CUDD
 
-export BDDCompiler, compile, enable_reordering, num_nodes, dump_dot
+export BDDCompiler, compile, enable_reordering, num_nodes, dump_dot, get_flips
 
 mutable struct BDDCompiler
     mgr::CuddMgr
@@ -10,6 +11,9 @@ mutable struct BDDCompiler
     num_uncompiled_parents::Dict{Dist{Bool}, Int}
     cache::Dict{AnyBool, CuddNode}
     level_to_flip::Dict{Integer, Flip}
+
+    # Liz - for labeling BDD nodes 
+    flips::Vector{Flip}
 end
 
 function BDDCompiler()
@@ -19,6 +23,7 @@ function BDDCompiler()
         Dict{Dist{Bool}, Int}(),
         Dict{AnyBool, CuddNode}(),
         Dict{Integer, Any}(),
+        Vector{Flip}()
     )
     Cudd_DisableGarbageCollection(c.mgr)
     c.cache[false] = constant(c.mgr, false)
@@ -48,9 +53,9 @@ function add_roots!(c::BDDCompiler, roots)
     union!(c.roots, roots)
 
     # Collect flips and reference count
-    flips = Vector{Flip}()
+    c.flips = Vector{Flip}()
     foreach_node(roots) do node
-        node isa Flip && push!(flips, node)
+        node isa Flip && push!(c.flips, node)
         for child in unique(children(node))
             get!(c.num_uncompiled_parents, child, 0)
             c.num_uncompiled_parents[child] += 1
@@ -59,8 +64,8 @@ function add_roots!(c::BDDCompiler, roots)
 
     # Compile flips so variable order matches instantiation order, and save
     # levels.
-    sort!(flips; by=f -> f.global_id)
-    for f in unique(flips)
+    sort!(c.flips; by=f -> f.ordering)
+    for f in unique(c.flips)
         haskey(c.cache, f) && continue
         n = new_var(c.mgr)
         c.cache[f] = n
@@ -168,21 +173,33 @@ num_nodes(c::BDDCompiler, xs::Vector{<:Ptr}; as_add=true) = begin
     Cudd_SharingSize(xs, length(xs))
 end
 
-dump_dot(x; filename, as_add=true) = begin
+# x must have tobits defined 
+dump_dot(x; filename, as_add=true, inames=C_NULL, onames=C_NULL) = begin
     c = BDDCompiler()
     bdd = compile(c, tobits(x))
-    dump_dot(c, bdd, filename; as_add=true)
+    dump_dot(c, bdd, filename; as_add=true, inames, onames)
 end
 
-dump_dot(c::BDDCompiler, xs::Vector{<:Ptr}, filename; as_add=true) = begin
+dump_dot(c::BDDCompiler, xs::Vector{<:Ptr}, filename; as_add=true, inames=C_NULL, onames=C_NULL) = begin
     # convert to ADDs in order to properly print terminals
     if as_add
         xs = map(x -> rref(Cudd_BddToAdd(c.mgr, x)), xs)
     end
     outfile = ccall(:fopen, Ptr{FILE}, (Cstring, Cstring), filename, "w")
-    Cudd_DumpDot(c.mgr, length(xs), xs, C_NULL, C_NULL, outfile) 
+    Cudd_DumpDot(c.mgr, length(xs), xs, inames, onames, outfile) 
     @assert ccall(:fclose, Cint, (Ptr{FILE},), outfile) == 0
     nothing
+end
+
+get_flips(c::BDDCompiler) = begin
+    return c.flips
+end
+
+get_flips(x) = begin
+    c = BDDCompiler()
+    bdd = compile(c, tobits(x))
+    ret = get_flips(c)
+    return ret
 end
 
 # function dump_dot(xs, filename)

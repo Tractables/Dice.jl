@@ -7,42 +7,64 @@ export flip, prob_equals, AnyBool, expectation, variance, foreach_node, flip_pro
 
 const AnyBool = Union{Dist{Bool}, Bool}
 
-# TODO should become and atomic int when we care about multithreading
+# TODO should become an atomic int when we care about multithreading
 global_flip_id::Int64 = one(Int64)
+    # number field on 'sampling branch'
 
+# Compilation into wbf
+#   The struct def for constructing a new Boolean variable f with the given probability
+#       so you can assign f = Flip(0.6, "x") --> f is a new probabilistic Boolean variable 
 mutable struct Flip <: Dist{Bool}
     const global_id::Int
     prob
     const name
+    ## NEW ## - note that bit_index 0 = MSB
+    bit_index::Union{Nothing, Int}
+    ordering::Int
+    ## End NEW ##
     
-    Flip(prob, name) = begin
+    Flip(prob, name, bit_index) = begin
         if prob isa Real
             @assert !isone(prob) "Use `true` for deterministic flips"
             @assert !iszero(prob) "Use `false` for deterministic flips"
             @assert isnan(prob) || 0 < prob < 1 "Probabilities are between 0 and 1 (or undefined as NaN)"
         end
         global global_flip_id
-        new(global_flip_id += 1, prob, name)
+        id = global_flip_id+=1
+        new(id, prob, name, bit_index, id)
     end
 end
 
+# Modified SHOW to include orderings
 function Base.show(io::IO, f::Flip)
     p = f.prob
     p = if p isa AbstractFloat round(p, digits=2) else p end
     if isnothing(f.name)
-        print(io, "$(typeof(f))($(f.global_id),$(p))")
+        print(io, "$(typeof(f))($(f.global_id),$(p), ordering=$(f.ordering)), bit_index=$(f.bit_index))")
     else
-        print(io, "$(typeof(f))($(f.global_id),$(p),$(f.name))")
+        print(io, "$(typeof(f))($(f.global_id),$(p),$(f.name), ordering=$(f.ordering)), bit_index=$(f.bit_index))")
     end
 end
 
+# function Base.show(io::IO, f::Flip)
+#     p = f.prob
+#     p = if p isa AbstractFloat round(p, digits=2) else p end
+#     if isnothing(f.name)
+#         print(io, "$(typeof(f))($(f.global_id),$(p))")
+#     else
+#         print(io, "$(typeof(f))($(f.global_id),$(p),$(f.name))")
+#     end
+# end
+
 "Create a Bernoulli random variable with the given probability (a coin flip)"
-function flip(prob = NaN16; name = nothing)
+#   C-FLIP (coin flip compilation)
+#   (is returned from this function?)
+function flip(prob = NaN16; name = nothing, bit_index = nothing)
     if prob isa Real
         iszero(prob) && return false
         isone(prob) && return true
     end
-    Flip(prob, name)
+    Flip(prob, name, bit_index)
 end
 
 "Set the probability of a flip that has not been assigned a probability yet"
@@ -112,12 +134,15 @@ Base.:(|)(y::DistNot, x::Dist{Bool}) = x | y
 Base.:(|)(x::DistNot, y::DistNot) = !((!x) & (!y))
 
 ##################################
-# inference
+# inference - function definitions
 ##################################
 
 tobits(::Bool) = []
+    # a plain Boolean value doesn't become probabilistic bits
 tobits(b::Dist{Bool}) = [b]
+    # takes in a Dist{Bool} object, which includes FLIPS
 frombits(b::Bool, _) = b
+    # Just returns boolean value itself
 frombits(b::Dist{Bool}, world) = world[b]
 frombits_as_dist(b::Dist{Bool}, world) = world[b]
 
@@ -137,11 +162,27 @@ children(::Flip) = []
 # methods
 ##################################
 
-prob_equals(x::Bool, y::Bool) = x == y
+# Handling OBSERVE statements (C-OBS)
+#    (transforms observe aexp to (T, phi, theta)) --> condition on phi being true
+#   somehow enforces that the 'observe' statements must be true
+prob_equals(x::Bool, y::Bool) = x == y      # If x/y known booleans (ie they are 'true' or 'false)
 prob_equals(x::Bool, y::Dist{Bool}) = x ? y : !y
 prob_equals(x::Dist{Bool}, y::Bool) = prob_equals(y,x)
 prob_equals(x::Dist{Bool}, y::Dist{Bool}) = 
     x == y ? true : (x & y) | (!x & !y)
+
+"
+chatGPT example: 
+    f1 = flip(0.3)
+    f2 = flip(0.6)
+    observe(f1 == f2)
+    f1 == f2 compiles to (phi, T, theta) where phi is the boolean formula 
+        (f1 && f2) | (!f1 && !f2)
+    applying C-OBS --> this becomes (T, phi, theta) --> all future computations must
+        assume that f1 and f2 are equal
+    ==> 'directly replaces equality checks w/ Boolean formulas
+
+"
 
 Base.xor(x::Bool, y::Dist{Bool}) = x ? !y : y
 Base.xor(x::Dist{Bool}, y::Bool) = xor(y,x)
@@ -153,17 +194,22 @@ Base.isless(x::AnyBool, y::AnyBool) = !x & y
 Base.:(<=)(x::AnyBool, y::AnyBool) = !isless(y, x)
 Base.:(>=)(x::AnyBool, y::AnyBool) = !isless(x, y)
 
+# Compilation rule C-ITE        (if-then-else)
 function Base.ifelse(cond::Dist{Bool}, then::AnyBool, elze::AnyBool)
+    # Optimization cases
     (then == elze) && return then
     (cond == then) && return cond | elze
     (cond == elze) && return cond & then
     # TODO special case some DistNot branches
+    # Regular case:
     (cond & then) | (!cond & elze)
 end
 
 "Test whether at least two of three arguments are true"
 atleast_two(x,y,z) = (x & y) | ((x | y) & z)
 
+# for C-LET compilation 
+#   (recall: 'let' --> basically used to define vars to be used in later statements)
 function foreach_node(f, roots)
     seen = Set{Dist{Bool}}()
     for root in roots
