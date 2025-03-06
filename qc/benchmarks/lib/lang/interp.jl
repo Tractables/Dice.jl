@@ -131,7 +131,7 @@ function interp(rs::RunState, prog::L.Program)
 
     function interp(env::Env, x::L.Call)
         f = functions[x.f]
-        @assert length(f.params) == length(x.args)
+        @assert length(f.params) == length(x.args) "$(f.name), $(f.params), $(x.args)"
         res = interp(
             Env(
                 param.name => interp(env, arg)
