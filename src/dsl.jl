@@ -32,10 +32,10 @@ end
 
 
 struct DiceDyna
-    path::Vector{AnyBool}
-    errors::Vector{Tuple{AnyBool, ErrorException}}
-    observations::Vector{AnyBool}
-    dots::Vector{Tuple{Vector{AnyBool}, String}}
+    path::Vector{AnyBool}   # tracks execution paths (diff probabilistic branches)
+    errors::Vector{Tuple{AnyBool, ErrorException}}  #errors in different execution contexts
+    observations::Vector{AnyBool}   # stores observations / probabilistic constraints
+    dots::Vector{Tuple{Vector{AnyBool}, String}}    # visualization data?
     DiceDyna() = new(AnyBool[], Tuple{AnyBool, String}[], AnyBool[], Tuple{Vector{AnyBool}, String}[])
 end
 
@@ -53,10 +53,10 @@ global dynamoed = Vector()
 
 @dynamo function (dyna::DiceDyna)(a...)
     ir, time, _ = @timed begin
-        ir = IR(a...)
+        ir = IR(a...)       # gets IR (immediate representation, low level code)
         (ir === nothing) && return
         ir = functional(ir)
-        ir = prewalk(ir) do x
+        ir = prewalk(ir) do x       # walk through IR
             if x isa Expr && x.head == :call
                 return xcall(self, x.args...)
             end
@@ -80,12 +80,13 @@ top_dynamoed() = sort(dynamoed; by = x -> x[1], rev = true)
 
 function (dyna::DiceDyna)(::typeof(IRTools.cond), guard::Dist{Bool}, then, elze)
     push!(dyna.path, guard)
-    t = then()
+    t = then()      # executes 'then' branch
     pop!(dyna.path)
     push!(dyna.path, !guard)
-    e = elze()
+    e = elze()  # execute 'else' branch
     pop!(dyna.path)
-    ifelse(guard, t, e)
+    ifelse(guard, t, e)     # merge results based on probability
+                            # ex (?) x = ifelse(flip(0.7), 1, 0) --> preserves both outcomes w/o actually executing the flip
 end
 
 path_condition(dyna) = reduce(&, dyna.path; init=true)
@@ -101,6 +102,7 @@ end
 
 (dyna::DiceDyna)(::typeof(observe), x) =
     push!(dyna.observations, !path_condition(dyna) | x)
+    # stores observations in dyna.observations, helps see which constraints influenced the result + where/why paths were eliminated
 
 (dyna::DiceDyna)(::typeof(pathcond)) = path_condition(dyna)
 
