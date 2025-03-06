@@ -7,6 +7,7 @@ rootdir = "/space2/tjoa/tuning-output/v69_attempt_stlctb_faster"
 
 rootdir = "/scratch/tjoa/tuning-output/v114_rbt_table"
 rootdir = "/space2/tjoa/tuning-output/v119_4321"
+rootdir = "/space2/tjoa/tuning-output/v120_stlctbeval"
 
 import os
 import shutil
@@ -97,6 +98,8 @@ for root, subdirs, files in os.walk(rootdir):
                 {
                     "prop=always_true": "AlwaysTrue",
                     "prop=isRBT": "IsRBT",
+                    "prop=wellTyped": "WellTyped",
+                    "prop=isBST": "IsBST",
                 },
             ]),
             "satisfy_property": ("Prop", [
