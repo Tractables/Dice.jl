@@ -19,6 +19,8 @@ end
 DistUInt(bits::AbstractVector) = 
     DistUInt{length(bits)}(bits)
 
+# Constructor - turns argument i into its binary representation
+    # then each 0 --> False, 1 --> True
 function DistUInt{W}(i::Integer) where W
     # @show i
     if i < 0 i = 0 end
@@ -33,6 +35,7 @@ function DistUInt{W}(i::Integer) where W
     DistUInt{W}(bits)
 end
 
+# Same constructor as above but infers W (width of number)
 function DistUInt(i::Integer)
     W = ndigits(i, base=2)
     DistUInt{W}(i)
@@ -47,8 +50,9 @@ const DistUInt64= DistUInt{64}
 "Construct a uniform random number"
 function uniform(::Type{DistUInt{W}}, n = W) where W
     @assert W >= n >= 0
-    DistUInt{W}([i > W-n ? flip(0.5) : false for i=1:W])
+    DistUInt{W}([i > W-n ? flip(0.5, bit_index=(W-i)) : false for i=1:W])
 end
+
 
 "Construct a uniform random number between `start` (inclusive) and `stop` (exclusive)"
 function uniform(::Type{DistUInt{W}}, start, stop; strategy = :arith) where W
@@ -80,6 +84,23 @@ function uniform_arith(::Type{DistUInt{W}}, start, stop) where W
         end
     end
 end
+
+##  just for me to print bit indices (got from ChatGPT)
+    # could be useful down the line for accessing specific bit_index values from uniform uint
+function Base.getindex(d::DistUInt{W}, i::Int) where W
+    @assert 0 <= i < W "Index $i is out of bounds for DistUInt{$W}."
+
+    # Find the Flip with the corresponding bit_index
+    for bit in d.bits
+        if bit isa Flip && bit.bit_index == i
+            return bit
+        end
+    end
+
+    error("Bit with bit_index $i not found.")
+end
+
+## END Mine
 
 "Construct a uniform random number by case analysis on the bits"
 function uniform_ite(::Type{DistUInt{W}}, start::Int, stop::Int)::DistUInt{W} where W
@@ -299,8 +320,39 @@ Base.:(>=)(x::Dist{<:Number}, y::Dist{<:Number}) = !isless(x, y)
 
 function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
     z = Vector{AnyBool}(undef, W)
+
+    println("\nUINT - Addition function - ")
+    println("\tx = ", x.bits, "\n\ty = ", y.bits)
+
+    println("\t\t(delete) x[3] = ", x.bits[3])
+
+    # CHAT GPT: Find the highest existing ordering value in x.bits or y.bits
+    x_orderings = filter(!isnothing, [hasfield(typeof(b), :ordering) ? b.ordering : nothing for b in x.bits])
+    y_orderings = filter(!isnothing, [hasfield(typeof(b), :ordering) ? b.ordering : nothing for b in y.bits])
+    orderings = vcat(x_orderings, y_orderings)
+    sort(orderings)
+    if orderings === nothing
+            #nada
+    else
+        ordering_idx = 0
+        for i in 1:W
+            if hasfield(typeof(x.bits[i]), :ordering)
+                ordering_idx += 1
+                reordering_id = orderings[ordering_idx]
+                x.bits[i].ordering = reordering_id
+            end
+            if hasfield(typeof(y.bits[i]), :ordering)
+                ordering_idx += 1
+                reordering_id = orderings[ordering_idx]
+                y.bits[i].ordering = reordering_id
+            end
+        end
+    end
+
+    println("-- After Redordering --\n\t", x.bits, "\n\t", y.bits, "\n")
+
     carry = false
-    for i=W:-1:1
+    for i = W:-1:1
         z[i] = xor(x.bits[i], y.bits[i], carry)
         carry = atleast_two(x.bits[i], y.bits[i], carry)
     end
