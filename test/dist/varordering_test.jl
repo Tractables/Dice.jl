@@ -19,4 +19,6 @@ using Dice: Flip, num_ir_nodes
     i = g+h
     @test num_nodes(i) == 58
 
+    # hi
+
 end
