@@ -70,16 +70,7 @@ end
 function generate(rs::RunState, p::LangDerivedGenerator{T}) where T
     prog = derive_lang_generator(p)
     res, prim_map, function_results = interp(rs, prog)
-    constructors_overapproximation = []
-    if T == STLC
-        STLCGeneration(OptExpr.Some(res), [OptExpr.Some(e) for e in function_results["genExpr"]])
-    elseif T == BST
-        BSTGeneration(res, function_results["genTree"])
-    elseif T == RBT
-        RBTGeneration(res) #, function_results["genTree"])
-    else
-        error()
-    end
+    Generation(res, prog, Dict())
 end
 function generation_params_emit_stats(rs::RunState, p::LangDerivedGenerator, s)
     prog = derive_lang_generator(p)
@@ -163,7 +154,7 @@ function derive_lang_generator(p::LangDerivedGenerator{T}) where T
                                 end
                             ],
                             [ L.Var(stack_vars[i]) for i in 2:p.stack_size ],
-                            [L.Loc()],
+                            # [L.Loc()],
                         ))
                     elseif param == Nat.t
                         if p.arbitrary_prims
