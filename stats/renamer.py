@@ -8,6 +8,7 @@ rootdir = "/space2/tjoa/tuning-output/v69_attempt_stlctb_faster"
 rootdir = "/scratch/tjoa/tuning-output/v114_rbt_table"
 rootdir = "/space2/tjoa/tuning-output/v119_4321"
 rootdir = "/space2/tjoa/tuning-output/v120_stlctbeval"
+rootdir = "/space2/tjoa/tuning-output/v122_more_ablation"
 
 import os
 import shutil
@@ -47,6 +48,7 @@ for root, subdirs, files in os.walk(rootdir):
             "langderived": ("LD", [
                 {
                     "stack_size=2": "",
+                    "stack_size=0": "SS0",
                 },
                 {
                     "intwidth=3": "Thin",

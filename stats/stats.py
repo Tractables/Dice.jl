@@ -76,13 +76,17 @@ ORDER: List[str] = { # Put rows in this order and also assert that these generat
         # "RLSDThinEqValidLR30Epochs2000Bound10SPB200Generator",
         # "LSDRBTFastGenerator"
 
-"UntunedGenerator",
-"ValidGenerator",
-"ValidBoundGenerator",
-"EntropyGenerator",
-"EntropyBoundGenerator",
-"SEGenerator",
-"SEBoundGenerator",
+# "UntunedGenerator",
+# "ValidGenerator",
+# "ValidBoundGenerator",
+# "EntropyGenerator",
+# "EntropyBoundGenerator",
+# "SEGenerator",
+# "SEBoundGenerator",
+
+"RLDSS0ThinSEFreq2SPB200IsRBTLR03Epochs1000Generator",
+"RLDUntunedGenerator",
+
 
     ],
 
