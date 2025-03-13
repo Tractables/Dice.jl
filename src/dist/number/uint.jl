@@ -322,34 +322,84 @@ function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
     z = Vector{AnyBool}(undef, W)
 
     println("\nUINT - Addition function - ")
-    println("\tx = ", x.bits, "\n\ty = ", y.bits)
+    println("\tx = ", x.bits, "\n\ty = ", y.bits, "\n\n")
 
-    println("\t\t(delete) x[3] = ", x.bits[3])
+    #=
+    DistOr and DistAnd both have Fields
+        x and y             (correspond to inputs nodes to OR/AND)
+    DistAnd has fields 
+        x 
+    =#
 
-    # CHAT GPT: Find the highest existing ordering value in x.bits or y.bits
-    x_orderings = filter(!isnothing, [hasfield(typeof(b), :ordering) ? b.ordering : nothing for b in x.bits])
-    y_orderings = filter(!isnothing, [hasfield(typeof(b), :ordering) ? b.ordering : nothing for b in y.bits])
-    orderings = vcat(x_orderings, y_orderings)
+    # Used to DFS through graph and retrieve all Flips as part of this subgraph
+    function extract_flips(bit)
+        if hasfield(typeof(bit), :ordering)
+            return [bit]
+        elseif bit isa DistOr || bit isa DistAnd
+            return vcat(extract_flips(bit.x), extract_flips(bit.y))
+        elseif bit isa DistNot
+            return extract_flips(bit.x)
+        end
+        return []
+    end
+
+    # Iterate through x.bits, y.bits
+        # Use index i to set bit_index to all Flips returned from extract_flips 
+        # (so complicated expressions within x.bits[i] all get the same bit_index value)
+    x_flips = []
+    for i in 0:length(x.bits)-1
+        flips = extract_flips(x.bits[i+1])
+        for flip in flips
+            flip.bit_index = i
+        end
+        append!(x_flips, flips)
+    end
+    y_flips = []
+    for i in 0:length(y.bits)-1
+        flips = extract_flips(y.bits[i+1])
+        for flip in flips
+            flip.bit_index = i
+        end
+        append!(y_flips, flips)
+    end
+
+
+    all_flips = unique(vcat(x_flips, y_flips))
+    println("\n+++FLIPS\n\t")
+    for o in all_flips
+        println("\t", o)
+    end
+
+    # Extract available 'ordering' values to be interleaved
+    orderings = [flip.ordering for flip in all_flips]
     sort(orderings)
-    if orderings === nothing
-            #nada
-    else
-        ordering_idx = 0
-        for i in 1:W
-            if hasfield(typeof(x.bits[i]), :ordering)
-                ordering_idx += 1
-                reordering_id = orderings[ordering_idx]
-                x.bits[i].ordering = reordering_id
-            end
-            if hasfield(typeof(y.bits[i]), :ordering)
-                ordering_idx += 1
-                reordering_id = orderings[ordering_idx]
-                y.bits[i].ordering = reordering_id
-            end
+
+    flips_by_bit_index = Dict()
+
+    # Group Flips by bit_index for interleaving
+    for flip in all_flips
+        if !haskey(flips_by_bit_index, flip.bit_index)
+            flips_by_bit_index[flip.bit_index] = []
+        end
+        push!(flips_by_bit_index[flip.bit_index], flip)
+    end
+
+    # Sort all Flips by bit_index --> handles interleaving by bit index 
+    sorted_bit_indices = sort(collect(keys(flips_by_bit_index)))
+
+    ordering_idx = 1
+
+    for bit_idx in sorted_bit_indices
+        for flip in flips_by_bit_index[bit_idx]
+            flip.ordering = orderings[ordering_idx]
+            ordering_idx += 1
         end
     end
 
-    println("-- After Redordering --\n\t", x.bits, "\n\t", y.bits, "\n")
+    println("\n+++After Reordering: FLIPS\n\t")
+    for o in all_flips
+        println("\t", o)
+    end
 
     carry = false
     for i = W:-1:1
