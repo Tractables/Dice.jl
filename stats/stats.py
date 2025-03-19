@@ -60,8 +60,12 @@ ORDER: List[str] = { # Put rows in this order and also assert that these generat
         # "LSDThinGenerator",
         # "SLSDThinEqWellLR30Bound10Generator",
         # "STLC10MGenerator",
-        "LSDSTLCFastGenerator",
-        "FastACEGenerator"
+        # "LSDSTLCFastGenerator",
+        # "FastACEGenerator"
+"SBespokeMLENumAppsTarget4321LR1Epochs250Generator",
+"LBespokeGenerator",
+"BespokeGenerator",
+
     ] 
     # + [
     #     f"{template}May{eq}Bound{bound}Generator"
@@ -84,10 +88,10 @@ ORDER: List[str] = { # Put rows in this order and also assert that these generat
 # "SEGenerator",
 # "SEBoundGenerator",
 
-"RLDSS0ThinSEFreq2SPB200IsRBTLR03Epochs1000Generator",
-"RLDUntunedGenerator",
+# "RLDSS0ThinSEFreq2SPB200IsRBTLR03Epochs1000Generator",
+# "RLDUntunedGenerator",
 
-
+"RLDSS0ThinSEFreq2SPB200IsRBTLR03Epochs1000Bound10Generator",
     ],
 
     "BST": [
