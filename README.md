@@ -1,6 +1,16 @@
-# HyBit
+# Alea.jl
 
-[![Unit Tests](https://github.com/Juice-jl/Alea.jl/workflows/Unit%20Tests/badge.svg)](https://github.com/Juice-jl/Alea.jl/actions?query=workflow%3A%22Unit+Tests%22+branch%3Amain)  [![codecov](https://codecov.io/gh/Tractables/Alea.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/Tractables/Alea.jl)
+[![Unit Tests](https://github.com/Juice-jl/Dice.jl/workflows/Unit%20Tests/badge.svg)](https://github.com/Juice-jl/Dice.jl/actions?query=workflow%3A%22Unit+Tests%22+branch%3Amain)  [![codecov](https://codecov.io/gh/Tractables/Dice.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/Tractables/Dice.jl)
+
+Alea is a probabilistic programming system built in Julia based on the discrete probabilistic programming language Dice. See [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice).
+
+This repository currently consists code for the following papers:
+
+1. [Bit Blasting Probabilistic Programs.](https://dl.acm.org/doi/10.1145/3656412) Poorva Garg, Steven Holtzen, Guy Van den Broeck, Todd Millstein. PLDI 2024.
+
+2. [Scaling Integer Arithmetic in Probabilistic Programs.](https://dl.acm.org/doi/10.5555/3625834.3625859) William X. Cao, Poorva Garg, Ryan Tjoa, Steven Holtzen, Todd Millstein, Guy Van den Broeck. UAI 2023.
+
+## HyBit
 
 `HyBit` is a bit blasting based probabilistic programming system for discrete-continuous probabilistic programs. It is built on top of another probabilistic programming language Dice See [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice).  
 
