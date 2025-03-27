@@ -16,7 +16,7 @@ DFiP = DistFix{8+bits, bits}
 ys = [1, -1, 1, -1, -1, -1, 1, 1, 1, 1, 1, -1, 1, -1, -1, -1, 1, 1, 1, 1]
 xs = DFiP.([6, 8, -1, 0, 5, 1.2, -2, 9.8, 4, 12, 1, 10, 1, 2.2, -6, 9.8, 1, 1, 1, 1])
 
-t = @timed expectation(@dice begin
+t = @timed expectation(@alea begin
             w1 = uniform(DFiP, -8.0, 8.0)
             w2 = uniform(DFiP, -8.0, 8.0)
 

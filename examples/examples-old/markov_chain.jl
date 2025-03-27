@@ -1,7 +1,7 @@
 using Alea
 using Alea: num_flips, num_nodes, to_dice_ir
 
-code = @dice_ite begin
+code = @alea_ite begin
     n = 10
     x = Vector(undef, n)
     x[1] = flip(0.5)

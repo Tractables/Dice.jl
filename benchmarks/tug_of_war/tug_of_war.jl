@@ -10,7 +10,7 @@ else
     pieces = parse(Int64, ARGS[2])
 end
 
-t = @timed pr(@dice begin
+t = @timed pr(@alea begin
     DFiP = DistFix{bits + 5, bits}
 
             alice_skill = bitblast_exponential(DFiP, Normal(5, 1), pieces, -3.0, 13.0)

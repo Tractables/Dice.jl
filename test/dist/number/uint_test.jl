@@ -36,7 +36,7 @@ using Alea: Flip, num_ir_nodes
 
     x = DistUInt{4}([true, false, true, false]) # 10
     y = DistUInt{4}([false, false, true, true]) # 3
-    p = pr(@dice if flip(0.1) x else y end)
+    p = pr(@alea if flip(0.1) x else y end)
     @test p[10] ≈ 0.1
     @test p[3] ≈ 0.9
 
@@ -63,7 +63,7 @@ end
     p = pr(t)
     @test issetequal(keys(p), 3 .+ (0:(2^3-1)))
     @test all(values(p) .≈ 1/2^3)
-    p = pr((@dice t - y2), ignore_errors=true)
+    p = pr((@alea t - y2), ignore_errors=true)
     @test issetequal(keys(p), 1 .+ (0:(2^3-1)))
     @test all(values(p) .≈ 1/2^3)
 
@@ -76,17 +76,17 @@ end
 
     w = uniform(DistUInt{4}, 2)
     z = uniform(DistUInt{4}, 2)
-    p = pr((@dice w + y - z), ignore_errors=true)
+    p = pr((@alea w + y - z), ignore_errors=true)
     n = 2^2
     for i=0:6
         @test p[i] ≈ (n - abs(i-(n-1)))/n^2
     end
 
     @test_nowarn pr(uniform(DistUInt{3}, 3) + uniform(DistUInt{3}, 3)) # currently the default is no error checking outside of dynamo
-    @test_throws Exception pr(@dice uniform(DistUInt{3}, 3) + uniform(DistUInt{3}, 3))
+    @test_throws Exception pr(@alea uniform(DistUInt{3}, 3) + uniform(DistUInt{3}, 3))
 
     @test_nowarn pr(uniform(DistUInt{3}, 3) - uniform(DistUInt{3}, 3)) # currently the default is no error checking outside of dynamo
-    @test_throws Exception pr(@dice uniform(DistUInt{3}, 3) - uniform(DistUInt{3}, 3))
+    @test_throws Exception pr(@alea uniform(DistUInt{3}, 3) - uniform(DistUInt{3}, 3))
     
     x = DistUInt{3}([false, flip(0.5), flip(0.5)]) # uniform(0, 4)
     y = DistUInt{3}([false, flip(0.5), flip(0.5)])
@@ -109,7 +109,7 @@ end
     @test p[4] ≈ 0
 
     y = DistUInt{4}([flip(0.5), false, true, true]) # 3
-    code = @dice convert(DistUInt{3}, y)
+    code = @alea convert(DistUInt{3}, y)
     @test_throws Exception pr(code)
 
     y = DistUInt{4}([false, false, true, flip(0.5)]) # 3
@@ -152,7 +152,7 @@ end
     @test_nowarn convert(DistUInt{3}, y)
 
     y = DistUInt{4}([flip(0.5), false, true, true]) # 3
-    code = @dice convert(DistUInt{3}, y)
+    code = @alea convert(DistUInt{3}, y)
     @test_throws ProbException pr(code)
 
     y = DistUInt{4}([false, false, true, flip(0.5)]) # 3
@@ -163,13 +163,13 @@ end
     @test p[3] ≈ 0.5
 
     x = DistUInt{4}([false, flip(0.5), true, true])
-    @test_throws ProbException pr(@dice convert(DistUInt{2}, x))
+    @test_throws ProbException pr(@alea convert(DistUInt{2}, x))
 end
 
 @testset "DistUInt expectation" begin
     y = DistUInt{4}([true, false, true, false])
     @test expectation(y) == 10.0
-    @test expectation(@dice y) == 10.0
+    @test expectation(@alea y) == 10.0
 
     y = DistUInt{2}([flip(0.1), flip(0.1)])
     p = pr(y)
@@ -252,11 +252,11 @@ end
 
     x = DistUInt{4}(3)
     y = DistUInt{4}(6)
-    @test_throws Exception p = pr(@dice x*y)
+    @test_throws Exception p = pr(@alea x*y)
 
     x = uniform(DistUInt{4}, 2)
     y = uniform(DistUInt{4}, 2)
-    p = pr(@dice y*x)
+    p = pr(@alea y*x)
     @test p[0] ≈ 7/16
     @test p[9] ≈ 1/16
 end
@@ -264,15 +264,15 @@ end
 @testset "DistUInt division" begin
     x = DistUInt{4}(15)
     y = DistUInt{4}(3)
-    p = pr(@dice x / y)
+    p = pr(@alea x / y)
     @test p[5] ≈ 1.0
 
     a = uniform_arith(DistUInt{3}, 0, 8)
     b = uniform_arith(DistUInt{3}, 0, 8)
-    c = @dice a/b
+    c = @alea a/b
     @test_throws ProbException pr(c)
 
-    code = @dice begin
+    code = @alea begin
             a = uniform_arith(DistUInt{3}, 1, 8)
             b = uniform_arith(DistUInt{3}, 1, 8)
             c = a/b
@@ -286,7 +286,7 @@ end
         for j = 1:7
             a = DistUInt{3}(i)
             b = DistUInt{3}(j)
-            c = pr(@dice a/b)
+            c = pr(@alea a/b)
             @test c[floor(i/j)] ≈ 1.0
         end
     end
@@ -295,15 +295,15 @@ end
 @testset "DistUInt mod" begin
     x = DistUInt{4}(15)
     y = DistUInt{4}(3)
-    p = pr(@dice x % y)
+    p = pr(@alea x % y)
     @test p[0] ≈ 1.0
 
     a = uniform_arith(DistUInt{3}, 0, 8)
     b = uniform_arith(DistUInt{3}, 0, 8)
-    c = @dice a%b
+    c = @alea a%b
     @test_throws ProbException pr(c)
 
-    code = @dice begin
+    code = @alea begin
             a = uniform_arith(DistUInt{3}, 1, 8)
             b = uniform_arith(DistUInt{3}, 1, 8)
             c = a%b
@@ -317,7 +317,7 @@ end
         for j = 1:7
             a = DistUInt{3}(i)
             b = DistUInt{3}(j)
-            c = pr(@dice a%b)
+            c = pr(@alea a%b)
             @test c[floor(i%j)] ≈ 1.0
         end
     end

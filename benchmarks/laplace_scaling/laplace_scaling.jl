@@ -32,7 +32,7 @@ a = ifelse(flip(0.5),
 
 data = [-0.5, -0.75, 1.75, 1.5]
 
-t = @timed expectation(@dice begin
+t = @timed expectation(@alea begin
             for datapt in data
                 # prob_equals(laplace(DFiP, 0.0, 1.0, -8.0, 8.0) + a, DFiP(datapt))
                 gaussian_observe(DFiP, pieces, -8.0, 8.0, a, 1.0, DFiP(datapt), add=true, exp=true)

@@ -22,7 +22,7 @@ start_term = S
 num_steps = 4
 top_n = 40  # Only the top_n most likely strings are printed
 
-code = @dice_ite begin
+code = @alea_ite begin
     # Level-order traversal of the parse tree
     level = DistVector([DistEnum(start_term)])
     # Each step, we replace all nonterminals to move down a level

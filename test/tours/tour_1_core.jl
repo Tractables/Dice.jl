@@ -33,8 +33,8 @@ y = flip(0.1)
 @test pr(x & y, evidence=x)[true] ≈ 0.1
 
 # The condition of `if` statements can be Dist{Bool} if written inside of the
-# @dice_ite macro.
-ite_example = @dice_ite begin
+# @alea_ite macro.
+ite_example = @alea_ite begin
     if flip(0.9)
         true
     else
@@ -52,7 +52,7 @@ end
 # https://arxiv.org/pdf/2005.09089.pdf#page=6
 
 function diamond(s1)
-    @dice_ite begin
+    @alea_ite begin
         route = flip(0.5)
         s2 = if route s1 else false end
         s3 = if route false else s1 end
@@ -80,7 +80,7 @@ net = network()
 
 # DistUInts represent distributions over unsigned integers.
 dist = pr(
-    @dice_ite if flip(0.3)
+    @alea_ite if flip(0.3)
         DistUInt32(7)
     else
         DistUInt32(3)

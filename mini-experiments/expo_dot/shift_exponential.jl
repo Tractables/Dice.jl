@@ -15,7 +15,7 @@ dump_dot(e2, filename="mini-experiments/expo_dot/laplace.dot")
 t = pr(e2)
 plot(t)
 
-x = (@dice unit_gamma(DistFix{7, 6}, 2, -2.0, constants = []))
+x = (@alea unit_gamma(DistFix{7, 6}, 2, -2.0, constants = []))
 a = x.returnvalue
 b = reduce(&, x.observations)
 
@@ -27,7 +27,7 @@ dump_dot(a, filename="mini-experiments/expo_dot/lsb_obs.dot")
 
 
 #shift point gamma
-x = (@dice shift_point_gamma(DistFix{5, 4}, 2, -2.0))
+x = (@alea shift_point_gamma(DistFix{5, 4}, 2, -2.0))
 a = x.returnvalue
 b = x.observations
 

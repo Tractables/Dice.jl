@@ -69,7 +69,7 @@ function unif_half1(u::DistUInt{W}) where W
         res = if res === nothing
             uniform(DistUInt{bits}, 0, x+1, strategy=:ite)
         else
-            @dice_ite if prob_equals(u, DistUInt{bits}(x))
+            @alea_ite if prob_equals(u, DistUInt{bits}(x))
                 # uniform(DistUInt{bits}, 0, x+1, strategy=:ite)
                 custom_uniform(x+1)
             else
@@ -87,7 +87,7 @@ function unif_half2(u::DistUInt{W}) where W
         res = if res === nothing
             uniform(DistUInt{bits}, 0, x+1, strategy=:arith)
         else
-            @dice_ite if prob_equals(u, DistUInt{bits}(x))
+            @alea_ite if prob_equals(u, DistUInt{bits}(x))
                 uniform(DistUInt{bits}, 0, x+1, strategy=:arith)
                 # custom_uniform(x+1)
             else

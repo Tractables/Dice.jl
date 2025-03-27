@@ -21,7 +21,7 @@ acceptors = [4]
 num_steps = 5
 top_n = 20  # Only the top_n most likely strings are printed
 
-code = @dice_ite begin
+code = @alea_ite begin
     function state_to_string(state, num_steps)
         if state in acceptors
             DistString(""), flip(false)

@@ -455,7 +455,7 @@ function unif_half2(u::DistUInt{W}) where W
         res = if res === nothing
             uniform(DistUInt{W}, 0, x)
         else
-            @dice_ite if prob_equals(u, DistUInt32(x))
+            @alea_ite if prob_equals(u, DistUInt32(x))
                 uniform(DistUInt{W}, 0, x)
             else
                 res

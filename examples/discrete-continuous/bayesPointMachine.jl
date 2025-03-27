@@ -15,7 +15,7 @@ fs3 = DFiP.([1.0,1.0,1.0,1.0,1.0,1.0])
 os = [1,0,1,1,0,0]
 noise = 0.1
 
-code = @dice begin
+code = @alea begin
     w1 = bitblast(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
     w2 = bitblast(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)
     w3 = bitblast(DFiP, Normal(0, 1), num_pieces, -8.0, 8.0)

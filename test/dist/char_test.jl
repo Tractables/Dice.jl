@@ -2,7 +2,7 @@ using Test
 using Alea
 
 @testset "DistChar core" begin
-    c = @dice_ite begin
+    c = @alea_ite begin
         if flip(1/10)
             DistChar('a')
         elseif flip(2/9)
@@ -22,7 +22,7 @@ using Alea
     @test dist[' '] ≈ 3/10
     @test dist['!'] ≈ 4/10
 
-    c = @dice_ite begin
+    c = @alea_ite begin
         if flip(1/10)
             DistChar('a')
         elseif flip(2/9)

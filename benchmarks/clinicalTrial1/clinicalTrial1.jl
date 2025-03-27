@@ -16,7 +16,7 @@ end
 
 DFiP = DistFix{2+bits, bits}
 
-t = @timed pr(@dice begin
+t = @timed pr(@alea begin
             isEffective = flip(0.5)
             probControl = uniform(DFiP, 0.0, 1.0)
             probTreated = uniform(DFiP, 0.0, 1.0)

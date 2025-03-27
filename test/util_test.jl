@@ -6,7 +6,7 @@ using Alea, Distributions
     FP = DistFix{6, 2}
     data = FP(0.0)
     
-    @test_broken code = @dice begin
+    @test_broken code = @alea begin
         a = flip(0.5)
         gaussian_observe(FP, 4, -4.0, 4.0, 0.0, 1.0, data)
         a
@@ -19,7 +19,7 @@ using Alea, Distributions
 
     # test for conjugate gaussians
     map([true, false]) do add_arg
-        code = @dice begin
+        code = @alea begin
             a = bitblast(FP, Normal(0, 1), 16, -8.0, 8.0)
             gaussian_observe(FP, 8, -8.0, 8.0, a, 1.0, data, add=add_arg)
             a
@@ -32,14 +32,14 @@ using Alea, Distributions
 
     map([true, false]) do mult_arg
 
-        code = @dice begin
+        code = @alea begin
             a = bitblast(FP, Normal(1, 1), 2, 0.5, 2.5)
             gaussian_observe(FP, 2, -2.0, 2.0, 0.0, a, data, mult=mult_arg)
             a
         end
         @test 1.2 < expectation(code) < 1.6
 
-        code = @dice begin
+        code = @alea begin
             m = uniform(FP, -2.0, 2.0)
             a = bitblast(FP, Normal(1, 1), 2, 0.5, 2.5)
             gaussian_observe(FP, 2, -2.0, 2.0, m, a, data, mult=mult_arg)

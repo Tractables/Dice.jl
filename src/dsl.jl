@@ -2,7 +2,7 @@
 using IRTools
 using IRTools: @dynamo, IR, recurse!, self, xcall, functional
 
-export @dice, dice, observe, constraint, assert_dice, @code_ir_dice, errorcheck, indynamo, save_dot, pathcond
+export @alea, dice, observe, constraint, assert_dice, @code_ir_dice, errorcheck, indynamo, save_dot, pathcond
 
 ##################################
 # Control flow + error + observation dynamo
@@ -39,9 +39,9 @@ struct AleaDyna
     AleaDyna() = new(AnyBool[], Tuple{AnyBool, String}[], AnyBool[], Tuple{Vector{AnyBool}, String}[])
 end
 
-"Assert that the current code must be run within an @dice evaluation"
+"Assert that the current code must be run within an @alea evaluation"
 assert_dice() = 
-    indynamo() ? nothing : error("This code must be called from within an @dice evaluation.")
+    indynamo() ? nothing : error("This code must be called from within an @alea evaluation.")
 
 observe(_) = assert_dice()
 

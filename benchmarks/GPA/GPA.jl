@@ -13,7 +13,7 @@ end
 
 DFiP = DistFix{bits + 5, bits}
 
-t = @timed pr(@dice begin 
+t = @timed pr(@alea begin 
             d1 = bitblast_exponential(DFiP, 4*Beta(8, 2), pieces, 0.0, 4.0)
             d2 = bitblast_exponential(DFiP, 8*Beta(5, 5), pieces, 0.0, 8.0)
             gpa1 = if flip(0.95) d1 else 

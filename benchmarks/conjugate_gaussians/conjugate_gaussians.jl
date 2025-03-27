@@ -17,7 +17,7 @@ DFiP = DistFix{8 + bits, bits}
 data = DFiP.([8.0, 9.0])
 add_arg = true
 
-t = @timed pr(@dice begin
+t = @timed pr(@alea begin
                 a = bitblast(DFiP, Normal(0, 1), pieces, -16.0, 16.0)
                 for datapt in data
                     gaussian_observe(DFiP, pieces, -16.0, 16.0, a, 1.0, datapt, add=add_arg, exp=false)

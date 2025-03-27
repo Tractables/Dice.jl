@@ -13,7 +13,7 @@ end
 
 DFiP = DistFix{5+bits, bits}
 
-t = @timed expectation(@dice begin
+t = @timed expectation(@alea begin
                 x = bitblast(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
                 y = bitblast(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
                 m = if (x < y) y else x end

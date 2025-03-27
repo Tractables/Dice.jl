@@ -14,7 +14,7 @@ end
 DFiP = DistFix{5+bits, bits}
 indices = [1, 0, 1]
 
-t = @timed expectation(@dice begin
+t = @timed expectation(@alea begin
                 x = Vector(undef, 3)
                 for i=1:3
                     x[i] = bitblast(DFiP, Normal(0, 1), pieces, -8.0, 8.0)

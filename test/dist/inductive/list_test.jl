@@ -19,13 +19,13 @@ end
 
 @testset "DistList core" begin
     # Test concatenation, appending, ifelse
-    v = @dice_ite if flip(3/5)
+    v = @alea_ite if flip(3/5)
         to_dist_list([1, 2, 3, 4])
     else
         to_dist_list([7, 6, 5])
     end
-    v = @dice_ite if flip(2/3) prob_append(v, DistUInt32(100)) else v end
-    v2 = @dice_ite if flip(1/10)
+    v = @alea_ite if flip(2/3) prob_append(v, DistUInt32(100)) else v end
+    v2 = @alea_ite if flip(1/10)
         to_dist_list([333, 444])
     else
         to_dist_list([555])
@@ -42,7 +42,7 @@ end
     @test dist[to_ast([7, 6, 5, 333, 444])] ≈ 2/5 * 1/3 * 1/10
     @test dist[to_ast([7, 6, 5, 555])] ≈ 2/5 * 1/3 * 9/10
 
-    cg = @dice begin
+    cg = @alea begin
         v1 = Nil(DistUInt32)
         v2 = ifelse(flip(1/2), prob_append(v1, DistUInt32(6)), v1)
         v3 = ifelse(flip(1/2), prob_append(v2, DistUInt32(7)), v2)
@@ -69,7 +69,7 @@ end
     @test pr(x)[true] ≈ 0.5 * 0.1
 
     # Test concatenation for empty vectors
-    cg = @dice begin
+    cg = @alea begin
         concat(Nil(DistUInt32), Nil(DistUInt32))
     end
     dist = pr(cg)
@@ -77,7 +77,7 @@ end
     @test dist[to_ast([])] ≈ 1
     
     
-    cg = @dice begin
+    cg = @alea begin
         concat(Nil(DistString), Cons(DistString, DistString("hi"), Nil(DistString)))
     end
     dist = pr(cg)

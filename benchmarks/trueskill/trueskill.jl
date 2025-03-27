@@ -11,7 +11,7 @@ else
     pieces = parse(Int64, ARGS[2])
 end
 
-t = @timed pr(@dice begin
+t = @timed pr(@alea begin
     DFiP = DistFix{bits + 6, bits}
 
             # alice_skill = bitblast(DFiP, Normal(0, 1), pieces, -8.0, 8.0)

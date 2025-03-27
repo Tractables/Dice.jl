@@ -7,13 +7,13 @@ module Alea
 using MacroTools: prewalk, postwalk
 using PrecompileTools
 
-export @dice_ite
+export @alea_ite
 
 "Syntactic macro to make if-then-else supported by dice"
 macro dice_ite(code)
     postwalk(esc(code)) do x
         if x isa Expr && (x.head == :if || x.head == :elseif)
-            @assert length(x.args) == 3 "@dice_ite macro only supports purely functional if-then-else"
+            @assert length(x.args) == 3 "@alea_ite macro only supports purely functional if-then-else"
             ite_guard = gensym(:ite)
             return :(begin $ite_guard = $(x.args[1])
                     if (!Alea.indynamo() && $(ite_guard) isa Dist{Bool})
@@ -44,7 +44,7 @@ include("util.jl")
 
 # add precompile statements here - keep it lightweight for main features
 @compile_workload begin
-    code = @dice begin 
+    code = @alea begin 
         if flip(0.5) true else flip(0.1) end 
     end
     pr(code)

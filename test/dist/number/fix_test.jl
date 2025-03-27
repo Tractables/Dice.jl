@@ -43,18 +43,18 @@ end
 @testset "DistFix expectation" begin
     y = DistFix{4, 3}([true, false, true, false])
     @test expectation(y) == -0.75
-    @test expectation(@dice y) == -0.75
+    @test expectation(@alea y) == -0.75
     @test variance(y) == 0.0
-    @test variance(@dice y) == 0.0
+    @test variance(@alea y) == 0.0
 
     y = DistFix{2, 0}([flip(0.1), flip(0.1)])
     p = pr(y)
     mean = reduce(+, [(key*value) for (key, value) in p])
     std_sq = reduce(+, [(key*key*value) for (key, value) in p]) - mean^2
     @test expectation(y) ≈ mean
-    @test expectation(@dice y) ≈ mean
+    @test expectation(@alea y) ≈ mean
     @test variance(y) ≈ std_sq
-    @test variance(@dice y) ≈ std_sq
+    @test variance(@alea y) ≈ std_sq
 end
 
 @testset "DistFix triangle" begin
@@ -70,12 +70,12 @@ end
     a = DistFix{3, 1}(1.5)
     b = DistFix{3, 1}(1.5)
     @test_nowarn pr(a + b)
-    @test_throws Exception pr(@dice a + b)
+    @test_throws Exception pr(@alea a + b)
 
     a = DistFix{3, 1}(-1.5)
     b = DistFix{3, 1}(-1.5)
     @test_nowarn pr(a + b)
-    @test_throws Exception pr(@dice a + b)
+    @test_throws Exception pr(@alea a + b)
 
     a = DistFix{3, 1}(-1.5)
     b = DistFix{3, 1}(1.5)
@@ -84,17 +84,17 @@ end
 
     a = uniform(DistFix{3, 1}, 3)
     b = DistFix{3, 1}(-0.5)
-    @test_throws ProbException p = pr(@dice a + b)
+    @test_throws ProbException p = pr(@alea a + b)
 
     a = DistFix{3, 1}(1.5)
     b = DistFix{3, 1}(-1.0)
     @test_nowarn pr(a - b)
-    @test_throws Exception pr(@dice a - b)
+    @test_throws Exception pr(@alea a - b)
 
     a = DistFix{3, 1}(-1.5)
     b = DistFix{3, 1}(1.0)
     @test_nowarn pr(a - b)
-    @test_throws Exception pr(@dice a - b)
+    @test_throws Exception pr(@alea a - b)
 
     a = DistFix{3, 1}(1.5)
     b = DistFix{3, 1}(1.0)
@@ -182,25 +182,25 @@ end
     map(a, b) do i, j
         fi = DistFix{4, 2}(i)
         fj = DistFix{4, 2}(j)
-        p = pr(@dice fi*fj)
+        p = pr(@alea fi*fj)
         @test p[floor(i*j * 2^2)/4] ≈ 1
     end
 
     a = uniform(DistFix{4, 2}, 2) - DistFix{4, 2}(0.5)
     b = uniform(DistFix{4, 2}, 2) - DistFix{4, 2}(0.5)
-    p = pr(@dice a*b)
+    p = pr(@alea a*b)
     @test p[0.25] ≈ 1/16
     @test p[0] ≈ 11/16
 
     a = DistFix{20, 0}(14.0) * DistFix{20, 0}(-7.0)
-    p = pr(@dice a)
+    p = pr(@alea a)
     @test p[-98.0] ≈ 1.0
 
     for i = -2.0:0.25:2-0.25
         for j = -2.0:0.25:2-0.25
             a = DistFix{4, 2}(i)
             b = DistFix{4, 2}(j)
-            c = @dice a*b
+            c = @alea a*b
             d = floor(i*j *4)/4
             if (d > 1.75) | (d < -2)
                 @test_throws ProbException pr(c)
@@ -274,14 +274,14 @@ end
 @testset "DistFix division" begin
     x = DistFix{5, 2}(0.5)
     y = DistFix{5, 2}(2.0)
-    c = @dice x/y
+    c = @alea x/y
     q = pr(c)
 
     for i = -4.0:0.25:4 - 0.25
         for j= -4.0:0.25:4 - 0.25
             x = DistFix{5, 2}(i)
             y = DistFix{5, 2}(j)
-            c = @dice x/y
+            c = @alea x/y
             ans = sign(i/j) * floor(abs(i/j) * 4)/4
             if (j == 0.0) | (ans >= 4.0) | (ans < -4.0)
                 @test_throws ProbException pr(c)
@@ -311,7 +311,7 @@ end
         for j = -2:0.5:1.5
             a = DistFix{3, 1}(i)
             b = DistFix{3, 1}(j)
-            @test pr(@dice a < b)[i < j] ≈ 1.0
+            @test pr(@alea a < b)[i < j] ≈ 1.0
         end
     end
 
@@ -344,40 +344,40 @@ end
     @test pr(x)[0] ≈ cdf(actual_dist, 0.125) - cdf(actual_dist, 0.0)
 
     # Tests for Gamma distribution (α = 1)
-    x = @dice unit_gamma(DistFix{5, 3}, 0, -1.0)
+    x = @alea unit_gamma(DistFix{5, 3}, 0, -1.0)
     a = pr(x)
 
     d = Truncated(Gamma(1, 1), 0.0, 1.0)
     @test a[0] ≈ (cdf(d, 0.125) - cdf(d, 0))
 
-    x = @dice unit_gamma(DistFix{5, 3}, 0, -3.0)
+    x = @alea unit_gamma(DistFix{5, 3}, 0, -3.0)
     a = pr(x)
 
     d = Truncated(Gamma(1, 1/3), 0.0, 1.0)
     @test a[0] ≈ (cdf(d, 0.125) - cdf(d, 0))
 
     # Tests for Gamma distribution for (α = 2)
-    x = @dice unit_gamma(DistFix{5, 3}, 1, -1.0)
+    x = @alea unit_gamma(DistFix{5, 3}, 1, -1.0)
     a = pr(x)
     d = Truncated(Gamma(2, 1), 0.0, 1.0)
     @test a[0] ≈ cdf(d, 0.125) - cdf(d, 0)
 
-    x = @dice unit_gamma(DistFix{5, 3}, 1, -3.0)
+    x = @alea unit_gamma(DistFix{5, 3}, 1, -3.0)
     a = pr(x)
     d = Truncated(Gamma(2, 1/3), 0.0, 1.0)
     @test a[0] ≈ cdf(d, 0.125) - cdf(d, 0)
 
     #Tests for shift_point_gamma
-    x = @dice shift_point_gamma(DistFix{5, 3}, 1, 1.0)
+    x = @alea shift_point_gamma(DistFix{5, 3}, 1, 1.0)
     a = pr(x)
     @test a[0.125]/a[0] ≈ 2exp(0.125)
 
-    x = @dice shift_point_gamma(DistFix{5, 3}, 2, -2.0)
+    x = @alea shift_point_gamma(DistFix{5, 3}, 2, -2.0)
     a = pr(x)
     @test a[0.125]/a[0] ≈ 4exp(-0.25)
 
     # Building Gamma(3, 0.5)
-    x = (@dice unit_gamma(DistFix{4, 3}, 2, -2.0, constants = []))
+    x = (@alea unit_gamma(DistFix{4, 3}, 2, -2.0, constants = []))
     a = pr(x)[0.0]
     d = Truncated(Gamma(3, 0.5), 0.0, 1.0)
     @test a ≈ cdf(d, 0.125) - cdf(d, 0.0)
@@ -391,7 +391,7 @@ end
     @test pr(a)[0.0] ≈ pdf(x, 0.0)
     @test pr(a)[19] ≈ pdf(x, 19.0)
 
-    x = (@dice general_gamma(DistFix{7, 4}, 1, 1.0, 0.5, 1.0))
+    x = (@alea general_gamma(DistFix{7, 4}, 1, 1.0, 0.5, 1.0))
     @test pr(x)[0.0] ≈ 0.0
 end
 

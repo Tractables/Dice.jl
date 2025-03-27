@@ -15,7 +15,7 @@ DFiP = DistFix{bits+2, bits}
 
 y = [1, 1, 0, 1, 0]
 
-t = @timed expectation(@dice begin
+t = @timed expectation(@alea begin
         a = bitblast_exponential(DFiP, Beta(2, 5), pieces, 0.0, 1.0)
         for i = 1:5
             b = parametrised_flip(a)

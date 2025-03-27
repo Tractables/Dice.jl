@@ -13,7 +13,7 @@ end
 
 DFiP = DistFix{4+precision, precision}
 
-t = @timed pr(@dice begin
+t = @timed pr(@alea begin
 
   isWeekend = flip(2/7)
   hour = if isWeekend

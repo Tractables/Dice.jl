@@ -17,7 +17,7 @@ clicks1 = [true, true, true, false, false]
 sim0 = Vector(undef, 5)
 sim1 = Vector(undef, 5)
 
-t = @timed expectation(@dice begin
+t = @timed expectation(@alea begin
             similarityAll = uniform(DFiP, 0.0, 1.0)
             for i=1:5
                 sim = parametrised_flip(similarityAll)

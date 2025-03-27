@@ -9,7 +9,7 @@ else
     b = parse(Int64, ARGS[1])
 end
 
-t = @timed pr(@dice begin
+t = @timed pr(@alea begin
             x = uniform(DistFix{b+2, b}, 1/2^b, 1.0 + 1/2^b)
             y = uniform(DistFix{b+2, b}, 1/2^b, 1.0 + 1/2^b)
             x = DistFix{b+2, 1}(x.number)

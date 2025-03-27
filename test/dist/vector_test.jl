@@ -3,7 +3,7 @@ using Alea
 
 @testset "DistVector core" begin
     # Test concatenation, appending, ifelse
-    cg = @dice_ite begin
+    cg = @alea_ite begin
         v = if flip(3/5)
             DistVector([DistUInt32(1),DistUInt32(2),DistUInt32(3),DistUInt32(4)])
         else
@@ -28,7 +28,7 @@ using Alea
     @test dist[[7, 6, 5, 333, 444]] ≈ 2/5 * 1/3 * 1/10
     @test dist[[7, 6, 5, 555]] ≈ 2/5 * 1/3 * 9/10
 
-    cg = @dice_ite begin
+    cg = @alea_ite begin
         v1 = DistVector{DistInt32}()
         v2 = ifelse(flip(1/2), prob_append(v1, DistInt32(6)), v1)
         v3 = ifelse(flip(1/2), prob_append(v2, DistInt32(7)), v2)
@@ -46,7 +46,7 @@ using Alea
     
     
     # Test concatenation for empty vectors
-    cg = @dice_ite begin
+    cg = @alea_ite begin
         prob_extend(DistVector{DistUInt32}(), DistVector{DistUInt32}())
     end
     dist = pr(cg)
@@ -54,7 +54,7 @@ using Alea
     @test dist[[]] ≈ 1
     
     
-    cg = @dice_ite begin
+    cg = @alea_ite begin
         prob_extend(DistVector{DistString}(Vector{DistString}()), DistVector([DistString("hi")]))
     end
     dist = pr(cg)
@@ -63,7 +63,7 @@ using Alea
     
     
     # Test getindex, setindex
-    cg = @dice_ite begin
+    cg = @alea_ite begin
         s = if flip(0.6)
             DistVector(Vector{AnyBool}([flip(0), flip(0), flip(0)]))
         else
@@ -85,14 +85,14 @@ using Alea
     @test dist[true] ≈ 0.6*0.7*0.9
     
     # Test prob_startswith
-    cg = @dice_ite begin
+    cg = @alea_ite begin
         s = DistVector(AnyBool[flip(0), flip(0.3), flip(0)])
         t = DistVector(AnyBool[flip(0), flip(1)])
         prob_startswith(s, t)
     end
     @test pr(cg)[true] ≈ 0.3
 
-    cg = @dice_ite begin
+    cg = @alea_ite begin
         s = if flip(0.3)
             DistVector(AnyBool[false, true, false])
         else
@@ -103,7 +103,7 @@ using Alea
     end
     @test pr(cg)[true] ≈ 0.3
     
-    cg = @dice_ite begin
+    cg = @alea_ite begin
         s = DistVector(AnyBool[flip(0)])
         s = if flip(0.3) s else prob_append(s, flip(0.4)) end
         t = DistVector(AnyBool[flip(0.9), flip(1)])
@@ -114,7 +114,7 @@ using Alea
     # Test prob_contains
     _5, _6, _7, _8 = DistInt32(5), DistInt32(6), DistInt32(7), DistInt32(8)
     
-    cg = @dice_ite begin
+    cg = @alea_ite begin
         s = DistVector([_5, _6, _7])
         if flip(0.3)
             prob_append(s, _8)
@@ -125,7 +125,7 @@ using Alea
     end
     @test pr(cg)[true] == 1
 
-    cg = @dice_ite begin
+    cg = @alea_ite begin
         s = DistVector([_5, _6, _7])
         t = if flip(0.3)
             prob_append(s, _8)
@@ -138,7 +138,7 @@ using Alea
 
     # Test sort
 
-    cg = @dice_ite begin
+    cg = @alea_ite begin
         s = DistVector([_6, _5])
         sort(s)
     end
@@ -146,7 +146,7 @@ using Alea
     @test length(dist) == 1
     @test dist[[5, 6]] == 1
 
-    cg = @dice_ite begin
+    cg = @alea_ite begin
         s = DistVector([_8, ifelse(flip(2/3), _5, _7)])
         t = ifelse(flip(3/10), prob_append(s, _6), s)
         sort(t)
@@ -158,7 +158,7 @@ using Alea
     @test dist[[5, 8]] ≈ 7/10 * 2/3
     @test dist[[7, 8]] ≈ 7/10 * 1/3
 
-    cg = @dice_ite begin
+    cg = @alea_ite begin
         v1 = DistVector{DistInt32}()
         v2 = ifelse(flip(1/2), prob_append(v1, _8), v1)
         v3 = ifelse(flip(1/2), prob_append(v2, _7), v2)
@@ -181,7 +181,7 @@ using Alea
     @test length(dist) == 1
     @test dist[[]] == 1
 
-    cg = @dice_ite begin
+    cg = @alea_ite begin
         v1 = DistVector{DistInt32}()
         v2 = ifelse(flip(1/2), prob_append(v1, _6), v1)
         v3 = ifelse(flip(1/2), prob_append(v2, _7), v2)
@@ -199,7 +199,7 @@ using Alea
 end
 
 @testset "Choice" begin
-    v = @dice_ite if flip(3/5)
+    v = @alea_ite if flip(3/5)
         DistVector([DistUInt32(1),DistUInt32(2),DistUInt32(3),DistUInt32(4)])
     else
         DistVector([DistUInt32(7),DistUInt32(6),DistUInt32(5)])
@@ -218,7 +218,7 @@ end
     v2 = DistVector([DistUInt32(7),DistUInt32(6),DistUInt32(5)])
     ch1, evid1 = choice_obs(v1)
     ch2, evid2 = choice_obs(v2)
-    ch = @dice_ite if flip(3/5)
+    ch = @alea_ite if flip(3/5)
         ch1
     else
         ch2

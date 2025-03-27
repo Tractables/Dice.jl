@@ -34,7 +34,7 @@ d2 = ifelse(y,
             bitblast_exponential(DFiP, Normal(135, 8), pieces, 135-64.0, 135+64.0),
             bitblast_exponential(DFiP, Normal(80, 8), pieces, 80-64.0, 80+64.0))
 
-t = @timed expectation(@dice begin
+t = @timed expectation(@alea begin
     observe(prob_equals(d1, DFiP(79.0)))
     observe(prob_equals(d2, DFiP(136.0)))
     prior[1]

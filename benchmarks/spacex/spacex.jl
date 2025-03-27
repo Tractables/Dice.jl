@@ -13,7 +13,7 @@ end
 
 DFiP = DistFix{8+bits, bits}
 
-t = @timed expectation(@dice begin
+t = @timed expectation(@alea begin
             engines = bitblast(DFiP, Normal(5, 1), pieces, 0.0, 64.0)
             first_stage = bitblast_exponential(DFiP, Normal(10, 3), pieces, 0.0, 64.0)
             completed_first_stage = engines + first_stage

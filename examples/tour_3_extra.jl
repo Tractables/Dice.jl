@@ -28,11 +28,11 @@
 
 
 ################################################################################
-# @dice macro
+# @alea macro
 ################################################################################
 
-# The @dice macro supports complicated control flow and imperative observations.
-pos = @dice begin
+# The @alea macro supports complicated control flow and imperative observations.
+pos = @alea begin
     pos = DistUInt32(1)
     continue_at_each_pos = DistVector([flip(0.01), flip(0.3), true, false])
     while prob_getindex(continue_at_each_pos, pos)
@@ -43,12 +43,12 @@ pos = @dice begin
 end
 pr(pos)  # Dict(2 => 0.7, 4 => 0.3)
 
-# An equivalent program without @dice
+# An equivalent program without @alea
 pos = DistUInt32(1)
 continue_at_each_pos = [flip(0.01), flip(0.3), true, false]
 still_moving = true
 for i in eachindex(continue_at_each_pos)
-    pos, still_moving = @dice_ite if still_moving & continue_at_each_pos[i]
+    pos, still_moving = @alea_ite if still_moving & continue_at_each_pos[i]
         pos + DistUInt32(1), true
     else
         pos, false

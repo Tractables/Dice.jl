@@ -12,7 +12,7 @@ function finite_quotient(x,y)
     end
 end
 
-quo, errors, observation = @dice begin
+quo, errors, observation = @alea begin
     finite_quotient(flip(0.5), flip(0.5))
 end
 total_error = reduce(|, [err for (err, msg) in errors])
@@ -28,10 +28,10 @@ function less_than(a, b)
     return DistFalse()
 end
 
-d, errors, obs = @dice less_than(flip(0.3), flip(0.5))
+d, errors, obs = @alea less_than(flip(0.3), flip(0.5))
 @assert infer_bool(d, observation=obs) ≈ 0.15
 
-d, a, obs = @dice begin
+d, a, obs = @alea begin
     flipA = flip(0.3)
     flipB = flip(0.5)
     observe(flipA)

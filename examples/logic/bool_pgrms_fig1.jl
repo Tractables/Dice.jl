@@ -31,7 +31,7 @@ end
     false  # dummy return value
 end
 
-md = @dice main()
+md = @alea main()
 pr(md)
 
 

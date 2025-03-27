@@ -19,7 +19,7 @@ x = uniform(DistUInt{3})
 y = uniform(DistUInt{3}, 0, 4)
 pr((x < y) | prob_equals(x, y))
 
-code = @dice begin
+code = @alea begin
 
             if prob_equals(x, DistUInt{3}(0))
                     uniform(DistUInt{3}, 0, 8)
@@ -48,7 +48,7 @@ pr(uniform(DistUInt{3}, 1, 8))
 
 x = uniform(DFiP)
 y = uniform(DFiP)
-code = @dice begin
+code = @alea begin
             if flip(3/4) 
                 observe(x < y)
             else 
@@ -60,7 +60,7 @@ end
 actual = pr(code)
 plot(pr(code))
 
-code2 = @dice begin
+code2 = @alea begin
             observe(x < y)
             x
 end
@@ -87,7 +87,7 @@ pr(x < y)
 burglary = flip(0.5)
 earthquake = flip(0.5)
 
-alarm = @dice begin
+alarm = @alea begin
     if (burglary)
         (if (earthquake) 
             flip(0.95)
@@ -101,7 +101,7 @@ end
 
 dist_a1 = discrete(DistUInt{8}, [0.7, 0.3])
 
-a = @dice if flip(0.5) flip(0.3) else flip(0.7) end
+a = @alea if flip(0.5) flip(0.3) else flip(0.7) end
 
 a = ifelse(flip(0.5), flip(0.3), flip(0.7))
 

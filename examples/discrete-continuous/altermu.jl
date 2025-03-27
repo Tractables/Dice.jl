@@ -16,7 +16,7 @@ data = DFiP.([-2.57251482,  0.33806206,  2.71757796,  1.09861336,  2.85603752,
 -0.67970862,  0.93461681,  1.18187607, -1.49501051,  2.44755622,
 -2.06424237, -0.04584074,  1.93396696,  1.07685273, -0.09837907]);
 
-code = @dice begin
+code = @alea begin
     # TODO use more general `uniform`
     mu1 = bitblast(DFiP, Normal(0, 5), num_pieces, -2.0, 2.0)
     mu2 = bitblast(DFiP, Normal(0, 5), num_pieces, -2.0, 2.0)

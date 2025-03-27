@@ -39,7 +39,7 @@ end
     
     w1 = bitblast(DFiP, Normal(0, sqrt(2)), pieces, -8.0, 8.0)
     w2 = bitblast(DFiP, Normal(0, sqrt(2)), pieces, -8.0, 8.0)
-    code = @dice begin
+    code = @alea begin
                 error1 = bitblast(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
                 observe(prob_equals(DFiP(y1s[1]), DFiP(x1s[1])*w1 + DFiP(x2s[1])*w2 + error1))
                 w1

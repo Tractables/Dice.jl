@@ -1,6 +1,6 @@
 using Alea
 
-c = @dice_ite begin
+c = @alea_ite begin
     if flip(1/10)
         DistChar('a')
     elseif flip(2/9)
@@ -19,7 +19,7 @@ dist = infer(c)
 @assert dist[' '] ≈ 3/10
 @assert dist['!'] ≈ 4/10
 
-c = @dice_ite begin
+c = @alea_ite begin
     if flip(1/10)
         DistChar('a')
     elseif flip(2/9)

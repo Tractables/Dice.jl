@@ -2,7 +2,7 @@ using Alea
 
 N = 5
 
-md = @dice begin
+md = @alea begin
     row_col_pairs = [
         (uniform(DistInt32, 1, 1 + N), uniform(DistInt32, 1, 1 + N))
         for _ in 1:N

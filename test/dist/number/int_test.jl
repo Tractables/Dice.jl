@@ -50,21 +50,21 @@ end
     p = pr(z)
     @test p[3] ≈ 1.0
 
-    @test pr(@dice convert(DistInt{3}, DistUInt{3}(0)))[0] ≈ 1
-    @test pr(@dice convert(DistInt{2}, DistUInt{3}(0)))[0] ≈ 1
-    @test pr(@dice convert(DistInt{4}, DistUInt{3}(0)))[0] ≈ 1
-    @test pr(@dice convert(DistInt{2}, DistUInt{3}(1)))[1] ≈ 1
-    @test pr(@dice convert(DistInt{4}, DistUInt{3}(1)))[1] ≈ 1
-    @test pr(@dice convert(DistInt{3}, DistUInt{3}(3)))[3] ≈ 1
-    @test_throws ProbException pr(@dice convert(DistInt{3}, DistUInt{3}(4)))
+    @test pr(@alea convert(DistInt{3}, DistUInt{3}(0)))[0] ≈ 1
+    @test pr(@alea convert(DistInt{2}, DistUInt{3}(0)))[0] ≈ 1
+    @test pr(@alea convert(DistInt{4}, DistUInt{3}(0)))[0] ≈ 1
+    @test pr(@alea convert(DistInt{2}, DistUInt{3}(1)))[1] ≈ 1
+    @test pr(@alea convert(DistInt{4}, DistUInt{3}(1)))[1] ≈ 1
+    @test pr(@alea convert(DistInt{3}, DistUInt{3}(3)))[3] ≈ 1
+    @test_throws ProbException pr(@alea convert(DistInt{3}, DistUInt{3}(4)))
 end
 
 @testset "DistInt expectation" begin
     y = DistInt{4}([true, false, true, false])
     @test expectation(y) == -6.0
-    @test expectation(@dice y) == -6.0
+    @test expectation(@alea y) == -6.0
     @test variance(y) == 0.0
-    @test variance(@dice y) == 0.0
+    @test variance(@alea y) == 0.0
 
     y = DistInt{2}([flip(0.1), flip(0.1)])
     p = pr(y)
@@ -101,11 +101,11 @@ end
     a = DistInt{3}(3)
     b = DistInt{3}(3)
     @test_nowarn pr(a + b)
-    @test_throws ProbException pr(@dice a + b)
+    @test_throws ProbException pr(@alea a + b)
 
     a = DistInt{3}(-3)
     b = DistInt{3}(-3)
-    @test_throws ProbException pr(@dice a + b)
+    @test_throws ProbException pr(@alea a + b)
 
     a = DistInt{3}(-3)
     b = DistInt{3}(3)
@@ -114,16 +114,16 @@ end
 
     a = uniform(DistInt{3}, 3)
     b = DistInt{3}(-1)
-    @test_throws ProbException p = pr(@dice a + b)
+    @test_throws ProbException p = pr(@alea a + b)
 
     a = DistInt{3}(3)
     b = DistInt{3}(-2)
     @test_nowarn pr(a - b)
-    @test_throws ProbException pr(@dice a - b)
+    @test_throws ProbException pr(@alea a - b)
 
     a = DistInt{3}(-3)
     b = DistInt{3}(2)
-    @test_throws ProbException pr(@dice a - b)
+    @test_throws ProbException pr(@alea a - b)
 
     a = DistInt{3}(3)
     b = DistInt{3}(2)
@@ -144,7 +144,7 @@ end
     T = DistInt{2}
     x = uniform(T,1) - T(1)
     y = uniform(T,1) - T(1)
-    @test pr(@dice x + y)[-1] ≈ 0.5
+    @test pr(@alea x + y)[-1] ≈ 0.5
     @test pr(x + y)[-1] ≈ 0.5
 
     # we want overallocation of bits to not affect the computation graph size
@@ -155,10 +155,10 @@ end
     s = convert(DistUInt{B+1}, x.number) + convert(DistUInt{B+1}, y.number)
     @test Alea.num_ir_nodes(s.bits[2]) < 15 
     
-    @test pr(@dice -DistInt8(127))[-127] ≈ 1
-    @test pr(@dice -DistInt8(-127))[127] ≈ 1
-    @test pr(@dice -DistInt8(0))[0] ≈ 1
-    @test_throws ProbException pr(@dice -DistInt8(-128))
+    @test pr(@alea -DistInt8(127))[-127] ≈ 1
+    @test pr(@alea -DistInt8(-127))[127] ≈ 1
+    @test pr(@alea -DistInt8(0))[0] ≈ 1
+    @test_throws ProbException pr(@alea -DistInt8(-128))
     
 end
 
@@ -171,7 +171,7 @@ end
 
     a = DistInt{4}(-2)
     b = DistInt{4}(-3)
-    p = pr(@dice a*b)
+    p = pr(@alea a*b)
     @test p[6] ≈ 1
 
     a = DistInt{4}(2)
@@ -186,7 +186,7 @@ end
 
     a = uniform(DistInt{4}, -2, 2)
     b = uniform(DistInt{4}, -2, 2)
-    p = pr(@dice a*b)
+    p = pr(@alea a*b)
     @test p[4] ≈ 1/16
     @test p[0] ≈ 7/16
 
@@ -194,7 +194,7 @@ end
         for j = -8:7
             a = DistInt{4}(i)
             b = DistInt{4}(j)
-            c = @dice a*b
+            c = @alea a*b
             if (i*j > 7) | (i*j < -8)
                 @test_throws ProbException pr(c)
             else
@@ -205,13 +205,13 @@ end
 end
 
 @testset "DistInt uniform" begin
-    y = @dice uniform(DistInt{4}, -7, 1)
+    y = @alea uniform(DistInt{4}, -7, 1)
     p = pr(y)
   
     @test issetequal(keys(p), -7:1:1-1)
     @test all(values(p) .≈ 1/8)
 
-    y = @dice uniform(DistInt{4}, -7, 3)
+    y = @alea uniform(DistInt{4}, -7, 3)
     p = pr(y)
   
     @test issetequal(keys(p), -7:1:3-1)
@@ -221,29 +221,29 @@ end
 
     flags = [:arith]
     map(flags) do flag
-        y = @dice uniform(DistInt{4}, -7, 1; strategy=flag)
+        y = @alea uniform(DistInt{4}, -7, 1; strategy=flag)
         p = pr(y)
       
         @test issetequal(keys(p), -7:1:1-1)
         @test all(values(p) .≈ 1/8)
     end
 
-    @test_broken @dice uniform(DistInt{4}, -7, 1; strategy=:ite)
+    @test_broken @alea uniform(DistInt{4}, -7, 1; strategy=:ite)
 end
 
 @testset "DistInt division" begin
     x = DistInt{4}(7)
     y = DistInt{4}(-3)
-    p = pr(@dice x / y)
+    p = pr(@alea x / y)
     @test p[-2] ≈ 1.0
 
     a = uniform(DistInt{3}, -4, 4)
     b = uniform(DistInt{3}, -4, 4)
-    @test_throws ProbException pr(@dice a/b)
+    @test_throws ProbException pr(@alea a/b)
 
     x = DistInt{3}(-4)
     y = DistInt{3}(-4)
-    p = pr(@dice x / y)
+    p = pr(@alea x / y)
     @test p[1] ≈ 1.0
 
     for i = -4:3
@@ -251,9 +251,9 @@ end
             a = DistInt{3}(i)
             b = DistInt{3}(j)
             if (j == 0) | ((i == -4) & (j == -1))
-                @test_throws ProbException pr(@dice a/b)
+                @test_throws ProbException pr(@alea a/b)
             else
-                @test pr(@dice a/b)[i ÷ j] ≈ 1.0
+                @test pr(@alea a/b)[i ÷ j] ≈ 1.0
             end
         end
     end
@@ -262,16 +262,16 @@ end
 @testset "DistInt mod" begin
     x = DistInt{4}(7)
     y = DistInt{4}(-3)
-    p = pr(@dice x % y)
+    p = pr(@alea x % y)
     @test p[1] ≈ 1.0
 
     a = uniform(DistInt{3}, -4, 4)
     b = uniform(DistInt{3}, -4, 4)
-    @test_throws ProbException pr(@dice a%b)
+    @test_throws ProbException pr(@alea a%b)
 
     x = DistInt{3}(-4)
     y = DistInt{3}(-4)
-    p = pr(@dice x % y)
+    p = pr(@alea x % y)
     @test p[0] ≈ 1.0
 
     for i = -4:3
@@ -279,9 +279,9 @@ end
             a = DistInt{3}(i)
             b = DistInt{3}(j)
             if (j == 0)
-                @test_throws ProbException pr(@dice a%b)
+                @test_throws ProbException pr(@alea a%b)
             else
-                @test pr(@dice a%b)[i % j] ≈ 1.0
+                @test pr(@alea a%b)[i % j] ≈ 1.0
             end
         end
     end
@@ -307,7 +307,7 @@ end
         for j = -4:3
             a = DistInt{3}(i)
             b = DistInt{3}(j)
-            @test pr(@dice a < b)[i < j] ≈ 1.0
+            @test pr(@alea a < b)[i < j] ≈ 1.0
         end
     end
 

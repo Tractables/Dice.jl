@@ -3,7 +3,7 @@ using Alea
 include("util.jl")
 
 # Calculate discrete(0.1, 0.2, 0.3, 0.4) using SBK
-sbk = @dice_ite begin
+sbk = @alea_ite begin
     if flip(1/10)
         DistInt(0)
     elseif flip(2/9)
@@ -16,7 +16,7 @@ sbk = @dice_ite begin
 end
 
 # Calculate discrete(0.1, 0.2, 0.3, 0.4) using BWH
-bwh = @dice_ite begin
+bwh = @alea_ite begin
     b1 = flip(7/10)
     b0 = if b1 flip(4/7) else flip(2/3) end
     DistInt([b0, b1])

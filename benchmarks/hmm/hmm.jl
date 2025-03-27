@@ -38,7 +38,7 @@ d2 = ifelse(z[n_vars],
             bitblast_exponential(DFiP, Normal(-1, 1), pieces, -9.0, 7.0),
             bitblast_exponential(DFiP, Normal(1, 1), pieces, -7.0, 9.0))
 
-t = @timed expectation(@dice begin
+t = @timed expectation(@alea begin
             observe(prob_equals(d1, DFiP(-1.5)))
             observe(prob_equals(d2, DFiP(1.5)))
             theta1

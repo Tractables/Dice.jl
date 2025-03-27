@@ -18,7 +18,7 @@ using Alea
     @test compute(var_vals, prob) ≈ 2/3
 
     # Approximate a dataset
-    b = @dice_ite if flip(prob) true else flip(0.5) end
+    b = @alea_ite if flip(prob) true else flip(0.5) end
     dataset = [true, true, false]
     bools_to_maximize = [prob_equals(b, x) for x in dataset]
     var_vals = Valuation(psp => 0)
@@ -44,12 +44,12 @@ end
 
     # Train for 200 epochs
     var_vals = Valuation(psp => 0)
-    b = @dice_ite if flip(prob) true else flip(prob) end
+    b = @alea_ite if flip(prob) true else flip(prob) end
     train!(var_vals, mle_loss([prob_equals(b, x) for x in dataset]); epochs=200, learning_rate=0.003)
     p1 = pr_mixed(var_vals)(b)[true]
 
     # Train for 100 epochs, twice
-    b = @dice_ite if flip(prob) true else flip(prob) end
+    b = @alea_ite if flip(prob) true else flip(prob) end
     var_vals = Valuation(psp => 0)
     train!(var_vals, mle_loss([prob_equals(b, x) for x in dataset]); epochs=100, learning_rate=0.003)
     train!(var_vals, mle_loss([prob_equals(b, x) for x in dataset]); epochs=100, learning_rate=0.003)

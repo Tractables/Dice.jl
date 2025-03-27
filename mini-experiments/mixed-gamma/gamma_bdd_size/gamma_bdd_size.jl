@@ -14,7 +14,7 @@ for j in 1:3
     io = open(string("./mini-experiments/mixed-gamma/nodes_obs_"*string(j)*".txt"), "a")
     for i in 1:max_bits
         DFiP = DistFix{i+1, i}
-        t = @dice unit_gamma(DFiP, j, -2.0)
+        t = @alea unit_gamma(DFiP, j, -2.0)
         n = num_nodes(reduce(&, t.observations))
         @show i, n
         writedlm(io, [i n], ",")

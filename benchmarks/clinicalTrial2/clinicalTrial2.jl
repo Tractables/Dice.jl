@@ -14,7 +14,7 @@ DFiP = DistFix{2+bits, bits}
 controlGroup = [false, false, true, false, false]
 treatedGroup = [true, false, true, true, true]
 
-t = @timed expectation(@dice begin
+t = @timed expectation(@alea begin
             isEffective = flip(0.5)
             probIfTreated = uniform(DFiP, 0.0, 1.0)
             probIfControl = if isEffective uniform(DFiP, 0.0, 1.0) else probIfTreated end

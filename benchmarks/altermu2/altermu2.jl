@@ -26,9 +26,9 @@ data = DFiP.([-2.57251482,  0.33806206,  2.71757796,  1.09861336,  2.85603752,
         -0.67970862,  0.93461681,  1.18187607, -1.49501051,  2.44755622,
         -2.06424237, -0.04584074,  1.93396696,  1.07685273, -0.09837907]);
 
-# g = @dice bitblast_exponential(DFiP, Normal(0, 1), num_pieces, truncation[1], truncation[2], true)
+# g = @alea bitblast_exponential(DFiP, Normal(0, 1), num_pieces, truncation[1], truncation[2], true)
 
-t = @timed expectation(@dice begin
+t = @timed expectation(@alea begin
     # TODO use more general `uniform`
     mu1 = uniform(DFiP, -8.0, 8.0)
     mu2 = uniform(DFiP, -8.0, 8.0)

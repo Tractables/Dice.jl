@@ -2,7 +2,7 @@ using Revise
 using Alea
 using Alea: num_flips, num_nodes, to_dice_ir
 
-code = @dice_ite begin
+code = @alea_ite begin
     function uniform(b::Int, w::Int) # uniform [0, b)
         num_b = 1 * (b == 1) + (ndigits(b, base = 2) - 1) * (b != 1)
         x = Vector(undef, num_b)   

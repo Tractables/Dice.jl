@@ -10,7 +10,7 @@ VOUCHES = Dict(
     5 => [1, 4],
 )
 
-md = @dice begin
+md = @alea begin
     liars = DistVector{DistUInt32}()
 
     # select unique liars

@@ -19,7 +19,7 @@ z = Vector(undef, n_vars)
 y = Vector(undef, n_vars)
 z[1] = discrete(DistUInt{2}, [1/3, 1/3, 1/3])
 
-t = @timed expectation(@dice begin
+t = @timed expectation(@alea begin
         for i in 2:n_vars
             z[i] = ifelse(prob_equals(z[i-1], DistUInt{2}(0)),
                                 discrete(DistUInt{2}, [1/3, 1/3, 1/3]),

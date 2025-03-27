@@ -18,7 +18,7 @@ w2 = laplace(DFiP, 0.0, scale, -8.0, 8.0)
 
 data = [1.0]
 
-t = pr(@dice begin
+t = pr(@alea begin
             mu = w1 + w2
             gaussian_observe(DFiP, pieces, -8.0, 8.0, mu, 1.0, DFiP(1.0), add=true)
             w1

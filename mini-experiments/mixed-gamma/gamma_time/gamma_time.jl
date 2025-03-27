@@ -14,7 +14,7 @@ for j in 1:3
     io = open(string("./mini-experiments/mixed-gamma/gamma_time_"*string(j)*".txt"), "a")
     for i in 1:max_bits
         DFiP = DistFix{i+1, i}
-        t = @timed expectation(@dice unit_gamma(DFiP, j, -2.0))
+        t = @timed expectation(@alea unit_gamma(DFiP, j, -2.0))
         @show i, t.time
         writedlm(io, [i t.time], ",")
         cur[i] = t.time

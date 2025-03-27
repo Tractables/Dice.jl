@@ -10,7 +10,7 @@ add_arg = false
 data = DFiP.([1.0, 3.0, 6.0, 10.0, 15.0]);
 
 
-code = @dice begin
+code = @alea begin
     x = DFiP(0.0)
     v = DFiP(0.0)
     a = DFiP(0.0)

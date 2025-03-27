@@ -8,7 +8,7 @@ pieces = 8
 io = open(string("./mini-experiments/expectation_variance/exp_var.txt"), "a")
 for i = 16:20
     DFiP = DistFix{5+i, i}
-    code = @dice begin
+    code = @alea begin
         x = bitblast(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
         x
     end

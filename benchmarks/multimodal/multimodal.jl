@@ -14,7 +14,7 @@ mu2 = uniform(DFiP, -16.0, 16.0)
 
 datapt = [5.0, 5.0, 5.0, 5.0, 5.0, 5.0, -5.0, -5.0, -5.0]
 
-code = @dice begin
+code = @alea begin
             for data in datapt
                 y = ifelse(flip(2/3),
                                 bitblast_exponential(DFiP, Normal(0, 1), pieces, -8.0, 8.0) + mu1,

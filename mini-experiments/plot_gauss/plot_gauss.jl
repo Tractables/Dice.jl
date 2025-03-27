@@ -4,7 +4,7 @@ using Plots
 # Plot approximations of gaussian
 function plot_gaussian(bits::Int, pieces::Int)
     DFiP = DistFix{4 + bits, bits}
-    code = @dice bitblast_exponential(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
+    code = @alea bitblast_exponential(DFiP, Normal(0, 1), pieces, -8.0, 8.0)
     pr(code)
 end
 
