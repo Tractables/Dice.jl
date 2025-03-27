@@ -1,3 +1,4 @@
 {
-    "julia.executablePath": "/usr/local/bin/julia"
+    "julia.executablePath": "/usr/local/bin/julia",
+    "graphviz-interactive-preview.renderLockAdditionalTimeout": 100000
 }
