@@ -2,7 +2,7 @@
 using IRTools
 using IRTools: @dynamo, IR, recurse!, self, xcall, functional
 
-export @alea, dice, observe, constraint, assert_dice, @code_ir_dice, errorcheck, indynamo, save_dot, pathcond
+export @alea, alea, observe, constraint, assert_alea, @code_ir_alea, errorcheck, indynamo, save_dot, pathcond
 
 ##################################
 # Control flow + error + observation dynamo
@@ -14,17 +14,17 @@ errorcheck() = indynamo()
 "Is this code running in the context of the Alea dynamo"
 indynamo() = false
 
-"Interpret dice code with control flow, observations, and errors"
-function dice(f) 
+"Interpret alea code with control flow, observations, and errors"
+function alea(f) 
     dyna = AleaDyna()
     x = dyna(f)
     MetaDist(x, dyna.errors, dyna.observations, dyna.dots)
 end
 
-"Interpret dice code with control flow, observations, and errors"
-macro dice(code)
+"Interpret alea code with control flow, observations, and errors"
+macro alea(code)
     esc(quote
-        dice() do
+        alea() do
             $code
         end
     end)
@@ -40,14 +40,14 @@ struct AleaDyna
 end
 
 "Assert that the current code must be run within an @alea evaluation"
-assert_dice() = 
+assert_alea() = 
     indynamo() ? nothing : error("This code must be called from within an @alea evaluation.")
 
-observe(_) = assert_dice()
+observe(_) = assert_alea()
 
-save_dot(_xs, _filename) = assert_dice()
+save_dot(_xs, _filename) = assert_alea()
 
-pathcond() = assert_dice()
+pathcond() = assert_alea()
 
 global dynamoed = Vector()
 
@@ -90,7 +90,7 @@ end
 
 path_condition(dyna) = reduce(&, dyna.path; init=true)
 
-# in a dice context, do check for probabilistic errors
+# in a alea context, do check for probabilistic errors
 (dyna::AleaDyna)(::typeof(indynamo)) = true
 
 # TODO catch Base exceptions in ifelse instead

@@ -9,8 +9,8 @@ using PrecompileTools
 
 export @alea_ite
 
-"Syntactic macro to make if-then-else supported by dice"
-macro dice_ite(code)
+"Syntactic macro to make if-then-else supported by alea"
+macro alea_ite(code)
     postwalk(esc(code)) do x
         if x isa Expr && (x.head == :if || x.head == :elseif)
             @assert length(x.args) == 3 "@alea_ite macro only supports purely functional if-then-else"

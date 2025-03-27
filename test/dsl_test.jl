@@ -45,7 +45,7 @@ using Distributions
         x
     end
 
-    @test_throws ErrorException assert_dice()
+    @test_throws ErrorException assert_alea()
     @test_throws ErrorException observe(true)
 
 end
@@ -93,10 +93,10 @@ end
         x
     end
 
-    @test pr(dice(f2))[true] ≈ 1 - 0.6
+    @test pr(alea(f2))[true] ≈ 1 - 0.6
 
     f2b() = f2() & flip(0.8)
-    @test pr(dice(f2b))[true] ≈ (1 - 0.6) * 0.8
+    @test pr(alea(f2b))[true] ≈ (1 - 0.6) * 0.8
     @test pr(@alea f2b())[true] ≈ (1 - 0.6) * 0.8
 
     f3 = @alea begin
@@ -111,8 +111,8 @@ end
 
     @test (@alea true).returnvalue == true
     
-    @test_nowarn dice() do 
-        assert_dice()
+    @test_nowarn alea() do 
+        assert_alea()
     end
 end
 
@@ -125,7 +125,7 @@ end
         false 
     end
     
-    x = dice() do 
+    x = alea() do 
         f(0.1) || f(0.2) 
     end
 
@@ -150,7 +150,7 @@ end
         @test e.errors[2][2].msg ==  "BAD 0.2"
     end
 
-    y = dice() do 
+    y = alea() do 
         if flip(0.6)
             error("bad branch")
             observe(false)
@@ -180,7 +180,7 @@ end
         false 
     end
 
-    x = dice() do 
+    x = alea() do 
         f(0.1) || f(0.2) 
     end
 
@@ -205,7 +205,7 @@ end
 @testset "Dynamo profiling" begin
 
     
-    dice() do 
+    alea() do 
         f(x) = flip(x)
         f(0.1) || f(0.2) 
     end
@@ -220,15 +220,15 @@ end
 
     f = flip(0.5)
     
-    @test returnvalue(dice() do 
+    @test returnvalue(alea() do 
         true == f
     end) == f
 
-    @test returnvalue(dice() do 
+    @test returnvalue(alea() do 
         f == true
     end) == f
 
-    @test returnvalue(dice() do 
+    @test returnvalue(alea() do 
         f == f
     end)
 

@@ -124,7 +124,7 @@ end
 #             else
 #                 nothing
 #             end
-#             # assert_dice()
+#             # assert_alea()
 #             if i > length(idx.bits)
 #                 if v < 1 || v > length(d.contents)
 #                     d.contents[1]  # dummy
