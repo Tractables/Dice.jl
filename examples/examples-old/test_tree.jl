@@ -1,4 +1,4 @@
-using Dice
+using Alea
 
 # Test four ways to construct
 cg = @dice_ite begin

@@ -1,4 +1,4 @@
-using Dice
+using Alea
 include("../util.jl")
 
 # See state_machine.jpg for a diagram of this machine
@@ -38,8 +38,8 @@ for step_i in 1:num_steps
 
         # Only update if our current state matches state1
         state_matches = prob_equals(state, DistUInt32(state1))
-        next_state = Dice.ifelse(state_matches, cand_state, next_state)
-        c = Dice.ifelse(state_matches, cand_c, c)
+        next_state = Alea.ifelse(state_matches, cand_state, next_state)
+        c = Alea.ifelse(state_matches, cand_c, c)
     end
     str.chars[step_i] = c
     global state = next_state
@@ -48,7 +48,7 @@ end
 # Infer with recorded error, which in this case is true in execution paths
 # where we fail to reach an accepting state within our steps bound.
 reached_accepting_state = reduce(|, [prob_equals(state, DistUInt32(acceptor)) for acceptor in acceptors])
-str = Dice.ifelse(reached_accepting_state, str, DistString("not accepted"))
+str = Alea.ifelse(reached_accepting_state, str, DistString("not accepted"))
 str_dist = pr(str)
 
 print_dict(str_dist)

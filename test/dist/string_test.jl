@@ -1,5 +1,5 @@
 using Test
-using Dice
+using Alea
 
 @testset "DistString core" begin
     cg = @dice begin

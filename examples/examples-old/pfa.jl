@@ -1,5 +1,5 @@
-using Dice
-using Dice: num_nodes, num_flips
+using Alea
+using Alea: num_nodes, num_flips
 include("util.jl")
 
 machine = Dict([  # List of transitions

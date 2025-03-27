@@ -1,4 +1,4 @@
-using Dice
+using Alea
 
 for discrete_impl in [discrete, discrete_sbk]
     local dist, err = infer(discrete_impl([

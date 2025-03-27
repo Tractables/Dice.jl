@@ -158,7 +158,7 @@ function discrete(::Type{DistUInt{W}}, probs) where W
                 flip(sum(probs[Int((s+e+1)/2):e])/denom)
             end
         else
-            Dice.ifelse(bits[end-i+1], 
+            Alea.ifelse(bits[end-i+1], 
                 recurse(i-1, Int((s+e+1)/2), e), 
                 recurse(i-1, s, Int((s+e-1)/2)))
         end
@@ -397,7 +397,7 @@ function Base.ifelse(cond::Dist{Bool}, then::DistUInt{W}, elze::DistUInt{W}) whe
     DistUInt{W}(bits)
 end
   
-using Dice: tobits, frombits
+using Alea: tobits, frombits
 
 function maxvalue(x::DistUInt{W}) where W
     c = BDDCompiler(x.bits)

@@ -1,5 +1,5 @@
-using Dice
-using Dice: num_flips, num_nodes
+using Alea
+using Alea: num_flips, num_nodes
 
 for n = 7:7
     code = @dice_ite begin

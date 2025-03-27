@@ -1,5 +1,5 @@
-using Dice
-using Dice: num_flips, num_nodes, DWE
+using Alea
+using Alea: num_flips, num_nodes, DWE
 using Revise
 include("../util.jl")
 
@@ -53,7 +53,7 @@ function tree()
             if lhs in terminals
                 DistTree(DistEnum(lhs))
             elseif max_depth == 0
-                Dice.DWE(DistTree(DistEnum(start_term)), flip(true))  # Dummy node, just indicate that there is error
+                Alea.DWE(DistTree(DistEnum(start_term)), flip(true))  # Dummy node, just indicate that there is error
             else
                 expansions = []
                 for (rhs, p) in rules[lhs]

@@ -1,4 +1,4 @@
-using Dice
+using Alea
 
 @enum Colors red green blue
 cg = @dice_ite begin

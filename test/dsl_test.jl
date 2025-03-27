@@ -1,6 +1,6 @@
 using Test
-using Dice
-using Dice: Flip, num_ir_nodes
+using Alea
+using Alea: Flip, num_ir_nodes
 using Distributions
 
 @testset "Control flow macro" begin
@@ -210,8 +210,8 @@ end
         f(0.1) || f(0.2) 
     end
 
-    @test !isempty(Dice.top_dynamoed())
-    @test_nowarn Dice.reset_dynamoed()
+    @test !isempty(Alea.top_dynamoed())
+    @test_nowarn Alea.reset_dynamoed()
 
 end
 

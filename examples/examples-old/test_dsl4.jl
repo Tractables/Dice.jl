@@ -1,4 +1,4 @@
-using Dice
+using Alea
 
 function finite_quotient(x,y)
     require_dice_transformation()

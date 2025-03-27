@@ -1,5 +1,5 @@
 using Test
-using Dice
+using Alea
 
 @testset "DistEnum core" begin
     @enum Colors red green blue

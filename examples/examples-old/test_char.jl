@@ -1,4 +1,4 @@
-using Dice
+using Alea
 
 c = @dice_ite begin
     if flip(1/10)

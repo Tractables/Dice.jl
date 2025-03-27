@@ -1,10 +1,10 @@
 using Test
-using Dice
-using Dice: Flip, num_ir_nodes
+using Alea
+using Alea: Flip, num_ir_nodes
 
 @testset "DistUInt inference" begin
     x = DistUInt{4}([true, false, true, false]) # 10
-    @test Dice.bitwidth(x) == 4
+    @test Alea.bitwidth(x) == 4
 
     p = pr(x)
     @test p[9] ≈ 0
@@ -23,7 +23,7 @@ using Dice: Flip, num_ir_nodes
     @test all(values(p) .≈ 1/2^3)
 
     x = DistUInt([true, false, true, false])
-    @test Dice.bitwidth(x) == 4
+    @test Alea.bitwidth(x) == 4
 
     @test_throws Exception DistUInt{3}([true, false, true, false])
     @test_throws Exception DistUInt{5}([true, false, true, false])

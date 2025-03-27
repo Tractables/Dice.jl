@@ -1,5 +1,5 @@
 using Test
-using Dice
+using Alea
 using Distributions
 
 @testset "BDDCompiler" begin
@@ -7,11 +7,11 @@ using Distributions
     f2 = flip(0.5)
     x = ((f1 & f2) | (f1 & !f2)) & !f1
     c = BDDCompiler()
-    @test !Dice.issat(c.mgr, compile(c, x))
-    @test Dice.isvalid(c.mgr, compile(c, !x))
+    @test !Alea.issat(c.mgr, compile(c, x))
+    @test Alea.isvalid(c.mgr, compile(c, !x))
 
-    @test Dice.issat(c.mgr, compile(c, f1))
-    @test !Dice.isvalid(c.mgr, compile(c, f1))
+    @test Alea.issat(c.mgr, compile(c, f1))
+    @test !Alea.isvalid(c.mgr, compile(c, f1))
 end
 
 @testset "num_nodes" begin

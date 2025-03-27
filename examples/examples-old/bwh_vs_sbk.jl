@@ -1,5 +1,5 @@
 using Revise
-using Dice
+using Alea
 include("util.jl")
 
 # Calculate discrete(0.1, 0.2, 0.3, 0.4) using SBK

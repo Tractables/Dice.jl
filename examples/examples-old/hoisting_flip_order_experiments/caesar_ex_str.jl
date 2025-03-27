@@ -1,6 +1,6 @@
 using Revise
-using Dice
-using Dice: num_flips, num_nodes
+using Alea
+using Alea: num_flips, num_nodes
 include("../util.jl")
 
 function caesar()

@@ -1,4 +1,4 @@
-# Extra and experimental Dice.jl features
+# Extra and experimental Alea.jl features
 
 ################################################################################
 # More datatypes

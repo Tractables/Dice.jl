@@ -1,4 +1,4 @@
-using Dice
+using Alea
 
 NUM_NODES = 4
 NUM_COLORS = 3

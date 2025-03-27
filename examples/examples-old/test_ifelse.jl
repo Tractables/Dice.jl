@@ -1,5 +1,5 @@
-using Dice
-using Dice: ifelse
+using Alea
+using Alea: ifelse
 
 cg = @dice_ite begin
     b = DistInt([DistBool(false)])

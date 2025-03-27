@@ -1,5 +1,5 @@
-using Dice
-using Dice: num_flips, num_nodes
+using Alea
+using Alea: num_flips, num_nodes
 
 function my_uniform(b::Int, w::Int) # b is the bits for uniform, w is the bitwidth
     x = Vector(undef, b)

@@ -15,7 +15,7 @@ function canonicalize(root::Dist{Bool})
     canonical_root, cache
 end
 
-# Compress flip ids so that multiple Dice programs run in the same Julia program
+# Compress flip ids so that multiple Alea programs run in the same Julia program
 # still have consistent canonicalizations.
 #
 # For example, let some program produce flips {0, 1, 2}. When run again, it will

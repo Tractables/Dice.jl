@@ -1,5 +1,5 @@
 using Revise
-using Dice
+using Alea
 
 #Ryan's program
 

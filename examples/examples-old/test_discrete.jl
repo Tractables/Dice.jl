@@ -1,5 +1,5 @@
-using Dice
-using Dice: num_flips, num_nodes
+using Alea
+using Alea: num_flips, num_nodes
 
 a = [0.1, 0.2, 0.7]
 function my_discrete(p::Vector{Float64})
@@ -14,7 +14,7 @@ function my_discrete(p::Vector{Float64})
     println(v)
     ans = DistInt(mb-1)
     for i=mb-1:-1:1
-        ans = Dice.ifelse(flip(v[i]), DistInt(i-1), ans)
+        ans = Alea.ifelse(flip(v[i]), DistInt(i-1), ans)
     end
     return ans
 end      

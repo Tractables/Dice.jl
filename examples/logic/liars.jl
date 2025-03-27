@@ -1,4 +1,4 @@
-using Dice
+using Alea
 
 NUM_PEOPLE = 5
 NUM_LIARS = 2

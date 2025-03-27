@@ -1,4 +1,4 @@
-using Dice
+using Alea
 
 # hack to allow us to use non-functional probabilistic ITE
 Base.ifelse(::Dist{Bool}, ::Any, ::Nothing) = DistUInt32(77)
@@ -69,7 +69,7 @@ end
 
 
 
-# ~~ Dice-style safety analysis ~~
+# ~~ Alea-style safety analysis ~~
 # Multi-rooted BDD representing program states; vars are choices.
 function getUnit()
     x = false

@@ -1,6 +1,6 @@
 using Test
-using Dice
-using Dice: Flip, num_ir_nodes
+using Alea
+using Alea: Flip, num_ir_nodes
 using Distributions
 
 @testset "Probabilistic Tuples" begin

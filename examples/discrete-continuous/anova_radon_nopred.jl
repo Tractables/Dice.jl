@@ -1,5 +1,5 @@
 using Pkg; Pkg.activate(@__DIR__)
-using Dice, Distributions
+using Alea, Distributions
 
 precision = 0
 DFiP = DistFix{11+precision, precision}

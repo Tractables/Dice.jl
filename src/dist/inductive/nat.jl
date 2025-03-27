@@ -1,7 +1,7 @@
 export Nat, nat_ast_to_int
 
 module Nat
-    using Dice
+    using Alea
     @inductive t Z() S(t)
 end
 
@@ -43,7 +43,7 @@ function sticky_sub(x, y)
     end
 end
 
-function Dice.match(x::DistUInt32, branches)
+function Alea.match(x::DistUInt32, branches)
     branch_dict = Dict(branches)
     @dice_ite if prob_equals(x, DistUInt32(0))
         branch_dict[:O]()

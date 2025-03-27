@@ -1,4 +1,4 @@
-using Dice
+using Alea
 
 # + that returns a Tuple{DistInt, DistBool}
 cg = @dice_ite begin

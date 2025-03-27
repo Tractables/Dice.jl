@@ -1,5 +1,5 @@
 using Test
-using Dice, Distributions
+using Alea, Distributions
 
 @testset "Gaussian observations" begin
     

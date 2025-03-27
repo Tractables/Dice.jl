@@ -1,5 +1,5 @@
 using Test
-using Dice
+using Alea
 
 dist_type(::Integer) = DistUInt32
 dist_type(::String) = DistString
@@ -14,7 +14,7 @@ function to_dist_list(v)
 end
 
 function to_ast(v)
-    Dice.frombits(to_dist_list(v), Dict())
+    Alea.frombits(to_dist_list(v), Dict())
 end
 
 @testset "DistList core" begin

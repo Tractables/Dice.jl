@@ -2,7 +2,7 @@
 
 # Setup testing
 using Test
-using Dice
+using Alea
 @testset "tour_2_learning" begin
 
 ################################################################################

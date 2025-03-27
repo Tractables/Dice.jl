@@ -1,4 +1,4 @@
-using Dice, Distributions
+using Alea, Distributions
 using Revise
 using Plots
 using DelimitedFiles

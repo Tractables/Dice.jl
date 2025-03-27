@@ -1,6 +1,6 @@
 #==
 using Test
-using Dice
+using Alea
 using TikzGraphs
 using TikzPictures
 
