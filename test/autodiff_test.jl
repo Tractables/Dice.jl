@@ -1,4 +1,4 @@
-using Dice
+using Alea
 using Test
 
 @testset "test autodiff" begin

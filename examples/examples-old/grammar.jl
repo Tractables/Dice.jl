@@ -1,5 +1,5 @@
-using Dice
-using Dice: num_flips, num_nodes
+using Alea
+using Alea: num_flips, num_nodes
 include("util.jl")
 
 @enum Terms S NP VP V Alice Bob and ran saw

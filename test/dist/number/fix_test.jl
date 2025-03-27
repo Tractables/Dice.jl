@@ -1,11 +1,11 @@
 using Test
-using Dice
-using Dice: Flip, ifelse, num_ir_nodes
+using Alea
+using Alea: Flip, ifelse, num_ir_nodes
 using Distributions
 
 @testset "DistFix inference" begin
     x = DistFix{4, 2}([true, false, true, false]) # -1.5
-    @test Dice.bitwidth(x) == 4
+    @test Alea.bitwidth(x) == 4
 
     p = pr(x)
     @test p[-1.25] ≈ 0
@@ -13,7 +13,7 @@ using Distributions
     @test p[-1.75] ≈ 0
 
     x = DistFix{4, 2}(1.53)
-    @test Dice.bitwidth(x) == 4
+    @test Alea.bitwidth(x) == 4
 
     p = pr(x)
     @test p[1.5] ≈ 1

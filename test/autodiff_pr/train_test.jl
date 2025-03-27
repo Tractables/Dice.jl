@@ -1,5 +1,5 @@
 using Test
-using Dice
+using Alea
 
 @testset "MLE" begin
     psp = Var("psp") # pre-sigmoid probability

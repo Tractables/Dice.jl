@@ -1,6 +1,6 @@
 using Test
-using Dice
-using Dice: canonicalize, optimize_unsat, optimize_condition, num_ir_nodes
+using Alea
+using Alea: canonicalize, optimize_unsat, optimize_condition, num_ir_nodes
 
 @testset "canonicalize" begin
     
@@ -19,10 +19,10 @@ end
     f1, f2, f3, f4, f5 = [flip(0.5) for _ = 1:5]
 
     x = !f5 & (f5 | (f4 & !((f1 | f2) | (!f2 | f3))))
-    @test Dice.optimize_unsat(x) == false
+    @test Alea.optimize_unsat(x) == false
 
     x = (f1 | f2) & f1
-    @test Dice.optimize_unsat(x) == f1
+    @test Alea.optimize_unsat(x) == f1
 end
 
 
@@ -33,15 +33,15 @@ end
     
     x = (f1 & f2) & (f1 | f3) 
 
-    @test Dice.num_ir_nodes(x) == 6
+    @test Alea.num_ir_nodes(x) == 6
 
-    x = Dice.optimize_condition(x);
+    x = Alea.optimize_condition(x);
 
-    @test Dice.num_ir_nodes(x) == 3
+    @test Alea.num_ir_nodes(x) == 3
 
     # this should work eventually
     # x = (f1 & f2) | (f1 & !f2)
-    # @test Dice.optimize_***(x) == f1
+    # @test Alea.optimize_***(x) == f1
 
 
 end
@@ -58,7 +58,7 @@ end
                         ifelse(pa2, flip(0.3), flip(0.4)))
     end
     evidence = reduce(&, grid)
-    evidence_opt = Dice.optimize_condition_global(evidence)
+    evidence_opt = Alea.optimize_condition_global(evidence)
 
     @test pr(evidence)[true] ≈ pr(evidence_opt)[true]
     @test num_ir_nodes(evidence) > num_ir_nodes(evidence_opt)

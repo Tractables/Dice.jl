@@ -1,5 +1,5 @@
-using Dice
-using Dice: num_flips, num_nodes, to_dice_ir
+using Alea
+using Alea: num_flips, num_nodes, to_dice_ir
 
 code = @dice_ite begin
     n = 10

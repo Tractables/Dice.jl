@@ -1,4 +1,4 @@
-using Dice
+using Alea
 using DelimitedFiles
 using BenchmarkTools
 using Plots

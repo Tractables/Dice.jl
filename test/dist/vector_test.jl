@@ -1,5 +1,5 @@
 using Test
-using Dice
+using Alea
 
 @testset "DistVector core" begin
     # Test concatenation, appending, ifelse

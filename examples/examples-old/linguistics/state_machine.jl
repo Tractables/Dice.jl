@@ -1,4 +1,4 @@
-using Dice
+using Alea
 include("../util.jl")
 
 # See state_machine.jpg for a diagram of this machine
@@ -38,8 +38,8 @@ for step_i in 1:num_steps
 
         # Only update if our current state matches state1
         state_matches = prob_equals(state, state1)
-        next_state = Dice.ifelse(state_matches, cand_state, next_state)
-        c = Dice.ifelse(state_matches, cand_c, c)
+        next_state = Alea.ifelse(state_matches, cand_state, next_state)
+        c = Alea.ifelse(state_matches, cand_c, c)
     end
     str.chars[step_i] = c
     global state = next_state

@@ -1,5 +1,5 @@
 using Test
-using Dice
+using Alea
 
 @testset "Option test" begin
     none_int = Opt.None(DistUInt32)

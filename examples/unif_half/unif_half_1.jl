@@ -1,5 +1,5 @@
 using Revise
-using Dice
+using Alea
 
 bits = 5
 t = DistUInt{bits}

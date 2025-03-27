@@ -1,4 +1,4 @@
-using Dice
+using Alea
 code = @dice_ite begin
     b = DistInt(7)
     f = flip(0.2)

@@ -1,4 +1,4 @@
-using Dice
+using Alea
 using Plots
 
 f1 = flip(0.1)

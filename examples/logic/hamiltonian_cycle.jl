@@ -1,4 +1,4 @@
-using Dice
+using Alea
 
 # (1)--(2)--(3)
 #  |   / \   |

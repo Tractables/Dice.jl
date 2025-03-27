@@ -1,4 +1,4 @@
-using Dice
+using Alea
 using Plots
 
 # Generating .dot files

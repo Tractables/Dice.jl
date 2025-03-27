@@ -6,7 +6,7 @@
   dart of each color lands in it own color?
 ==#
 
-using Dice
+using Alea
 import Base: all, any
 
 all(itr) = reduce(&, itr)

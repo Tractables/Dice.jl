@@ -1,5 +1,5 @@
 using Test
-using Dice
+using Alea
 
 function Base.isapprox(d1::AbstractDict, d2::AbstractDict)
     issetequal(keys(d1), keys(d2)) && all(isapprox(d1[k], d2[k],rtol=0.01) for k in keys(d1))

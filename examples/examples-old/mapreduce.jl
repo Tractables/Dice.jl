@@ -1,5 +1,5 @@
-using Dice
-using Dice: num_flips, num_nodes
+using Alea
+using Alea: num_flips, num_nodes
 
 probs = [1/i for i=2:20]
 res = mapreduce(p -> !flip(p), &, probs)  # all tails

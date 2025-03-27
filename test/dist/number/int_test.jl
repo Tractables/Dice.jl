@@ -1,10 +1,10 @@
-using Dice
+using Alea
 using Test
-using Dice: Flip, num_ir_nodes
+using Alea: Flip, num_ir_nodes
 
 @testset "DistInt inference" begin
     x = DistInt{4}([true, false, true, false]) # -6
-    @test Dice.bitwidth(x) == 4
+    @test Alea.bitwidth(x) == 4
 
     p = pr(x)
     @test p[-5] ≈ 0
@@ -153,7 +153,7 @@ end
     x = uniform(T,1) - T(1)
     y = uniform(T,1) - T(1)
     s = convert(DistUInt{B+1}, x.number) + convert(DistUInt{B+1}, y.number)
-    @test Dice.num_ir_nodes(s.bits[2]) < 15 
+    @test Alea.num_ir_nodes(s.bits[2]) < 15 
     
     @test pr(@dice -DistInt8(127))[-127] ≈ 1
     @test pr(@dice -DistInt8(-127))[127] ≈ 1

@@ -193,7 +193,7 @@ Base.getindex(x::ADNode, i...) = GetIndex(x, CartesianIndex(i...))
 #   `compute(f::ADFunction, arguments::Vector{RM})::RM`
 #     where `RM = Union{Real, AbstractMatrix}`
 #   `differentiate(f::ADFunction)::ADFunction`
-# ...but let's save this for the next Dice rewrite!
+# ...but let's save this for the next Alea rewrite!
 mutable struct Map <: ADNode
     f::Function
     f′::Function

@@ -1,5 +1,5 @@
 using Revise
-using Dice, Distributions
+using Alea, Distributions
 using DelimitedFiles
 using BenchmarkTools
 

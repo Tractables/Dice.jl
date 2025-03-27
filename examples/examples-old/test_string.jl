@@ -1,4 +1,4 @@
-using Dice
+using Alea
 
 # Test concatenation, appending, ifelse
 cg = @dice_ite begin

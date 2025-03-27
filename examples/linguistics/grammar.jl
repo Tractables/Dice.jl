@@ -1,4 +1,4 @@
-using Dice
+using Alea
 include("../util.jl")
 
 # Put enum in module so case variables are scoped

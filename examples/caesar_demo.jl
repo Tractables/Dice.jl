@@ -1,4 +1,4 @@
-using Dice
+using Alea
 using DataStructures: counter
 
 corpus_url = "https://raw.githubusercontent.com/teropa/nlp/master/resources/corpora/gutenberg/shakespeare-macbeth.txt"

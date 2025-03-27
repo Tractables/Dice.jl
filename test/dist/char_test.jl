@@ -1,5 +1,5 @@
 using Test
-using Dice
+using Alea
 
 @testset "DistChar core" begin
     c = @dice_ite begin

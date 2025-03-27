@@ -1,4 +1,4 @@
-using Dice
+using Alea
 
 N = 5
 

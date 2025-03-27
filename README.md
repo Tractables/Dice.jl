@@ -1,6 +1,6 @@
 # HyBit
 
-[![Unit Tests](https://github.com/Juice-jl/Dice.jl/workflows/Unit%20Tests/badge.svg)](https://github.com/Juice-jl/Dice.jl/actions?query=workflow%3A%22Unit+Tests%22+branch%3Amain)  [![codecov](https://codecov.io/gh/Tractables/Dice.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/Tractables/Dice.jl)
+[![Unit Tests](https://github.com/Juice-jl/Alea.jl/workflows/Unit%20Tests/badge.svg)](https://github.com/Juice-jl/Alea.jl/actions?query=workflow%3A%22Unit+Tests%22+branch%3Amain)  [![codecov](https://codecov.io/gh/Tractables/Alea.jl/branch/main/graph/badge.svg)](https://codecov.io/gh/Tractables/Alea.jl)
 
 `HyBit` is a bit blasting based probabilistic programming system for discrete-continuous probabilistic programs. It is built on top of another probabilistic programming language Dice See [https://github.com/SHoltzen/dice](https://github.com/SHoltzen/dice).  
 
@@ -17,7 +17,7 @@ pip3 install sympy
 Next, clone the repository and start julia in project mode for current folder:
 
 ```bash
-cd Dice.jl
+cd Alea.jl
 julia --project
 ```
 
@@ -27,7 +27,7 @@ In Julia REPL, then use the following command to install all the needed dependen
 using Pkg; Pkg.instantiate()
 ```
 
-Once the Dice Julia package is instantiated, its inference algorithm and HyBit is ready to use.
+Once the Alea Julia package is instantiated, its inference algorithm and HyBit is ready to use.
 
 ## Quick Start
 
@@ -36,7 +36,7 @@ Once the Dice Julia package is instantiated, its inference algorithm and HyBit i
 Let's first start with a discrete probabilistic program. Imagine you have two coins `a` and `b` with probability of landing on heads as 0.4 and 0.6 respectively. You flip both the coins and see that one of them has landed heads. What is the probability that `a` lands heads?
 
 ```julia
-using Dice
+using Alea
 code = @dice begin
     a = flip(0.4)
     b = flip(0.6)
@@ -65,7 +65,7 @@ DataStructures.DefaultOrderedDict{Any, Any, Float64} with 2 entries:
 To see the use of HyBit to write discrete-continuous probabilistic programs, consider the following example. Here, we compute the probability of a random variable `a` being less than 0.
 
 ```julia
-using Dice, Distributions
+using Alea, Distributions
 DFiP = DistFix{6, 2}
 code = @dice begin
             a = bitblast(DFiP, Normal(0, 1), 4, -8.0, 8.0)
@@ -89,7 +89,7 @@ DataStructures.DefaultOrderedDict{Any, Any, Float64} with 2 entries:
   false => 0.5
 ```
 
-The Julia package Dice makes available the following constructs
+The Julia package Alea makes available the following constructs
 
 * `@dice` macro that encapsulates the probabilistic program
 * `observe()` to condition on a Boolean random variable being true.
@@ -118,5 +118,5 @@ It also offers different probabilistic inference queries such as the following:
 More examples can be found at the following directories:
 
 * `test/` directory contains unit test cases for all the functions and data types implemented.
-* `examples/` contains simple examples to get started with using Dice Julia package to write probabilistic programs.
+* `examples/` contains simple examples to get started with using Alea Julia package to write probabilistic programs.
 * `benchmarks/` contains discrete-continuous probabilistic programs to get started with using bit blasting.  
