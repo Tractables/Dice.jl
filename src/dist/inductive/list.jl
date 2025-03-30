@@ -1,7 +1,7 @@
 # Define List
 export List, Nil, Cons, prob_append, concat, one_of
 
-@inductive List{T} Nil() Cons(T, List{T})
+@type List{T} = Nil() | Cons(T, List{T})
 
 function Base.length(l::List{T}) where T
     match(l, [

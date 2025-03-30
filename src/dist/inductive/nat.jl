@@ -2,7 +2,7 @@ export Nat, nat_ast_to_int
 
 module Nat
     using Dice
-    @inductive t Z() S(t)
+    @type t = Z() | S(t)
 end
 
 function Nat.t(x::Unsigned)

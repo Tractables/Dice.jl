@@ -1,5 +1,7 @@
 # Distributions over inductively-defined types
-export @inductive, @match, matches, variants, InductiveType
+export @inductive, @match, matches, variants, InductiveType, @type
+using MacroTools
+
 
 abstract type InductiveType <: Dist{Any} end
 
@@ -119,10 +121,23 @@ function matches end
 
 function variants end
 
-# Usage:
-# @inductive Option Some(DistInt32) None()
-# @inductive List{T} Nil() Cons(T, List{T})
-macro inductive(type, constructors...)
+# desugars
+# @type t = Some(DistUInt32) | None()
+# to
+# @inductive t Some(DistUInt32) None()
+macro type(def)
+    @capture(def, type_ = arms_)
+    rev_constructors = []
+    while arms.head == :call && arms.args[1] == :|
+        _bar, arms, constructor = arms.args
+        push!(rev_constructors, constructor)
+    end
+    push!(rev_constructors, arms)
+    constructors = reverse(rev_constructors)
+    inductive_impl(type, constructors)
+end
+
+function inductive_impl(type, constructors)
     if length(constructors) == 1 && constructors[1].head == :vect
         constructors = constructors[1].args
     end
@@ -233,4 +248,12 @@ macro match(scrutinee, branches)
             map(branch_to_fn_pair, branches.args)
         ...)])
     end
+
+end
+
+# Usage:
+# @inductive Option Some(DistInt32) None()
+# @inductive List{T} Nil() Cons(T, List{T})
+macro inductive(type, constructors...)
+    inductive_impl(type, constructors)
 end
