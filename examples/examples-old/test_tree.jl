@@ -1,7 +1,7 @@
-using Dice
+using Alea
 
 # Test four ways to construct
-cg = @dice_ite begin
+cg = @alea_ite begin
     DistTree(DistInt(5), DistVector{DistTree{DistInt}}([
         DistTree(DistInt(3))
     ]))
@@ -10,7 +10,7 @@ dist = infer(cg)
 @assert dist[(5, [(3, [])])] == 1
 @assert length(dist) == 1
 
-cg = @dice_ite begin
+cg = @alea_ite begin
     DistTree(DistInt(5))
 end
 dist = infer(cg)
@@ -18,7 +18,7 @@ dist = infer(cg)
 @assert length(dist) == 1
 
 
-cg = @dice_ite begin
+cg = @alea_ite begin
     DistTree{DistInt}(DistInt(5), DistVector{DistTree{DistInt}}([
         DistTree(DistInt(3))
     ]))
@@ -27,7 +27,7 @@ dist = infer(cg)
 @assert dist[(5, [(3, [])])] == 1
 @assert length(dist) == 1
 
-cg = @dice_ite begin
+cg = @alea_ite begin
     DistTree{DistInt}(DistInt(5))
 end
 dist = infer(cg)
@@ -36,7 +36,7 @@ dist = infer(cg)
 
 
 # Test prob_append_child, ifelse
-cg = @dice_ite begin
+cg = @alea_ite begin
     t = DistTree(DistInt(5))
     if flip(0.4)
         prob_append_child(t, DistTree(DistInt(3)))
@@ -51,7 +51,7 @@ dist = infer(cg)
 
 
 # Test prob_extend_children
-cg = @dice_ite begin
+cg = @alea_ite begin
     t = DistTree(DistInt(5))
     if flip(0.4)
         prob_extend_children(
@@ -68,7 +68,7 @@ dist = infer(cg)
 @assert length(dist) == 2
 
 # Test prob_equals
-cg = @dice_ite begin
+cg = @alea_ite begin
     t = DistTree(DistInt(5))
     t = if flip(0.4)
         prob_extend_children(
@@ -86,7 +86,7 @@ end
 @assert infer_bool(cg) ≈ 0.4
 
 # Test leaves
-cg = @dice_ite begin
+cg = @alea_ite begin
     t = DistTree(DistInt(5))
     leaves(if flip(0.4)
         prob_extend_children(

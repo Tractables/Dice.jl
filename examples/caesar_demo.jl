@@ -1,4 +1,4 @@
-using Dice
+using Alea
 using DataStructures: counter
 
 corpus_url = "https://raw.githubusercontent.com/teropa/nlp/master/resources/corpora/gutenberg/shakespeare-macbeth.txt"
@@ -15,7 +15,7 @@ function choose_char(char_freqs)
 end
 
 function rotate_letter(c::DistChar, k::DistUInt)
-    @dice_ite if (c < DistChar('a')) | (c > DistChar('z'))
+    @alea_ite if (c < DistChar('a')) | (c > DistChar('z'))
         c
     else
         rotated_i = c.i + k

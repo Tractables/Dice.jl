@@ -102,7 +102,7 @@ dummy(::Type{DistInt32}) = DistInt32(555)
 function prob_getindex(d::DistVector{T}, idx::DistUInt32) where T
     ans = if isempty(d.contents) dummy(T) else d.contents[1] end
     for i in 1:length(d.contents)
-        ans = @dice_ite if prob_equals(DistUInt32(i), idx)
+        ans = @alea_ite if prob_equals(DistUInt32(i), idx)
             d.contents[i]
         else
             ans
@@ -116,7 +116,7 @@ end
 # function prob_getindex(d::DistVector, idx::DistUInt32)
 #     # (idx < DistUInt32(1) || idx > d.len) && error("Vector out of bounds access")
 #     println(pr(idx))
-#     @dice_ite begin
+#     @alea_ite begin
 #         function helper(i, v)
 #             println("i: $(i) v: $(v)")
 #             if v == 4294967200
@@ -124,7 +124,7 @@ end
 #             else
 #                 nothing
 #             end
-#             # assert_dice()
+#             # assert_alea()
 #             if i > length(idx.bits)
 #                 if v < 1 || v > length(d.contents)
 #                     d.contents[1]  # dummy
@@ -168,7 +168,7 @@ end
 
 function prob_extend(s::DistVector{T}, t::DistVector{T}) where T <: Any
     isempty(s.contents) && return t
-    @dice_ite begin
+    @alea_ite begin
         len = s.len + t.len
         contents = Vector{T}(undef, length(s.contents) + length(t.contents))
         for i = 1:length(contents)
@@ -188,7 +188,7 @@ function prob_extend(s::DistVector{T}, t::DistVector{T}) where T <: Any
 end
 
 function prob_startswith(u::DistVector, v::DistVector)
-    @dice_ite if u.len < v.len
+    @alea_ite if u.len < v.len
         false
     else
         reduce(
@@ -218,7 +218,7 @@ function choice_obs(v::DistVector{T})::Tuple{T, AnyBool} where T
 end
 
 function choice(v::DistVector{T})::T where T
-    @dice_ite if prob_equals(v.len, DistUInt32(0))
+    @alea_ite if prob_equals(v.len, DistUInt32(0))
         dummy(T)
     else
         i = unif(DistUInt32(1), v.len)

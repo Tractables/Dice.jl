@@ -1,7 +1,7 @@
-using Dice
+using Alea
 
 # Test concatenation, appending, ifelse
-cg = @dice_ite begin
+cg = @alea_ite begin
     v = if flip(3/5)
         DistVector([DistInt(1),DistInt(2),DistInt(3),DistInt(4)])
     else
@@ -28,7 +28,7 @@ dist = infer(cg)
 
 
 # Test concatenation for empty vectors
-cg = @dice_ite begin
+cg = @alea_ite begin
     prob_extend(DistVector{DistInt}(), DistVector{DistInt}())
 end
 dist = infer(cg)
@@ -36,7 +36,7 @@ dist = infer(cg)
 @assert dist[[]] ≈ 1
 
 
-cg = @dice_ite begin
+cg = @alea_ite begin
     prob_extend(DistVector{DistString}(Vector{DistString}()), [DistString("hi")])
 end
 dist = infer(cg)
@@ -45,7 +45,7 @@ dist = infer(cg)
 
 
 # Test getindex, setindex
-cg = @dice_ite begin
+cg = @alea_ite begin
     s = if flip(0.6)
         DistVector(Vector{DistBool}([flip(false), flip(false), flip(false)]))
     else
@@ -65,14 +65,14 @@ dist, error = infer(cg)
 @assert error ≈ 0
 
 # Test prob_startswith
-cg = @dice_ite begin
+cg = @alea_ite begin
     s = DistVector(DistBool[flip(false), flip(0.3), flip(false)])
     t = DistVector(DistBool[flip(false), flip(true)])
     prob_startswith(s, t)
 end
 @assert infer_bool(cg) ≈ 0.3
 
-cg = @dice_ite begin
+cg = @alea_ite begin
     s = DistVector(DistBool[flip(false)])
     s = if flip(0.3) s else prob_append(s, flip(0.4)) end
     t = DistVector(DistBool[flip(0.9), flip(true)])

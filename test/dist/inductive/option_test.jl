@@ -1,5 +1,5 @@
 using Test
-using Dice
+using Alea
 
 @testset "Option test" begin
     none_int = Opt.None(DistUInt32)
@@ -9,12 +9,12 @@ using Dice
     dist = pr(prob_equals(none_int, Opt.None(DistUInt32)))
     @test dist[true] == 1
 
-    probably_none = @dice_ite if flip(9/10)
+    probably_none = @alea_ite if flip(9/10)
         Opt.None(DistString)
     else
         Opt.Some(
             DistString,
-            @dice_ite if flip(2/3)
+            @alea_ite if flip(2/3)
                 DistString("foo")
             else
                 DistString("")

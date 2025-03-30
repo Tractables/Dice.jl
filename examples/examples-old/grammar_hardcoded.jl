@@ -1,5 +1,5 @@
-using Dice
-using Dice: num_flips, num_nodes
+using Alea
+using Alea: num_flips, num_nodes
 using Revise
 include("util.jl")
 
@@ -9,7 +9,7 @@ include("util.jl")
 num_steps = 4
 top_n = 40  # Only the top_n most likely strings are printed
 
-code = @dice_ite begin
+code = @alea_ite begin
     function S(max_depth)
         if max_depth == 0
             DistVector([DistEnum(ERROR)])

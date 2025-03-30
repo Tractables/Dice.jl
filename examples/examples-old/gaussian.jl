@@ -1,9 +1,9 @@
 using Revise
-using Dice
-using Dice: num_flips, num_nodes, to_dice_ir
+using Alea
+using Alea: num_flips, num_nodes, to_dice_ir
 using Distributions
 
-code = @dice_ite begin
+code = @alea_ite begin
     # triangle distribution
 
     function triangle(b::Int)
@@ -12,7 +12,7 @@ code = @dice_ite begin
         x = Vector(undef, b)
         y = Vector(undef, b)
         for i = b:-1:1
-            x[i] = Dice.ifelse(s, flip(1/2), flip((3n - 2)/ (4n-4)))
+            x[i] = Alea.ifelse(s, flip(1/2), flip((3n - 2)/ (4n-4)))
             y[i] = flip((n-2)/(3n-2))
             s = s || (x[i] && !y[i])
             n = n/2
@@ -46,7 +46,7 @@ code = @dice_ite begin
     end
 
     function anyline(bits::Int, p::Float64)
-        ans = Dice.ifelse(flip(p*2^bits), add_bits(uniform(bits), 3), add_bits(triangle(bits), 3))
+        ans = Alea.ifelse(flip(p*2^bits), add_bits(uniform(bits), 3), add_bits(triangle(bits), 3))
         return ans
     end
 

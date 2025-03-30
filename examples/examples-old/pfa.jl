@@ -1,5 +1,5 @@
-using Dice
-using Dice: num_nodes, num_flips
+using Alea
+using Alea: num_nodes, num_flips
 include("util.jl")
 
 machine = Dict([  # List of transitions
@@ -21,7 +21,7 @@ acceptors = [4]
 num_steps = 15
 top_n = 20  # Only the top_n most likely strings are printed
 
-code = @dice_ite begin
+code = @alea_ite begin
     str = Vector(undef, num_steps)
     state = DistInt(start)
 

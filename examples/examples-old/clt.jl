@@ -1,8 +1,8 @@
 using Revise
-using Dice
-using Dice: num_flips, num_nodes, to_dice_ir
+using Alea
+using Alea: num_flips, num_nodes, to_dice_ir
 
-code = @dice_ite begin
+code = @alea_ite begin
     function uniform(b::Int, w::Int) # b is the bits for uniform, w is the bitwidth
         x = Vector(undef, b)
         for i = b:-1:1

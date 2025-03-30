@@ -2,7 +2,7 @@
 
 # Setup testing
 using Test
-using Dice
+using Alea
 @testset "tour_2_learning" begin
 
 ################################################################################
@@ -37,7 +37,7 @@ train!(var_vals, loss, epochs=2000, learning_rate=0.1)
 # will cause x to be true 2/3 of the time?
 p_before_sigmoid = Var("p_before_sigmoid")
 p = sigmoid(p_before_sigmoid)
-b = @dice_ite if flip(p) true else flip(0.5) end
+b = @alea_ite if flip(p) true else flip(0.5) end
 
 # We can match this dataset...
 dataset = [true, true, false]

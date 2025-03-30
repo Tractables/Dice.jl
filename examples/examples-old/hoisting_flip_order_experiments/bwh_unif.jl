@@ -1,5 +1,5 @@
-using Dice
-using Dice: ifelse
+using Alea
+using Alea: ifelse
 
 function bwh_discrete(p::Vector{Float64})
     @assert ispow2(length(p)) "Distribution length should be power of 2"

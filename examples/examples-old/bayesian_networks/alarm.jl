@@ -1,5 +1,5 @@
-using Dice
-using Dice: ifelse
+using Alea
+using Alea: ifelse
 
 HYPOVOLEMIA = discrete_int([0.200000,0.800000])
 LVFAILURE = discrete_int([0.050000,0.950000])

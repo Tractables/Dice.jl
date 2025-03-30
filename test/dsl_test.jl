@@ -1,11 +1,11 @@
 using Test
-using Dice
-using Dice: Flip, num_ir_nodes
+using Alea
+using Alea: Flip, num_ir_nodes
 using Distributions
 
 @testset "Control flow macro" begin
     
-    f = @dice_ite begin
+    f = @alea_ite begin
         if flip(0.5)
             true
         else
@@ -16,7 +16,7 @@ using Distributions
     @test f isa Flip
     @test pr(f)[true] ≈ 0.5
 
-    @dice_ite g(p) = begin
+    @alea_ite g(p) = begin
         if flip(p)
             true
         else
@@ -27,7 +27,7 @@ using Distributions
     @test g(0.42) isa Flip
     @test pr(g(0.42))[true] ≈ 0.42
 
-    @dice_ite h(p) = begin
+    @alea_ite h(p) = begin
         if flip(p)
             flip(0.1)
         else
@@ -37,7 +37,7 @@ using Distributions
 
     @test pr(h(0.42))[true] ≈ 0.42 * 0.1 + (1-0.42) * 0.2
     
-    @test_throws LoadError @eval @dice_ite begin
+    @test_throws LoadError @eval @alea_ite begin
         x = true
         if flip(0.5)
             x = false
@@ -45,7 +45,7 @@ using Distributions
         x
     end
 
-    @test_throws ErrorException assert_dice()
+    @test_throws ErrorException assert_alea()
     @test_throws ErrorException observe(true)
 
 end
@@ -53,7 +53,7 @@ end
 
 @testset "Control flow dynamo" begin
 
-    f = @dice begin
+    f = @alea begin
         if flip(0.5)
             true
         else
@@ -72,8 +72,8 @@ end
         end
     end
 
-    @test (@dice g(0.42)).returnvalue isa Flip
-    @test pr(@dice g(0.42))[true] ≈ 0.42
+    @test (@alea g(0.42)).returnvalue isa Flip
+    @test pr(@alea g(0.42))[true] ≈ 0.42
 
     h(p) = begin
         if flip(p)
@@ -83,7 +83,7 @@ end
         end
     end
 
-    @test pr(@dice h(0.42))[true] ≈ 0.42 * 0.1 + (1-0.42) * 0.2
+    @test pr(@alea h(0.42))[true] ≈ 0.42 * 0.1 + (1-0.42) * 0.2
     
     f2() = begin
         x = true
@@ -93,13 +93,13 @@ end
         x
     end
 
-    @test pr(dice(f2))[true] ≈ 1 - 0.6
+    @test pr(alea(f2))[true] ≈ 1 - 0.6
 
     f2b() = f2() & flip(0.8)
-    @test pr(dice(f2b))[true] ≈ (1 - 0.6) * 0.8
-    @test pr(@dice f2b())[true] ≈ (1 - 0.6) * 0.8
+    @test pr(alea(f2b))[true] ≈ (1 - 0.6) * 0.8
+    @test pr(@alea f2b())[true] ≈ (1 - 0.6) * 0.8
 
-    f3 = @dice begin
+    f3 = @alea begin
         x = true
         if flip(0.6)
             x = false
@@ -109,10 +109,10 @@ end
 
     @test pr(f3)[true] ≈ 1 - 0.6
 
-    @test (@dice true).returnvalue == true
+    @test (@alea true).returnvalue == true
     
-    @test_nowarn dice() do 
-        assert_dice()
+    @test_nowarn alea() do 
+        assert_alea()
     end
 end
 
@@ -125,7 +125,7 @@ end
         false 
     end
     
-    x = dice() do 
+    x = alea() do 
         f(0.1) || f(0.2) 
     end
 
@@ -150,7 +150,7 @@ end
         @test e.errors[2][2].msg ==  "BAD 0.2"
     end
 
-    y = dice() do 
+    y = alea() do 
         if flip(0.6)
             error("bad branch")
             observe(false)
@@ -165,7 +165,7 @@ end
 
     ferr() = (errorcheck() && error())
     @test_nowarn pr(ferr())
-    @test_throws ProbException pr(@dice begin
+    @test_throws ProbException pr(@alea begin
         ferr()
     end)
 
@@ -180,7 +180,7 @@ end
         false 
     end
 
-    x = dice() do 
+    x = alea() do 
         f(0.1) || f(0.2) 
     end
 
@@ -205,13 +205,13 @@ end
 @testset "Dynamo profiling" begin
 
     
-    dice() do 
+    alea() do 
         f(x) = flip(x)
         f(0.1) || f(0.2) 
     end
 
-    @test !isempty(Dice.top_dynamoed())
-    @test_nowarn Dice.reset_dynamoed()
+    @test !isempty(Alea.top_dynamoed())
+    @test_nowarn Alea.reset_dynamoed()
 
 end
 
@@ -220,15 +220,15 @@ end
 
     f = flip(0.5)
     
-    @test returnvalue(dice() do 
+    @test returnvalue(alea() do 
         true == f
     end) == f
 
-    @test returnvalue(dice() do 
+    @test returnvalue(alea() do 
         f == true
     end) == f
 
-    @test returnvalue(dice() do 
+    @test returnvalue(alea() do 
         f == f
     end)
 
@@ -236,6 +236,12 @@ end
 
 @testset begin "Dynamo exclusion of supported functions"
 
-    @test_nowarn @dice bitblast(DistFix{7, 2}, Normal(0, 1), 4, -8.0, 8.0)
+    @test_nowarn @alea bitblast(DistFix{7, 2}, Normal(0, 1), 4, -8.0, 8.0)
 
+end
+
+@testset "reduce inside dynamo" begin
+    @test_nowarn (@alea reduce(&, [true, false]))
+    @test_nowarn @alea reduce(&, [true, false], init=true)
+    
 end

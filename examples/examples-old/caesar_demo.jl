@@ -1,6 +1,6 @@
 using Revise
-using Dice
-using Dice: num_flips, num_nodes
+using Alea
+using Alea: num_flips, num_nodes
 
 include("util.jl")
 
@@ -13,11 +13,11 @@ function choose_char()
 end
 
 function rotate_letter(c::DistChar, k::DistInt)
-    Dice.ifelse((c < DistChar('a')) | (c > DistChar('z')),
+    Alea.ifelse((c < DistChar('a')) | (c > DistChar('z')),
         c,
         begin
             rotated_i = safe_add(c.i, k)
-            Dice.ifelse(DistChar(rotated_i) > DistChar('z'),
+            Alea.ifelse(DistChar(rotated_i) > DistChar('z'),
                 DistChar((rotated_i - 26)[1]),
                 DistChar(rotated_i))
         end

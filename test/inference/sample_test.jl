@@ -1,5 +1,5 @@
 using Test
-using Dice
+using Alea
 using Random
 
 @testset "Sample tests" begin

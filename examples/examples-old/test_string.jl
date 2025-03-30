@@ -1,7 +1,7 @@
-using Dice
+using Alea
 
 # Test concatenation, appending, ifelse
-cg = @dice_ite begin
+cg = @alea_ite begin
     s = if flip(3/5) DistString("sand") else DistString("san") end
     s = if flip(2/3) s + 'd' else s end
     t = if flip(1/10) DistString("wich") else DistString("box") end
@@ -19,7 +19,7 @@ dist = infer(cg)
 
 
 # Test concatenation for empty strings
-cg = @dice_ite begin
+cg = @alea_ite begin
     DistString("") + DistString("")
 end
 dist = infer(cg)
@@ -28,7 +28,7 @@ dist = infer(cg)
 
 
 # Test getindex, setindex
-cg = @dice_ite begin
+cg = @alea_ite begin
     s = DWE(if flip(0.6) DistString("abc") else DistString("xyz") end)
 
     # Choose whether to change index 1 (Pr=0.3) or 2 (Pr = 0.7)
@@ -43,7 +43,7 @@ dist, err = infer(cg)
 @assert err ≈ 0
 
 # Test lessthan
-cg = @dice_ite begin
+cg = @alea_ite begin
     s = if flip(0.6) DistString("abc") else DistString("xyz") end
     t = if flip(0.6) DistString("abc") else DistString("xyz") end
     s < t
@@ -52,14 +52,14 @@ end
 
 
 # Test lessthan for identical strings
-cg = @dice_ite begin
+cg = @alea_ite begin
     DistString("abc") < DistString("abc")
 end
 @assert infer_bool(cg) ≈ 0
 
 
 # Test lessthan for strings that differ only in length
-cg = @dice_ite begin
+cg = @alea_ite begin
     DistString("abc") < DistString("abca")
 end
 @assert infer_bool(cg) ≈ 1

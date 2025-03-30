@@ -1,8 +1,8 @@
-using Dice
-using Dice: num_flips, num_nodes
+using Alea
+using Alea: num_flips, num_nodes
 
-seven = Dice.ifelse(flip(0), DistInt(3), DistInt(7))
-hundred = Dice.ifelse(flip(1), DistInt(100), DistInt(200))
+seven = Alea.ifelse(flip(0), DistInt(3), DistInt(7))
+hundred = Alea.ifelse(flip(1), DistInt(100), DistInt(200))
 cg = (seven + hundred)[1]
 
 res = infer(cg)

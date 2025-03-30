@@ -137,8 +137,8 @@ macro inductive(type, constructors...)
     ]
     tvs = if type isa Expr && type.head == :curly map(esc, type.args[2:end]) else [] end
     quote
-        struct $(ty) <: $(esc(:(Dice.InductiveType))) 
-            union::$(esc(:(Dice.DistTaggedUnion)))
+        struct $(ty) <: $(esc(:(Alea.InductiveType))) 
+            union::$(esc(:(Alea.DistTaggedUnion)))
         end
 
         dict = Dict(
@@ -163,36 +163,36 @@ macro inductive(type, constructors...)
             $(esc(:(Base.match)))(x.union, branches)
         end
 
-        function $(esc(:(Dice.matches)))(x::$(ty), ctor) where {$(tvs...)}
+        function $(esc(:(Alea.matches)))(x::$(ty), ctor) where {$(tvs...)}
             prob_equals(x.union.which, DistUInt32(dict[ctor]))
         end
 
-        function $(esc(:(Dice.variants)))(::$(esc(:(Base.Type))){$(ty)}) where {$(tvs...)}
+        function $(esc(:(Alea.variants)))(::$(esc(:(Base.Type))){$(ty)}) where {$(tvs...)}
             [$([
                 :($(esc(ctor)) => [$(map(esc, args)...)])
                 for (ctor, args) in plist
             ]...)]
         end
 
-        function $(esc(:(Dice.ifelse)))(c::$(esc(Dist{Bool})), x::$(ty), y::$(ty)) where {$(tvs...)}
+        function $(esc(:(Alea.ifelse)))(c::$(esc(Dist{Bool})), x::$(ty), y::$(ty)) where {$(tvs...)}
             $(ty)($(esc(:(Base.ifelse)))(c, x.union, y.union))
         end
 
-        function $(esc(:(Dice.prob_equals)))(x::$(ty), y::$(ty)) where {$(tvs...)}
-            $(esc(:(Dice.prob_equals)))(x.union, y.union)
+        function $(esc(:(Alea.prob_equals)))(x::$(ty), y::$(ty)) where {$(tvs...)}
+            $(esc(:(Alea.prob_equals)))(x.union, y.union)
         end
 
-        function $(esc(:(Dice.tobits)))(x::$(ty)) where {$(tvs...)}
-            $(esc(:(Dice.tobits)))(x.union)
+        function $(esc(:(Alea.tobits)))(x::$(ty)) where {$(tvs...)}
+            $(esc(:(Alea.tobits)))(x.union)
         end
 
-        function $(esc(:(Dice.frombits)))(x::$(ty), world) where {$(tvs...)}
-            i, v = $(esc(:(Dice.frombits)))(x.union, world)
+        function $(esc(:(Alea.frombits)))(x::$(ty), world) where {$(tvs...)}
+            i, v = $(esc(:(Alea.frombits)))(x.union, world)
             (a[i], v)
         end
 
-        function $(esc(:(Dice.frombits_as_dist)))(x::$(ty), world) where {$(tvs...)}
-            $(ty)($(esc(:(Dice.frombits_as_dist)))(x.union, world))
+        function $(esc(:(Alea.frombits_as_dist)))(x::$(ty), world) where {$(tvs...)}
+            $(ty)($(esc(:(Alea.frombits_as_dist)))(x.union, world))
         end
 
         $([
@@ -203,10 +203,10 @@ macro inductive(type, constructors...)
                 quote
                     function $(esc(ctor))($(vcat(tvs_args,vars_annotated)...)) where {$(tvs...)}
                         args = Any[$([
-                            :($(esc(:(Dice.getunset)))()) for _ in 1:length(constructors)
+                            :($(esc(:(Alea.getunset)))()) for _ in 1:length(constructors)
                         ]...)]
                         args[$(ctor_i)] = [$(vars...)]
-                        $(ty)($(esc(:(Dice.DistTaggedUnion)))($(esc(:(Dice.DistUInt32)))($(ctor_i)), args))
+                        $(ty)($(esc(:(Alea.DistTaggedUnion)))($(esc(:(Alea.DistUInt32)))($(ctor_i)), args))
                     end
                 end
             end

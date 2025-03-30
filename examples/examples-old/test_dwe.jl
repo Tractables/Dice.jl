@@ -1,7 +1,7 @@
-using Dice
+using Alea
 
 # + that returns a Tuple{DistInt, DistBool}
-cg = @dice_ite begin
+cg = @alea_ite begin
     x = if DWE(flip(0.3)) 
         DWE(DistInt(0))
     else
@@ -17,7 +17,7 @@ dist, err = infer(cg)
 
 
 # + that returns a DistString
-cg = @dice_ite begin
+cg = @alea_ite begin
     DWE(DistString("abc")) + DWE(DistChar('d'))
 end
 dist, err = infer(cg)
@@ -25,7 +25,7 @@ dist, err = infer(cg)
 @assert dist["abcd"] ≈ 1
 @assert length(dist) == 1
 
-cg = @dice_ite begin
+cg = @alea_ite begin
     DWE(DistString("abc"))[DWE(if flip(.4) DistInt(2) else DistInt(100) end)]
 end
 dist, err = infer(cg)
@@ -34,7 +34,7 @@ dist, err = infer(cg)
 @assert length(dist) == 1
 
 # Test automatic conversion
-cg = @dice_ite begin
+cg = @alea_ite begin
     if flip(true)
         DWE(DistInt(1)) + DistInt(0)
     else

@@ -1,5 +1,5 @@
-using Dice
-using Dice: num_flips, num_nodes
+using Alea
+using Alea: num_flips, num_nodes
 using Revise
 include("util.jl")
 
@@ -24,7 +24,7 @@ start_term = "S"
 num_steps = 4
 top_n = 40  # Only the top_n most likely strings are printed
 
-comp_graph = @dice_ite begin
+comp_graph = @alea_ite begin
     function expand_term(lhs, max_depth)
         if typeof(lhs) == Terms
             DistTree(DistEnum(lhs))

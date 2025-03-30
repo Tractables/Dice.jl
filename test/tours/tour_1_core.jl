@@ -1,8 +1,8 @@
-# Tour of Dice.jl by example
+# Tour of Alea.jl by example
 
 # Setup testing
 using Test
-using Dice
+using Alea
 function Base.isapprox(d1::AbstractDict, d2::AbstractDict)
     issetequal(keys(d1), keys(d2)) && all(isapprox(d1[k], d2[k],rtol=0.01) for k in keys(d1))
 end
@@ -12,7 +12,7 @@ end
 # Basics
 ################################################################################
 
-# The fundamental datatype in Dice.jl is `Dist{Bool}`, which represents a
+# The fundamental datatype in Alea.jl is `Dist{Bool}`, which represents a
 # distribution over booleans.
 
 # `flip(p)` can be used create a random variable ~ Bernoulli(p)
@@ -33,8 +33,8 @@ y = flip(0.1)
 @test pr(x & y, evidence=x)[true] ≈ 0.1
 
 # The condition of `if` statements can be Dist{Bool} if written inside of the
-# @dice_ite macro.
-ite_example = @dice_ite begin
+# @alea_ite macro.
+ite_example = @alea_ite begin
     if flip(0.9)
         true
     else
@@ -48,11 +48,11 @@ end
 ################################################################################
 
 # We now have enough to reconstruct the network verification example from the
-# Dice paper.
+# Alea paper.
 # https://arxiv.org/pdf/2005.09089.pdf#page=6
 
 function diamond(s1)
-    @dice_ite begin
+    @alea_ite begin
         route = flip(0.5)
         s2 = if route s1 else false end
         s3 = if route false else s1 end
@@ -80,7 +80,7 @@ net = network()
 
 # DistUInts represent distributions over unsigned integers.
 dist = pr(
-    @dice_ite if flip(0.3)
+    @alea_ite if flip(0.3)
         DistUInt32(7)
     else
         DistUInt32(3)

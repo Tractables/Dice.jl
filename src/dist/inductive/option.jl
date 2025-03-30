@@ -2,7 +2,7 @@
 export Opt
 
 module Opt
-    using Dice
+    using Alea
     @inductive T{A} None() Some(A)
 
     Some(x) = Some(typeof(x), x)

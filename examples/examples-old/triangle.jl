@@ -1,8 +1,8 @@
-using Dice
-using Dice: num_flips, num_nodes, to_dice_ir
+using Alea
+using Alea: num_flips, num_nodes, to_dice_ir
 
 #TODO: the code below is not correct
-code = @dice_ite begin
+code = @alea_ite begin
     # triangle distribution
 
     function triangle(b::Int)

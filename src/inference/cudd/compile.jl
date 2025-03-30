@@ -2,7 +2,7 @@
 # CUDD Compilation
 ##################################
 
-export BDDCompiler, compile, enable_reordering
+export BDDCompiler, compile, enable_reordering, num_nodes, dump_dot
 
 mutable struct BDDCompiler
     mgr::CuddMgr
@@ -87,9 +87,9 @@ function compile_existing(c::BDDCompiler, root::AnyBool)::CuddNode
         for child in unique(children(node))
             c.num_uncompiled_parents[child] -= 1
             @assert c.num_uncompiled_parents[child] >= 0
-            if c.num_uncompiled_parents[child] == 0
-                Cudd_RecursiveDeref(c.mgr, c.cache[child])
-            end
+            # if c.num_uncompiled_parents[child] == 0
+            #     Cudd_RecursiveDeref(c.mgr, c.cache[child])
+            # end
         end
     end
     
@@ -156,3 +156,39 @@ function split(c::BDDCompiler, context::CuddNode, test::AnyBool)::Tuple{CuddNode
         ifbdd, elsebdd
     end
 end
+
+num_nodes(x; as_add=true) = begin
+    c = BDDCompiler()
+    bdd = compile(c, tobits(x))
+    num_nodes(c, bdd; as_add)
+end
+
+num_nodes(c::BDDCompiler, xs::Vector{<:Ptr}; as_add=true) = begin
+    as_add && (xs = map(x -> rref(Cudd_BddToAdd(c.mgr, x)), xs))
+    Cudd_SharingSize(xs, length(xs))
+end
+
+dump_dot(x; filename, as_add=true) = begin
+    c = BDDCompiler()
+    bdd = compile(c, tobits(x))
+    dump_dot(c, bdd, filename; as_add=true)
+end
+
+dump_dot(c::BDDCompiler, xs::Vector{<:Ptr}, filename; as_add=true) = begin
+    # convert to ADDs in order to properly print terminals
+    if as_add
+        xs = map(x -> rref(Cudd_BddToAdd(c.mgr, x)), xs)
+    end
+    outfile = ccall(:fopen, Ptr{FILE}, (Cstring, Cstring), filename, "w")
+    Cudd_DumpDot(c.mgr, length(xs), xs, C_NULL, C_NULL, outfile) 
+    @assert ccall(:fclose, Cint, (Ptr{FILE},), outfile) == 0
+    nothing
+end
+
+# function dump_dot(xs, filename)
+#     xs = map(x -> rref(Cudd_BddToAdd(mgr, x.cudd_ptr)), xs)
+#     outfile = ccall(:fopen, Ptr{FILE}, (Cstring, Cstring), filename, "w")
+#     Cudd_DumpDot(mgr, length(xs), xs, C_NULL, C_NULL, outfile) 
+#     @assert ccall(:fclose, Cint, (Ptr{FILE},), outfile) == 0
+#     nothing
+# end

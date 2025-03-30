@@ -1,9 +1,9 @@
 using Test
-using Dice
+using Alea
 
 @testset "DistEnum core" begin
     @enum Colors red green blue
-    cg = @dice_ite begin
+    cg = @alea_ite begin
         if flip(1/10)
             DistEnum(red)
         else
@@ -20,7 +20,7 @@ using Dice
     @test dist[green] ≈ 2/10
     @test dist[blue] ≈ 7/10
 
-    cg = @dice_ite begin
+    cg = @alea_ite begin
         x = if flip(1/10)
             DistEnum(red)
         elseif flip(2/9)

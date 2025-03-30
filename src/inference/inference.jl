@@ -90,7 +90,7 @@ end
 # Inference with metadata distributions from DSL
 ##################################
        
-"A distribution computed by a dice program with metadata on observes and errors"
+"A distribution computed by a alea program with metadata on observes and errors"
 struct MetaDist
     returnvalue
     errors::Vector{CondError}

@@ -1,8 +1,8 @@
-using Dice
-using Dice: num_flips, num_nodes
+using Alea
+using Alea: num_flips, num_nodes
 
 function network()
-    @dice_ite begin
+    @alea_ite begin
         # network reachability example from the dice paper
 
         function diamond(s1)

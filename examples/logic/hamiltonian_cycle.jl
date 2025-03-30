@@ -1,4 +1,4 @@
-using Dice
+using Alea
 
 # (1)--(2)--(3)
 #  |   / \   |
@@ -8,7 +8,7 @@ using Dice
 NUM_NODES = 5
 EDGES = [(1, 2), (2, 3), (3, 5), (5, 4), (4, 1), (2, 4), (2, 5)]
 
-md = @dice begin
+md = @alea begin
     # Choose path
     path = [
         uniform(DistUInt32, 1, NUM_NODES + 1)

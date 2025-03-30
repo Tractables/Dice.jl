@@ -1,10 +1,10 @@
-using Dice
+using Alea
 
 NUM_NODES = 4
 NUM_COLORS = 3
 EDGES = [(1, 2), (2, 3), (3, 1), (1, 4)]
 
-md = @dice begin
+md = @alea begin
     node_colors = [
         uniform(DistUInt32, 0, NUM_COLORS)
         for _ in 1:NUM_NODES

@@ -73,7 +73,7 @@ function Base.:+(s::DistString, t::DistString)
     len = s.len + t.len
     chars = Vector(undef, length(s.chars) + length(t.chars))
     for i = 1:length(chars)
-        chars[i] = @dice_ite if DistUInt32(i) <= s.len
+        chars[i] = @alea_ite if DistUInt32(i) <= s.len
             s[DistUInt32(i)]
         else
             if DistUInt32(i) <= s.len + t.len

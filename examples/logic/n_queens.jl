@@ -1,8 +1,8 @@
-using Dice
+using Alea
 
 N = 5
 
-md = @dice begin
+md = @alea begin
     row_to_col = [
         uniform(DistInt32, 1, 1 + N)
         for _ in 1:N

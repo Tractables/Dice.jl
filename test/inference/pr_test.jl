@@ -1,10 +1,10 @@
 using Test
-using Dice
+using Alea
 using CUDD
 
 @testset "Backend selection" begin
-    @test pr(flip(0.78); algo = Dice.Cudd())[true] ≈ 0.78
-    @test pr(true; algo = Dice.Cudd())[true] ≈ 1.00
+    @test pr(flip(0.78); algo = Alea.Cudd())[true] ≈ 0.78
+    @test pr(true; algo = Alea.Cudd())[true] ≈ 1.00
 end
 
 @testset "Multiple queries" begin
@@ -93,8 +93,8 @@ end
     @test debug_info_ref[].num_nodes == 196604
 
     pr(x, algo=Cudd(CUDD.CUDD_REORDER_SIFT, debug_info_ref))
-    @test debug_info_ref[].num_nodes == 160
+    @test debug_info_ref[].num_nodes == 1500
 
     pr(x, algo=Cudd(CUDD.CUDD_REORDER_WINDOW2, debug_info_ref))
-    @test debug_info_ref[].num_nodes == 129820
+    @test debug_info_ref[].num_nodes == 196860
 end

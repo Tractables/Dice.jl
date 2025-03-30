@@ -1,5 +1,5 @@
-using Dice
-using Dice: num_flips, num_nodes, DWE
+using Alea
+using Alea: num_flips, num_nodes, DWE
 using Revise
 include("../util.jl")
 
@@ -48,12 +48,12 @@ function tree()
     # top_n = 40  # Only the top_n most likely strings are printed
     # expected_sentence = [Alice, and, Bob, and, Alice, saw, Bob]
 
-    tree, tree_observe = @dice_ite begin
+    tree, tree_observe = @alea_ite begin
         function expand_term(lhs, max_depth)
             if lhs in terminals
                 DistTree(DistEnum(lhs))
             elseif max_depth == 0
-                Dice.DWE(DistTree(DistEnum(start_term)), flip(true))  # Dummy node, just indicate that there is error
+                Alea.DWE(DistTree(DistEnum(start_term)), flip(true))  # Dummy node, just indicate that there is error
             else
                 expansions = []
                 for (rhs, p) in rules[lhs]

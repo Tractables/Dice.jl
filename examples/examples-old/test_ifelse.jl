@@ -1,7 +1,7 @@
-using Dice
-using Dice: ifelse
+using Alea
+using Alea: ifelse
 
-cg = @dice_ite begin
+cg = @alea_ite begin
     b = DistInt([DistBool(false)])
     ifelse(flip(0.5), b, b)
 end

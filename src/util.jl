@@ -6,13 +6,13 @@ export gaussian_observe, gaussian_observe_enumerate, parametrised_flip, print_tr
 # Gaussian observation methods
 ##################################
 
-function gaussian_observe(::Type{DistFix{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::Float64, std::Float64, datapt::DistFix{W, F}) where W where F
+function gaussian_observe(::Type{DistFix{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::Float64, std::Float64, datapt::DistFix{W, F}; exp=false) where W where F
     @assert std > 0
-    g = bitblast(DistFix{W, F}, Normal(mean, std), pieces, start, stop)
+    g = bitblast(DistFix{W, F}, Normal(mean, std), pieces, start, stop, exp)
     observe(g == datapt)
 end
 
-function gaussian_observe(::Type{DistFix{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::DistFix{W, F}, std::Float64, datapt::DistFix{W, F}; add=true) where W where F
+function gaussian_observe(::Type{DistFix{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::DistFix{W, F}, std::Float64, datapt::DistFix{W, F}; add=true, exp=false) where W where F
     @assert std > 0
     g = bitblast(DistFix{W, F}, Normal(0.0, std), pieces, start, stop)
     
@@ -23,7 +23,7 @@ function gaussian_observe(::Type{DistFix{W, F}}, pieces::Int, start::Float64, st
     end
 end
 
-function gaussian_observe(::Type{DistFix{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::Float64, std::DistFix{W, F}, datapt::DistFix{W, F}; mult=true) where W where F
+function gaussian_observe(::Type{DistFix{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::Float64, std::DistFix{W, F}, datapt::DistFix{W, F}; mult=true, exp=false) where W where F
     #TODO: implement isless for fixedpoint to support the following check
     # isneg = DistFix{W, F}(0.0) < std
     # isneg && error("Standard deviation <= 0")
@@ -36,7 +36,7 @@ function gaussian_observe(::Type{DistFix{W, F}}, pieces::Int, start::Float64, st
     end
 end
 
-function gaussian_observe(::Type{DistFix{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::DistFix{W, F}, std::DistFix{W, F}, datapt::DistFix{W, F}; mult=true) where W where F
+function gaussian_observe(::Type{DistFix{W, F}}, pieces::Int, start::Float64, stop::Float64, mean::DistFix{W, F}, std::DistFix{W, F}, datapt::DistFix{W, F}; mult=true, exp=false) where W where F
     #TODO: implement isless for fixedpoint to support the following check
     # isneg = DistFix{W, F}(0.0) < std
     # isneg && error("Standard deviation <= 0")

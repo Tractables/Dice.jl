@@ -20,6 +20,8 @@ DistUInt(bits::AbstractVector) =
     DistUInt{length(bits)}(bits)
 
 function DistUInt{W}(i::Integer) where W
+    # @show i
+    if i < 0 i = 0 end
     @assert i >= 0
     num_b = ndigits(i, base = 2)
     @assert num_b <= W "Int $i cannot be represented as a DistUInt{$W}"
@@ -156,7 +158,7 @@ function discrete(::Type{DistUInt{W}}, probs) where W
                 flip(sum(probs[Int((s+e+1)/2):e])/denom)
             end
         else
-            Dice.ifelse(bits[end-i+1], 
+            Alea.ifelse(bits[end-i+1], 
                 recurse(i-1, Int((s+e+1)/2), e), 
                 recurse(i-1, s, Int((s+e-1)/2)))
         end
@@ -389,7 +391,7 @@ function Base.ifelse(cond::Dist{Bool}, then::DistUInt{W}, elze::DistUInt{W}) whe
     DistUInt{W}(bits)
 end
   
-using Dice: tobits, frombits
+using Alea: tobits, frombits
 
 function maxvalue(x::DistUInt{W}) where W
     c = BDDCompiler(x.bits)
@@ -447,7 +449,7 @@ function unif_half2(u::DistUInt{W}) where W
         res = if res === nothing
             uniform(DistUInt{W}, 0, x)
         else
-            @dice_ite if prob_equals(u, DistUInt32(x))
+            @alea_ite if prob_equals(u, DistUInt32(x))
                 uniform(DistUInt{W}, 0, x)
             else
                 res

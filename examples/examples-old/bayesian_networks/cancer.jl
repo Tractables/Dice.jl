@@ -1,5 +1,5 @@
-using Dice
-using Dice: ifelse
+using Alea
+using Alea: ifelse
 
 Pollution = discrete_int([0.500000,0.400000,0.100000])
 Smoker = discrete_int([0.300000,0.700000])

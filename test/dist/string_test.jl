@@ -1,8 +1,8 @@
 using Test
-using Dice
+using Alea
 
 @testset "DistString core" begin
-    cg = @dice begin
+    cg = @alea begin
         s = if flip(3/5) DistString("sand") else DistString("san") end
         if flip(2/3) s + 'd' else s end
     end
@@ -12,7 +12,7 @@ using Dice
     @test dist["san"] ≈ 2/5 * 1/3
 
     # Test concatenation, appending, ifelse
-    cg = @dice begin
+    cg = @alea begin
         s = if flip(3/5) DistString("sand") else DistString("san") end
         s = if flip(2/3) s + 'd' else s end
         t = if flip(1/10) DistString("wich") else DistString("box") end
@@ -36,7 +36,7 @@ using Dice
 
 
     # Test getindex, setindex
-    cg = @dice begin
+    cg = @alea begin
         s = if flip(0.6) DistString("abc") else DistString("xyz") end
 
         # Choose whether to change index 1 (Pr=0.3) or 2 (Pr = 0.7)
@@ -49,7 +49,7 @@ using Dice
     @test pr(cg)[true] ≈ 0.6*0.7*0.9
 
     # Test lessthan
-    cg = @dice begin
+    cg = @alea begin
         s = if flip(0.6) DistString("abc") else DistString("xyz") end
         t = if flip(0.6) DistString("abc") else DistString("xyz") end
         s < t
@@ -58,18 +58,18 @@ using Dice
 
 
     # Test lessthan for identical strings
-    cg = @dice begin
+    cg = @alea begin
         DistString("abc") < DistString("abc")
     end
     @test pr(cg)[true] ≈ 0
 
 
     # Test lessthan for strings that differ only in length
-    cg = @dice begin
+    cg = @alea begin
         DistString("abc") < DistString("abca")
     end
     @test pr(cg)[true] ≈ 1
-    cg = @dice begin
+    cg = @alea begin
         DistString("abca") < DistString("abc")
     end
     @test pr(cg)[true] ≈ 0
@@ -81,7 +81,7 @@ using Dice
 
     # Test that case where multiple bit assignments represent the same string
     # is handled properly
-    cg = @dice begin
+    cg = @alea begin
         chars = [
             DistChar('a'),
             DistChar('b'),
