@@ -118,7 +118,11 @@ end
 
 # avoid transformation when it is known to trigger a bug
 for f in :[getfield, typeof, Core.apply_type, typeassert, (===),
+        # Base.:&,
+        # Base.foldl, Base._foldl_impl, Base.typejoin_union_tuple, Base.length_continued,
+        match,
         Core.sizeof, Core.arrayset, tuple, isdefined, fieldtype, nfields,
+        uniform, uniform_ite,
         isa, Core.arraysize, repr, print, println, Base.vect, Broadcast.broadcasted,
         Broadcast.materialize, Core.Compiler.return_type, Base.union!, Base.getindex, Base.haskey,
         Base.pop!, Base.setdiff, unsafe_copyto!, Base.fma_emulated].args
@@ -129,6 +133,6 @@ end
 for f in :[xor, atleast_two, prob_equals, (&), (|), (!), isless, ifelse, 
     Base.collect_to!, Base.collect, Base.steprange_last, oneunit, 
     Base.pairwise_blocksize, eltype, firstindex, iterate, 
-    bitblast, uniform, flip, truncated].args
+    bitblast, flip, truncated].args
     @eval (::DiceDyna)(::typeof($f), args...) = $f(args...)
 end

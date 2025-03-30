@@ -111,7 +111,7 @@ function uniform_ite(::Type{DistUInt{W}}, start::Int, stop::Int)::DistUInt{W} wh
         a, b = pivots[j], pivots[j+1]
         segment_length = b-a
         randbits = floor(Int, log2(segment_length))
-        segment = DistUInt{W}(a) + uniform(DistUInt{W}, randbits, strategy=:ite) 
+        segment = DistUInt{W}(a) + uniform(DistUInt{W}, randbits) 
         prob = flip(segment_length/total_length)
         total_length -= segment_length
         (prob, segment)
