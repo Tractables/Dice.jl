@@ -29,7 +29,7 @@ type_to_coq(::Type{ListTyp.t}) = "list Typ"
 
 module ListNat
     using Dice
-    @inductive t = nil() | cons(DistUInt32, t)
+    @type t = nil() | cons(DistUInt32, t)
 end
 type_to_coq(::Type{ListNat.t}) = "list nat"
 

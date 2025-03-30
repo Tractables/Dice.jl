@@ -7,7 +7,6 @@ using Plots
 # Start with GR backend by default
 # gr()
 using Random
-using Infiltrator
 using DataStructures
 using JLD2
 # using Debugger
@@ -151,7 +150,6 @@ function run_benchmark(
     save_object(joinpath(out_dir, "pres_posts.jld2"), (press, postss))
 end
 
-using PyPlot
 
 
 begin
@@ -310,7 +308,6 @@ end
 
     # savefig("$(path).tikz")
     # savefig("$(path).tex")
-using PyPlot
 
 
 
