@@ -11,36 +11,6 @@ env:
   JIVE_PROCS: 1
 
 jobs:
-  build:
-    runs-on: ubuntu-20.04
-
-    steps:
-      
-      - uses: actions/checkout@v2
-      - uses: julia-actions/setup-julia@latest
-        with:
-          version: 1.8
-          
-      - name: Install Latex Dependencies
-        run:
-          sudo apt update && sudo apt install -y pdf2svg texlive-latex-base texlive-binaries texlive-latex-extra texlive-luatex
-
-      - name: Install Custom Dependencies
-        run: |
-          julia --project -e "import Pkg;Pkg.add(url=\"https://github.com/PoorvaGarg/IRTools.jl.git\",rev=\"loop-break-patch\")"
-          julia --project -e "import Pkg;Pkg.add(url=\"https://github.com/rtjoa/CUDD.jl.git\",rev=\"m1compat\")"
-
-      - name: Instantiate Packages
-        run: |
-          julia --project -e 'using Pkg; Pkg.instantiate(); Pkg.build();'
-
-      - name: Unit Tests
-        run:
-          julia --project --check-bounds=yes --depwarn=yes -e 'import Pkg; try Pkg.test(; coverage=true) catch e println(e); exit(1) end'
-      
-      # - name: Codecov Upload
-      #   run:
-      #     julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder());'
   test:
     name: Julia ${{ matrix.julia-version }} - ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -70,4 +40,4 @@ jobs:
         
       - name: Run tests
         run: |
-          julia --project=@. -e 'using Pkg; Pkg.test(coverage=true)' 
+          julia --project --check-bounds=yes --depwarn=yes -e 'import Pkg; try Pkg.test(; coverage=true) catch e println(e); exit(1) end'
