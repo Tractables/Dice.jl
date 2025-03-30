@@ -36,3 +36,30 @@ jobs:
       # - name: Codecov Upload
       #   run:
       #     julia -e 'using Pkg; Pkg.add("Coverage"); using Coverage; Codecov.submit(process_folder());'
+  test:
+    name: Julia ${{ matrix.julia-version }} - ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        julia-version: ['1.6', '1']  # Test on LTS and latest stable
+        os: [ubuntu-latest]
+        include:
+          - os: windows-latest
+            julia-version: '1'
+          - os: macos-latest
+            julia-version: '1'
+
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Setup Julia
+        uses: julia-actions/setup-julia@v1
+        with:
+          version: ${{ matrix.julia-version }}
+          
+      - name: Build package
+        uses: julia-actions/julia-buildpkg@v1
+        
+      - name: Run tests
+        run: |
+          julia --project=@. -e 'using Pkg; Pkg.test(coverage=true)' 
