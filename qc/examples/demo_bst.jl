@@ -9,7 +9,7 @@ function depth(l::DistTree)
         DistLeaf() -> DistUInt32(0),
         DistBranch(x, l, r) -> begin
             dl, dr = depth(l), depth(r)
-            @dice_ite if dl > dr
+            @alea_ite if dl > dr
                 DistUInt32(1) + dl
             else
                 DistUInt32(1) + dr
@@ -30,7 +30,7 @@ end
 
 # Return tree
 function gen_bst(size, lo, hi)
-    @dice_ite if size == 0 || flip(register_weight!("sz$(size)"))
+    @alea_ite if size == 0 || flip(register_weight!("sz$(size)"))
         DistLeaf()
     else
         x = unif(lo, hi)

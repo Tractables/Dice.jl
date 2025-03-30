@@ -18,7 +18,7 @@ using Dice
 lo1, hi1, lo2, hi2 = 1000, 2000, 5000, 8000
 
 X = sigmoid(Var("X_psp"))
-g = @dice_ite if flip(X)
+g = @alea_ite if flip(X)
     uniform(DistUInt32, lo1, hi1)
 else
     uniform(DistUInt32, lo2, hi2)

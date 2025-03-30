@@ -41,7 +41,7 @@ sample_cache = Dict{Dist{Bool}, Bool}()
 s = better_sample(rs.rng, a, g, sample_cache)
 
 
-@dice_ite if f
+@alea_ite if f
     DistUInt{3}([a, b, c])
 else
     DistUInt{3}([d, e, f])

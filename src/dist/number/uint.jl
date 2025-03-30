@@ -315,11 +315,11 @@ function overflow_sum(x::DistUInt{W}, y::DistUInt{W}) where W
 end
 
 function Base.min(x::DistUInt{W}, y::DistUInt{W}) where W
-    @dice_ite if x < y x else y end
+    @alea_ite if x < y x else y end
 end
 
 function Base.max(x::DistUInt{W}, y::DistUInt{W}) where W
-    @dice_ite if x > y x else y end
+    @alea_ite if x > y x else y end
 end
 
 function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W

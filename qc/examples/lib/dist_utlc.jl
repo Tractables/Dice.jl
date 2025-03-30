@@ -22,7 +22,7 @@
 #         "Var"    => (s)      -> DistUInt32(0),
 #         "App"    => (e1, e2) -> begin
 #             d1, d2 = ast_depth(e1), ast_depth(e2)
-#             @dice_ite if d1 > d2
+#             @alea_ite if d1 > d2
 #                 DistUInt32(1) + d1
 #             else
 #                 DistUInt32(1) + d2

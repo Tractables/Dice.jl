@@ -6,7 +6,7 @@
 # include("lib/dist_utlc.jl")     # DistVar, DistApp, DistAbs, utlc_str
 
 # function gen_name()
-#     @dice_ite if flip(1/3)
+#     @alea_ite if flip(1/3)
 #         DistString("a")
 #     elseif flip(1/2)
 #         DistString("b")
@@ -23,7 +23,7 @@
 #     # Fuel check
 #     size == 0 && return DistVar(name)
 
-#     @dice_ite if flip_for(size) & (in_scope.len > DistUInt32(0))
+#     @alea_ite if flip_for(size) & (in_scope.len > DistUInt32(0))
 #         DistVar(name)
 #     # Fix weight between Abs and App. We must also always choose Abs if
 #     # size=1 and the scope is empty so far.

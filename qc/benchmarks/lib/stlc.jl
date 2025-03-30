@@ -64,7 +64,7 @@ end
 function one_of(default::OptExpr.t, l::ListOptExpr.t)::OptExpr.t
     @match l [
         nil() -> default,
-        cons(x, xs) -> @dice_ite if flip_reciprocal(length(l))
+        cons(x, xs) -> @alea_ite if flip_reciprocal(length(l))
             x
         else
             one_of(default, xs)

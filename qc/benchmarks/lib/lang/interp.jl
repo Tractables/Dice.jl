@@ -62,7 +62,7 @@ function interp(rs::RunState, prog::L.Program)
     end
 
     function interp(env::Env, x::L.If)
-        @dice_ite if interp(env, x.c)
+        @alea_ite if interp(env, x.c)
             interp(env, x.t)
         else
             interp(env, x.e)
@@ -119,7 +119,7 @@ function interp(rs::RunState, prog::L.Program)
             if Dice.isunset(res)
                 res = v
             else
-                res = @dice_ite if prob_equals(DistUInt32(i), scrutinee)
+                res = @alea_ite if prob_equals(DistUInt32(i), scrutinee)
                     v
                 else
                     res
@@ -200,7 +200,7 @@ function interp(rs::RunState, prog::L.Program)
         name = prim_map[x]
         dependents = [interp(env, dependent) for dependent in x.dependents]
         sum(
-            @dice_ite if flip_for(rs, "$(name)_num$(n)", dependents)
+            @alea_ite if flip_for(rs, "$(name)_num$(n)", dependents)
                 DistUInt32(n)
             else
                 DistUInt32(0)
@@ -213,7 +213,7 @@ function interp(rs::RunState, prog::L.Program)
         name = prim_map[x]
         dependents = [interp(env, dependent) for dependent in x.dependents]
         sum(
-            @dice_ite if flip_for(rs, "$(name)_num$(n)", dependents)
+            @alea_ite if flip_for(rs, "$(name)_num$(n)", dependents)
                 DistInt32(n)
             else
                 DistInt32(0)

@@ -19,7 +19,7 @@ function find_longest_distance(graph::Matrix)
         if i == j
             dist[i,j] = DU8(0)
         else
-            dist[i,j] = @dice_ite if graph[i,j] DU8(1) else DU8_Inf end
+            dist[i,j] = @alea_ite if graph[i,j] DU8(1) else DU8_Inf end
         end
     end
 
@@ -40,7 +40,7 @@ function find_longest_distance(graph::Matrix)
     for k in 1:n
         for i in 1:n
             for j in 1:n
-                dist[i,j] = @dice_ite if prob_equals(dist[i,k], DU8_Inf) | prob_equals(dist[k,j], DU8_Inf)
+                dist[i,j] = @alea_ite if prob_equals(dist[i,k], DU8_Inf) | prob_equals(dist[k,j], DU8_Inf)
                     dist[i,j]
                 else
                     min(dist[i,j], dist[i,k] + dist[k,j])
@@ -58,7 +58,7 @@ function find_longest_distance(graph::Matrix)
     max_dist = DU8(0)
     for i in 1:n
         for j in 1:n
-            max_dist = @dice_ite if (!prob_equals(dist[i,j], DU8_Inf)) & (dist[i,j] > max_dist)
+            max_dist = @alea_ite if (!prob_equals(dist[i,j], DU8_Inf)) & (dist[i,j] > max_dist)
                 dist[i,j]
             else
                 max_dist

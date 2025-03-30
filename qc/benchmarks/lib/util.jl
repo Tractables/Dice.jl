@@ -6,7 +6,7 @@ end
 
 function shuffle_for(rs, name, xs)
     # Hand-build shuffle for lengths 2 and 3
-    @dice_ite if length(xs) == 2
+    @alea_ite if length(xs) == 2
         pr_var2 = register_weight!(rs, "$(name)_pr_var2")
         if flip(pr_var2)
             [xs[1], xs[2]]
@@ -99,7 +99,7 @@ end
 function first_some(default, xs)
     isempty(xs) && return default
     x, rest = xs[1], @view xs[2:end]
-    @dice_ite if Dice.matches(x, :Some)
+    @alea_ite if Dice.matches(x, :Some)
         x
     else
         first_some(default, rest)
@@ -110,7 +110,7 @@ end
 function first_some(::Type{T}, xs) where T
     isempty(xs) && return DistNone(T)
     x, rest = xs[1], @view xs[2:end]
-    @dice_ite if matches(x, "Some")
+    @alea_ite if matches(x, "Some")
         x
     else
         first_some(T, rest)
@@ -141,7 +141,7 @@ end
 function freq_choose(xs, flips)
     res = last(xs)
     for i in length(xs) - 1 : -1 : 1
-        res = @dice_ite if flips[i]
+        res = @alea_ite if flips[i]
             xs[i]
         else
             res
@@ -289,7 +289,7 @@ function flip_for(rs, name, dependents)
         if isnothing(res)
             res = v
         else
-            res = @dice_ite if prob_equals(dependents, dependents_vals)
+            res = @alea_ite if prob_equals(dependents, dependents_vals)
                 v
             else
                 res
@@ -331,7 +331,7 @@ function backtrack_for(rs, name, dependents, casenames_xs, default)
         if isnothing(res)
             res = v
         else
-            res = @dice_ite if prob_equals(dependents, dependents_vals)
+            res = @alea_ite if prob_equals(dependents, dependents_vals)
                 v
             else
                 res
@@ -362,7 +362,7 @@ function frequency_for(rs, name, dependents, casenames_xs)
         if isnothing(res)
             res = v
         else
-            res = @dice_ite if prob_equals(dependents, dependents_vals)
+            res = @alea_ite if prob_equals(dependents, dependents_vals)
                 v
             else
                 res

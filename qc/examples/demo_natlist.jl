@@ -20,7 +20,7 @@ function gen_list(size)
     # probability. This would restrict the distribution over list lengths to
     # roughly geometric distributions, so the final distribution wouldn't be as
     # close to the desired (but still better than before training).
-    @dice_ite if flip(sigmoid(Var(size)))
+    @alea_ite if flip(sigmoid(Var(size)))
         DistNil()
     else
         # The flips used in `uniform` use concrete weights, so we don't learn

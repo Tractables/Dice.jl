@@ -10,7 +10,7 @@
     
 #     # The flips used in the uniform aren't tracked via flip_for, so we
 #     # don't learn their probabilities (this is on purpose - we could).
-#     @dice_ite if flip_for(size)
+#     @alea_ite if flip_for(size)
 #         DistNil(DistUInt32)
 #     else
 #         # Try changing the parameter to flip_for to a constant, which would force

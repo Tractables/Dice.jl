@@ -35,7 +35,7 @@ function depth(e::ColorKVTree.t)
         T(c, l, k, v, r) -> begin
             ldepth = depth(l)
             rdepth = depth(r)
-            DistUInt32(1) + @dice_ite if ldepth > rdepth ldepth else rdepth end
+            DistUInt32(1) + @alea_ite if ldepth > rdepth ldepth else rdepth end
         end
     ]
 end
@@ -50,7 +50,7 @@ function satisfies_bookkeeping_invariant(e::ColorKVTree.t)
             T(c, l, k, v, r) -> begin
                 left_black_height, left_valid = black_height_and_valid(l)
                 right_black_height, right_valid = black_height_and_valid(r)
-                @dice_ite if left_valid & right_valid & prob_equals(left_black_height, right_black_height) 
+                @alea_ite if left_valid & right_valid & prob_equals(left_black_height, right_black_height) 
                     left_black_height + if is_red(c) DistUInt32(0) else DistUInt32(1) end, true
                 else
                     DistUInt32(0), false
@@ -70,7 +70,7 @@ function satisfies_balance_invariant(e::ColorKVTree.t)
             T(c, l, k, v, r) -> begin
                 left_color, left_valid = color_and_valid(l)
                 right_color, right_valid = color_and_valid(r)
-                @dice_ite if left_valid & right_valid & !(is_red(c) & (is_red(left_color) | is_red(right_color)))
+                @alea_ite if left_valid & right_valid & !(is_red(c) & (is_red(left_color) | is_red(right_color)))
                     c, true
                 else
                     c, false
