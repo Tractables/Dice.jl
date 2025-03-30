@@ -31,7 +31,7 @@ jobs:
 
       - name: Unit Tests
         run:
-          julia --project --check-bounds=yes --depwarn=yes -e 'import Pkg; Pkg.test(; coverage=true)'
+          julia --project --check-bounds=yes --depwarn=yes -e 'import Pkg; try Pkg.test(; coverage=true) catch e println(e); exit(1) end'
       
       # - name: Codecov Upload
       #   run:
