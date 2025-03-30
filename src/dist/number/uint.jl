@@ -318,12 +318,8 @@ end
 Base.:(<=)(x::Dist{<:Number}, y::Dist{<:Number}) = !isless(y, x)
 Base.:(>=)(x::Dist{<:Number}, y::Dist{<:Number}) = !isless(x, y)
 
-function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
-    z = Vector{AnyBool}(undef, W)
-
-    println("\nUINT - Addition function - ")
-    println("\tx = ", x.bits, "\n\ty = ", y.bits, "\n\n")
-
+# Used to DFS through graph and retrieve all Flips as part of this subgraph
+function extract_flips(bit)
     #=
     DistOr and DistAnd both have Fields
         x and y             (correspond to inputs nodes to OR/AND)
@@ -331,21 +327,17 @@ function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
         x 
     =#
 
-    # Used to DFS through graph and retrieve all Flips as part of this subgraph
-    function extract_flips(bit)
-        if hasfield(typeof(bit), :ordering)
-            return [bit]
-        elseif bit isa DistOr || bit isa DistAnd
-            return vcat(extract_flips(bit.x), extract_flips(bit.y))
-        elseif bit isa DistNot
-            return extract_flips(bit.x)
-        end
-        return []
+    if hasfield(typeof(bit), :ordering)
+        return [bit]
+    elseif bit isa DistOr || bit isa DistAnd
+        return vcat(extract_flips(bit.x), extract_flips(bit.y))
+    elseif bit isa DistNot
+        return extract_flips(bit.x)
     end
+    return []
+end
 
-    # Iterate through x.bits, y.bits
-        # Use index i to set bit_index to all Flips returned from extract_flips 
-        # (so complicated expressions within x.bits[i] all get the same bit_index value)
+function interleave(x::DistUInt{W}, y::DistUInt{W}) where W
     x_flips = []
     for i in 0:length(x.bits)-1
         flips = extract_flips(x.bits[i+1])
@@ -400,6 +392,14 @@ function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
     for o in all_flips
         println("\t", o)
     end
+end
+
+
+function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
+    z = Vector{AnyBool}(undef, W)
+
+    # Interleave x, y bits for variable ordering 
+    interleave(x,y)
 
     carry = false
     for i = W:-1:1
@@ -407,6 +407,19 @@ function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
         carry = atleast_two(x.bits[i], y.bits[i], carry)
     end
     errorcheck() & carry && error("integer overflow in `$x + $y`")
+
+    # Trying parsing through sum variable instead
+    println("\n----SUM Var----")
+    for bit in z
+        println(bit)
+        inside_bits = extract_flips(bit)
+        for ib in inside_bits
+            println("\t", ib)
+        end
+        
+    end
+    println("\n----END: SUM Var----")
+
     DistUInt{W}(z)
 end
 
@@ -433,6 +446,10 @@ end
 function Base.:(-)(x::DistUInt{W}, y::DistUInt{W}) where W
     z = Vector{AnyBool}(undef, W)
     borrow = false
+    
+    # Interleaving bits in x, y for variable ordering 
+    interleave(x,y)
+
     for i=W:-1:1
         z[i] = xor(x.bits[i], y.bits[i], borrow)
         borrow = ifelse(borrow, !x.bits[i] | y.bits[i], !x.bits[i] & y.bits[i])

@@ -38,22 +38,29 @@ d = uniform(DistUInt{3}, 2)
 e = uniform(DistUInt{3}, 2)
 f = d+e
 input_names = string.(get_flips(f) .|> x -> x.global_id)
-print("\tNUM NODES f (4 random vars) = ", num_nodes(f))
+print("\tNUM NODES ADD {3}, 2 = ", num_nodes(f))
 dump_dot(f, inames=input_names, filename="threexthree.dot")
 
 d = uniform(DistUInt{4}, 3)
 e = uniform(DistUInt{4}, 3)
 f = d+e
 input_names = string.(get_flips(f) .|> x -> x.global_id)
-print("\tNUM NODES f (6 random vars)= ", num_nodes(f))
+print("\tNUM NODES ADD {4}, 3= ", num_nodes(f))
 dump_dot(f, inames=input_names, filename="fourxfour.dot")
 
 d = uniform(DistUInt{5}, 4)
 e = uniform(DistUInt{5}, 4)
 f = d+e
 input_names = string.(get_flips(f) .|> x -> x.global_id)
-print("\tNUM NODES f ( 4x4 with overflow room )= ", num_nodes(f))
+print("\tNUM NODES ADD {5}, 4= ", num_nodes(f))
 dump_dot(f, inames=input_names, filename="fivexfive.dot")
+
+d = uniform(DistUInt{8}, 7)
+e = uniform(DistUInt{8}, 7)
+f = d+e
+input_names = string.(get_flips(f) .|> x -> x.global_id)
+print("\tNUM NODES ADD {8}, 7= ", num_nodes(f))
+dump_dot(f, inames=input_names, filename="eightxeight.dot")
 
 # -- End basic unit tests --
 
