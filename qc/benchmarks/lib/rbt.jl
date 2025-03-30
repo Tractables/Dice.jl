@@ -4,7 +4,7 @@ using Dice
 
 module Color
     using Dice
-    @inductive t R() B()
+    @type t = R() | B()
 end
 function Base.string(c::Color.t)
     @assert isdeterministic(c)
@@ -18,7 +18,7 @@ type_to_coq(::Type{Color.t}) = "Color"
 module ColorKVTree
     using Dice
     using Main: Z, Color
-    @inductive t E() T(Color.t, t, Z.t, Z.t, t)
+    @type t = E() | T(Color.t, t, Z.t, Z.t, t)
 end
 type_to_coq(::Type{ColorKVTree.t}) = "Tree"
 

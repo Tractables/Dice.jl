@@ -2,34 +2,34 @@
 
 module Typ
     using Dice
-    @inductive t TBool() TFun(t, t)
+    @type t = TBool() | TFun(t, t)
 end
 type_to_coq(::Type{Typ.t}) = "Typ"
 
 module Expr
     using Dice
     using Main: Nat, Typ
-    @inductive t Var(Nat.t) Bool(AnyBool) Abs(Typ.t, t) App(t, t)
+    @type t = Var(Nat.t) | Bool(AnyBool) | Abs(Typ.t, t) | App(t, t)
 end
 type_to_coq(::Type{Expr.t}) = "Expr"
 
 module OptExpr
     using Dice
     using Main: Expr
-    @inductive t None() Some(Expr.t)
+    @type t = None() | Some(Expr.t)
 end
 type_to_coq(::Type{OptExpr.t}) = "option Expr"
 
 module ListTyp
     using Dice
     using Main: Typ
-    @inductive t nil() cons(Typ.t, t)
+    @type t = nil() | cons(Typ.t, t)
 end
 type_to_coq(::Type{ListTyp.t}) = "list Typ"
 
 module ListNat
     using Dice
-    @inductive t nil() cons(DistUInt32, t)
+    @inductive t = nil() | cons(DistUInt32, t)
 end
 type_to_coq(::Type{ListNat.t}) = "list nat"
 

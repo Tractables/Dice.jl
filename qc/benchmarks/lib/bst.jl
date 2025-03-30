@@ -2,7 +2,7 @@
 module KVTree
     using Dice
     using Main: Nat
-    @inductive t E() T(t, Nat.t, Nat.t, t)
+    @type t = E() | T(t, Nat.t, Nat.t, t)
 end
 type_to_coq(::Type{KVTree.t}) = "Tree"
 
