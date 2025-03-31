@@ -1,0 +1,2 @@
+
+julia --project qc/benchmarks/tool.jl -f "LangDerivedGenerator{RBT}(Main.ColorKVTree.t,Pair{Type,Integer}[Main.ColorKVTree.t=>4,Main.Color.t=>0],0,3,true)" "Pair{MLELossConfig{RBT},Float64}[MLELossConfig{RBT}(depth,Uniform())=>0.1]" 1000 0.0
