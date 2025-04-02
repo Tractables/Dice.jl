@@ -207,7 +207,7 @@ function save_metric_dist(filename, dist; io)
             println(file, "$(i)\t$(dist[i])")
         end
     end
-    println(io, "Saved metric dist to $(filename).")
+    println(io, "Saved metric dist to $(filename)")
 end
 
 function save_samples(rs, filename, e; n_samples=200)

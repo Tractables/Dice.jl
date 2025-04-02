@@ -13,7 +13,7 @@ TAG = "v119_4321"
 TAG = "v120_stlctbeval"
 TAG = "v121_8sizeonly"
 TAG = "v122_more_ablation"
-OUT_TOP_DIR = joinpath(@__DIR__, "tuning-output")
+OUT_TOP_DIR = joinpath(@__DIR__, "../../tuning-output")
 
 args = ARGS
 allow_overwrite = "-f" ∈ args
@@ -101,8 +101,6 @@ if isfile(log_path) && !allow_overwrite
 end
 mkpath(out_dir)
 rs = RunState(Valuation(), Dict{String,ADNode}(), open(log_path, "w"), out_dir, MersenneTwister(SEED), nothing,generation_params)
-
-println(stderr, "Logging to $(log_path)\n")
 
 commit = strip(cmd_out(Cmd(`git rev-parse --short HEAD`, dir=@__DIR__)))
 t = now()
