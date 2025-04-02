@@ -23,6 +23,13 @@ comparing initial, trained, and target distributions. It supports:
    --fig3-epochs: Epochs for figure 3
 """
 
+"""
+Setup:
+julia --project -e "import Pkg;Pkg.add(url=\"https://github.com/PoorvaGarg/IRTools.jl.git\",rev=\"loop-break-patch\")"
+julia --project -e "import Pkg;Pkg.add(url=\"https://github.com/rtjoa/CUDD.jl.git\",rev=\"m1compat\")"
+julia --project -e "import Pkg;Pkg.instantiate()"
+"""
+
 import subprocess
 import re
 import pandas as pd
@@ -298,7 +305,7 @@ def create_figure3_experiment(args: argparse.Namespace) -> Experiment:
             "julia", "--project", "pbt/experiments/tool.jl",
             "-f",
             "LangSiblingDerivedGenerator{STLC}(Main.Expr.t,Pair{Type,Integer}[Main.Expr.t=>5,Main.Typ.t=>2],2,3)",
-            f"Pair{{FeatureSpecEntropy{{STLC}},Float64}}[FeatureSpecEntropy{{STLC}}(1,{args.fig3_epochs},wellTyped,typecheck_ft,true)=>{args.fig3_learning_rate}]",
+            f"Pair{{FeatureSpecEntropy{{STLC}},Float64}}[FeatureSpecEntropy{{STLC}}(1,200,wellTyped,typecheck_ft,true)=>{args.fig3_learning_rate}]",
             str(args.fig3_epochs),
             "0.0"
         ]
