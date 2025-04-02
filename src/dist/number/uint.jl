@@ -50,7 +50,7 @@ const DistUInt64= DistUInt{64}
 "Construct a uniform random number"
 function uniform(::Type{DistUInt{W}}, n = W) where W
     @assert W >= n >= 0
-    DistUInt{W}([i > W-n ? flip(0.5, bit_index=(W-i)) : false for i=1:W])
+    DistUInt{W}([i > W-n ? flip(0.5, bit_index=(W-i+1)) : false for i=1:W])
 end
 
 
@@ -328,8 +328,15 @@ function extract_flips(bit)
     =#
 
     if hasfield(typeof(bit), :ordering)
+        println("\t\t", bit)
         return [bit]
     elseif bit isa DistOr || bit isa DistAnd
+        if (bit isa DistOr)
+            println("\t++ OR")
+        else
+            println("\t++ AND")
+        end
+
         return vcat(extract_flips(bit.x), extract_flips(bit.y))
     elseif bit isa DistNot
         return extract_flips(bit.x)
@@ -342,7 +349,10 @@ function interleave(x::DistUInt{W}, y::DistUInt{W}) where W
     for i in 0:length(x.bits)-1
         flips = extract_flips(x.bits[i+1])
         for flip in flips
-            flip.bit_index = i
+            # flip.bit_index = i
+            if (flip.bit_index === nothing)
+                flip.bit_index = i
+            end
         end
         append!(x_flips, flips)
     end
@@ -350,7 +360,10 @@ function interleave(x::DistUInt{W}, y::DistUInt{W}) where W
     for i in 0:length(y.bits)-1
         flips = extract_flips(y.bits[i+1])
         for flip in flips
-            flip.bit_index = i
+            # flip.bit_index = i
+            if (flip.bit_index === nothing)
+                flip.bit_index = i
+            end
         end
         append!(y_flips, flips)
     end
@@ -364,7 +377,7 @@ function interleave(x::DistUInt{W}, y::DistUInt{W}) where W
 
     # Extract available 'ordering' values to be interleaved
     orderings = [flip.ordering for flip in all_flips]
-    sort(orderings)
+    sort!(orderings)
 
     flips_by_bit_index = Dict()
 
@@ -382,7 +395,9 @@ function interleave(x::DistUInt{W}, y::DistUInt{W}) where W
     ordering_idx = 1
 
     for bit_idx in sorted_bit_indices
+        # println("Inside loop: current bit index = ", bit_idx)
         for flip in flips_by_bit_index[bit_idx]
+            # println("\tGiving ordering ", orderings[ordering_idx], " to flip ", flip)
             flip.ordering = orderings[ordering_idx]
             ordering_idx += 1
         end
@@ -409,16 +424,16 @@ function Base.:(+)(x::DistUInt{W}, y::DistUInt{W}) where W
     errorcheck() & carry && error("integer overflow in `$x + $y`")
 
     # Trying parsing through sum variable instead
-    println("\n----SUM Var----")
-    for bit in z
-        println(bit)
-        inside_bits = extract_flips(bit)
-        for ib in inside_bits
-            println("\t", ib)
-        end
+    # println("\n----SUM Var----")
+    # for bit in z
+    #     println(bit)
+    #     inside_bits = extract_flips(bit)
+        # for ib in inside_bits
+        #     println("\t", ib)
+        # end
         
-    end
-    println("\n----END: SUM Var----")
+    # end
+    # println("\n----END: SUM Var----")
 
     DistUInt{W}(z)
 end
