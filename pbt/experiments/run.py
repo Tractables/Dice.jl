@@ -189,12 +189,47 @@ def main():
     parser = argparse.ArgumentParser(description='Run experiments and generate distribution plots')
     parser.add_argument('--verbose', action='store_true', help='Print detailed file paths')
     parser.add_argument('--parallel', action='store_true', help='Run experiments in parallel')
-    parser.add_argument('--figure', type=int, choices=[2, 3], help='Which figure to generate (2 or 3). If not specified, generates all figures.')
-    parser.add_argument('--fig2-learning-rate', type=float, default=0.3, help='Learning rate for figure 2 experiments (default: 0.3)')
-    parser.add_argument('--fig2-epochs', type=int, default=100, help='Number of epochs for figure 2 experiments (default: 100)')
-    parser.add_argument('--fig3-learning-rate', type=float, default=0.3, help='Learning rate for figure 3 experiment (default: 0.3)')
-    parser.add_argument('--fig3-epochs', type=int, default=2000, help='Number of epochs for figure 3 experiment (default: 2000)')
-    args = parser.parse_args()
+    parser.add_argument('--all', action='store_true', help='Run all figures')
+    parser.add_argument('--fig2', action='store_true', help='Run figure 2 experiments')
+    parser.add_argument('--fig3', action='store_true', help='Run figure 3 experiment')
+    parser.add_argument('--fast', action='store_true', help='Use faster training settings (fewer epochs, higher learning rates)')
+    parser.add_argument('--fig2-learning-rate', type=float, help='Learning rate for figure 2 experiments')
+    parser.add_argument('--fig2-epochs', type=int, help='Number of epochs for figure 2 experiments')
+    parser.add_argument('--fig3-learning-rate', type=float, help='Learning rate for figure 3 experiment')
+    parser.add_argument('--fig3-epochs', type=int, help='Number of epochs for figure 3 experiment')
+    args, unknown = parser.parse_known_args()
+    
+    # Validate that at least one figure is selected
+    if not (args.all or args.fig2 or args.fig3):
+        print("Error: Must specify at least one figure to run. Use --all, --fig2, or --fig3.")
+        sys.exit(1)
+    
+    # Check which figure-specific flags were explicitly specified
+    fig2_flags_specified = any(arg.startswith('--fig2-') for arg in unknown)
+    fig3_flags_specified = any(arg.startswith('--fig3-') for arg in unknown)
+    
+    # Validate that figure-specific parameters are only used when their figure is enabled
+    if fig2_flags_specified and not (args.all or args.fig2):
+        print("Error: Figure 2 parameters specified but figure 2 is not enabled. Use --fig2 or --all.")
+        sys.exit(1)
+    
+    if fig3_flags_specified and not (args.all or args.fig3):
+        print("Error: Figure 3 parameters specified but figure 3 is not enabled. Use --fig3 or --all.")
+        sys.exit(1)
+    
+    # Set default parameters based on --fast flag
+    if args.fast:
+        # Fast defaults
+        args.fig2_learning_rate = args.fig2_learning_rate if args.fig2_learning_rate is not None else 0.3
+        args.fig2_epochs = args.fig2_epochs if args.fig2_epochs is not None else 100
+        args.fig3_learning_rate = args.fig3_learning_rate if args.fig3_learning_rate is not None else 1.0
+        args.fig3_epochs = args.fig3_epochs if args.fig3_epochs is not None else 200
+    else:
+        # Normal defaults
+        args.fig2_learning_rate = args.fig2_learning_rate if args.fig2_learning_rate is not None else 0.1
+        args.fig2_epochs = args.fig2_epochs if args.fig2_epochs is not None else 1000
+        args.fig3_learning_rate = args.fig3_learning_rate if args.fig3_learning_rate is not None else 0.3
+        args.fig3_epochs = args.fig3_epochs if args.fig3_epochs is not None else 2000
     
     # Define all experiments for figure 2
     figure2_experiments = [
@@ -309,38 +344,54 @@ def main():
         
         # Get the directory containing the log file
         log_dir = os.path.dirname(log_path)
+        if args.verbose:
+            print(f"Looking for plots in directory: {log_dir}")
         
         # Create experiments-output directory if it doesn't exist
         output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'experiments-output')
         os.makedirs(output_dir, exist_ok=True)
         
         # Copy feature distribution plot
-        feature_dist_pattern = os.path.join(log_dir, 'feature_dist.*.png')
-        feature_dist_files = glob.glob(feature_dist_pattern)
-        if not feature_dist_files:
+        feature_dist_pattern = os.path.join(log_dir, 'feature_dist_feature_spec_entropy_train_feature=true_freq=1-spb=5_prop=wellTyped_feature=typecheck_ft.png')
+        if args.verbose:
+            print(f"Searching for feature distribution plot: {feature_dist_pattern}")
+        if not os.path.exists(feature_dist_pattern):
             print("Error: Could not find feature distribution plot")
+            print("Contents of log directory:")
+            for f in os.listdir(log_dir):
+                print(f"  {f}")
             sys.exit(1)
-        shutil.copy2(feature_dist_files[0], os.path.join(output_dir, 'fig3a_stlc_unique_types_dist.png'))
-        print(f"Copied feature distribution plot to: fig3a_stlc_unique_types_dist.png")
+        if args.verbose:
+            print(f"Found feature distribution plot: {feature_dist_pattern}")
+        output_path = os.path.join(output_dir, 'fig3a_stlc_unique_types_dist.png')
+        shutil.copy2(feature_dist_pattern, output_path)
+        print(f"Plot saved to: {output_path}")
         
         # Copy unique curves plot
-        unique_curves_pattern = os.path.join(log_dir, 'unique_curves.*.svg')
-        unique_curves_files = glob.glob(unique_curves_pattern)
-        if not unique_curves_files:
+        unique_curves_pattern = os.path.join(log_dir, 'unique_curves_feature_spec_entropy_train_feature=true_freq=1-spb=5_prop=wellTyped_feature=typecheck_ft.svg')
+        if args.verbose:
+            print(f"Searching for unique curves plot: {unique_curves_pattern}")
+        if not os.path.exists(unique_curves_pattern):
             print("Error: Could not find unique curves plot")
+            print("Contents of log directory:")
+            for f in os.listdir(log_dir):
+                print(f"  {f}")
             sys.exit(1)
-        shutil.copy2(unique_curves_files[0], os.path.join(output_dir, 'fig3b_stlc_cumulative_unique_types.svg'))
-        print(f"Copied unique curves plot to: fig3b_stlc_cumulative_unique_types.svg")
+        if args.verbose:
+            print(f"Found unique curves plot: {unique_curves_pattern}")
+        output_path = os.path.join(output_dir, 'fig3b_stlc_cumulative_unique_types.svg')
+        shutil.copy2(unique_curves_pattern, output_path)
+        print(f"Plot saved to: {output_path}")
 
     # Run the requested figures
-    if args.figure is None:
-        # Run all figures
+    if args.all:
         run_figure2()
         run_figure3()
-    elif args.figure == 2:
-        run_figure2()
-    else:  # figure == 3
-        run_figure3()
+    else:
+        if args.fig2:
+            run_figure2()
+        if args.fig3:
+            run_figure3()
 
 if __name__ == "__main__":
     main()
