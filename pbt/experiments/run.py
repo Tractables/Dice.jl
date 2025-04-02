@@ -46,6 +46,8 @@ import sys
 import argparse
 import multiprocessing
 from functools import partial
+import glob
+import shutil
 
 def run_experiment(command):
     """Run the Julia command and return the log file path from stdout."""
@@ -165,7 +167,7 @@ def run_single_experiment(exp_config, verbose=False):
     os.makedirs(output_dir, exist_ok=True)
     
     # Generate plot
-    plot_path = os.path.join(output_dir, f"{exp_config['name']}.png")
+    plot_path = os.path.join(output_dir, f"fig2_{exp_config['name']}.png")
     plot_distributions(initial_dist, trained_dist, plot_path, exp_config['target_type'], exp_config['name'])
     print(f"Plot saved to: {plot_path}")
 
@@ -187,12 +189,15 @@ def main():
     parser = argparse.ArgumentParser(description='Run experiments and generate distribution plots')
     parser.add_argument('--verbose', action='store_true', help='Print detailed file paths')
     parser.add_argument('--parallel', action='store_true', help='Run experiments in parallel')
-    parser.add_argument('--epochs', type=int, default=100, help='Number of epochs to run (default: 100)')
-    parser.add_argument('--learning-rate', type=float, default=0.3, help='Learning rate to use (default: 0.3)')
+    parser.add_argument('--figure', type=int, choices=[2, 3], help='Which figure to generate (2 or 3). If not specified, generates all figures.')
+    parser.add_argument('--fig2-learning-rate', type=float, default=0.3, help='Learning rate for figure 2 experiments (default: 0.3)')
+    parser.add_argument('--fig2-epochs', type=int, default=100, help='Number of epochs for figure 2 experiments (default: 100)')
+    parser.add_argument('--fig3-learning-rate', type=float, default=0.3, help='Learning rate for figure 3 experiment (default: 0.3)')
+    parser.add_argument('--fig3-epochs', type=int, default=2000, help='Number of epochs for figure 3 experiment (default: 2000)')
     args = parser.parse_args()
     
-    # Define all experiments
-    experiments = [
+    # Define all experiments for figure 2
+    figure2_experiments = [
         # RBT Type-Based Uniform
         {
             'name': 'rbt_type_based_uniform',
@@ -201,8 +206,8 @@ def main():
                 "julia", "--project", "pbt/experiments/tool.jl",
                 "-f",
                 "LangDerivedGenerator{RBT}(Main.ColorKVTree.t,Pair{Type,Integer}[Main.ColorKVTree.t=>4,Main.Color.t=>0],0,3,true)",
-                f"Pair{{MLELossConfig{{RBT}},Float64}}[MLELossConfig{{RBT}}(depth,Uniform())=>{args.learning_rate}]",
-                str(args.epochs),
+                f"Pair{{MLELossConfig{{RBT}},Float64}}[MLELossConfig{{RBT}}(depth,Uniform())=>{args.fig2_learning_rate}]",
+                str(args.fig2_epochs),
                 "0.0"
             ]
         },
@@ -214,8 +219,8 @@ def main():
                 "julia", "--project", "pbt/experiments/tool.jl",
                 "-f",
                 "LangDerivedGenerator{RBT}(Main.ColorKVTree.t,Pair{Type,Integer}[Main.ColorKVTree.t=>4,Main.Color.t=>0],0,3,true)",
-                f"Pair{{MLELossConfig{{RBT}},Float64}}[MLELossConfig{{RBT}}(depth,Linear())=>{args.learning_rate}]",
-                str(args.epochs),
+                f"Pair{{MLELossConfig{{RBT}},Float64}}[MLELossConfig{{RBT}}(depth,Linear())=>{args.fig2_learning_rate}]",
+                str(args.fig2_epochs),
                 "0.0"
             ]
         },
@@ -227,8 +232,8 @@ def main():
                 "julia", "--project", "pbt/experiments/tool.jl",
                 "-f",
                 "LangDerivedGenerator{STLC}(Main.Expr.t,Pair{Type,Integer}[Main.Expr.t=>5,Main.Typ.t=>2],0,3,true)",
-                f"Pair{{MLELossConfig{{STLC}},Float64}}[MLELossConfig{{STLC}}(depth,Uniform())=>{args.learning_rate}]",
-                str(args.epochs),
+                f"Pair{{MLELossConfig{{STLC}},Float64}}[MLELossConfig{{STLC}}(depth,Uniform())=>{args.fig2_learning_rate}]",
+                str(args.fig2_epochs),
                 "0.0"
             ]
         },
@@ -240,8 +245,8 @@ def main():
                 "julia", "--project", "pbt/experiments/tool.jl",
                 "-f",
                 "LangDerivedGenerator{STLC}(Main.Expr.t,Pair{Type,Integer}[Main.Expr.t=>5,Main.Typ.t=>2],0,3,true)",
-                f"Pair{{MLELossConfig{{STLC}},Float64}}[MLELossConfig{{STLC}}(depth,Linear())=>{args.learning_rate}]",
-                str(args.epochs),
+                f"Pair{{MLELossConfig{{STLC}},Float64}}[MLELossConfig{{STLC}}(depth,Linear())=>{args.fig2_learning_rate}]",
+                str(args.fig2_epochs),
                 "0.0"
             ]
         },
@@ -253,8 +258,8 @@ def main():
                 "julia", "--project", "pbt/experiments/tool.jl",
                 "-f",
                 "LangBespokeSTLCGenerator(5,2)",
-                f"Pair{{MLELossConfig{{STLC}},Float64}}[MLELossConfig{{STLC}}(depth,Uniform())=>{args.learning_rate}]",
-                str(args.epochs),
+                f"Pair{{MLELossConfig{{STLC}},Float64}}[MLELossConfig{{STLC}}(depth,Uniform())=>{args.fig2_learning_rate}]",
+                str(args.fig2_epochs),
                 "0.0"
             ]
         },
@@ -266,21 +271,76 @@ def main():
                 "julia", "--project", "pbt/experiments/tool.jl",
                 "-f",
                 "LangBespokeSTLCGenerator(5,2)",
-                f"Pair{{MLELossConfig{{STLC}},Float64}}[MLELossConfig{{STLC}}(depth,Linear())=>{args.learning_rate}]",
-                str(args.epochs),
+                f"Pair{{MLELossConfig{{STLC}},Float64}}[MLELossConfig{{STLC}}(depth,Linear())=>{args.fig2_learning_rate}]",
+                str(args.fig2_epochs),
                 "0.0"
             ]
         }
     ]
-    
-    # Run experiments either sequentially or in parallel
-    if args.parallel:
-        print(f"Running {len(experiments)} experiments in parallel...")
-        run_experiments_parallel(experiments, args.verbose)
-    else:
-        for exp in experiments:
-            print(f"\nRunning {exp['name']} experiment...")
-            run_single_experiment(exp, args.verbose)
+
+    # Define experiment for figure 3
+    figure3_experiment = {
+        'name': 'stlc_unique_types',
+        'command': [
+            "julia", "--project", "pbt/experiments/tool.jl",
+            "-f",
+            "LangSiblingDerivedGenerator{STLC}(Main.Expr.t,Pair{Type,Integer}[Main.Expr.t=>5,Main.Typ.t=>2],2,3)",
+            f"Pair{{FeatureSpecEntropy{{STLC}},Float64}}[FeatureSpecEntropy{{STLC}}(1,{args.fig3_epochs},wellTyped,typecheck_ft,true)=>{args.fig3_learning_rate}]",
+            str(args.fig3_epochs),
+            "0.0"
+        ]
+    }
+
+    def run_figure2():
+        if args.parallel:
+            print(f"Running {len(figure2_experiments)} experiments for figure 2 in parallel...")
+            run_experiments_parallel(figure2_experiments, args.verbose)
+        else:
+            for exp in figure2_experiments:
+                print(f"\nRunning {exp['name']} experiment...")
+                run_single_experiment(exp, args.verbose)
+
+    def run_figure3():
+        print("\nRunning experiment for figure 3...")
+        # Run experiment and get log path
+        log_path = run_experiment(figure3_experiment['command'])
+        if args.verbose:
+            print(f"Log file: {log_path}")
+        
+        # Get the directory containing the log file
+        log_dir = os.path.dirname(log_path)
+        
+        # Create experiments-output directory if it doesn't exist
+        output_dir = os.path.join(os.path.dirname(os.path.dirname(os.path.dirname(__file__))), 'experiments-output')
+        os.makedirs(output_dir, exist_ok=True)
+        
+        # Copy feature distribution plot
+        feature_dist_pattern = os.path.join(log_dir, 'feature_dist.*.png')
+        feature_dist_files = glob.glob(feature_dist_pattern)
+        if not feature_dist_files:
+            print("Error: Could not find feature distribution plot")
+            sys.exit(1)
+        shutil.copy2(feature_dist_files[0], os.path.join(output_dir, 'fig3a_stlc_unique_types_dist.png'))
+        print(f"Copied feature distribution plot to: fig3a_stlc_unique_types_dist.png")
+        
+        # Copy unique curves plot
+        unique_curves_pattern = os.path.join(log_dir, 'unique_curves.*.svg')
+        unique_curves_files = glob.glob(unique_curves_pattern)
+        if not unique_curves_files:
+            print("Error: Could not find unique curves plot")
+            sys.exit(1)
+        shutil.copy2(unique_curves_files[0], os.path.join(output_dir, 'fig3b_stlc_cumulative_unique_types.svg'))
+        print(f"Copied unique curves plot to: fig3b_stlc_cumulative_unique_types.svg")
+
+    # Run the requested figures
+    if args.figure is None:
+        # Run all figures
+        run_figure2()
+        run_figure3()
+    elif args.figure == 2:
+        run_figure2()
+    else:  # figure == 3
+        run_figure3()
 
 if __name__ == "__main__":
     main()
