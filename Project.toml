@@ -23,7 +23,7 @@ Symbolics = "0c5d862f-8b57-4792-8d23-62f2024744c7"
 [compat]
 CUDD = "0.3"
 DataStructures = "0.18"
-DirectedAcyclicGraphs = "0.1.1"
+DirectedAcyclicGraphs = "0.1.1, 0.2"
 Distributions = "0.25"
 Graphs = "1"
 Jive = "0.2"
